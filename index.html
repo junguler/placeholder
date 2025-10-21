@@ -22,10 +22,13 @@
             --success-color: #98c379;
             --warning-color: #e5c07b;
             --error-color: #e06c75;
+            --mobile-header-height: 60px;
+            --mobile-sidebar-width: 280px;
         }
 
         * {
             transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+            box-sizing: border-box;
         }
 
         body {
@@ -37,65 +40,76 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Top Search Header */
         .search-header {
             background-color: var(--sidebar-bg);
             border-bottom: 1px solid var(--border-color);
-            padding: 15px 20px;
+            padding: 10px 12px;
             position: sticky;
             top: 0;
             z-index: 100;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
+            min-height: var(--mobile-header-height);
         }
 
         .sidebar-toggle {
             background: var(--button-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 8px 12px;
-            border-radius: 5px;
+            padding: 10px;
+            border-radius: 8px;
             cursor: pointer;
             z-index: 101;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 14px;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
             flex-shrink: 0;
+            position: relative;
         }
 
-        .sidebar-toggle:hover {
-            background: var(--button-hover);
+        .sidebar-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .sidebar-toggle span {
+            display: none;
         }
 
         .theme-toggle {
             background: var(--button-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 8px 12px;
-            border-radius: 5px;
+            padding: 10px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 14px;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
             flex-shrink: 0;
         }
 
-        .theme-toggle:hover {
-            background: var(--button-hover);
+        .theme-toggle:active {
+            transform: scale(0.95);
         }
 
         .search-container {
             flex: 1;
             position: relative;
-            width: 100%;
+            min-width: 0;
         }
+
         .search-help {
             position: absolute;
             right: 10px;
@@ -106,6 +120,7 @@
             color: var(--file-size-color);
             cursor: pointer;
             font-size: 16px;
+            padding: 8px;
         }
 
         .search-help:focus {
@@ -120,23 +135,27 @@
             background: var(--sidebar-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 14px;
             display: none;
             z-index: 200;
             box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+            max-height: 70vh;
+            overflow-y: auto;
         }
 
         .search-help-panel.show {
             display: block;
         }
 
-        .search-help-panel b { color: var(--accent-color); }
+        .search-help-panel b { 
+            color: var(--accent-color); 
+        }
 
         .search-box {
             width: 100%;
-            padding: 12px 20px 12px 45px;
+            padding: 12px 45px 12px 45px;
             background-color: var(--search-bg);
             border: 1px solid var(--search-border);
             border-radius: 8px;
@@ -144,6 +163,8 @@
             font-size: 16px;
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         .search-box:focus {
@@ -162,11 +183,12 @@
             transform: translateY(-50%);
             color: var(--file-size-color);
             pointer-events: none;
+            font-size: 16px;
         }
 
         .search-filters {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 10px;
             flex-wrap: wrap;
         }
@@ -174,14 +196,15 @@
         .filter-chip {
             background: var(--button-bg);
             border: 1px solid var(--border-color);
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
+            touch-action: manipulation;
         }
 
         .filter-chip:hover {
@@ -196,6 +219,8 @@
         .filter-chip .remove {
             cursor: pointer;
             font-weight: bold;
+            font-size: 16px;
+            line-height: 1;
         }
 
         /* Main Content Container */
@@ -203,6 +228,7 @@
             display: flex;
             flex: 1;
             overflow: hidden;
+            position: relative;
         }
 
         /* Sidebar */
@@ -215,33 +241,55 @@
             transition: transform 0.3s ease, width 0.3s ease;
             flex-shrink: 0;
             overflow: hidden;
+            position: relative;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 49;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
         }
 
         .sidebar.collapsed {
-            width: 0;
             transform: translateX(-100%);
         }
 
         .search-results-info {
-            padding: 8px 15px;
-            font-size: 12px;
+            padding: 12px 15px;
+            font-size: 13px;
             color: var(--file-size-color);
             border-bottom: 1px solid var(--border-color);
             background-color: var(--hover-bg);
+            flex-shrink: 0;
         }
 
         .breadcrumbs {
-            padding: 10px 15px;
+            padding: 12px 15px;
             border-bottom: 1px solid var(--border-color);
             font-size: 14px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
         }
 
         .breadcrumbs span {
             cursor: pointer;
             color: var(--accent-color);
+            word-break: break-all;
         }
 
         .breadcrumbs span:hover {
@@ -252,16 +300,16 @@
             background: var(--button-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 10px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             flex-shrink: 0;
         }
 
@@ -289,6 +337,7 @@
             flex: 1;
             overflow-y: auto;
             position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
         .virtual-scroll-content {
@@ -305,7 +354,7 @@
         }
 
         .file-list li {
-            padding: 8px 15px;
+            padding: 12px 15px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -314,8 +363,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
             position: relative;
-            height: 40px;
+            height: 48px;
             box-sizing: border-box;
+            border-bottom: 1px solid transparent;
+            touch-action: manipulation;
         }
 
         .file-list li:hover {
@@ -345,18 +396,19 @@
         }
 
         .file-list .icon {
-            margin-right: 10px;
-            font-size: 18px;
+            margin-right: 12px;
+            font-size: 20px;
             flex-shrink: 0;
         }
 
         .file-list .file-name {
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 14px;
         }
 
         .file-list .file-path {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--file-size-color);
             margin-top: 2px;
         }
@@ -378,10 +430,11 @@
         /* Content Viewer */
         .content-viewer {
             flex-grow: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             overflow-x: hidden;
             position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
         .content-viewer pre {
@@ -391,15 +444,19 @@
             overflow-x: auto;
             position: relative;
             padding: 0;
+            font-size: 14px;
         }
 
         .content-viewer img {
             max-width: 100%;
             height: auto;
+            display: block;
+            margin: 0 auto;
         }
 
         .content-viewer .markdown-content {
             line-height: 1.6;
+            font-size: 15px;
         }
         
         .content-viewer .markdown-content h1, 
@@ -407,10 +464,13 @@
         .content-viewer .markdown-content h3 {
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.3em;
+            margin-top: 24px;
+            margin-bottom: 16px;
         }
 
         .content-viewer .markdown-content a {
             color: var(--accent-color);
+            word-break: break-word;
         }
         
         .content-viewer .markdown-content code {
@@ -418,6 +478,7 @@
             padding: 0.2em 0.4em;
             border-radius: 3px;
             font-size: 85%;
+            word-break: break-word;
         }
 
         .content-viewer .markdown-content table {
@@ -426,6 +487,7 @@
             white-space: nowrap;
             border-collapse: collapse;
             width: 100%;
+            font-size: 14px;
         }
 
         .content-viewer .markdown-content th,
@@ -479,28 +541,32 @@
             box-sizing: border-box;
         }
 
-
         .shortcuts-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
             width: 100%;
             max-width: 600px;
-            margin-top: 10px;
+            margin-top: 20px;
         }
 
         .shortcut-card {
             background: var(--sidebar-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 20px;
+            padding: 15px;
             transition: all 0.3s ease;
+            touch-action: manipulation;
         }
 
         .shortcut-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             border-color: var(--accent-color);
+        }
+
+        .shortcut-card:active {
+            transform: translateY(0);
         }
 
         .shortcut-key {
@@ -525,14 +591,12 @@
         /* File header info */
         .file-header {
             background-color: var(--sidebar-bg);
-            padding: 15px 20px;
-            margin: -20px -20px 20px -20px;
+            padding: 15px;
+            margin: -15px -15px 15px -15px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            flex-direction: column;
+            gap: 12px;
             position: sticky;
             top: 0;
             z-index: 10;
@@ -541,45 +605,47 @@
         .file-header .file-title {
             display: flex;
             align-items: center;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 500;
             flex: 1;
             min-width: 0;
+            word-break: break-word;
         }
 
         .file-header .file-title .icon {
             margin-right: 10px;
-            font-size: 24px;
+            font-size: 20px;
             flex-shrink: 0;
         }
 
         .file-header .file-meta {
             display: flex;
-            align-items: center;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
             color: var(--file-size-color);
-            font-size: 14px;
-            flex-shrink: 0;
+            font-size: 13px;
         }
 
         .file-header .file-actions {
             display: flex;
-            gap: 10px;
-            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .file-header .file-actions button {
             background-color: var(--button-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             display: flex;
             align-items: center;
             gap: 5px;
             transition: all 0.2s ease;
+            touch-action: manipulation;
+            min-height: 36px;
         }
 
         .file-header .file-actions button:hover {
@@ -600,12 +666,13 @@
             border: 1px solid var(--border-color);
             color: var(--text-color);
             padding: 8px 12px;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0;
             transition: opacity 0.2s ease;
             z-index: 5;
+            touch-action: manipulation;
         }
 
         .line-numbers-wrapper:hover .copy-button {
@@ -626,22 +693,23 @@
             display: flex;
             background-color: var(--sidebar-bg);
             border: 1px solid var(--border-color);
-            border-radius: 5px;
+            border-radius: 6px;
             overflow: auto;
             margin: 10px 0;
             max-height: calc(100vh - 200px);
             position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
         .line-numbers {
-            width: 60px;
-            padding: 15px 10px;
+            width: 50px;
+            padding: 15px 8px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             text-align: right;
             color: var(--file-size-color);
             font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.5;
             user-select: none;
             flex-shrink: 0;
@@ -653,7 +721,7 @@
             flex: 1;
             padding: 15px;
             font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.5;
             white-space: pre;
             overflow: visible;
@@ -669,7 +737,7 @@
 
         .code-content code {
             font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.5;
             white-space: pre;
             display: block;
@@ -683,7 +751,7 @@
             background: var(--button-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 10px 15px;
+            padding: 12px 16px;
             border-radius: 25px;
             cursor: pointer;
             font-size: 14px;
@@ -693,11 +761,16 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             transition: all 0.2s ease;
             z-index: 100;
+            touch-action: manipulation;
         }
 
         .wrap-toggle:hover {
             background: var(--button-hover);
             transform: translateY(-2px);
+        }
+
+        .wrap-toggle:active {
+            transform: translateY(0);
         }
 
         .wrap-toggle.active {
@@ -719,6 +792,8 @@
             opacity: 0;
             transition: all 0.3s ease;
             z-index: 1000;
+            max-width: 90%;
+            text-align: center;
         }
 
         .toast.show {
@@ -738,34 +813,40 @@
             color: var(--error-color);
         }
 
-        /* Advanced Help Modal (centered, large text, minimal horizontal padding) */
+        /* Advanced Help Modal */
         .adv-help-overlay {
             position: fixed;
             inset: 0;
             display: none;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.45);
+            background: rgba(0,0,0,0.6);
             z-index: 1200;
+            padding: 20px;
         }
 
         .adv-help-modal {
             background: var(--sidebar-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 12px 8px; /* minimal horizontal padding */
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            max-width: 90%;
-            width: auto;
-            font-size: 2em; /* twice as big text size */
-            line-height: 1.3;
+            max-width: 500px;
+            width: 100%;
+            font-size: 16px;
+            line-height: 1.5;
             text-align: left;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        /* Make sure small screens still center properly */
-        @media (max-width: 480px) {
-            .adv-help-modal { font-size: 1.6em; padding: 10px 6px; }
+        .adv-help-modal code {
+            background: var(--hover-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
         }
 
         /* Error Boundary */
@@ -786,6 +867,7 @@
             padding: 10px;
             border-radius: 4px;
             overflow-x: auto;
+            font-size: 13px;
         }
 
         /* Focus indicators */
@@ -797,43 +879,244 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
-                position: absolute;
+                position: fixed;
+                top: var(--mobile-header-height);
+                left: 0;
+                bottom: 0;
+                width: var(--mobile-sidebar-width);
                 z-index: 50;
-                height: 100%;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
             }
             
             .sidebar.collapsed {
                 transform: translateX(-100%);
             }
             
-            .file-header {
-                flex-direction: column;
-                align-items: flex-start;
+            .sidebar-overlay.show {
+                display: block;
             }
             
-            .file-header .file-meta {
-                flex-wrap: wrap;
+            .search-header {
+                padding: 8px 10px;
+                gap: 8px;
+            }
+            
+            .search-box {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 10px 40px 10px 40px;
+            }
+            
+            .search-icon {
+                left: 12px;
+                font-size: 14px;
+            }
+            
+            .search-help {
+                right: 8px;
+                padding: 6px;
+            }
+            
+            .content-viewer {
+                padding: 10px;
+            }
+            
+            .file-header {
+                margin: -10px -10px 10px -10px;
+                padding: 12px;
+            }
+            
+            .file-header .file-title {
+                font-size: 15px;
+            }
+            
+            .file-header .file-actions button {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            
+            .shortcuts-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
                 gap: 10px;
             }
-
-            .shortcuts-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                max-width: 400px;
-            }
-
+            
             .shortcut-card {
-                padding: 15px;
+                padding: 12px;
             }
-
-
+            
             .line-numbers {
                 width: 40px;
                 padding: 10px 5px;
+                font-size: 12px;
             }
+            
+            .code-content {
+                font-size: 12px;
+                padding: 10px;
+            }
+            
+            .code-content code {
+                font-size: 12px;
+            }
+            
+            .wrap-toggle {
+                bottom: 15px;
+                right: 15px;
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+            
+            .toast {
+                bottom: 15px;
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            .adv-help-modal {
+                font-size: 15px;
+                padding: 15px;
+            }
+        }
 
-            .search-filters {
-                display: none;
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 85%;
+                max-width: 300px;
+            }
+            
+            .search-header {
+                padding: 6px 8px;
+            }
+            
+            .sidebar-toggle,
+            .theme-toggle {
+                width: 38px;
+                height: 38px;
+                padding: 8px;
+            }
+            
+            .search-box {
+                padding: 8px 35px 8px 35px;
+            }
+            
+            .search-icon {
+                left: 10px;
+            }
+            
+            .search-help {
+                right: 6px;
+            }
+            
+            .content-viewer {
+                padding: 8px;
+            }
+            
+            .file-header {
+                margin: -8px -8px 8px -8px;
+                padding: 10px;
+            }
+            
+            .file-header .file-title {
+                font-size: 14px;
+            }
+            
+            .file-header .file-title .icon {
+                font-size: 18px;
+            }
+            
+            .file-header .file-meta {
+                font-size: 12px;
+                gap: 10px;
+            }
+            
+            .file-header .file-actions button {
+                font-size: 11px;
+                padding: 5px 8px;
+                min-height: 32px;
+            }
+            
+            .shortcuts-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                max-width: 250px;
+            }
+            
+            .shortcut-card {
+                padding: 10px;
+            }
+            
+            .shortcut-key {
+                font-size: 0.8em;
+                padding: 2px 4px;
+            }
+            
+            .shortcut-description {
+                font-size: 0.85em;
+            }
+            
+            .line-numbers {
+                width: 35px;
+                padding: 8px 4px;
+                font-size: 11px;
+            }
+            
+            .code-content {
+                font-size: 11px;
+                padding: 8px;
+            }
+            
+            .code-content code {
+                font-size: 11px;
+            }
+            
+            .wrap-toggle {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .toast {
+                bottom: 10px;
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .adv-help-modal {
+                font-size: 14px;
+                padding: 12px;
+            }
+            
+            .search-help-panel {
+                font-size: 13px;
+                padding: 12px;
+            }
+        }
+
+        /* Landscape mobile adjustments */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .search-header {
+                padding: 6px 10px;
+                min-height: 50px;
+            }
+            
+            .sidebar {
+                top: 50px;
+            }
+            
+            .content-viewer {
+                padding: 8px;
+            }
+            
+            .file-header {
+                padding: 8px;
+            }
+            
+            .welcome-screen {
+                padding: 10px;
+            }
+            
+            .shortcuts-grid {
+                margin-top: 10px;
             }
         }
 
@@ -883,6 +1166,19 @@
                 placeholder="🔍 Search files... (use ext:, size:, path:, type: filters)"
                 autocomplete="off"
             >
+            <button class="search-help" id="search-help" title="Search Help">
+                <i class="fas fa-question-circle"></i>
+            </button>
+            <div class="search-help-panel" id="search-help-panel">
+                <div><b>Advanced search examples</b></div>
+                <div style="margin-top:8px;">
+                    <div><b>ext:</b> js, py, md — e.g. <code>ext:js</code></div>
+                    <div><b>size:</b> comparison (>, >=, <, <=, =) with k/m/g — e.g. <code>size:>10k</code></div>
+                    <div><b>path:</b> match anywhere in path — e.g. <code>path:src/components</code></div>
+                    <div><b>type:</b> file or folder — e.g. <code>type:folder</code></div>
+                </div>
+                <div style="margin-top:10px;color:var(--file-size-color);font-size:0.9em;">Press <kbd>h</kbd> for more help or click outside to close.</div>
+            </div>
             <div class="search-filters" id="search-filters"></div>
         </div>
         <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
@@ -891,6 +1187,7 @@
     </header>
 
     <div class="main-container">
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <aside class="sidebar" id="sidebar">
             <nav class="breadcrumbs" id="breadcrumbs">
                 <span>root</span>
@@ -910,23 +1207,7 @@
         </aside>
 
         <main class="content-viewer" id="content-viewer">
-            <!-- welcome-screen removed from static HTML to avoid a brief duplicate flash.
-                 renderDirectory([]) will render the welcome screen consistently. -->
         </main>
-    </div>
-
-    <!-- Advanced Help Modal -->
-    <div id="adv-help-modal" class="adv-help-overlay" aria-hidden="true">
-        <div class="adv-help-modal" role="dialog" id="adv-help-content">
-            <div><b>Advanced search examples</b></div>
-            <div style="margin-top:8px;">
-                <div><b>ext:</b> js, py, md — e.g. <code>ext:js</code></div>
-                <div><b>size:</b> comparison (>, >=, <, <=, =) with k/m/g — e.g. <code>size:>10k</code></div>
-                <div><b>path:</b> match anywhere in path — e.g. <code>path:src/components</code></div>
-                <div><b>type:</b> file or folder — e.g. <code>type:folder</code></div>
-            </div>
-            <div style="margin-top:10px;color:var(--file-size-color);font-size:0.6em;">Press <kbd>h</kbd> again or click/press any key to dismiss.</div>
-        </div>
     </div>
 
     <button class="wrap-toggle" id="wrap-toggle" title="Toggle Word Wrap" style="display: none;">
@@ -957,12 +1238,12 @@
                 currentFileContent: '',
                 searchFilters: {},
                 virtualScroll: {
-                    itemHeight: 40,
+                    itemHeight: 48,
                     visibleItems: 0,
                     startIndex: 0,
                     scrollTop: 0
                 },
-                // advanced help state
+                isMobile: window.innerWidth <= 768,
                 advHelpOpenTime: 0
             };
 
@@ -976,13 +1257,16 @@
                 searchFiltersEl: document.getElementById('search-filters'),
                 sidebarToggle: document.getElementById('sidebar-toggle'),
                 sidebar: document.getElementById('sidebar'),
+                sidebarOverlay: document.getElementById('sidebar-overlay'),
                 wrapToggle: document.getElementById('wrap-toggle'),
                 toast: document.getElementById('toast'),
                 themeToggle: document.getElementById('theme-toggle'),
                 virtualScrollContainer: document.getElementById('virtual-scroll-container'),
                 virtualScrollContent: document.getElementById('virtual-scroll-content'),
-                advHelpModal: document.getElementById('adv-help-modal')
+                searchHelp: document.getElementById('search-help'),
+                searchHelpPanel: document.getElementById('search-help-panel')
             };
+            
             // handlers reference so we can remove listeners reliably
             const advHelpHandlers = { pointer: null, key: null };
 
@@ -1060,7 +1344,7 @@
 
             // Virtual scrolling implementation
             class VirtualScroller {
-                constructor(container, itemHeight = 40) {
+                constructor(container, itemHeight = 48) {
                     this.container = container;
                     this.itemHeight = itemHeight;
                     this.visibleItems = Math.ceil(container.clientHeight / itemHeight) + 2;
@@ -1071,8 +1355,8 @@
                 }
 
                 setupListeners() {
-                    this.container.addEventListener('scroll', this.handleScroll.bind(this));
-                    window.addEventListener('resize', this.handleResize.bind(this));
+                    this.container.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+                    window.addEventListener('resize', this.handleResize.bind(this), { passive: true });
                 }
 
                 handleScroll() {
@@ -1144,7 +1428,12 @@
                                     <span class="file-name">${item.name}</span>
                                 </div>
                             `;
-                            li.onclick = () => renderDirectory([...state.currentPath, item.name]);
+                            li.onclick = () => {
+                                renderDirectory([...state.currentPath, item.name]);
+                                if (state.isMobile) {
+                                    toggleSidebar(false);
+                                }
+                            };
                         }
                     } else {
                         const icon = getFileIcon(item.name);
@@ -1157,7 +1446,7 @@
                                 <div class="file-info" style="min-width:0;">
                                     <span class="icon">${icon}</span>
                                     <div style="display:flex;flex-direction:column;overflow:hidden;min-width:0;">
-                                        <span class="file-path" style="font-size:11px;color:var(--file-size-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dirDisplay}</span>
+                                        <span class="file-path" style="font-size:12px;color:var(--file-size-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dirDisplay}</span>
                                         <span class="file-name">${item.name}</span>
                                     </div>
                                 </div>
@@ -1173,7 +1462,12 @@
                             `;
                         }
 
-                        li.onclick = () => renderFile(item.path, item.name, item.size);
+                        li.onclick = () => {
+                            renderFile(item.path, item.name, item.size);
+                            if (state.isMobile) {
+                                toggleSidebar(false);
+                            }
+                        };
                     }
 
                     return li;
@@ -1217,13 +1511,13 @@
 
                 onSwipeRight() {
                     if (elements.sidebar.classList.contains('collapsed')) {
-                        elements.sidebar.classList.remove('collapsed');
+                        toggleSidebar(true);
                     }
                 }
 
                 onSwipeLeft() {
                     if (!elements.sidebar.classList.contains('collapsed')) {
-                        elements.sidebar.classList.add('collapsed');
+                        toggleSidebar(false);
                     }
                 }
             }
@@ -1235,13 +1529,34 @@
 
             // Initialize virtual scroller
             function initializeVirtualScroller() {
-                virtualScroller = new VirtualScroller(elements.virtualScrollContainer);
+                virtualScroller = new VirtualScroller(elements.virtualScrollContainer, state.virtualScroll.itemHeight);
             }
 
             // Initialize touch gestures
             function initializeTouchGestures() {
                 if ('ontouchstart' in window) {
                     touchGestures = new TouchGestures(document.body);
+                }
+            }
+
+            // Toggle sidebar with overlay
+            function toggleSidebar(show) {
+                if (show === undefined) {
+                    elements.sidebar.classList.toggle('collapsed');
+                } else {
+                    if (show) {
+                        elements.sidebar.classList.remove('collapsed');
+                    } else {
+                        elements.sidebar.classList.add('collapsed');
+                    }
+                }
+                
+                if (state.isMobile) {
+                    if (elements.sidebar.classList.contains('collapsed')) {
+                        elements.sidebarOverlay.classList.remove('show');
+                    } else {
+                        elements.sidebarOverlay.classList.add('show');
+                    }
                 }
             }
 
@@ -1490,7 +1805,6 @@
                 elements.breadcrumbsEl.style.display = 'none';
                 elements.searchResultsInfo.style.display = 'block';
                 elements.searchResultsInfo.textContent = `Found ${results.length} file${results.length !== 1 ? 's' : ''} matching "${query}"`;
-                // start selection at first result so keyboard navigation works immediately
                 state.selectedIndex = results.length > 0 ? 0 : -1;
                 
                 if (results.length === 0) {
@@ -1506,18 +1820,15 @@
                 }));
                 
                 virtualScroller.setItems(items);
-                // ensure selected item is visible after setting items
                 setTimeout(updateSelection, 0);
             }
 
             // Update selection
             function updateSelection() {
-                // Re-render to apply the 'selected' class correctly based on state.selectedIndex
                 virtualScroller.render();
 
                 if (state.selectedIndex === -1) return;
 
-                // Manually calculate and adjust scroll position for the virtual list
                 const container = elements.virtualScrollContainer;
                 const itemHeight = state.virtualScroll.itemHeight;
 
@@ -1561,7 +1872,6 @@
             function renderBreadcrumbs(pathArray) {
                 let html = '';
                 
-                // Add root and path breadcrumbs
                 html += `<span onclick="renderDirectory([])">root</span>`;
                 let pathSoFar = [];
                 for (const folder of pathArray) {
@@ -1582,10 +1892,9 @@
                 elements.searchResultsInfo.style.display = 'none';
                 elements.searchFiltersEl.innerHTML = '';
                 renderBreadcrumbs(pathArray);
-                elements.virtualScrollContainer.scrollTop = 0; // Reset scroll on directory change
+                elements.virtualScrollContainer.scrollTop = 0;
                 state.selectedIndex = -1;
                 
-                // Show welcome screen if in root
                 if (pathArray.length === 0) {
                     elements.contentViewerEl.innerHTML = `
                         <div class="welcome-screen">
@@ -1595,14 +1904,14 @@
                                         <span class="shortcut-key">↑</span>
                                         <span class="shortcut-key">↓</span>
                                     </div>
-                                    <div class="shortcut-description">Navigate file list</div>
+                                    <div class="shortcut-description">Navigate</div>
                                 </div>
                                 
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">Enter</span>
                                     </div>
-                                    <div class="shortcut-description">Open file/folder</div>
+                                    <div class="shortcut-description">Open</div>
                                 </div>
                                 
                                 <div class="shortcut-card">
@@ -1610,44 +1919,42 @@
                                         <span class="shortcut-key">←</span>
                                         <span class="shortcut-key">→</span>
                                     </div>
-                                    <div class="shortcut-description">Go back/Enter</div>
+                                    <div class="shortcut-description">Back/Enter</div>
                                 </div>
                                 
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">/</span>
                                     </div>
-                                    <div class="shortcut-description">Focus search</div>
+                                    <div class="shortcut-description">Search</div>
                                 </div>
                                 
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">Esc</span>
                                     </div>
-                                    <div class="shortcut-description">Clear search</div>
+                                    <div class="shortcut-description">Clear</div>
                                 </div>
 
-                                <!-- Advanced help keybind card added here (keeps welcome screen consistent) -->
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">h</span>
                                     </div>
-                                    <div class="shortcut-description">Advanced search tips</div>
+                                    <div class="shortcut-description">Help</div>
                                 </div>
                                 
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">T</span>
                                     </div>
-                                    <div class="shortcut-description">Toggle theme</div>
+                                    <div class="shortcut-description">Theme</div>
                                 </div>
 
-                                <!-- Added shortcuts -->
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">B</span>
                                     </div>
-                                    <div class="shortcut-description">Toggle sidebar</div>
+                                    <div class="shortcut-description">Sidebar</div>
                                 </div>
 
                                 <div class="shortcut-card">
@@ -1655,7 +1962,7 @@
                                         <span class="shortcut-key">Ctrl</span>
                                         <span class="shortcut-key">C</span>
                                     </div>
-                                    <div class="shortcut-description">Copy file content</div>
+                                    <div class="shortcut-description">Copy</div>
                                 </div>
                             </div>
                         </div>
@@ -1665,10 +1972,8 @@
                     elements.contentViewerEl.innerHTML = `<p>Select a file to preview.</p>`;
                 }
 
-                // Prepare items for virtual scroller
                 const items = [];
                 
-                // Add ".." if not in root
                 if (pathArray.length > 0) {
                     items.push({
                         type: 'folder',
@@ -1677,7 +1982,6 @@
                     });
                 }
 
-                // Sort items
                 node.children.sort((a, b) => {
                     if (a.type !== b.type) {
                         return a.type === 'folder' ? -1 : 1;
@@ -1724,21 +2028,17 @@
                 lineNumbers.className = 'line-numbers';
                 lineNumbers.innerHTML = lines.map((_, i) => i + 1).join('<br>');
                 
-                // Create code element with syntax highlighting
                 const codeElement = document.createElement('code');
                 codeElement.className = `language-${lang}`;
                 codeElement.textContent = content;
                 
-                // Apply syntax highlighting
                 if (Prism.languages[lang]) {
                     codeElement.innerHTML = Prism.highlight(content, Prism.languages[lang], lang);
                 }
                 
-                // Create pre element
                 const preElement = document.createElement('pre');
                 preElement.appendChild(codeElement);
                 
-                // Create code content div
                 const codeContent = document.createElement('div');
                 codeContent.className = 'code-content';
                 codeContent.appendChild(preElement);
@@ -1837,13 +2137,11 @@
                         contentElement.width = '100%';
                         contentElement.height = '600px';
                     } else {
-                        // Create code block with line numbers and syntax highlighting
                         const lang = Prism.languages[fileExtension] ? fileExtension : 'plaintext';
                         const wrapper = addLineNumbers(content, lang);
                         addCopyButton(wrapper, content);
                         contentElement = wrapper;
                         
-                        // Apply current word wrap state
                         if (state.wordWrap) {
                             const codeElement = wrapper.querySelector('code');
                             if (codeElement) {
@@ -1912,7 +2210,11 @@
 
             // Event listeners
             elements.sidebarToggle.addEventListener('click', () => {
-                elements.sidebar.classList.toggle('collapsed');
+                toggleSidebar();
+            });
+
+            elements.sidebarOverlay.addEventListener('click', () => {
+                toggleSidebar(false);
             });
 
             elements.wrapToggle.addEventListener('click', toggleWordWrap);
@@ -1924,6 +2226,18 @@
                 switchTheme(themeKeys[nextIndex]);
             });
 
+            // Search help toggle
+            elements.searchHelp.addEventListener('click', (e) => {
+                e.stopPropagation();
+                elements.searchHelpPanel.classList.toggle('show');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!elements.searchHelp.contains(e.target) && !elements.searchHelpPanel.contains(e.target)) {
+                    elements.searchHelpPanel.classList.remove('show');
+                }
+            });
+
             // Search with debouncing
             let searchTimeout;
             elements.searchBox.addEventListener('input', (e) => {
@@ -1933,54 +2247,8 @@
                 }, 150);
             });
             
-            // Advanced help modal functions (opened by keybind '?')
-            function showAdvancedHelp() {
-                // Toggle behaviour: if already open, close
-                const overlay = elements.advHelpModal;
-                if (!overlay) return;
-                if (overlay.style.display === 'flex') {
-                    hideAdvancedHelp();
-                    return;
-                }
-                
-                // Open modal and note the open time to avoid immediately reacting to the same key event
-                overlay.style.display = 'flex';
-                overlay.setAttribute('aria-hidden', 'false');
-                state.advHelpOpenTime = performance.now();
-                
-                // add handlers that will close the modal on next pointer or key input
-                advHelpHandlers.pointer = (e) => {
-                    hideAdvancedHelp();
-                };
-                advHelpHandlers.key = (e) => {
-                    // ignore the event that opened the modal (very recent events)
-                    const now = performance.now();
-                    if (now - state.advHelpOpenTime < 50) return;
-                    hideAdvancedHelp();
-                };
-                document.addEventListener('pointerdown', advHelpHandlers.pointer, true);
-                document.addEventListener('keydown', advHelpHandlers.key, true);
-            }
-
-            function hideAdvancedHelp() {
-                const overlay = elements.advHelpModal;
-                if (!overlay) return;
-                overlay.style.display = 'none';
-                overlay.setAttribute('aria-hidden', 'true');
-                // remove any attached handlers
-                if (advHelpHandlers.pointer) {
-                    document.removeEventListener('pointerdown', advHelpHandlers.pointer, true);
-                    advHelpHandlers.pointer = null;
-                }
-                if (advHelpHandlers.key) {
-                    document.removeEventListener('keydown', advHelpHandlers.key, true);
-                    advHelpHandlers.key = null;
-                }
-             }
-
             // Clear search on Escape
             elements.searchBox.addEventListener('keydown', (e) => {
-                 // keep Escape behaviour when typing
                  if (e.key === 'Escape') {
                      elements.searchBox.value = '';
                      elements.searchBox.blur();
@@ -1993,9 +2261,7 @@
                  const items = virtualScroller.items;
                  const activeIsSearch = document.activeElement === elements.searchBox;
  
-                 // If search box is focused, allow arrow navigation and Enter to select results
                  if (activeIsSearch) {
-                    // allow opening advanced help even when search is focused (key 'h', case-insensitive)
                     if (e.key && e.key.toLowerCase() === 'h') {
                         e.preventDefault();
                         showAdvancedHelp();
@@ -2024,15 +2290,16 @@
                                  } else {
                                      renderFile(selectedItem.path, selectedItem.name, selectedItem.size);
                                  }
+                                 if (state.isMobile) {
+                                     toggleSidebar(false);
+                                 }
                              }
                          return;
                          }
                      }
-                     // Escape key handled elsewhere (searchBox keydown) — let typing work for other keys
                      return;
                  }
  
-                 // Not focused in search box: keep existing behavior
                  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                      if (e.key === 'Escape') {
                          e.target.blur();
@@ -2041,7 +2308,6 @@
                  }
  
                  if (!items || items.length === 0) return;
-                 // top-level toggle key for advanced help (h/H)
                  if (e.key && e.key.toLowerCase() === 'h') {
                      e.preventDefault();
                      showAdvancedHelp();
@@ -2078,6 +2344,9 @@
                              } else {
                                  renderFile(selectedItem.path, selectedItem.name, selectedItem.size);
                              }
+                             if (state.isMobile) {
+                                 toggleSidebar(false);
+                             }
                          }
                          break;
                      case '/':
@@ -2096,7 +2365,7 @@
                      case 'b':
                      case 'B':
                          e.preventDefault();
-                         elements.sidebar.classList.toggle('collapsed');
+                         toggleSidebar();
                          break;
                      case 't':
                      case 'T':
@@ -2119,6 +2388,37 @@
                          break;
                  }
               });
+
+            // Advanced help modal functions
+            function showAdvancedHelp() {
+                const overlay = document.createElement('div');
+                overlay.className = 'adv-help-overlay';
+                overlay.style.display = 'flex';
+                overlay.innerHTML = `
+                    <div class="adv-help-modal">
+                        <div><b>Advanced search examples</b></div>
+                        <div style="margin-top:12px;">
+                            <div style="margin-bottom:8px;"><b>ext:</b> js, py, md — e.g. <code>ext:js</code></div>
+                            <div style="margin-bottom:8px;"><b>size:</b> comparison (>, >=, <, <=, =) with k/m/g — e.g. <code>size:>10k</code></div>
+                            <div style="margin-bottom:8px;"><b>path:</b> match anywhere in path — e.g. <code>path:src/components</code></div>
+                            <div style="margin-bottom:8px;"><b>type:</b> file or folder — e.g. <code>type:folder</code></div>
+                        </div>
+                        <div style="margin-top:12px;color:var(--file-size-color);font-size:0.9em;">Press <kbd>h</kbd> again or click/press any key to dismiss.</div>
+                    </div>
+                `;
+                
+                document.body.appendChild(overlay);
+                state.advHelpOpenTime = performance.now();
+                
+                const closeHelp = () => {
+                    const now = performance.now();
+                    if (now - state.advHelpOpenTime < 50) return;
+                    overlay.remove();
+                };
+                
+                overlay.addEventListener('click', closeHelp);
+                document.addEventListener('keydown', closeHelp, { once: true });
+            }
             
             // Go back one folder
             function goBackOneFolder() {
@@ -2126,6 +2426,24 @@
                     renderDirectory(state.currentPath.slice(0, -1));
                 }
             }
+
+            // Handle window resize
+            function handleResize() {
+                const wasMobile = state.isMobile;
+                state.isMobile = window.innerWidth <= 768;
+                
+                if (wasMobile !== state.isMobile) {
+                    if (state.isMobile) {
+                        elements.sidebar.classList.add('collapsed');
+                        elements.sidebarOverlay.classList.remove('show');
+                    } else {
+                        elements.sidebar.classList.remove('collapsed');
+                        elements.sidebarOverlay.classList.remove('show');
+                    }
+                }
+            }
+
+            window.addEventListener('resize', handleResize, { passive: true });
 
             // Make functions globally accessible
             window.renderDirectory = renderDirectory;
@@ -2137,6 +2455,12 @@
             initializeVirtualScroller();
             initializeTouchGestures();
             switchTheme(state.currentTheme);
+            
+            // Set initial mobile state
+            if (state.isMobile) {
+                elements.sidebar.classList.add('collapsed');
+            }
+            
             loadFileTree();
         });
     </script>

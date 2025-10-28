@@ -1,45 +1,1593 @@
-<!doctype html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Enhanced Repository File Viewer</title><link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css><link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css><style>:root{--bg-color:#282c34;--sidebar-bg:#21252b;--text-color:#abb2bf;--border-color:#3e4451;--hover-bg:#2c313c;--accent-color:#61afef;--file-size-color:#8b929e;--button-bg:#3a3f4b;--button-hover:#4a5060;--search-bg:#2c313c;--search-border:#3e4451;--success-color:#98c379;--warning-color:#e5c07b;--error-color:#e06c75}*{transition:background-color .2s ease,color .2s ease,transform .2s ease}body{font-family:segoe ui,Tahoma,Geneva,Verdana,sans-serif;background-color:var(--bg-color);color:var(--text-color);margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden}.search-header{background-color:var(--sidebar-bg);border-bottom:1px solid var(--border-color);padding:15px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:15px}.sidebar-toggle{background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:8px 12px;border-radius:5px;cursor:pointer;z-index:101;transition:all .2s ease;display:flex;align-items:center;gap:5px;font-size:14px;flex-shrink:0}.sidebar-toggle:hover{background:var(--button-hover)}.theme-toggle{background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:8px 12px;border-radius:5px;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;gap:5px;font-size:14px;flex-shrink:0}.theme-toggle:hover{background:var(--button-hover)}.search-container{flex:1;position:relative;width:100%}.search-help{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:0 0;border:none;color:var(--file-size-color);cursor:pointer;font-size:16px}.search-help:focus{outline:none}.search-help-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--sidebar-bg);border:1px solid var(--border-color);color:var(--text-color);padding:10px;border-radius:8px;font-size:13px;display:none;z-index:200;box-shadow:0 6px 18px rgba(0,0,0,.3)}.search-help-panel.show{display:block}.search-help-panel b{color:var(--accent-color)}.search-box{width:100%;padding:12px 20px 12px 45px;background-color:var(--search-bg);border:1px solid var(--search-border);border-radius:8px;color:var(--text-color);font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s}.search-box:focus{border-color:var(--accent-color);box-shadow:0 0 0 3px rgba(97,175,239,.2)}.search-box::placeholder{color:var(--file-size-color)}.search-icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--file-size-color);pointer-events:none}.search-filters{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}.filter-chip{background:var(--button-bg);border:1px solid var(--border-color);padding:4px 10px;border-radius:15px;font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all .2s ease}.filter-chip:hover{background:var(--button-hover)}.filter-chip.active{background:var(--accent-color);color:#fff}.filter-chip .remove{cursor:pointer;font-weight:700}.main-container{display:flex;flex:1;overflow:hidden}.sidebar{width:400px;background-color:var(--sidebar-bg);border-right:1px solid var(--border-color);display:flex;flex-direction:column;transition:transform .3s ease,width .3s ease;flex-shrink:0;overflow:hidden}.sidebar.collapsed{width:0;transform:translateX(-100%)}.search-results-info{padding:8px 15px;font-size:12px;color:var(--file-size-color);border-bottom:1px solid var(--border-color);background-color:var(--hover-bg)}.breadcrumbs{padding:10px 15px;border-bottom:1px solid var(--border-color);font-size:14px;display:flex;align-items:center;gap:10px}.breadcrumbs span{cursor:pointer;color:var(--accent-color)}.breadcrumbs span:hover{text-decoration:underline}.back-button{background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:16px;transition:all .2s ease;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0}.back-button:hover{background:var(--button-hover);transform:translateY(-1px)}.back-button:active{transform:translateY(0)}.back-button:disabled{opacity:.5;cursor:not-allowed}.back-button:disabled:hover{background:var(--button-bg);transform:none}.virtual-scroll-container{flex:1;overflow-y:auto;position:relative}.virtual-scroll-content{position:absolute;top:0;left:0;right:0}.file-list{list-style:none;padding:0;margin:0}.file-list li{padding:8px 15px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;height:40px;box-sizing:border-box}.file-list li:hover{background-color:var(--hover-bg)}.file-list li.selected{background-color:var(--hover-bg);border-left:3px solid var(--accent-color)}.file-list li.search-result{background-color:var(--hover-bg);border-bottom:1px solid var(--border-color)}.file-list li.search-result:hover{background-color:#353b45}.file-list .file-info{display:flex;align-items:center;flex:1;min-width:0;overflow:hidden}.file-list .icon{margin-right:10px;font-size:18px;flex-shrink:0}.file-list .file-name{overflow:hidden;text-overflow:ellipsis}.file-list .file-path{font-size:11px;color:var(--file-size-color);margin-top:2px}.file-list .file-size{color:var(--file-size-color);font-size:12px;margin-left:10px;flex-shrink:0;font-family:consolas,monaco,monospace}.highlight{background-color:rgba(97,175,239,.3);padding:1px 2px;border-radius:2px}.content-viewer{flex-grow:1;padding:20px;overflow-y:auto;overflow-x:hidden;position:relative}.content-viewer pre{margin:0;background-color:initial!important;white-space:pre;overflow-x:auto;position:relative;padding:0}.content-viewer img{max-width:100%;height:auto}.content-viewer .markdown-content{line-height:1.6}.content-viewer .markdown-content h1,.content-viewer .markdown-content h2,.content-viewer .markdown-content h3{border-bottom:1px solid var(--border-color);padding-bottom:.3em}.content-viewer .markdown-content a{color:var(--accent-color)}.content-viewer .markdown-content code{background-color:var(--hover-bg);padding:.2em .4em;border-radius:3px;font-size:85%}.content-viewer .markdown-content table{display:block;overflow-x:auto;white-space:nowrap;border-collapse:collapse;width:100%}.content-viewer .markdown-content th,.content-viewer .markdown-content td{padding:8px 12px;border:1px solid var(--border-color);text-align:left}.content-viewer .markdown-content th{background-color:var(--hover-bg)}.skeleton{background:linear-gradient(90deg,var(--hover-bg) 25%,var(--border-color) 50%,var(--hover-bg) 75%);background-size:200% 100%;animation:loading 1.5s infinite;border-radius:4px}@keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}.skeleton-text{height:16px;margin:8px 0}.skeleton-title{height:24px;width:60%;margin:16px 0}.welcome-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:20px;max-width:100%;box-sizing:border-box}.shortcuts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:600px;margin-top:10px}.shortcut-card{background:var(--sidebar-bg);border:1px solid var(--border-color);border-radius:8px;padding:20px;transition:all .3s ease}.shortcut-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3);border-color:var(--accent-color)}.shortcut-key{display:inline-block;background:var(--button-bg);border:1px solid var(--border-color);border-radius:4px;padding:3px 6px;font-family:consolas,monaco,monospace;font-weight:700;margin:0 3px;box-shadow:0 2px 4px rgba(0,0,0,.2);font-size:.85em}.shortcut-description{margin-top:8px;color:var(--text-color);font-size:.9em}.file-header{background-color:var(--sidebar-bg);padding:15px 20px;margin:-20px -20px 20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;position:sticky;top:0;z-index:10}.file-header .file-title{display:flex;align-items:center;font-size:18px;font-weight:500;flex:1;min-width:0}.file-header .file-title .icon{margin-right:10px;font-size:24px;flex-shrink:0}.file-header .file-meta{display:flex;align-items:center;gap:20px;color:var(--file-size-color);font-size:14px;flex-shrink:0}.file-header .file-actions{display:flex;gap:10px;flex-shrink:0}.file-header .file-actions button{background-color:var(--button-bg);color:var(--text-color);border:1px solid var(--border-color);padding:6px 12px;border-radius:5px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:5px;transition:all .2s ease}.file-header .file-actions button:hover{background-color:var(--button-hover);transform:translateY(-1px)}.file-header .file-actions button:active{transform:translateY(0)}.copy-button{position:absolute;top:10px;right:10px;background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:8px 12px;border-radius:5px;cursor:pointer;font-size:14px;opacity:0;transition:opacity .2s ease;z-index:5}.line-numbers-wrapper:hover .copy-button{opacity:1}.copy-button:hover{background:var(--button-hover)}.copy-button.copied{background:var(--success-color);color:#fff}.line-numbers-wrapper{display:flex;background-color:var(--sidebar-bg);border:1px solid var(--border-color);border-radius:5px;overflow:auto;margin:10px 0;max-height:calc(100vh - 200px);position:relative}.line-numbers{width:60px;padding:15px 10px;background:var(--sidebar-bg);border-right:1px solid var(--border-color);text-align:right;color:var(--file-size-color);font-family:consolas,monaco,monospace;font-size:14px;line-height:1.5;user-select:none;flex-shrink:0;position:sticky;left:0}.code-content{flex:1;padding:15px;font-family:consolas,monaco,monospace;font-size:14px;line-height:1.5;white-space:pre;overflow:visible;min-width:0}.code-content pre{margin:0;padding:0;background:0 0!important;overflow:visible}.code-content code{font-family:consolas,monaco,monospace;font-size:14px;line-height:1.5;white-space:pre;display:block}.wrap-toggle{position:fixed;bottom:20px;right:20px;background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:10px 15px;border-radius:25px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:all .2s ease;z-index:100}.wrap-toggle:hover{background:var(--button-hover);transform:translateY(-2px)}.wrap-toggle.active{background:var(--accent-color);color:#fff}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%)translateY(100px);background:var(--sidebar-bg);border:1px solid var(--border-color);padding:12px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);opacity:0;transition:all .3s ease;z-index:1000}.toast.show{transform:translateX(-50%)translateY(0);opacity:1}.toast.success{border-color:var(--success-color);background:rgba(152,195,121,.1);color:var(--success-color)}.toast.error{border-color:var(--error-color);background:rgba(224,108,117,.1);color:var(--error-color)}.adv-help-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:1200}.adv-help-modal{background:var(--sidebar-bg);border:1px solid var(--border-color);color:var(--text-color);padding:12px 8px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:90%;width:auto;font-size:2em;line-height:1.3;text-align:left}@media(max-width:480px){.adv-help-modal{font-size:1.6em;padding:10px 6px}}.error-boundary{padding:20px;background:var(--error-color);color:#fff;border-radius:8px;margin:20px}.error-boundary h3{margin-top:0}.error-boundary pre{background:rgba(0,0,0,.2);padding:10px;border-radius:4px;overflow-x:auto}:focus-visible{outline:2px solid var(--accent-color);outline-offset:2px}@media(max-width:768px){.sidebar{position:absolute;z-index:50;height:100%}.sidebar.collapsed{transform:translateX(-100%)}.file-header{flex-direction:column;align-items:flex-start}.file-header .file-meta{flex-wrap:wrap;gap:10px}.shortcuts-grid{grid-template-columns:repeat(2,1fr);gap:15px;max-width:400px}.shortcut-card{padding:15px}.line-numbers{width:40px;padding:10px 5px}.search-filters{display:none}}body.light-theme{--bg-color:#ffffff;--sidebar-bg:#f6f8fa;--text-color:#24292e;--border-color:#d1d5da;--hover-bg:#f3f4f6;--accent-color:#0366d6;--file-size-color:#6a737d;--button-bg:#fafbfc;--button-hover:#e1e4e8;--search-bg:#fafbfc;--search-border:#d1d5da}body.solarized-theme{--bg-color:#002b36;--sidebar-bg:#073642;--text-color:#839496;--border-color:#586e75;--hover-bg:#073642;--accent-color:#268bd2;--file-size-color:#657b83;--button-bg:#073642;--button-hover:#586e75;--search-bg:#073642;--search-border:#586e75}.m3u-header{display:flex;align-items:center;gap:10px;margin-bottom:15px}.m3u-header button{background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:8px 12px;border-radius:6px;cursor:pointer;transition:all .2s}.m3u-header button:hover{background:var(--button-hover)}.m3u-header button:disabled{opacity:.5;cursor:not-allowed}.playlist-panel{display:flex;gap:20px;flex-wrap:wrap}.playlist-left{flex:1 1 320px;min-width:320px}.playlist-right{flex:1 1 400px;min-width:400px}.stream-list{list-style:none;padding:0;margin:0;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;max-height:60vh}.stream-list li{padding:10px 12px;border-bottom:1px solid var(--border-color);cursor:pointer;display:flex;align-items:center;gap:10px}.stream-list li:hover{background:var(--hover-bg)}.stream-list li.active{background:rgba(97,175,239,.15);border-left:3px solid var(--accent-color)}.stream-list .stream-name{flex:1;overflow:hidden;text-overflow:ellipsis}.stream-list .stream-url{font-size:12px;color:var(--file-size-color)}.playlist-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}.playlist-actions .btn{background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:6px 10px;border-radius:6px;cursor:pointer}.playlist-actions .btn:hover{background:var(--button-hover)}.audio-player{position:fixed;bottom:0;left:0;right:0;background:var(--sidebar-bg);border-top:1px solid var(--border-color);display:flex;align-items:center;gap:12px;padding:10px 14px;z-index:900}.audio-player .title{font-size:13px;color:var(--text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}.audio-player .controls{display:flex;align-items:center;gap:8px}.audio-player .controls button{background:var(--button-bg);border:1px solid var(--border-color);color:var(--text-color);padding:6px 10px;border-radius:6px;cursor:pointer}.audio-player .controls button:hover{background:var(--button-hover)}.audio-player .time{font-size:12px;color:var(--file-size-color);min-width:90px;text-align:right}.audio-player input[type=range]{width:140px}.audio-player .volume{display:flex;align-items:center;gap:6px}.audio-player.hidden{display:none}</style><header class=search-header><button class=sidebar-toggle id=sidebar-toggle title="Toggle Sidebar"><i class="fas fa-bars"></i><span>Files</span></button><div class=search-container><i class="fas fa-search search-icon"></i><input class=search-box id=search-box placeholder="🔍 Search files... (use ext:, size:, path:, type: filters)" autocomplete=off><div class=search-filters id=search-filters></div></div><button class=theme-toggle id=theme-toggle title="Toggle Theme"><i class="fas fa-moon"></i></button></header><div class=main-container><aside class=sidebar id=sidebar><nav class=breadcrumbs id=breadcrumbs><span>root</span></nav><div class=search-results-info id=search-results-info style=display:none></div><div class=virtual-scroll-container id=virtual-scroll-container><div class=virtual-scroll-content id=virtual-scroll-content><ul class=file-list id=file-list><li class=loading><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style=width:70%></div></li></ul></div></div></aside><main class=content-viewer id=content-viewer></main></div><div id=adv-help-modal class=adv-help-overlay aria-hidden=true><div class=adv-help-modal role=dialog id=adv-help-content><div><b>Advanced search examples</b></div><div style=margin-top:8px><div><b>ext:</b> js, py, md — e.g. <code>ext:js</code></div><div><b>size:</b> comparison (>, >=, <, <=, =) with k/m/g — e.g. <code>size:>10k</code></div><div><b>path:</b> match anywhere in path — e.g. <code>path:src/components</code></div><div><b>type:</b> file or folder — e.g. <code>type:folder</code></div></div><div style=margin-top:10px;color:var(--file-size-color);font-size:.6em>Press <kbd>h</kbd> again or click/press any key to dismiss.</div></div></div><button class=wrap-toggle id=wrap-toggle title="Toggle Word Wrap" style=display:none><i class="fas fa-text-width"></i><span>Wrap</span></button><div class=toast id=toast></div><script src=https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js></script><script src=https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js></script><script src=https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js></script><script src=https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js></script><script src=https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js></script><script src=https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js></script><script src=https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js></script><script>document.addEventListener("DOMContentLoaded",()=>{const t={fullFileTree:[],currentPath:[],allFiles:[],searchResults:[],currentTheme:localStorage.getItem("theme")||"dark",selectedIndex:-1,wordWrap:!1,currentFileContent:"",searchFilters:{},virtualScroll:{itemHeight:40,visibleItems:0,startIndex:0,scrollTop:0},advHelpOpenTime:0},e={fileListEl:document.getElementById("file-list"),breadcrumbsEl:document.getElementById("breadcrumbs"),contentViewerEl:document.getElementById("content-viewer"),searchBox:document.getElementById("search-box"),searchResultsInfo:document.getElementById("search-results-info"),searchFiltersEl:document.getElementById("search-filters"),sidebarToggle:document.getElementById("sidebar-toggle"),sidebar:document.getElementById("sidebar"),wrapToggle:document.getElementById("wrap-toggle"),toast:document.getElementById("toast"),themeToggle:document.getElementById("theme-toggle"),virtualScrollContainer:document.getElementById("virtual-scroll-container"),virtualScrollContent:document.getElementById("virtual-scroll-content"),advHelpModal:document.getElementById("adv-help-modal")},s={pointer:null,key:null},M={js:"🟨",jsx:"🟨",ts:"🔷",tsx:"🔷",py:"🐍",java:"☕",cpp:"🔷",c:"🔹",cs:"🔷",php:"🐘",rb:"💎",go:"🐹",rs:"🦀",swift:"🍎",kt:"🎯",dart:"🎯",scala:"🔴",lua:"🌙",r:"📊",m:"🔷",sh:"⌨️",bash:"⌨️",zsh:"⌨️",ps1:"💙",sql:"🗃️",html:"🌐",htm:"🌐",css:"🎨",scss:"🎨",sass:"🎨",less:"🎨",vue:"💚",svelte:"🧡",json:"📋",xml:"📄",yaml:"📄",yml:"📄",toml:"📄",ini:"⚙️",conf:"⚙️",env:"🔐",lock:"🔒",md:"📝",txt:"📄",pdf:"📕",doc:"📘",docx:"📘",png:"🖼️",jpg:"🖼️",jpeg:"🖼️",gif:"🖼️",svg:"🎨",webp:"🖼️",ico:"🖼️",bmp:"🖼️",mp4:"🎬",avi:"🎬",mov:"🎬",wmv:"🎬",webm:"🎬",mkv:"🎬",flv:"🎬",mp3:"🎵",wav:"🎵",flac:"🎵",aac:"🎵",ogg:"🎵",m4a:"🎵",m3u:"🎵",m3u8:"🎵",zip:"📦",rar:"📦",tar:"📦",gz:"📦","7z":"📦",exe:"⚙️",dll:"⚙️",so:"⚙️",app:"📱",apk:"📱",ipa:"📱"},r={dark:{icon:"fas fa-moon",class:""},light:{icon:"fas fa-sun",class:"light-theme"},solarized:{icon:"fas fa-sun",class:"solarized-theme"}};class D{constructor(){this.setupGlobalHandlers()}setupGlobalHandlers(){window.addEventListener("error",this.handleError.bind(this)),window.addEventListener("unhandledrejection",this.handlePromiseRejection.bind(this))}handleError(e){console.error("Global error:",e.error),this.showErrorToast("An unexpected error occurred"),this.renderErrorScreen(e.error),e.preventDefault()}handlePromiseRejection(e){console.error("Unhandled promise rejection:",e.reason),this.showErrorToast("Operation failed"),e.preventDefault()}showErrorToast(e){o(e,"error")}renderErrorScreen(t){e.contentViewerEl.innerHTML=`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Repository File Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #282c34;
+            --sidebar-bg: #21252b;
+            --text-color: #abb2bf;
+            --border-color: #3e4451;
+            --hover-bg: #2c313c;
+            --accent-color: #61afef;
+            --file-size-color: #8b929e;
+            --button-bg: #3a3f4b;
+            --button-hover: #4a5060;
+            --search-bg: #2c313c;
+            --search-border: #3e4451;
+            --success-color: #98c379;
+            --warning-color: #e5c07b;
+            --error-color: #e06c75;
+        }
+
+        * {
+            transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Search Header */
+        .search-header {
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sidebar-toggle {
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 101;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--button-hover);
+        }
+
+        .theme-toggle {
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle:hover {
+            background: var(--button-hover);
+        }
+
+        .search-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+        }
+        .search-help {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--file-size-color);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .search-help:focus {
+            outline: none;
+        }
+
+        .search-help-panel {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 8px);
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+            z-index: 200;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        }
+
+        .search-help-panel.show {
+            display: block;
+        }
+
+        .search-help-panel b { color: var(--accent-color); }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            background-color: var(--search-bg);
+            border: 1px solid var(--search-border);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(97, 175, 239, 0.2);
+        }
+
+        .search-box::placeholder {
+            color: var(--file-size-color);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--file-size-color);
+            pointer-events: none;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-chip:hover {
+            background: var(--button-hover);
+        }
+
+        .filter-chip.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .filter-chip .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Main Content Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 400px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, width 0.3s ease;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            transform: translateX(-100%);
+        }
+
+        .search-results-info {
+            padding: 8px 15px;
+            font-size: 12px;
+            color: var(--file-size-color);
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--hover-bg);
+        }
+
+        .breadcrumbs {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .breadcrumbs span {
+            cursor: pointer;
+            color: var(--accent-color);
+        }
+
+        .breadcrumbs span:hover {
+            text-decoration: underline;
+        }
+
+        .back-button {
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .back-button:hover {
+            background: var(--button-hover);
+            transform: translateY(-1px);
+        }
+
+        .back-button:active {
+            transform: translateY(0);
+        }
+
+        .back-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .back-button:disabled:hover {
+            background: var(--button-bg);
+            transform: none;
+        }
+
+        /* Virtual Scrolling Container */
+        .virtual-scroll-container {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .virtual-scroll-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .file-list li {
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+            height: 40px;
+            box-sizing: border-box;
+        }
+
+        .file-list li:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .file-list li.selected {
+            background-color: var(--hover-bg);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .file-list li.search-result {
+            background-color: var(--hover-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .file-list li.search-result:hover {
+            background-color: #353b45;
+        }
+
+        .file-list .file-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .file-list .icon {
+            margin-right: 10px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .file-list .file-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-list .file-path {
+            font-size: 11px;
+            color: var(--file-size-color);
+            margin-top: 2px;
+        }
+
+        .file-list .file-size {
+            color: var(--file-size-color);
+            font-size: 12px;
+            margin-left: 10px;
+            flex-shrink: 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .highlight {
+            background-color: rgba(97, 175, 239, 0.3);
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+
+        /* Content Viewer */
+        .content-viewer {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .content-viewer pre {
+            margin: 0;
+            background-color: transparent !important;
+            white-space: pre;
+            overflow-x: auto;
+            position: relative;
+            padding: 0;
+        }
+
+        .content-viewer img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .content-viewer .markdown-content {
+            line-height: 1.6;
+        }
+        
+        .content-viewer .markdown-content h1, 
+        .content-viewer .markdown-content h2, 
+        .content-viewer .markdown-content h3 {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3em;
+        }
+
+        .content-viewer .markdown-content a {
+            color: var(--accent-color);
+        }
+        
+        .content-viewer .markdown-content code {
+            background-color: var(--hover-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-size: 85%;
+        }
+
+        .content-viewer .markdown-content table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .content-viewer .markdown-content th,
+        .content-viewer .markdown-content td {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .content-viewer .markdown-content th {
+            background-color: var(--hover-bg);
+        }
+
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, 
+                var(--hover-bg) 25%, 
+                var(--border-color) 50%, 
+                var(--hover-bg) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin: 8px 0;
+        }
+
+        .skeleton-title {
+            height: 24px;
+            width: 60%;
+            margin: 16px 0;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 20px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 10px;
+        }
+
+        .shortcut-card {
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .shortcut-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-color);
+        }
+
+        .shortcut-key {
+            display: inline-block;
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-weight: bold;
+            margin: 0 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 0.85em;
+        }
+
+        .shortcut-description {
+            margin-top: 8px;
+            color: var(--text-color);
+            font-size: 0.9em;
+        }
+
+        /* File header info */
+        .file-header {
+            background-color: var(--sidebar-bg);
+            padding: 15px 20px;
+            margin: -20px -20px 20px -20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .file-header .file-title {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 500;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-header .file-title .icon {
+            margin-right: 10px;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .file-header .file-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: var(--file-size-color);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .file-header .file-actions {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .file-header .file-actions button {
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .file-header .file-actions button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-1px);
+        }
+
+        .file-header .file-actions button:active {
+            transform: translateY(0);
+        }
+
+        /* Copy Code Button */
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 5;
+        }
+
+        .line-numbers-wrapper:hover .copy-button {
+            opacity: 1;
+        }
+
+        .copy-button:hover {
+            background: var(--button-hover);
+        }
+
+        .copy-button.copied {
+            background: var(--success-color);
+            color: white;
+        }
+
+        /* Line Numbers */
+        .line-numbers-wrapper {
+            display: flex;
+            background-color: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            overflow: auto;
+            margin: 10px 0;
+            max-height: calc(100vh - 200px);
+            position: relative;
+        }
+
+        .line-numbers {
+            width: 60px;
+            padding: 15px 10px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            text-align: right;
+            color: var(--file-size-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            user-select: none;
+            flex-shrink: 0;
+            position: sticky;
+            left: 0;
+        }
+
+        .code-content {
+            flex: 1;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre;
+            overflow: visible;
+            min-width: 0;
+        }
+
+        .code-content pre {
+            margin: 0;
+            padding: 0;
+            background: transparent !important;
+            overflow: visible;
+        }
+
+        .code-content code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre;
+            display: block;
+        }
+
+        /* Word Wrap Toggle */
+        .wrap-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .wrap-toggle:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        .wrap-toggle.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--success-color);
+            background: rgba(152, 195, 121, 0.1);
+            color: var(--success-color);
+        }
+
+        .toast.error {
+            border-color: var(--error-color);
+            background: rgba(224, 108, 117, 0.1);
+            color: var(--error-color);
+        }
+
+        /* Advanced Help Modal (centered, large text, minimal horizontal padding) */
+        .adv-help-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.45);
+            z-index: 1200;
+        }
+
+        .adv-help-modal {
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px 8px; /* minimal horizontal padding */
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 90%;
+            width: auto;
+            font-size: 2em; /* twice as big text size */
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        /* Make sure small screens still center properly */
+        @media (max-width: 480px) {
+            .adv-help-modal { font-size: 1.6em; padding: 10px 6px; }
+        }
+
+        /* Error Boundary */
+        .error-boundary {
+            padding: 20px;
+            background: var(--error-color);
+            color: white;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        .error-boundary h3 {
+            margin-top: 0;
+        }
+
+        .error-boundary pre {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        /* Focus indicators */
+        :focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                z-index: 50;
+                height: 100%;
+            }
+            
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+            
+            .file-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .file-header .file-meta {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .shortcuts-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                max-width: 400px;
+            }
+
+            .shortcut-card {
+                padding: 15px;
+            }
+
+
+            .line-numbers {
+                width: 40px;
+                padding: 10px 5px;
+            }
+
+            .search-filters {
+                display: none;
+            }
+        }
+
+        /* Light theme */
+        body.light-theme {
+            --bg-color: #ffffff;
+            --sidebar-bg: #f6f8fa;
+            --text-color: #24292e;
+            --border-color: #d1d5da;
+            --hover-bg: #f3f4f6;
+            --accent-color: #0366d6;
+            --file-size-color: #6a737d;
+            --button-bg: #fafbfc;
+            --button-hover: #e1e4e8;
+            --search-bg: #fafbfc;
+            --search-border: #d1d5da;
+        }
+
+        /* Solarized theme */
+        body.solarized-theme {
+            --bg-color: #002b36;
+            --sidebar-bg: #073642;
+            --text-color: #839496;
+            --border-color: #586e75;
+            --hover-bg: #073642;
+            --accent-color: #268bd2;
+            --file-size-color: #657b83;
+            --button-bg: #073642;
+            --button-hover: #586e75;
+            --search-bg: #073642;
+            --search-border: #586e75;
+        }
+    </style>
+</head>
+<body>
+    <header class="search-header">
+        <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+            <span>Files</span>
+        </button>
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input 
+                type="text" 
+                class="search-box" 
+                id="search-box" 
+                placeholder="🔍 Search files... (use ext:, size:, path:, type: filters)"
+                autocomplete="off"
+            >
+            <div class="search-filters" id="search-filters"></div>
+        </div>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+            <i class="fas fa-moon"></i>
+        </button>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar" id="sidebar">
+            <nav class="breadcrumbs" id="breadcrumbs">
+                <span>root</span>
+            </nav>
+            <div class="search-results-info" id="search-results-info" style="display: none;"></div>
+            <div class="virtual-scroll-container" id="virtual-scroll-container">
+                <div class="virtual-scroll-content" id="virtual-scroll-content">
+                    <ul class="file-list" id="file-list">
+                        <li class="loading">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text" style="width: 70%;"></div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-viewer" id="content-viewer">
+            <!-- welcome-screen removed from static HTML to avoid a brief duplicate flash.
+                 renderDirectory([]) will render the welcome screen consistently. -->
+        </main>
+    </div>
+
+    <!-- Advanced Help Modal -->
+    <div id="adv-help-modal" class="adv-help-overlay" aria-hidden="true">
+        <div class="adv-help-modal" role="dialog" id="adv-help-content">
+            <div><b>Advanced search examples</b></div>
+            <div style="margin-top:8px;">
+                <div><b>ext:</b> js, py, md — e.g. <code>ext:js</code></div>
+                <div><b>size:</b> comparison (>, >=, <, <=, =) with k/m/g — e.g. <code>size:>10k</code></div>
+                <div><b>path:</b> match anywhere in path — e.g. <code>path:src/components</code></div>
+                <div><b>type:</b> file or folder — e.g. <code>type:folder</code></div>
+            </div>
+            <div style="margin-top:10px;color:var(--file-size-color);font-size:0.6em;">Press <kbd>h</kbd> again or click/press any key to dismiss.</div>
+        </div>
+    </div>
+
+    <button class="wrap-toggle" id="wrap-toggle" title="Toggle Word Wrap" style="display: none;">
+        <i class="fas fa-text-width"></i>
+        <span>Wrap</span>
+    </button>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Global state management
+            const state = {
+                fullFileTree: [],
+                currentPath: [],
+                allFiles: [],
+                searchResults: [],
+                currentTheme: localStorage.getItem('theme') || 'dark',
+                selectedIndex: -1,
+                wordWrap: false,
+                currentFileContent: '',
+                searchFilters: {},
+                virtualScroll: {
+                    itemHeight: 40,
+                    visibleItems: 0,
+                    startIndex: 0,
+                    scrollTop: 0
+                },
+                // advanced help state
+                advHelpOpenTime: 0
+            };
+
+            // DOM elements
+            const elements = {
+                fileListEl: document.getElementById('file-list'),
+                breadcrumbsEl: document.getElementById('breadcrumbs'),
+                contentViewerEl: document.getElementById('content-viewer'),
+                searchBox: document.getElementById('search-box'),
+                searchResultsInfo: document.getElementById('search-results-info'),
+                searchFiltersEl: document.getElementById('search-filters'),
+                sidebarToggle: document.getElementById('sidebar-toggle'),
+                sidebar: document.getElementById('sidebar'),
+                wrapToggle: document.getElementById('wrap-toggle'),
+                toast: document.getElementById('toast'),
+                themeToggle: document.getElementById('theme-toggle'),
+                virtualScrollContainer: document.getElementById('virtual-scroll-container'),
+                virtualScrollContent: document.getElementById('virtual-scroll-content'),
+                advHelpModal: document.getElementById('adv-help-modal')
+            };
+            // handlers reference so we can remove listeners reliably
+            const advHelpHandlers = { pointer: null, key: null };
+
+            // File type icon mapping
+            const fileIcons = {
+                'js': '🟨', 'jsx': '🟨', 'ts': '🔷', 'tsx': '🔷', 'py': '🐍',
+                'java': '☕', 'cpp': '🔷', 'c': '🔹', 'cs': '🔷', 'php': '🐘',
+                'rb': '💎', 'go': '🐹', 'rs': '🦀', 'swift': '🍎', 'kt': '🎯',
+                'dart': '🎯', 'scala': '🔴', 'lua': '🌙', 'r': '📊', 'm': '🔷',
+                'sh': '⌨️', 'bash': '⌨️', 'zsh': '⌨️', 'ps1': '💙', 'sql': '🗃️',
+                'html': '🌐', 'htm': '🌐', 'css': '🎨', 'scss': '🎨', 'sass': '🎨',
+                'less': '🎨', 'vue': '💚', 'svelte': '🧡', 'json': '📋', 'xml': '📄',
+                'yaml': '📄', 'yml': '📄', 'toml': '📄', 'ini': '⚙️', 'conf': '⚙️',
+                'env': '🔐', 'lock': '🔒', 'md': '📝', 'txt': '📄', 'pdf': '📕',
+                'doc': '📘', 'docx': '📘', 'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️',
+                'gif': '🖼️', 'svg': '🎨', 'webp': '🖼️', 'ico': '🖼️', 'bmp': '🖼️',
+                'mp4': '🎬', 'avi': '🎬', 'mov': '🎬', 'wmv': '🎬', 'webm': '🎬',
+                'mkv': '🎬', 'flv': '🎬', 'mp3': '🎵', 'wav': '🎵', 'flac': '🎵',
+                'aac': '🎵', 'ogg': '🎵', 'm4a': '🎵', 'zip': '📦', 'rar': '📦',
+                'tar': '📦', 'gz': '📦', '7z': '📦', 'exe': '⚙️', 'dll': '⚙️',
+                'so': '⚙️', 'app': '📱', 'apk': '📱', 'ipa': '📱',
+            };
+
+            // Theme definitions
+            const themes = {
+                dark: { icon: 'fas fa-moon', class: '' },
+                light: { icon: 'fas fa-sun', class: 'light-theme' },
+                solarized: { icon: 'fas fa-sun', class: 'solarized-theme' }
+            };
+
+            // Error boundary
+            class ErrorBoundary {
+                constructor() {
+                    this.setupGlobalHandlers();
+                }
+
+                setupGlobalHandlers() {
+                    window.addEventListener('error', this.handleError.bind(this));
+                    window.addEventListener('unhandledrejection', this.handlePromiseRejection.bind(this));
+                }
+
+                handleError(event) {
+                    console.error('Global error:', event.error);
+                    this.showErrorToast('An unexpected error occurred');
+                    this.renderErrorScreen(event.error);
+                    event.preventDefault();
+                }
+
+                handlePromiseRejection(event) {
+                    console.error('Unhandled promise rejection:', event.reason);
+                    this.showErrorToast('Operation failed');
+                    event.preventDefault();
+                }
+
+                showErrorToast(message) {
+                    showToast(message, 'error');
+                }
+
+                renderErrorScreen(error) {
+                    elements.contentViewerEl.innerHTML = `
                         <div class="error-boundary">
                             <h3><i class="fas fa-exclamation-triangle"></i> Something went wrong</h3>
-                            <p>${t.message||"An unexpected error occurred"}</p>
+                            <p>${error.message || 'An unexpected error occurred'}</p>
                             <details>
                                 <summary>Error Details</summary>
-                                <pre>${t.stack||"No stack trace available"}</pre>
+                                <pre>${error.stack || 'No stack trace available'}</pre>
                             </details>
                             <button onclick="location.reload()" style="margin-top: 10px;">
                                 <i class="fas fa-redo"></i> Reload Page
                             </button>
                         </div>
-                    `}}class P{constructor(e,t=40){this.container=e,this.itemHeight=t,this.visibleItems=Math.ceil(e.clientHeight/t)+2,this.scrollTop=0,this.startIndex=0,this.items=[],this.setupListeners()}setupListeners(){this.container.addEventListener("scroll",this.handleScroll.bind(this)),window.addEventListener("resize",this.handleResize.bind(this))}handleScroll(){const e=this.container.scrollTop,n=Math.floor(e/this.itemHeight);n!==this.startIndex&&(this.startIndex=n,this.render()),t.virtualScroll.scrollTop=e}handleResize(){this.visibleItems=Math.ceil(this.container.clientHeight/this.itemHeight)+2,this.render()}setItems(e){this.items=e,this.updateContainerHeight(),this.render()}updateContainerHeight(){const t=this.items.length*this.itemHeight;e.virtualScrollContent.style.height=`${t}px`}render(){const t=Math.min(this.startIndex+this.visibleItems,this.items.length),n=this.items.slice(this.startIndex,t);e.fileListEl.innerHTML="",n.forEach((t,n)=>{const o=this.startIndex+n,s=this.createListItem(t,o);s.style.position="absolute",s.style.top=`${o*this.itemHeight}px`,s.style.width="100%",e.fileListEl.appendChild(s)})}createListItem(e,s){const o=document.createElement("li");if(o.dataset.index=s,s===t.selectedIndex&&o.classList.add("selected"),e.type==="folder")e.name===".."?(o.innerHTML=`
+                    `;
+                }
+            }
+
+            // Virtual scrolling implementation
+            class VirtualScroller {
+                constructor(container, itemHeight = 40) {
+                    this.container = container;
+                    this.itemHeight = itemHeight;
+                    this.visibleItems = Math.ceil(container.clientHeight / itemHeight) + 2;
+                    this.scrollTop = 0;
+                    this.startIndex = 0;
+                    this.items = [];
+                    this.setupListeners();
+                }
+
+                setupListeners() {
+                    this.container.addEventListener('scroll', this.handleScroll.bind(this));
+                    window.addEventListener('resize', this.handleResize.bind(this));
+                }
+
+                handleScroll() {
+                    const newScrollTop = this.container.scrollTop;
+                    const newStartIndex = Math.floor(newScrollTop / this.itemHeight);
+                    
+                    if (newStartIndex !== this.startIndex) {
+                        this.startIndex = newStartIndex;
+                        this.render();
+                    }
+                    
+                    state.virtualScroll.scrollTop = newScrollTop;
+                }
+
+                handleResize() {
+                    this.visibleItems = Math.ceil(this.container.clientHeight / this.itemHeight) + 2;
+                    this.render();
+                }
+
+                setItems(items) {
+                    this.items = items;
+                    this.updateContainerHeight();
+                    this.render();
+                }
+
+                updateContainerHeight() {
+                    const totalHeight = this.items.length * this.itemHeight;
+                    elements.virtualScrollContent.style.height = `${totalHeight}px`;
+                }
+
+                render() {
+                    const endIndex = Math.min(this.startIndex + this.visibleItems, this.items.length);
+                    const visibleItems = this.items.slice(this.startIndex, endIndex);
+                    
+                    elements.fileListEl.innerHTML = '';
+                    
+                    visibleItems.forEach((item, index) => {
+                        const actualIndex = this.startIndex + index;
+                        const li = this.createListItem(item, actualIndex);
+                        li.style.position = 'absolute';
+                        li.style.top = `${actualIndex * this.itemHeight}px`;
+                        li.style.width = '100%';
+                        elements.fileListEl.appendChild(li);
+                    });
+                }
+
+                createListItem(item, index) {
+                    const li = document.createElement('li');
+                    li.dataset.index = index;
+
+                    if (index === state.selectedIndex) {
+                        li.classList.add('selected');
+                    }
+
+                    if (item.type === 'folder') {
+                        if (item.name === '..') {
+                            li.innerHTML = `
                                 <div class="file-info">
                                     <span class="icon">📁</span>
                                     <span class="file-name">..</span>
                                 </div>
                                 <span class="file-size">Parent</span>
-                            `,o.onclick=()=>m()):(o.innerHTML=`
+                            `;
+                            li.onclick = () => goBackOneFolder();
+                        } else {
+                            li.innerHTML = `
                                 <div class="file-info">
                                     <span class="icon">📁</span>
-                                    <span class="file-name">${e.name}</span>
+                                    <span class="file-name">${item.name}</span>
                                 </div>
-                            `,o.onclick=()=>n([...t.currentPath,e.name]));else{const t=v(e.name),n=e.size?g(e.size):"",s=e.directory||"";e.isSearchResult&&s?o.innerHTML=`
+                            `;
+                            li.onclick = () => renderDirectory([...state.currentPath, item.name]);
+                        }
+                    } else {
+                        const icon = getFileIcon(item.name);
+                        const size = item.size ? formatFileSize(item.size) : '';
+
+                        const dirDisplay = item.directory || '';
+
+                        if (item.isSearchResult && dirDisplay) {
+                            li.innerHTML = `
                                 <div class="file-info" style="min-width:0;">
-                                    <span class="icon">${t}</span>
+                                    <span class="icon">${icon}</span>
                                     <div style="display:flex;flex-direction:column;overflow:hidden;min-width:0;">
-                                        <span class="file-path" style="font-size:11px;color:var(--file-size-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s}</span>
-                                        <span class="file-name">${e.name}</span>
+                                        <span class="file-path" style="font-size:11px;color:var(--file-size-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dirDisplay}</span>
+                                        <span class="file-name">${item.name}</span>
                                     </div>
                                 </div>
-                                <span class="file-size">${n}</span>
-                            `:o.innerHTML=`
+                                <span class="file-size">${size}</span>
+                            `;
+                        } else {
+                            li.innerHTML = `
                                 <div class="file-info">
-                                    <span class="icon">${t}</span>
-                                    <span class="file-name">${e.name}</span>
+                                    <span class="icon">${icon}</span>
+                                    <span class="file-name">${item.name}</span>
                                 </div>
-                                <span class="file-size">${n}</span>
-                            `,o.onclick=()=>c(e.path,e.name,e.size)}return o}}class R{constructor(e){this.element=e,this.startX=0,this.startY=0,this.threshold=50,this.setupListeners()}setupListeners(){this.element.addEventListener("touchstart",this.handleStart.bind(this),{passive:!0}),this.element.addEventListener("touchend",this.handleEnd.bind(this),{passive:!0})}handleStart(e){this.startX=e.touches[0].clientX,this.startY=e.touches[0].clientY}handleEnd(e){const n=e.changedTouches[0].clientX,s=e.changedTouches[0].clientY,t=n-this.startX,o=s-this.startY;Math.abs(t)>Math.abs(o)&&Math.abs(t)>this.threshold&&(t>0?this.onSwipeRight():this.onSwipeLeft())}onSwipeRight(){e.sidebar.classList.contains("collapsed")&&e.sidebar.classList.remove("collapsed")}onSwipeLeft(){e.sidebar.classList.contains("collapsed")||e.sidebar.classList.add("collapsed")}}const H=new D;let i,j;function y(){i=new P(e.virtualScrollContainer)}function E(){"ontouchstart"in window&&(j=new R(document.body))}function d(n){const s=r[n];if(!s)return;document.body.classList.remove("light-theme","solarized-theme"),n!=="dark"&&document.body.classList.add(s.class),e.themeToggle.innerHTML=`<i class="${s.icon}"></i>`,t.currentTheme=n,localStorage.setItem("theme",n)}const f={"ext:":(e,t)=>{const n=e.name.split(".").pop().toLowerCase();return t.split(",").includes(n)},"size:":(e,t)=>{const o=t.match(/(>=|<=|>|<|=)(\d+)(k|m|g)?/i);if(!o)return!1;const[,a,r,i]=o,n=e.size||0,c=i?{k:1024,m:1024*1024,g:1024*1024*1024}[i.toLowerCase()]||1:1,s=parseInt(r)*c;switch(a){case">=":return n>=s;case"<=":return n<=s;case">":return n>s;case"<":return n<s;case"=":return n===s;default:return!1}},"path:":(e,t)=>e.path.toLowerCase().includes(t.toLowerCase()),"type:":(e,t)=>e.type===t};function x(e){const n={};let t=e;for(const[o,a]of Object.entries(f)){const i=new RegExp(`${o}([^\\s]+)`,"g");let s;for(;(s=i.exec(e))!==null;)n[o]=s[1],t=t.replace(s[0],"").trim()}return{searchText:t,filters:n}}function O(n){e.searchFiltersEl.innerHTML="",Object.entries(n).forEach(([n,s])=>{const o=document.createElement("div");o.className="filter-chip active",o.innerHTML=`
-                        ${n}${s}
-                        <span class="remove" data-operator="${n}">×</span>
-                    `,o.querySelector(".remove").onclick=e=>{e.stopPropagation(),delete t.searchFilters[n],w()},e.searchFiltersEl.appendChild(o)})}function w(){const n=[];Object.entries(t.searchFilters).forEach(([e,t])=>{n.push(`${e}${t}`)}),t.searchQuery&&n.push(t.searchQuery),e.searchBox.value=n.join(" "),b(e.searchBox.value)}function b(s){if(!s){n(t.currentPath),e.searchResultsInfo.style.display="none",e.searchFiltersEl.innerHTML="",t.searchFilters={};return}const{searchText:o,filters:a}=x(s);t.searchQuery=o,t.searchFilters=a,O(a);const i=[];for(const e of t.allFiles){let n=!0;for(const[t,s]of Object.entries(a))if(!f[t](e,s)){n=!1;break}if(!n)continue;if(o){const t=_(o,e.fullPath);t&&i.push({...e,score:t.score,matches:t.matches})}else i.push(e)}o&&i.sort((e,t)=>t.score-e.score),C(i,o)}function _(e,t){e=e.toLowerCase(),t=t.toLowerCase();let s=0,n=0,o=0,i=0,a=[];for(;s<e.length&&n<t.length;)e[s]===t[n]?(a.push(n),o+=1+i*.5,i++,s++):i=0,n++;return s===e.length?(o+=(t.length-n)*.1,{score:o,matches:a}):null}function I(e,t){if(!t||t.length===0)return e;let n="",s=0;for(const o of t)n+=e.substring(s,o),n+=`<span class="highlight">${e[o]}</span>`,s=o+1;return n+=e.substring(s),n}function o(t,n="success"){e.toast.textContent=t,e.toast.className=`toast ${n}`,setTimeout(()=>e.toast.classList.add("show"),10),setTimeout(()=>{e.toast.classList.remove("show")},3e3)}function v(e){const t=e.split(".").pop().toLowerCase();return M[t]||"📄"}function g(e){if(e===0)return"0 B";const t=1024,s=["B","KB","MB","GB"],n=Math.floor(Math.log(e)/Math.log(t));return parseFloat((e/Math.pow(t,n)).toFixed(1))+" "+s[n]}function p(e,t=""){let n=[];for(const s of e){const o=t?`${t}/${s.name}`:s.name;s.type==="file"?n.push({...s,fullPath:o,directory:t}):s.children&&(n=n.concat(p(s.children,o)))}return n}function C(n,s){if(e.fileListEl.innerHTML="",e.breadcrumbsEl.style.display="none",e.searchResultsInfo.style.display="block",e.searchResultsInfo.textContent=`Found ${n.length} file${n.length!==1?"s":""} matching "${s}"`,t.selectedIndex=n.length>0?0:-1,n.length===0){e.fileListEl.innerHTML='<li class="loading" style="color: var(--file-size-color);">No files found</li>';return}const o=n.map((e,t)=>({...e,type:"file",isSearchResult:!0,originalIndex:t}));i.setItems(o),setTimeout(a,0)}function a(){if(i.render(),t.selectedIndex===-1)return;const n=e.virtualScrollContainer,o=t.virtualScroll.itemHeight,s=t.selectedIndex*o,a=s+o,r=n.scrollTop,c=r+n.clientHeight;s<r?n.scrollTop=s:a>c&&(n.scrollTop=a-n.clientHeight)}async function k(){try{const e=await fetch("./index.json");if(!e.ok)throw new Error("Failed to load index.json");t.fullFileTree=await e.json(),t.allFiles=p(t.fullFileTree),n([])}catch(t){e.fileListEl.innerHTML=`<li class="loading" style="color: var(--error-color);">Error: ${t.message}</li>`,o(`Error loading file tree: ${t.message}`,"error"),console.error(t)}}function A(e){let n={children:t.fullFileTree};for(const s of e){const t=n.children.find(e=>e.name===s&&e.type==="folder");if(!t)return null;n=t}return n}function S(t){let n="";n+=`<span onclick="renderDirectory([])">root</span>`;let s=[];for(const e of t)s.push(e),n+=` / <span onclick="renderDirectory(${JSON.stringify(s)})">${e}</span>`;e.breadcrumbsEl.innerHTML=n}function n(n){t.currentPath=n;const s=A(n);if(!s||!s.children)return;e.fileListEl.innerHTML="",e.breadcrumbsEl.style.display="block",e.searchResultsInfo.style.display="none",e.searchFiltersEl.innerHTML="",S(n),e.virtualScrollContainer.scrollTop=0,t.selectedIndex=-1,n.length===0?(e.contentViewerEl.innerHTML=`
+                                <span class="file-size">${size}</span>
+                            `;
+                        }
+
+                        li.onclick = () => renderFile(item.path, item.name, item.size);
+                    }
+
+                    return li;
+                }
+            }
+
+            // Touch gestures for mobile
+            class TouchGestures {
+                constructor(element) {
+                    this.element = element;
+                    this.startX = 0;
+                    this.startY = 0;
+                    this.threshold = 50;
+                    this.setupListeners();
+                }
+
+                setupListeners() {
+                    this.element.addEventListener('touchstart', this.handleStart.bind(this), { passive: true });
+                    this.element.addEventListener('touchend', this.handleEnd.bind(this), { passive: true });
+                }
+
+                handleStart(e) {
+                    this.startX = e.touches[0].clientX;
+                    this.startY = e.touches[0].clientY;
+                }
+
+                handleEnd(e) {
+                    const endX = e.changedTouches[0].clientX;
+                    const endY = e.changedTouches[0].clientY;
+                    const deltaX = endX - this.startX;
+                    const deltaY = endY - this.startY;
+                    
+                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > this.threshold) {
+                        if (deltaX > 0) {
+                            this.onSwipeRight();
+                        } else {
+                            this.onSwipeLeft();
+                        }
+                    }
+                }
+
+                onSwipeRight() {
+                    if (elements.sidebar.classList.contains('collapsed')) {
+                        elements.sidebar.classList.remove('collapsed');
+                    }
+                }
+
+                onSwipeLeft() {
+                    if (!elements.sidebar.classList.contains('collapsed')) {
+                        elements.sidebar.classList.add('collapsed');
+                    }
+                }
+            }
+
+            // Initialize components
+            const errorBoundary = new ErrorBoundary();
+            let virtualScroller;
+            let touchGestures;
+
+            // Initialize virtual scroller
+            function initializeVirtualScroller() {
+                virtualScroller = new VirtualScroller(elements.virtualScrollContainer);
+            }
+
+            // Initialize touch gestures
+            function initializeTouchGestures() {
+                if ('ontouchstart' in window) {
+                    touchGestures = new TouchGestures(document.body);
+                }
+            }
+
+            // Theme management
+            function switchTheme(themeName) {
+                const theme = themes[themeName];
+                if (!theme) return;
+                
+                // Remove all theme classes
+                document.body.classList.remove('light-theme', 'solarized-theme');
+                
+                // Add new theme class if not dark
+                if (themeName !== 'dark') {
+                    document.body.classList.add(theme.class);
+                }
+                
+                // Update button icon
+                elements.themeToggle.innerHTML = `<i class="${theme.icon}"></i>`;
+                
+                // Save preference
+                state.currentTheme = themeName;
+                localStorage.setItem('theme', themeName);
+                
+                // showToast(`Switched to ${themeName} theme`); // Disabled theme notification
+            }
+
+            // Advanced search with filters
+            const searchOperators = {
+                'ext:': (file, value) => {
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    return value.split(',').includes(ext);
+                },
+                'size:': (file, value) => {
+                    const match = value.match(/(>=|<=|>|<|=)(\d+)(k|m|g)?/i);
+                    if (!match) return false;
+                    const [, operator, size, unit] = match;
+                    const fileSize = file.size || 0;
+                    const multiplier = unit ? { k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024 }[unit.toLowerCase()] || 1 : 1;
+                    const targetSize = parseInt(size) * multiplier;
+                    
+                    switch (operator) {
+                        case '>=': return fileSize >= targetSize;
+                        case '<=': return fileSize <= targetSize;
+                        case '>': return fileSize > targetSize;
+                        case '<': return fileSize < targetSize;
+                        case '=': return fileSize === targetSize;
+                        default: return false;
+                    }
+                },
+                'path:': (file, value) => file.path.toLowerCase().includes(value.toLowerCase()),
+                'type:': (file, value) => file.type === value
+            };
+
+            function parseSearchQuery(query) {
+                const filters = {};
+                let searchText = query;
+                
+                for (const [operator, filter] of Object.entries(searchOperators)) {
+                    const regex = new RegExp(`${operator}([^\\s]+)`, 'g');
+                    let match;
+                    while ((match = regex.exec(query)) !== null) {
+                        filters[operator] = match[1];
+                        searchText = searchText.replace(match[0], '').trim();
+                    }
+                }
+                
+                return { searchText, filters };
+            }
+
+            function renderSearchFilters(filters) {
+                elements.searchFiltersEl.innerHTML = '';
+                
+                Object.entries(filters).forEach(([operator, value]) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'filter-chip active';
+                    chip.innerHTML = `
+                        ${operator}${value}
+                        <span class="remove" data-operator="${operator}">×</span>
+                    `;
+                    
+                    chip.querySelector('.remove').onclick = (e) => {
+                        e.stopPropagation();
+                        delete state.searchFilters[operator];
+                        updateSearchQuery();
+                    };
+                    
+                    elements.searchFiltersEl.appendChild(chip);
+                });
+            }
+
+            function updateSearchQuery() {
+                const queryParts = [];
+                
+                Object.entries(state.searchFilters).forEach(([operator, value]) => {
+                    queryParts.push(`${operator}${value}`);
+                });
+                
+                if (state.searchQuery) {
+                    queryParts.push(state.searchQuery);
+                }
+                
+                elements.searchBox.value = queryParts.join(' ');
+                searchFiles(elements.searchBox.value);
+            }
+
+            function searchFiles(query) {
+                if (!query) {
+                    renderDirectory(state.currentPath);
+                    elements.searchResultsInfo.style.display = 'none';
+                    elements.searchFiltersEl.innerHTML = '';
+                    state.searchFilters = {};
+                    return;
+                }
+                
+                const { searchText, filters } = parseSearchQuery(query);
+                state.searchQuery = searchText;
+                state.searchFilters = filters;
+                
+                renderSearchFilters(filters);
+                
+                const results = [];
+                for (const file of state.allFiles) {
+                    // Apply filters
+                    let passesFilters = true;
+                    for (const [operator, value] of Object.entries(filters)) {
+                        if (!searchOperators[operator](file, value)) {
+                            passesFilters = false;
+                            break;
+                        }
+                    }
+                    
+                    if (!passesFilters) continue;
+                    
+                    // Apply text search
+                    if (searchText) {
+                        const searchResult = fuzzySearch(searchText, file.fullPath);
+                        if (searchResult) {
+                            results.push({
+                                ...file,
+                                score: searchResult.score,
+                                matches: searchResult.matches
+                            });
+                        }
+                    } else {
+                        results.push(file);
+                    }
+                }
+                
+                if (searchText) {
+                    results.sort((a, b) => b.score - a.score);
+                }
+                
+                renderSearchResults(results, searchText);
+            }
+
+            // Fuzzy search implementation
+            function fuzzySearch(query, text) {
+                query = query.toLowerCase();
+                text = text.toLowerCase();
+                
+                let queryIndex = 0;
+                let textIndex = 0;
+                let score = 0;
+                let consecutiveMatches = 0;
+                let matches = [];
+                
+                while (queryIndex < query.length && textIndex < text.length) {
+                    if (query[queryIndex] === text[textIndex]) {
+                        matches.push(textIndex);
+                        score += (1 + consecutiveMatches * 0.5);
+                        consecutiveMatches++;
+                        queryIndex++;
+                    } else {
+                        consecutiveMatches = 0;
+                    }
+                    textIndex++;
+                }
+                
+                if (queryIndex === query.length) {
+                    score += (text.length - textIndex) * 0.1;
+                    return { score, matches };
+                }
+                
+                return null;
+            }
+
+            // Highlight matches in text
+            function highlightMatches(text, matches) {
+                if (!matches || matches.length === 0) return text;
+                
+                let result = '';
+                let lastIndex = 0;
+                
+                for (const matchIndex of matches) {
+                    result += text.substring(lastIndex, matchIndex);
+                    result += `<span class="highlight">${text[matchIndex]}</span>`;
+                    lastIndex = matchIndex + 1;
+                }
+                result += text.substring(lastIndex);
+                
+                return result;
+            }
+
+            // Toast notification
+            function showToast(message, type = 'success') {
+                elements.toast.textContent = message;
+                elements.toast.className = `toast ${type}`;
+                setTimeout(() => elements.toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    elements.toast.classList.remove('show');
+                }, 3000);
+            }
+
+            // Default icon for unknown file types
+            function getFileIcon(fileName) {
+                const extension = fileName.split('.').pop().toLowerCase();
+                return fileIcons[extension] || '📄';
+            }
+
+            // Format file size
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            // Flatten file tree
+            function flattenFileTree(nodes, path = '') {
+                let files = [];
+                for (const node of nodes) {
+                    const currentPath = path ? `${path}/${node.name}` : node.name;
+                    if (node.type === 'file') {
+                        files.push({ ...node, fullPath: currentPath, directory: path });
+                    } else if (node.children) {
+                        files = files.concat(flattenFileTree(node.children, currentPath));
+                    }
+                }
+                return files;
+            }
+
+            // Render search results
+            function renderSearchResults(results, query) {
+                elements.fileListEl.innerHTML = '';
+                elements.breadcrumbsEl.style.display = 'none';
+                elements.searchResultsInfo.style.display = 'block';
+                elements.searchResultsInfo.textContent = `Found ${results.length} file${results.length !== 1 ? 's' : ''} matching "${query}"`;
+                // start selection at first result so keyboard navigation works immediately
+                state.selectedIndex = results.length > 0 ? 0 : -1;
+                
+                if (results.length === 0) {
+                    elements.fileListEl.innerHTML = '<li class="loading" style="color: var(--file-size-color);">No files found</li>';
+                    return;
+                }
+                
+                const items = results.map((file, index) => ({
+                    ...file,
+                    type: 'file',
+                    isSearchResult: true,
+                    originalIndex: index
+                }));
+                
+                virtualScroller.setItems(items);
+                // ensure selected item is visible after setting items
+                setTimeout(updateSelection, 0);
+            }
+
+            // Update selection
+            function updateSelection() {
+                // Re-render to apply the 'selected' class correctly based on state.selectedIndex
+                virtualScroller.render();
+
+                if (state.selectedIndex === -1) return;
+
+                // Manually calculate and adjust scroll position for the virtual list
+                const container = elements.virtualScrollContainer;
+                const itemHeight = state.virtualScroll.itemHeight;
+
+                const itemTop = state.selectedIndex * itemHeight;
+                const itemBottom = itemTop + itemHeight;
+                const viewTop = container.scrollTop;
+                const viewBottom = viewTop + container.clientHeight;
+
+                if (itemTop < viewTop) {
+                    container.scrollTop = itemTop;
+                } else if (itemBottom > viewBottom) {
+                    container.scrollTop = itemBottom - container.clientHeight;
+                }
+            }
+
+            // Load file tree
+            async function loadFileTree() {
+                try {
+                    const response = await fetch('./index.json');
+                    if (!response.ok) throw new Error('Failed to load index.json');
+                    state.fullFileTree = await response.json();
+                    state.allFiles = flattenFileTree(state.fullFileTree);
+                    renderDirectory([]);
+                } catch (error) {
+                    elements.fileListEl.innerHTML = `<li class="loading" style="color: var(--error-color);">Error: ${error.message}</li>`;
+                    showToast(`Error loading file tree: ${error.message}`, 'error');
+                    console.error(error);
+                }
+            }
+
+            function getNodeAtPath(pathArray) {
+                let currentNode = { children: state.fullFileTree };
+                for (const folder of pathArray) {
+                    const nextNode = currentNode.children.find(item => item.name === folder && item.type === 'folder');
+                    if (!nextNode) return null;
+                    currentNode = nextNode;
+                }
+                return currentNode;
+            }
+
+            function renderBreadcrumbs(pathArray) {
+                let html = '';
+                
+                // Add root and path breadcrumbs
+                html += `<span onclick="renderDirectory([])">root</span>`;
+                let pathSoFar = [];
+                for (const folder of pathArray) {
+                    pathSoFar.push(folder);
+                    html += ` / <span onclick="renderDirectory(${JSON.stringify(pathSoFar)})">${folder}</span>`;
+                }
+                
+                elements.breadcrumbsEl.innerHTML = html;
+            }
+
+            function renderDirectory(pathArray) {
+                state.currentPath = pathArray;
+                const node = getNodeAtPath(pathArray);
+                if (!node || !node.children) return;
+
+                elements.fileListEl.innerHTML = '';
+                elements.breadcrumbsEl.style.display = 'block';
+                elements.searchResultsInfo.style.display = 'none';
+                elements.searchFiltersEl.innerHTML = '';
+                renderBreadcrumbs(pathArray);
+                elements.virtualScrollContainer.scrollTop = 0; // Reset scroll on directory change
+                state.selectedIndex = -1;
+                
+                // Show welcome screen if in root
+                if (pathArray.length === 0) {
+                    elements.contentViewerEl.innerHTML = `
                         <div class="welcome-screen">
                             <div class="shortcuts-grid">
                                 <div class="shortcut-card">
@@ -79,6 +1627,7 @@
                                     <div class="shortcut-description">Clear search</div>
                                 </div>
 
+                                <!-- Advanced help keybind card added here (keeps welcome screen consistent) -->
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">h</span>
@@ -93,6 +1642,7 @@
                                     <div class="shortcut-description">Toggle theme</div>
                                 </div>
 
+                                <!-- Added shortcuts -->
                                 <div class="shortcut-card">
                                     <div>
                                         <span class="shortcut-key">B</span>
@@ -109,39 +1659,135 @@
                                 </div>
                             </div>
                         </div>
-                    `,e.wrapToggle.style.display="none"):e.contentViewerEl.innerHTML=`<p>Select a file to preview.</p>`;const o=[];n.length>0&&o.push({type:"folder",name:"..",isBack:!0}),s.children.sort((e,t)=>e.type!==t.type?e.type==="folder"?-1:1:e.name.localeCompare(t.name)),s.children.forEach(e=>{o.push(e)}),i.setItems(o)}function F(e,t){const n=document.createElement("button");n.className="copy-button",n.innerHTML='<i class="fas fa-copy"></i> Copy',n.onclick=async()=>{try{await navigator.clipboard.writeText(t),n.innerHTML='<i class="fas fa-check"></i> Copied!',n.classList.add("copied"),o("Code copied to clipboard"),setTimeout(()=>{n.innerHTML='<i class="fas fa-copy"></i> Copy',n.classList.remove("copied")},2e3)}catch{o("Failed to copy code","error")}},e.appendChild(n)}function T(e,t){const r=e.split(`
-`),n=document.createElement("div");n.className="line-numbers-wrapper";const o=document.createElement("div");o.className="line-numbers",o.innerHTML=r.map((e,t)=>t+1).join("<br>");const s=document.createElement("code");s.className=`language-${t}`,s.textContent=e,Prism.languages[t]&&(s.innerHTML=Prism.highlight(e,Prism.languages[t],t));const a=document.createElement("pre");a.appendChild(s);const i=document.createElement("div");return i.className="code-content",i.appendChild(a),n.appendChild(o),n.appendChild(i),n}function z(){t.wordWrap=!t.wordWrap;const n=e.contentViewerEl.querySelector(".code-content code");n&&(t.wordWrap?(n.style.whiteSpace="pre-wrap",n.style.wordBreak="break-word",e.wrapToggle.classList.add("active")):(n.style.whiteSpace="pre",n.style.wordBreak="normal",e.wrapToggle.classList.remove("active")))}function B(e){const t=document.createElement("audio");t.controls=!1,t.preload="none";const n=document.createElement("div");n.className="audio-player hidden";n.innerHTML=`
-            <span class="title" id="ap-title">Nothing playing</span>
-            <div class="controls">
-                <button id="ap-prev" title="Previous"><i class="fas fa-step-backward"></i></button>
-                <button id="ap-play" title="Play/Pause"><i class="fas fa-play"></i></button>
-                <button id="ap-next" title="Next"><i class="fas fa-step-forward"></i></button>
-            </div>
-            <input id="ap-progress" type="range" min="0" max="100" value="0" step="1">
-            <span class="time" id="ap-time">00:00 / 00:00</span>
-            <div class="volume">
-                <i class="fas fa-volume-down"></i>
-                <input id="ap-volume" type="range" min="0" max="1" step="0.01" value="1">
-            </div>
-            <button id="ap-close" class="btn" title="Close"><i class="fas fa-times"></i></button>
-        `;return{el:n,audio:t,els:{title:n.querySelector("#ap-title"),play:n.querySelector("#ap-play"),prev:n.querySelector("#ap-prev"),next:n.querySelector("#ap-next"),progress:n.querySelector("#ap-progress"),time:n.querySelector("#ap-time"),volume:n.querySelector("#ap-volume"),close:n.querySelector("#ap-close")}}}function J(e,t){const n=[...e];let o=-1;return{list:n,index:-1,playAt(i){if(i<0||i>=n.length)return;this.index=i,o=i,t.src=n[i].url,t.load(),t.play().catch(e=>console.warn("Play blocked:",e))},next(){if(n.length===0)return;this.index=(this.index+1)%n.length,this.playAt(this.index)},prev(){if(n.length===0)return;this.index=(this.index-1+n.length)%n.length,this.playAt(this.index)}}}function L(e){const t=[];const n=e.split(/\r?\n/);let s="",o="";for(let e=0;e<n.length;e++){const t=n[e].trim();if(!t||t.startsWith("#")){if(t.startsWith("#EXTINF:")){const e=t.substring(8),n=e.split(","),r=n.length>1?n.slice(1).join(","):"";s=r||"",o=n[0]||"";}}else if(t.startsWith("http")||t.startsWith("./")||!t.includes("://")){const e=t;const n=document.createElement("a");n.href=e;let r=n.pathname.split("/").pop()||s||"Stream";const i=(s||"").split(" - ")[0]||s||"";r&&!/\.[a-z0-9]{2,5}$/i.test(r)&&(r+=".mp3");const a={title:i||s||r,url:e,display:r};t.push(a),s="",o=""}}return t}function U(t,s,a){const i=B(),r=J(s,t);function c(){const e=r.list[r.index];i.els.title.textContent=e?e.title:"Now Playing"}function l(e){const n=Math.floor(e/60),o=Math.floor(e%60);i.els.time.textContent=`${String(n).padStart(2,"0")}:${String(o).padStart(2,"0")} / ${i.els.time.dataset.total||"00:00"}`}function d(){if(!t.duration||!isFinite(t.duration))return;i.els.progress.max=Math.floor(t.duration),i.els.progress.value=Math.floor(t.currentTime||0)}function h(){l(t.currentTime||0)}function p(){const e=r.list[r.index];c(),i.el.classList.remove("hidden"),t.src=e.url,t.load(),t.play().catch(e=>console.warn("Autoplay prevented:",e))}i.els.play.onclick=()=>{if(t.paused){t.play().catch(console.warn);return}t.pause()},i.els.next.onclick=()=>r.next(),i.els.prev.onclick=()=>r.prev(),i.els.volume.oninput=()=>{t.volume=parseFloat(i.els.volume.value)},i.els.progress.oninput=()=>{if(t.duration){const e=parseFloat(i.els.progress.value);t.currentTime=e}},i.els.close.onclick=()=>{i.el.classList.add("hidden"),t.pause(),t.removeAttribute("src"),t.load()},t.addEventListener("play",()=>{i.els.play.innerHTML='<i class="fas fa-pause"></i>'}),t.addEventListener("pause",()=>{i.els.play.innerHTML='<i class="fas fa-play"></i>'}),t.addEventListener("timeupdate",()=>{d(),h()}),t.addEventListener("loadedmetadata",()=>{const e=Math.floor(t.duration||0);i.els.time.dataset.total=`${String(Math.floor(e/60)).padStart(2,"0")}:${String(e%60).padStart(2,"0")}`,d()}),t.addEventListener("ended",()=>r.next()),document.body.appendChild(i.el),document.body.appendChild(t),r.index=0,p();return{player:i,playlist:r,playAt:(e)=>{r.playAt(e)},toggle:()=>{t.paused?t.play():t.pause()},close:()=>{i.el.classList.add("hidden"),t.pause()}}}async function c(n,s,i){const a=v(s),r=i?g(i):"Unknown size";e.contentViewerEl.innerHTML=`
+                    `;
+                    elements.wrapToggle.style.display = 'none';
+                } else {
+                    elements.contentViewerEl.innerHTML = `<p>Select a file to preview.</p>`;
+                }
+
+                // Prepare items for virtual scroller
+                const items = [];
+                
+                // Add ".." if not in root
+                if (pathArray.length > 0) {
+                    items.push({
+                        type: 'folder',
+                        name: '..',
+                        isBack: true
+                    });
+                }
+
+                // Sort items
+                node.children.sort((a, b) => {
+                    if (a.type !== b.type) {
+                        return a.type === 'folder' ? -1 : 1;
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+
+                node.children.forEach(item => {
+                    items.push(item);
+                });
+
+                virtualScroller.setItems(items);
+            }
+
+            // Add copy button to code blocks
+            function addCopyButton(wrapperElement, content) {
+                const button = document.createElement('button');
+                button.className = 'copy-button';
+                button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                button.onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(content);
+                        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        button.classList.add('copied');
+                        showToast('Code copied to clipboard');
+                        setTimeout(() => {
+                            button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    } catch (err) {
+                        showToast('Failed to copy code', 'error');
+                    }
+                };
+                wrapperElement.appendChild(button);
+            }
+
+            // Add line numbers with syntax highlighting
+            function addLineNumbers(content, lang) {
+                const lines = content.split('\n');
+                const wrapper = document.createElement('div');
+                wrapper.className = 'line-numbers-wrapper';
+                
+                const lineNumbers = document.createElement('div');
+                lineNumbers.className = 'line-numbers';
+                lineNumbers.innerHTML = lines.map((_, i) => i + 1).join('<br>');
+                
+                // Create code element with syntax highlighting
+                const codeElement = document.createElement('code');
+                codeElement.className = `language-${lang}`;
+                codeElement.textContent = content;
+                
+                // Apply syntax highlighting
+                if (Prism.languages[lang]) {
+                    codeElement.innerHTML = Prism.highlight(content, Prism.languages[lang], lang);
+                }
+                
+                // Create pre element
+                const preElement = document.createElement('pre');
+                preElement.appendChild(codeElement);
+                
+                // Create code content div
+                const codeContent = document.createElement('div');
+                codeContent.className = 'code-content';
+                codeContent.appendChild(preElement);
+                
+                wrapper.appendChild(lineNumbers);
+                wrapper.appendChild(codeContent);
+                
+                return wrapper;
+            }
+
+            // Toggle word wrap
+            function toggleWordWrap() {
+                state.wordWrap = !state.wordWrap;
+                const codeContent = elements.contentViewerEl.querySelector('.code-content code');
+                if (codeContent) {
+                    if (state.wordWrap) {
+                        codeContent.style.whiteSpace = 'pre-wrap';
+                        codeContent.style.wordBreak = 'break-word';
+                        elements.wrapToggle.classList.add('active');
+                    } else {
+                        codeContent.style.whiteSpace = 'pre';
+                        codeContent.style.wordBreak = 'normal';
+                        elements.wrapToggle.classList.remove('active');
+                    }
+                }
+            }
+
+            async function renderFile(filePath, fileName, fileSize) {
+                const icon = getFileIcon(fileName);
+                const size = fileSize ? formatFileSize(fileSize) : 'Unknown size';
+                
+                elements.contentViewerEl.innerHTML = `
                     <div class="file-header">
                         <div class="file-title">
-                            <span class="icon">${a}</span>
-                            <span>${s}</span>
+                            <span class="icon">${icon}</span>
+                            <span>${fileName}</span>
                         </div>
                         <div class="file-meta">
-                            <span><i class="fas fa-chart-bar"></i> ${r}</span>
-                            <span><i class="fas fa-folder"></i> ${n}</span>
+                            <span><i class="fas fa-chart-bar"></i> ${size}</span>
+                            <span><i class="fas fa-folder"></i> ${filePath}</span>
                         </div>
                         <div class="file-actions">
                             <button id="back-btn" onclick="renderDirectory([])">
                                 <i class="fas fa-arrow-left"></i> Back
                             </button>
-                            <button id="raw-btn" onclick="viewRaw('${n}')">
+                            <button id="raw-btn" onclick="viewRaw('${filePath}')">
                                 <i class="fas fa-file"></i> Raw
                             </button>
-                            <button id="download-btn" onclick="downloadFile('${n}', '${s}')">
+                            <button id="download-btn" onclick="downloadFile('${filePath}', '${fileName}')">
                                 <i class="fas fa-download"></i> Download
                             </button>
                         </div>
@@ -152,39 +1798,77 @@
                         <div class="skeleton skeleton-text"></div>
                         <div class="skeleton skeleton-text" style="width: 80%;"></div>
                     </div>
-                `,e.wrapToggle.style.display="flex";try{const r=await fetch(`./${n}`);if(!r.ok)throw new Error(`Could not fetch ${n}`);const a=await r.text();t.currentFileContent=a;const i=s.split(".").pop().toLowerCase();if(["m3u","m3u8"].includes(i)){const t=document.createElement("div");t.innerHTML=`
-                        <div class="m3u-header">
-                            <div class="file-title" style="gap:8px">
-                                <span class="icon">🎵</span>
-                                <strong>${s}</strong>
-                            </div>
-                            <div class="m3u-actions">
-                                <button id="btn-play-m3u"><i class="fas fa-play"></i> Play M3U</button>
-                            </div>
-                        </div>
-                        <div class="playlist-panel">
-                            <div class="playlist-left">
-                                <div class="playlist-actions">
-                                    <button id="ap-prev" class="btn" disabled><i class="fas fa-step-backward"></i> Prev</button>
-                                    <button id="ap-play" class="btn" disabled><i class="fas fa-play"></i> Play/Pause</button>
-                                    <button id="ap-next" class="btn" disabled><i class="fas fa-step-forward"></i> Next</button>
-                                </div>
-                                <ul class="stream-list" id="stream-list"></ul>
-                            </div>
-                            <div class="playlist-right" style="min-width:300px">
-                                <p style="color:var(--file-size-color);margin-top:0">Tip: Click any stream to play it. Use the native audio player at the bottom to control playback.</p>
-                                <ul class="stream-list" id="stream-list-alt"></ul>
-                            </div>
-                        </div>
-                    `;e.contentViewerEl.innerHTML="",e.contentViewerEl.appendChild(t.querySelector(".file-header")),e.contentViewerEl.appendChild(t);const o=L(a);const s=t.querySelector("#stream-list"),c=t.querySelector("#stream-list-alt");function d(t){const n=document.createElement("li");const e=o[t];n.innerHTML=`<span class="stream-name">${e.title}</span><span class="stream-url">${e.url}</span>`,n.onclick=()=>{window.__m3uPlayer&&window.__m3uPlayer.playAt(t),Array.from(s.children).forEach(e=>e.classList.remove("active")),n.classList.add("active"),Array.from(c.children).forEach(e=>e.classList.remove("active")),c.children[t]&&c.children[t].classList.add("active")},s.appendChild(n)}function h(t){const n=document.createElement("li");n.innerHTML=`<span class="stream-name">${o[t].title}</span>`,n.onclick=()=>{window.__m3uPlayer&&window.__m3uPlayer.playAt(t),Array.from(s.children).forEach(e=>e.classList.remove("active")),s.children[t]&&s.children[t].classList.add("active"),Array.from(c.children).forEach(e=>e.classList.remove("active")),n.classList.add("active")},c.appendChild(n)}o.forEach((e,t)=>{d(t),h(t)});const p=document.createElement("audio");window.__m3uPlayer&&window.__m3uPlayer.close();window.__m3uPlayer=U(p,o,!0);const m=t.querySelector("#ap-prev"),y=t.querySelector("#ap-play"),E=t.querySelector("#ap-next");m.onclick=()=>window.__m3uPlayer.playlist.prev(),y.onclick=()=>window.__m3uPlayer.toggle(),E.onclick=()=>window.__m3uPlayer.playlist.next(),t.querySelector("#btn-play-m3u").onclick=()=>{window.__m3uPlayer&&(window.__m3uPlayer.playlist.index=-1,window.__m3uPlayer.playlist.next())};return}const u=document.createElement("div");if(["md"].includes(i))u.className="markdown-content",u.innerHTML=marked.parse(a);else if(["png","jpg","jpeg","gif","svg","webp","bmp","ico"].includes(i)){const e=document.createElement("img");e.src=`./${n}`,e.alt=s,u.appendChild(e)}else if(["mp4","webm","ogg","avi","mov","wmv","mkv","flv"].includes(i)){const e=document.createElement("video");e.src=`./${n}`,e.controls=!0,e.style.maxWidth="100%",e.style.height="auto",u.appendChild(e)}else if(["mp3","wav","flac","aac","ogg","m4a"].includes(i)){const e=document.createElement("audio");e.src=`./${n}`,e.controls=!0,e.style.width="100%",e.style.outline="none",u.appendChild(e)}else if(["pdf"].includes(i)){const e=document.createElement("embed");e.src=`./${n}`,e.type="application/pdf",e.width="100%",e.height="600px",u.appendChild(e)}else{const s=Prism.languages[i]?i:"plaintext",o=T(a,s);if(F(o,a),u.appendChild(o),t.wordWrap){const t=o.querySelector("code");t&&(t.style.whiteSpace="pre-wrap",t.style.wordBreak="break-word",e.wrapToggle.classList.add("active"))}}const l=e.contentViewerEl.querySelector(".file-header");e.contentViewerEl.innerHTML="",l&&e.contentViewerEl.appendChild(l),e.contentViewerEl.appendChild(u)}catch(t){e.contentViewerEl.innerHTML=`
+                `;
+                
+                elements.wrapToggle.style.display = 'flex';
+                
+                try {
+                    const response = await fetch(`./${filePath}`);
+                    if (!response.ok) throw new Error(`Could not fetch ${filePath}`);
+                    const content = await response.text();
+                    state.currentFileContent = content;
+                    const fileExtension = fileName.split('.').pop().toLowerCase();
+
+                    let contentElement = null;
+                    if (fileExtension === 'md') {
+                        contentElement = document.createElement('div');
+                        contentElement.className = 'markdown-content';
+                        contentElement.innerHTML = marked.parse(content);
+                    } else if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico'].includes(fileExtension)) {
+                        contentElement = document.createElement('img');
+                        contentElement.src = `./${filePath}`;
+                        contentElement.alt = fileName;
+                    } else if (['mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'mkv', 'flv'].includes(fileExtension)) {
+                        contentElement = document.createElement('video');
+                        contentElement.src = `./${filePath}`;
+                        contentElement.controls = true;
+                        contentElement.style.maxWidth = '100%';
+                        contentElement.style.height = 'auto';
+                    } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(fileExtension)) {
+                        contentElement = document.createElement('audio');
+                        contentElement.src = `./${filePath}`;
+                        contentElement.controls = true;
+                        contentElement.style.width = '100%';
+                        contentElement.style.outline = 'none';
+                    } else if (['pdf'].includes(fileExtension)) {
+                        contentElement = document.createElement('embed');
+                        contentElement.src = `./${filePath}`;
+                        contentElement.type = 'application/pdf';
+                        contentElement.width = '100%';
+                        contentElement.height = '600px';
+                    } else {
+                        // Create code block with line numbers and syntax highlighting
+                        const lang = Prism.languages[fileExtension] ? fileExtension : 'plaintext';
+                        const wrapper = addLineNumbers(content, lang);
+                        addCopyButton(wrapper, content);
+                        contentElement = wrapper;
+                        
+                        // Apply current word wrap state
+                        if (state.wordWrap) {
+                            const codeElement = wrapper.querySelector('code');
+                            if (codeElement) {
+                                codeElement.style.whiteSpace = 'pre-wrap';
+                                codeElement.style.wordBreak = 'break-word';
+                                elements.wrapToggle.classList.add('active');
+                            }
+                        }
+                    }
+                    
+                    const headerEl = elements.contentViewerEl.querySelector('.file-header');
+                    elements.contentViewerEl.innerHTML = '';
+                    if (headerEl) elements.contentViewerEl.appendChild(headerEl);
+                    if (contentElement) elements.contentViewerEl.appendChild(contentElement);
+                    
+                } catch (error) {
+                    elements.contentViewerEl.innerHTML = `
                         <div class="file-header">
                             <div class="file-title">
-                                <span class="icon">${a}</span>
-                                <span>${s}</span>
+                                <span class="icon">${icon}</span>
+                                <span>${fileName}</span>
                             </div>
                             <div class="file-meta">
-                                <span><i class="fas fa-chart-bar"></i> ${r}</span>
-                                <span><i class="fas fa-folder"></i> ${n}</span>
+                                <span><i class="fas fa-chart-bar"></i> ${size}</span>
+                                <span><i class="fas fa-folder"></i> ${filePath}</span>
                             </div>
                             <div class="file-actions">
                                 <button id="back-btn" onclick="renderDirectory([])">
@@ -192,5 +1876,269 @@
                                 </button>
                             </div>
                         </div>
-                        <p style="color: var(--error-color);">Error loading file: ${t.message}</p>
-                    `,o(`Error loading file: ${t.message}`,"error"),console.error(t)}}function N(e){window.open(`./${e}`,"_blank")}async function L(e,t){try{const s=await fetch(`./${e}`);if(!s.ok)throw new Error(`Could not fetch ${e}`);const a=await s.blob(),i=window.URL.createObjectURL(a),n=document.createElement("a");n.href=i,n.download=t,document.body.appendChild(n),n.click(),window.URL.revokeObjectURL(i),document.body.removeChild(n),o(`Downloaded ${t}`)}catch(e){console.error("Download failed:",e),o(`Failed to download ${t}: ${e.message}`,"error")}}e.sidebarToggle.addEventListener("click",()=>{e.sidebar.classList.toggle("collapsed")}),e.wrapToggle.addEventListener("click",z),e.themeToggle.addEventListener("click",()=>{const e=Object.keys(r),n=e.indexOf(t.currentTheme),s=(n+1)%e.length;d(e[s])});let u;e.searchBox.addEventListener("input",e=>{clearTimeout(u),u=setTimeout(()=>{b(e.target.value)},150)});function h(){const n=e.advHelpModal;if(!n)return;if(n.style.display==="flex"){l();return}n.style.display="flex",n.setAttribute("aria-hidden","false"),t.advHelpOpenTime=performance.now(),s.pointer=e=>{l()},s.key=e=>{const n=performance.now();if(n-t.advHelpOpenTime<50)return;l()},document.addEventListener("pointerdown",s.pointer,!0),document.addEventListener("keydown",s.key,!0)}function l(){const t=e.advHelpModal;if(!t)return;t.style.display="none",t.setAttribute("aria-hidden","true"),s.pointer&&(document.removeEventListener("pointerdown",s.pointer,!0),s.pointer=null),s.key&&(document.removeEventListener("keydown",s.key,!0),s.key=null)}e.searchBox.addEventListener("keydown",s=>{s.key==="Escape"&&(e.searchBox.value="",e.searchBox.blur(),n(t.currentPath))}),document.addEventListener("keydown",s=>{const l=i.items,u=document.activeElement===e.searchBox;if(u){if(s.key&&s.key.toLowerCase()==="h"){s.preventDefault(),h();return}if(!l||l.length===0)return;if(["ArrowUp","ArrowDown","Enter"].includes(s.key)){if(s.preventDefault(),s.key==="ArrowUp"){t.selectedIndex=Math.max(0,t.selectedIndex-1),a();return}if(s.key==="ArrowDown"){t.selectedIndex=Math.min(l.length-1,t.selectedIndex+1),a();return}if(s.key==="Enter"){const e=l[t.selectedIndex];e&&(e.isBack?n(t.currentPath.slice(0,-1)):e.type==="folder"?n([...t.currentPath,e.name]):c(e.path,e.name,e.size));return}}return}if(s.target.tagName==="INPUT"||s.target.tagName==="TEXTAREA"){s.key==="Escape"&&s.target.blur();return}if(!l||l.length===0)return;if(s.key&&s.key.toLowerCase()==="h"){s.preventDefault(),h();return}switch(s.key){case"ArrowUp":s.preventDefault(),t.selectedIndex=Math.max(0,t.selectedIndex-1),a();break;case"ArrowDown":s.preventDefault(),t.selectedIndex=Math.min(l.length-1,t.selectedIndex+1),a();break;case"ArrowLeft":s.preventDefault(),n(t.currentPath.length>0?t.currentPath.slice(0,-1):[]);break;case"ArrowRight":case"Enter":if(s.preventDefault(),t.selectedIndex>=0&&l[t.selectedIndex]){const e=l[t.selectedIndex];e.isBack?n(t.currentPath.slice(0,-1)):e.type==="folder"?n([...t.currentPath,e.name]):c(e.path,e.name,e.size)}break;case"/":s.preventDefault(),e.searchBox.focus();break;case"Escape":s.preventDefault(),e.searchBox.value?(e.searchBox.value="",n(t.currentPath)):n([]);break;case"b":case"B":s.preventDefault(),e.sidebar.classList.toggle("collapsed");break;case"t":case"T":s.preventDefault();const i=Object.keys(r),u=i.indexOf(t.currentTheme),h=(u+1)%i.length;d(i[h]);break;case"c":case"C":if(s.ctrlKey||s.metaKey){s.preventDefault();const t=e.contentViewerEl.querySelector(".code-content code");t&&(navigator.clipboard.writeText(t.textContent),o("File content copied to clipboard"))}break}});function m(){t.currentPath.length>0&&n(t.currentPath.slice(0,-1))}window.renderDirectory=n,window.viewRaw=N,window.downloadFile=L,window.goBackOneFolder=m,y(),E(),d(t.currentTheme),k()})</script>
+                        <p style="color: var(--error-color);">Error loading file: ${error.message}</p>
+                    `;
+                    showToast(`Error loading file: ${error.message}`, 'error');
+                    console.error(error);
+                }
+            }
+
+            // View raw file
+            function viewRaw(filePath) {
+                window.open(`./${filePath}`, '_blank');
+            }
+
+            // Download file
+            async function downloadFile(filePath, fileName) {
+                try {
+                    const response = await fetch(`./${filePath}`);
+                    if (!response.ok) throw new Error(`Could not fetch ${filePath}`);
+                    
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showToast(`Downloaded ${fileName}`);
+                } catch (error) {
+                    console.error('Download failed:', error);
+                    showToast(`Failed to download ${fileName}: ${error.message}`, 'error');
+                }
+            }
+
+            // Event listeners
+            elements.sidebarToggle.addEventListener('click', () => {
+                elements.sidebar.classList.toggle('collapsed');
+            });
+
+            elements.wrapToggle.addEventListener('click', toggleWordWrap);
+
+            elements.themeToggle.addEventListener('click', () => {
+                const themeKeys = Object.keys(themes);
+                const currentIndex = themeKeys.indexOf(state.currentTheme);
+                const nextIndex = (currentIndex + 1) % themeKeys.length;
+                switchTheme(themeKeys[nextIndex]);
+            });
+
+            // Search with debouncing
+            let searchTimeout;
+            elements.searchBox.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchFiles(e.target.value);
+                }, 150);
+            });
+            
+            // Advanced help modal functions (opened by keybind '?')
+            function showAdvancedHelp() {
+                // Toggle behaviour: if already open, close
+                const overlay = elements.advHelpModal;
+                if (!overlay) return;
+                if (overlay.style.display === 'flex') {
+                    hideAdvancedHelp();
+                    return;
+                }
+                
+                // Open modal and note the open time to avoid immediately reacting to the same key event
+                overlay.style.display = 'flex';
+                overlay.setAttribute('aria-hidden', 'false');
+                state.advHelpOpenTime = performance.now();
+                
+                // add handlers that will close the modal on next pointer or key input
+                advHelpHandlers.pointer = (e) => {
+                    hideAdvancedHelp();
+                };
+                advHelpHandlers.key = (e) => {
+                    // ignore the event that opened the modal (very recent events)
+                    const now = performance.now();
+                    if (now - state.advHelpOpenTime < 50) return;
+                    hideAdvancedHelp();
+                };
+                document.addEventListener('pointerdown', advHelpHandlers.pointer, true);
+                document.addEventListener('keydown', advHelpHandlers.key, true);
+            }
+
+            function hideAdvancedHelp() {
+                const overlay = elements.advHelpModal;
+                if (!overlay) return;
+                overlay.style.display = 'none';
+                overlay.setAttribute('aria-hidden', 'true');
+                // remove any attached handlers
+                if (advHelpHandlers.pointer) {
+                    document.removeEventListener('pointerdown', advHelpHandlers.pointer, true);
+                    advHelpHandlers.pointer = null;
+                }
+                if (advHelpHandlers.key) {
+                    document.removeEventListener('keydown', advHelpHandlers.key, true);
+                    advHelpHandlers.key = null;
+                }
+             }
+
+            // Clear search on Escape
+            elements.searchBox.addEventListener('keydown', (e) => {
+                 // keep Escape behaviour when typing
+                 if (e.key === 'Escape') {
+                     elements.searchBox.value = '';
+                     elements.searchBox.blur();
+                     renderDirectory(state.currentPath);
+                 }
+             });
+              
+              // Keyboard navigation
+              document.addEventListener('keydown', (e) => {
+                 const items = virtualScroller.items;
+                 const activeIsSearch = document.activeElement === elements.searchBox;
+ 
+                 // If search box is focused, allow arrow navigation and Enter to select results
+                 if (activeIsSearch) {
+                    // allow opening advanced help even when search is focused (key 'h', case-insensitive)
+                    if (e.key && e.key.toLowerCase() === 'h') {
+                        e.preventDefault();
+                        showAdvancedHelp();
+                        return;
+                    }
+                     if (!items || items.length === 0) return;
+                     if (['ArrowUp','ArrowDown','Enter'].includes(e.key)) {
+                         e.preventDefault();
+                         if (e.key === 'ArrowUp') {
+                             state.selectedIndex = Math.max(0, state.selectedIndex - 1);
+                             updateSelection();
+                             return;
+                         }
+                         if (e.key === 'ArrowDown') {
+                             state.selectedIndex = Math.min(items.length - 1, state.selectedIndex + 1);
+                             updateSelection();
+                             return;
+                         }
+                         if (e.key === 'Enter') {
+                             const selectedItem = items[state.selectedIndex];
+                             if (selectedItem) {
+                                 if (selectedItem.isBack) {
+                                     renderDirectory(state.currentPath.slice(0, -1));
+                                 } else if (selectedItem.type === 'folder') {
+                                     renderDirectory([...state.currentPath, selectedItem.name]);
+                                 } else {
+                                     renderFile(selectedItem.path, selectedItem.name, selectedItem.size);
+                                 }
+                             }
+                         return;
+                         }
+                     }
+                     // Escape key handled elsewhere (searchBox keydown) — let typing work for other keys
+                     return;
+                 }
+ 
+                 // Not focused in search box: keep existing behavior
+                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                     if (e.key === 'Escape') {
+                         e.target.blur();
+                     }
+                     return;
+                 }
+ 
+                 if (!items || items.length === 0) return;
+                 // top-level toggle key for advanced help (h/H)
+                 if (e.key && e.key.toLowerCase() === 'h') {
+                     e.preventDefault();
+                     showAdvancedHelp();
+                     return;
+                 }
+                 switch(e.key) {
+                      case 'ArrowUp':
+                          e.preventDefault();
+                          state.selectedIndex = Math.max(0, state.selectedIndex - 1);
+                          updateSelection();
+                          break;
+                     case 'ArrowDown':
+                         e.preventDefault();
+                         state.selectedIndex = Math.min(items.length - 1, state.selectedIndex + 1);
+                         updateSelection();
+                         break;
+                     case 'ArrowLeft':
+                         e.preventDefault();
+                         if (state.currentPath.length > 0) {
+                             renderDirectory(state.currentPath.slice(0, -1));
+                         } else {
+                             renderDirectory([]);
+                         }
+                         break;
+                     case 'ArrowRight':
+                     case 'Enter':
+                         e.preventDefault();
+                         if (state.selectedIndex >= 0 && items[state.selectedIndex]) {
+                             const selectedItem = items[state.selectedIndex];
+                             if (selectedItem.isBack) {
+                                 renderDirectory(state.currentPath.slice(0, -1));
+                             } else if (selectedItem.type === 'folder') {
+                                 renderDirectory([...state.currentPath, selectedItem.name]);
+                             } else {
+                                 renderFile(selectedItem.path, selectedItem.name, selectedItem.size);
+                             }
+                         }
+                         break;
+                     case '/':
+                         e.preventDefault();
+                         elements.searchBox.focus();
+                         break;
+                     case 'Escape':
+                         e.preventDefault();
+                         if (elements.searchBox.value) {
+                             elements.searchBox.value = '';
+                             renderDirectory(state.currentPath);
+                         } else {
+                             renderDirectory([]);
+                         }
+                         break;
+                     case 'b':
+                     case 'B':
+                         e.preventDefault();
+                         elements.sidebar.classList.toggle('collapsed');
+                         break;
+                     case 't':
+                     case 'T':
+                         e.preventDefault();
+                         const themeKeys = Object.keys(themes);
+                         const currentIndex = themeKeys.indexOf(state.currentTheme);
+                         const nextIndex = (currentIndex + 1) % themeKeys.length;
+                         switchTheme(themeKeys[nextIndex]);
+                         break;
+                     case 'c':
+                     case 'C':
+                         if (e.ctrlKey || e.metaKey) {
+                             e.preventDefault();
+                             const codeContent = elements.contentViewerEl.querySelector('.code-content code');
+                             if (codeContent) {
+                                 navigator.clipboard.writeText(codeContent.textContent);
+                                 showToast('File content copied to clipboard');
+                             }
+                         }
+                         break;
+                 }
+              });
+            
+            // Go back one folder
+            function goBackOneFolder() {
+                if (state.currentPath.length > 0) {
+                    renderDirectory(state.currentPath.slice(0, -1));
+                }
+            }
+
+            // Make functions globally accessible
+            window.renderDirectory = renderDirectory;
+            window.viewRaw = viewRaw;
+            window.downloadFile = downloadFile;
+            window.goBackOneFolder = goBackOneFolder;
+
+            // Initialize everything
+            initializeVirtualScroller();
+            initializeTouchGestures();
+            switchTheme(state.currentTheme);
+            loadFileTree();
+        });
+    </script>
+</body>
+</html>

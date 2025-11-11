@@ -5,7 +5,6 @@
   <title>Repository Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    /* Layout */
     :root {
       --bg: #111827;
       --bg-soft: #111827;
@@ -161,10 +160,6 @@
       gap: 6px;
     }
 
-    .sidebar-header span {
-      opacity: 0.9;
-    }
-
     .sidebar-actions {
       display: flex;
       gap: 4px;
@@ -295,7 +290,6 @@
       display: none;
     }
 
-    /* Main viewer */
     .main {
       display: flex;
       flex-direction: column;
@@ -653,7 +647,7 @@
         <div class="sidebar-actions">
           <div class="chip">
             <span>⮞</span>
-            <span>Folders like local</span>
+            <span>Folders collapsed</span>
           </div>
         </div>
       </div>
@@ -746,7 +740,16 @@
 </div>
 
 <script>
-  // Simple "local file manager" behavior backed by index.json
+  // Media extensions for native preview
+  const IMAGE_EXTENSIONS = new Set([
+    'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'
+  ]);
+  const VIDEO_EXTENSIONS = new Set([
+    'mp4', 'webm', 'ogg', 'mov'
+  ]);
+  const AUDIO_EXTENSIONS = new Set([
+    'mp3', 'wav', 'ogg', 'flac'
+  ]);
 
   let indexData = null;
   let currentFilePath = null;
@@ -765,8 +768,6 @@
       indexData = await res.json();
       statusLabel.textContent = 'Index loaded. Ready.';
       renderTree();
-      // Expand first level
-      autoExpandRoot();
     } catch (err) {
       console.error(err);
       statusLabel.textContent = 'Failed to load index.json';
@@ -814,34 +815,32 @@
     let childrenContainer = null;
 
     if (node.type === 'directory') {
-      item.classList.add('directory', 'expanded');
+      item.classList.add('directory', 'collapsed');
       icon.textContent = '▣';
+
       item.addEventListener('click', (e) => {
         if (e.target === name || e.target === icon || e.target === arrow || e.target === item) {
-          toggleDirectory(item, childrenContainer);
+          toggleDirectory(item);
         }
       });
 
+      childrenContainer = document.createElement('ul');
+      childrenContainer.className = 'tree-children collapsed';
+
       if (node.children && node.children.length) {
-        childrenContainer = document.createElement('ul');
-        childrenContainer.className = 'tree-children';
         node.children.forEach(child => {
           childrenContainer.appendChild(createTreeNode(child));
         });
-      } else {
-        childrenContainer = document.createElement('ul');
-        childrenContainer.className = 'tree-children';
       }
     } else {
       item.classList.add('file', node.previewable ? 'previewable' : 'not-previewable');
       icon.textContent = '▤';
       item.classList.add('leaf');
-      item.querySelector?.('.arrow')?.classList?.add('hidden');
+      arrow.style.visibility = 'hidden';
+
       item.addEventListener('click', () => {
         openFile(node.path);
       });
-      // For files, use a hidden arrow placeholder to align if needed
-      arrow.style.visibility = 'hidden';
     }
 
     item.appendChild(arrow);
@@ -856,14 +855,9 @@
     return li;
   }
 
-  function toggleDirectory(item, childrenContainer) {
-    const path = item.dataset.path || '';
-    if (!childrenContainer) {
-      // Find next sibling UL
-      const li = item.parentElement;
-      const next = li.querySelector('.tree-children');
-      childrenContainer = next || null;
-    }
+  function toggleDirectory(item) {
+    const li = item.parentElement;
+    const childrenContainer = li.querySelector('.tree-children');
     if (!childrenContainer) return;
 
     const collapsed = childrenContainer.classList.contains('collapsed');
@@ -876,20 +870,6 @@
       item.classList.remove('expanded');
       item.classList.add('collapsed');
     }
-  }
-
-  function autoExpandRoot() {
-    const tree = document.getElementById('tree');
-    const firstDirs = tree.querySelectorAll('.tree-item.directory');
-    firstDirs.forEach((dir, index) => {
-      const children = dir.parentElement.querySelector('.tree-children');
-      if (!children) return;
-      // Expand only top-level by default
-      if (dir.parentElement.parentElement.classList.contains('tree-root')) {
-        children.classList.remove('collapsed');
-        dir.classList.add('expanded');
-      }
-    });
   }
 
   function findNodeByPath(pathStr) {
@@ -918,16 +898,13 @@
     currentFilePath = filePath;
 
     if (pushHistory) {
-      // Trim forward history
       historyStack = historyStack.slice(0, historyIndex + 1);
       historyStack.push(filePath);
       historyIndex = historyStack.length - 1;
     }
 
-    // Update UI state in tree
     highlightActiveTreeItem(filePath);
 
-    // Update breadcrumb, titles, meta
     const breadcrumb = document.getElementById('breadcrumb-path');
     breadcrumb.textContent = filePath;
 
@@ -936,27 +913,41 @@
 
     const fileMeta = document.getElementById('file-meta');
     const sizeStr = typeof node.size === 'number' ? formatBytes(node.size) : 'unknown';
-    const prevStr = node.previewable ? 'inline preview' : 'no inline preview';
     fileMeta.innerHTML = `
       <span><strong>File:</strong> ${escapeHtml(filePath)}</span>
       <span class="dot"></span>
       <span>${sizeStr}</span>
       <span class="dot"></span>
-      <span>${prevStr}</span>
-      ${!node.previewable ? '<span class="dot"></span><span>Use "Raw" if this is a supported text file.</span>' : ''}
+      <span>${node.previewable ? 'inline text preview' : 'static / binary / large file'}</span>
     `;
 
     const viewerBody = document.getElementById('viewer-body');
 
+    const ext = (filePath.split('.').pop() || '').toLowerCase();
+
+    // 1) Media: use native browser viewers via direct URL
+    if (IMAGE_EXTENSIONS.has(ext)) {
+      renderImage(filePath);
+      return;
+    }
+    if (VIDEO_EXTENSIONS.has(ext)) {
+      renderVideo(filePath);
+      return;
+    }
+    if (AUDIO_EXTENSIONS.has(ext)) {
+      renderAudio(filePath);
+      return;
+    }
+
+    // 2) Non-media:
     if (!node.previewable && !rawMode) {
       viewerBody.innerHTML = `
         <div class="viewer-body-inner">
           <p class="not-previewable">
-            This file isn't inlined for preview (too large or binary).
+            This file is not inlined for preview (too large or non-text).
           </p>
           <p class="not-previewable">
-            Toggle "Raw" to attempt direct fetch from this static host (if available),
-            or download the file via your hosting environment.
+            Toggle "Raw" to attempt a direct fetch from this static host, or download it from the repository.
           </p>
         </div>
       `;
@@ -964,8 +955,6 @@
     }
 
     if (rawMode && (!node.content || node.size > 0)) {
-      // In raw mode, try to fetch the file itself relative to index.html.
-      // This only works if your hosting also serves the repo files alongside dist.
       loadRawFile(filePath);
       return;
     }
@@ -1005,9 +994,6 @@
 
   function renderText(content, pathStr) {
     const viewerBody = document.getElementById('viewer-body');
-    const ext = (pathStr.split('.').pop() || '').toLowerCase();
-    const isCode = true; // treat everything as code-ish for consistent feel
-
     const lines = content.replace(/\r\n/g, '\n').split('\n');
 
     const container = document.createElement('div');
@@ -1037,15 +1023,57 @@
     viewerBody.appendChild(pre);
   }
 
+  function renderImage(pathStr) {
+    const viewerBody = document.getElementById('viewer-body');
+    viewerBody.innerHTML = '';
+
+    const img = document.createElement('img');
+    img.src = pathStr;
+    img.alt = pathStr;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.display = 'block';
+    img.style.margin = '0 auto';
+
+    viewerBody.appendChild(img);
+  }
+
+  function renderVideo(pathStr) {
+    const viewerBody = document.getElementById('viewer-body');
+    viewerBody.innerHTML = '';
+
+    const video = document.createElement('video');
+    video.src = pathStr;
+    video.controls = true;
+    video.style.maxWidth = '100%';
+    video.style.maxHeight = '100%';
+    video.style.display = 'block';
+    video.style.margin = '0 auto';
+    video.style.backgroundColor = '#000';
+
+    viewerBody.appendChild(video);
+  }
+
+  function renderAudio(pathStr) {
+    const viewerBody = document.getElementById('viewer-body');
+    viewerBody.innerHTML = '';
+
+    const audio = document.createElement('audio');
+    audio.src = pathStr;
+    audio.controls = true;
+    audio.style.width = '100%';
+    audio.style.marginTop = '12px';
+
+    viewerBody.appendChild(audio);
+  }
+
   function highlightActiveTreeItem(pathStr) {
     const tree = document.getElementById('tree');
     tree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
     const item = tree.querySelector(`.tree-item[data-path="${cssEscape(pathStr)}"]`);
     if (item) {
       item.classList.add('active');
-      // Ensure parents expanded
       expandParents(item);
-      // Scroll into view (like a local file manager)
       item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
   }
@@ -1101,15 +1129,14 @@
     if (!parts.length) return;
     const parentPath = parts.join('/');
     const node = findNodeByPath(parentPath);
-    if (node && node.type === 'directory' && node.children && node.children.length) {
-      // Choose first file or directory inside as focus?
-      // We'll just highlight directory.
+    const viewerBody = document.getElementById('viewer-body');
+
+    if (node && node.type === 'directory') {
       highlightActiveTreeItem(parentPath);
       const breadcrumb = document.getElementById('breadcrumb-path');
       breadcrumb.textContent = parentPath + '/';
       const viewerTitle = document.getElementById('viewer-title');
       viewerTitle.textContent = parentPath + '/';
-      const viewerBody = document.getElementById('viewer-body');
       viewerBody.innerHTML = `
         <div class="placeholder">
           <div class="title">Directory selected: ${escapeHtml(parentPath)}/</div>
@@ -1176,7 +1203,7 @@
     }, 1500);
   }
 
-  // Start
+  // Init
   loadIndex();
 </script>
 </body>

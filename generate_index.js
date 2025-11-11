@@ -10,8 +10,8 @@ const INDEX_HTML_SRC = path.join(REPO_ROOT, 'index.html');
 const INDEX_HTML_DST = path.join(DIST_DIR, 'index.html');
 
 // Config
-const MAX_INLINE_FILE_SIZE = 200 * 1024; // 200 KB
-const MAX_TOTAL_INLINE_SIZE = 8 * 1024 * 1024; // 8 MB cap for safety
+const MAX_INLINE_FILE_SIZE = 200 * 1024; // 200 KB per file
+const MAX_TOTAL_INLINE_SIZE = 8 * 1024 * 1024; // 8 MB total
 
 // Directories/files to ignore in the index
 const IGNORE_NAMES = new Set([
@@ -24,7 +24,7 @@ const IGNORE_NAMES = new Set([
   '.DS_Store'
 ]);
 
-// File extensions we treat as "binary" or non-text-ish for preview
+// File extensions we treat as "binary"/non-text for inline content
 const BINARY_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.ico',
   '.mp4', '.webm', '.mov', '.avi', '.mkv',
@@ -38,7 +38,7 @@ let totalInlinedBytes = 0;
 
 function isIgnored(name, relPath) {
   if (IGNORE_NAMES.has(name)) return true;
-  // Skip dist output except when explicitly building it
+  // Skip dist content while generating (we only want source tree)
   if (relPath.startsWith('dist' + path.sep)) return true;
   return false;
 }
@@ -49,7 +49,6 @@ function isBinaryByExtension(filename) {
 }
 
 function looksTextual(buffer) {
-  // Simple heuristic: if it contains many control chars, treat as binary
   const len = Math.min(buffer.length, 4096);
   let controlCount = 0;
   for (let i = 0; i < len; i++) {
@@ -83,7 +82,7 @@ function readFileForPreview(fullPath, relPath) {
     }
 
     if (totalInlinedBytes + size > MAX_TOTAL_INLINE_SIZE) {
-      return info; // global cap hit
+      return info; // global cap
     }
 
     if (isBinaryByExtension(fullPath)) {
@@ -146,10 +145,10 @@ function buildTree(dir, baseRel = '') {
         content: fileInfo.previewable ? fileInfo.content : null
       });
     }
-    // symlinks etc. are skipped for simplicity
+    // symlinks and others are skipped
   }
 
-  // Sort like a typical file manager: folders first, then files, alphabetical
+  // Sort like typical file managers: directories first, alphabetical
   children.sort((a, b) => {
     if (a.type !== b.type) {
       return a.type === 'directory' ? -1 : 1;
@@ -167,11 +166,12 @@ function main() {
     fs.mkdirSync(DIST_DIR, { recursive: true });
   }
 
-  // Copy index.html into dist
   if (!fs.existsSync(INDEX_HTML_SRC)) {
     console.error('ERROR: index.html not found in repo root.');
     process.exit(1);
   }
+
+  // Copy index.html into dist as the app entry
   fs.copyFileSync(INDEX_HTML_SRC, INDEX_HTML_DST);
 
   const tree = {

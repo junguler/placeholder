@@ -16,329 +16,472 @@
   />
   <style>
     :root {
-      --bg: #111827;
+      --bg: #050608;
+      --bg-soft: #0b0e12;
+      --bg-elevated: #0f1319;
+      --border-subtle: #20232a;
       --accent: #3b82f6;
+      --accent-soft: rgba(59,130,246,0.18);
       --text: #e5e7eb;
       --muted: #9ca3af;
       --danger: #f97316;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --font-sans: system-ui, -apple-system, BlinkMacSystemFont, -system-ui, sans-serif;
-      --shadow-soft: 0 10px 40px rgba(15,23,42,0.55);
+      --shadow-soft: 0 10px 40px rgba(0,0,0,0.8);
       --transition-fast: 0.16s ease-out;
     }
+
     * { box-sizing: border-box; }
+
     html, body {
-      margin: 0; padding: 0;
-      height: 100%; width: 100%;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
       overflow: hidden;
       font-family: var(--font-sans);
-      background: radial-gradient(circle at top, #111827 0, #020817 52%, #000 100%);
+      background:
+        radial-gradient(circle at top, #111827 0, #020817 40%, #000 100%);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
     }
+
     body { display: flex; flex-direction: column; }
+
     .app {
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       height: 100vh;
-      padding: 14px;
-      gap: 10px;
+      padding: 10px;
+      gap: 8px;
     }
-    .app-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 12px;
-      background: radial-gradient(circle at top left, rgba(59,130,246,0.24), transparent 70%), rgba(2,6,23,0.96);
-      border-radius: 14px;
-      border: 1px solid rgba(148,163,253,0.18);
-      box-shadow: 0 14px 45px rgba(15,23,42,0.75);
-      backdrop-filter: blur(18px);
-    }
-    .app-title { display: flex; align-items: baseline; gap: 10px; }
-    .logo-dot {
-      width: 8px; height: 8px; border-radius: 999px;
-      background: var(--accent); box-shadow: 0 0 12px var(--accent);
-    }
-    .app-title h1 {
-      margin: 0; font-weight: 500;
-      font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase;
-      color: #9ca3af;
-    }
-    .app-title strong {
-      font-size: 16px; font-weight: 500;
-      color: #e5e7eb; letter-spacing: 0.01em; text-transform: none;
-    }
-    .app-meta {
-      display: flex; gap: 12px; align-items: center;
-      font-size: 11px; color: var(--muted);
-    }
-    .pill {
-      padding: 3px 9px; border-radius: 999px;
-      border: 1px solid rgba(148,163,253,0.35);
-      display: inline-flex; align-items: center; gap: 5px;
-      background-color: rgba(12,18,32,0.96);
-      backdrop-filter: blur(15px);
-      box-shadow: 0 6px 18px rgba(15,23,42,0.6);
-    }
-    .pill .dot {
-      width: 6px; height: 6px; border-radius: 999px;
-      background: #22c55e; box-shadow: 0 0 8px #22c55e;
-    }
-    .pill .dot-orange {
-      background: var(--danger); box-shadow: 0 0 8px var(--danger);
-    }
+
+    /* Layout */
+
     .layout {
-      flex: 1; display: grid;
+      flex: 1;
+      display: grid;
       grid-template-columns: 260px 1fr;
-      gap: 10px; min-height: 0;
+      gap: 8px;
+      min-height: 0;
     }
+
+    /* Sidebar */
+
     .sidebar {
-      display: flex; flex-direction: column;
-      background: radial-gradient(circle at top, rgba(15,23,42,0.9), rgba(2,6,23,0.98));
-      border-radius: 14px;
-      border: 1px solid rgba(75,85,99,0.65);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-soft);
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
       box-shadow: var(--shadow-soft);
-      padding: 8px; min-width: 0; min-height: 0;
+      padding: 6px;
+      min-width: 0;
+      min-height: 0;
     }
+
     .sidebar-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 2px 4px 6px; color: var(--muted); font-size: 11px; gap: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 2px 4px;
+      color: var(--muted);
+      font-size: 10px;
+      gap: 6px;
     }
-    .sidebar-actions { display: flex; gap: 4px; align-items: center; }
+
+    .sidebar-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
     .chip {
-      padding: 2px 7px; border-radius: 999px;
-      border: 1px solid rgba(75,85,99,0.9);
-      font-size: 10px; color: var(--muted);
-      display: inline-flex; align-items: center; gap: 4px;
-      background-color: rgba(2,6,23,0.96);
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      font-size: 9px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background-color: #05070b;
     }
+
     .tree {
-      flex: 1; overflow: auto; padding: 4px;
-      font-family: var(--font-mono); font-size: 11px; line-height: 1.6;
+      flex: 1;
+      overflow: auto;
+      padding: 4px 2px 4px 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1.6;
       color: #9ca3af;
     }
+
     .tree ul {
-      list-style: none; margin: 0;
-      padding-left: 14px; border-left: 1px solid rgba(55,65,81,0.55);
+      list-style: none;
+      margin: 0;
+      padding-left: 12px;
+      border-left: 1px solid rgba(75,85,99,0.35);
     }
-    .tree-root { padding-left: 2px; border-left: none; }
+
+    .tree-root {
+      padding-left: 2px;
+      border-left: none;
+    }
+
     .tree-item {
-      position: relative; padding: 1px 3px 1px 0;
+      position: relative;
+      padding: 1px 3px 1px 0;
       border-radius: 4px;
-      display: flex; align-items: center; gap: 4px;
-      cursor: default; user-select: none;
-      transition: background-color var(--transition-fast), color var(--transition-fast), transform 0.06s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: default;
+      user-select: none;
+      transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        transform 0.06s ease-out;
     }
+
     .tree-item .icon {
-      width: 14px; display: inline-flex; align-items: center; justify-content: center;
-      color: #6b7280; flex-shrink: 0; font-size: 10px;
+      width: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      flex-shrink: 0;
+      font-size: 9px;
     }
+
     .tree-item .name {
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .tree-item.directory .name { color: #9ca3af; font-weight: 500; }
-    .tree-item.file { color: #6b7280; }
-    .tree-item.file.previewable { color: #9ca3af; }
+
+    .tree-item.directory .name {
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .tree-item.file {
+      color: #6b7280;
+    }
+
+    .tree-item.file.previewable {
+      color: #9ca3af;
+    }
+
     .tree-item:hover {
-      background-color: rgba(31,41,55,0.9);
-      color: #e5e7eb; transform: translateX(1px);
+      background-color: #151922;
+      color: #e5e7eb;
+      transform: translateX(1px);
     }
+
     .tree-item.active {
-      background: linear-gradient(to right, rgba(59,130,246,0.24), rgba(15,23,42,0.98));
+      background: linear-gradient(
+        to right,
+        rgba(59,130,246,0.26),
+        rgba(10,15,25,1)
+      );
       color: #eff6ff;
-      box-shadow: 0 3px 12px rgba(15,23,42,0.85);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.9);
     }
+
     .tree-item.active .icon,
-    .tree-item:hover .icon { color: var(--accent); }
+    .tree-item:hover .icon {
+      color: var(--accent);
+    }
+
     .tree-item .arrow {
-      width: 11px; display: inline-flex; align-items: center; justify-content: center;
+      width: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       color: #4b5563;
       transition: transform var(--transition-fast), color var(--transition-fast);
-      flex-shrink: 0; font-size: 9px;
+      flex-shrink: 0;
+      font-size: 8px;
     }
+
     .tree-item.collapsed .arrow { transform: rotate(-90deg); }
     .tree-item.expanded .arrow { transform: rotate(0deg); }
     .tree-item.leaf .arrow { visibility: hidden; }
-    .tree-children { margin: 0; padding: 0 0 0 16px; }
-    .tree-children.collapsed { display: none; }
+
+    .tree-children {
+      margin: 0;
+      padding: 0 0 0 14px;
+    }
+
+    .tree-children.collapsed {
+      display: none;
+    }
+
+    /* Main panel */
+
     .main {
-      display: flex; flex-direction: column;
-      background: radial-gradient(circle at top right, rgba(15,23,42,0.92), rgba(2,6,23,0.99));
-      border-radius: 14px;
-      border: 1px solid rgba(75,85,99,0.7);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-soft);
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
       box-shadow: var(--shadow-soft);
-      padding: 8px; min-width: 0; min-height: 0; gap: 6px;
+      padding: 6px;
+      min-width: 0;
+      min-height: 0;
+      gap: 4px;
     }
+
     .breadcrumb {
-      display: flex; align-items: center; gap: 8px;
-      font-family: var(--font-mono); font-size: 10px; color: #9ca3af;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
     .breadcrumb .label {
-      font-size: 9px; padding: 2px 6px; border-radius: 999px;
-      border: 1px solid rgba(75,85,99,0.9);
-      color: #9ca3af; background-color: rgba(2,6,23,0.96);
+      font-size: 8px;
+      padding: 1px 5px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      color: #9ca3af;
+      background-color: #05070b;
     }
-    .breadcrumb-path { overflow: hidden; text-overflow: ellipsis; }
+
+    .breadcrumb-path {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .toolbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 6px; font-size: 10px; color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      font-size: 9px;
+      color: var(--muted);
     }
-    .toolbar-left, .toolbar-right {
-      display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
     }
+
     .btn {
-      border: 1px solid rgba(75,85,99,0.85);
-      background: rgba(2,6,23,0.98);
-      padding: 2px 7px; border-radius: 7px;
-      font-size: 9px; color: var(--muted);
-      display: inline-flex; align-items: center; gap: 4px;
-      cursor: pointer; transition: all var(--transition-fast);
-      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-subtle);
+      background: #05070b;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 8px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      backdrop-filter: blur(6px);
     }
-    .btn .icon { font-size: 9px; color: #6b7280; }
+
+    .btn .icon {
+      font-size: 8px;
+      color: #6b7280;
+    }
+
     .btn:hover {
       color: #e5e7eb;
       border-color: var(--accent);
-      background: radial-gradient(circle at top, rgba(37,99,235,0.16), rgba(2,6,23,1));
-      box-shadow: 0 4px 14px rgba(15,23,42,0.95);
+      background: radial-gradient(circle at top, var(--accent-soft), #020308);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.9);
       transform: translateY(-0.5px);
     }
+
     .btn.primary {
       border-color: var(--accent);
       color: #bfdbfe;
-      background: radial-gradient(circle at top, rgba(37,99,235,0.22), rgba(2,6,23,1));
+      background: radial-gradient(circle at top, rgba(37,99,235,0.24), #020308);
     }
-    .file-meta {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 9px; color: var(--muted); opacity: 0.9;
-    }
-    .file-meta .dot {
-      width: 4px; height: 4px; border-radius: 999px;
-      background-color: rgba(75,85,99,1);
-    }
+
     .viewer {
-      flex: 1; position: relative;
-      border-radius: 10px;
-      background-color: #020817;
-      border: 1px solid rgba(31,41,55,1);
-      box-shadow: 0 10px 36px rgba(15,23,42,0.88);
+      flex: 1;
+      position: relative;
+      border-radius: 8px;
+      background-color: #050608;
+      border: 1px solid #181b22;
+      box-shadow: 0 8px 26px rgba(0,0,0,0.95);
       overflow: hidden;
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       min-height: 0;
     }
+
     .viewer-header {
-      padding: 4px 8px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 6px; font-size: 9px; color: var(--muted);
+      padding: 3px 7px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      font-size: 8px;
+      color: var(--muted);
       background:
-        radial-gradient(circle at top left, rgba(37,99,235,0.15), transparent 75%),
-        radial-gradient(circle at top right, rgba(56,189,248,0.07), transparent 80%),
-        rgba(2,6,23,0.98);
-      border-bottom: 1px solid rgba(31,41,55,1);
+        radial-gradient(circle at top left, rgba(37,99,235,0.16), transparent 70%),
+        radial-gradient(circle at top right, rgba(15,118,110,0.08), transparent 75%),
+        #05070b;
+      border-bottom: 1px solid #181b22;
     }
-    .viewer-header-dots { display: flex; gap: 3px; }
+
+    .viewer-header-dots {
+      display: flex;
+      gap: 3px;
+    }
+
     .viewer-header-dot {
-      width: 6px; height: 6px; border-radius: 999px;
-      background-color: rgba(75,85,99,1);
+      width: 5px;
+      height: 5px;
+      border-radius: 999px;
+      background-color: #374151;
     }
+
     .viewer-header-dot.red { background-color: #f87171; }
     .viewer-header-dot.yellow { background-color: #facc15; }
     .viewer-header-dot.green { background-color: #22c55e; }
+
     .viewer-header-title {
       font-family: var(--font-mono);
-      font-size: 9px; color: #9ca3af; opacity: 0.9;
+      font-size: 8px;
+      color: #9ca3af;
+      opacity: 0.9;
     }
+
     .badge {
-      padding: 2px 5px; border-radius: 6px;
-      border: 1px solid rgba(75,85,99,0.9);
-      font-size: 8px; color: #9ca3af;
-      display: inline-flex; align-items: center; gap: 4px;
-      background-color: rgba(2,6,23,0.98);
+      padding: 1px 4px;
+      border-radius: 5px;
+      border: 1px solid #272b35;
+      font-size: 7px;
+      color: #9ca3af;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background-color: #05070b;
     }
+
     .badge.accent {
       border-color: rgba(59,130,246,0.9);
-      color: #bfdbfe; background-color: rgba(15,23,42,0.98);
+      color: #bfdbfe;
+      background-color: #05070b;
     }
+
     .viewer-body {
-      flex: 1; overflow: auto;
+      flex: 1;
+      overflow: auto;
       font-family: var(--font-mono);
-      font-size: 11px; line-height: 1.5;
-      color: #e5e7eb; padding: 8px; position: relative;
-    }
-    pre { margin: 0; white-space: pre; color: #e5e7eb; }
-    .placeholder {
-      height: 100%; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 6px; color: #6b7280; text-align: center;
-      pointer-events: none;
-    }
-    .status {
-      font-size: 9px; color: var(--muted);
-      padding: 3px 8px 0;
-      display: flex; justify-content: flex-end;
-      gap: 6px; opacity: 0.85;
-    }
-    .status .dot {
-      width: 4px; height: 4px; border-radius: 999px;
-      background-color: var(--accent); box-shadow: 0 0 6px var(--accent);
-    }
-    .line-numbers-container {
+      font-size: 11px;
+      line-height: 1.5;
+      color: #e5e7eb;
+      padding: 6px;
       position: relative;
+      background-color: #050608;
     }
-    .line-numbers {
-      counter-reset: line;
+
+    pre {
+      margin: 0;
+      white-space: pre;
     }
-    .line {
-      display: flex; align-items: flex-start;
+
+    .placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: #6b7280;
+      text-align: center;
+      pointer-events: none;
+      font-size: 10px;
     }
-    .line-number {
-      counter-increment: line;
-      width: 32px; padding-right: 6px;
-      text-align: right; color: #4b5563;
-      user-select: none; flex-shrink: 0;
+
+    .status {
+      font-size: 8px;
+      color: var(--muted);
+      padding: 2px 4px 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      opacity: 0.9;
     }
-    .line-number::before { content: counter(line); }
-    .line-content { white-space: pre; flex: 1; }
-    .not-previewable { font-size: 10px; color: #9ca3af; }
-    .error { font-size: 10px; color: #f97316; }
+
+    .status .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background-color: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    .not-previewable {
+      font-size: 9px;
+      color: #9ca3af;
+    }
+
+    .error {
+      font-size: 9px;
+      color: var(--danger);
+    }
 
     .preview-wrapper {
       width: 100%;
       height: 100%;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
+
     .preview-label {
-      font-size: 9px;
+      font-size: 8px;
       color: var(--muted);
       display: flex;
       gap: 6px;
       align-items: center;
     }
-    .preview-label span.badge-mini {
+
+    .badge-mini {
       padding: 1px 4px;
       border-radius: 4px;
-      border: 1px solid rgba(75,85,99,0.9);
-      font-size: 8px;
+      border: 1px solid #272b35;
+      font-size: 7px;
       color: #9ca3af;
+      background-color: #05070b;
     }
-    .viewer-iframe,
-    .viewer-object {
+
+    .viewer-object,
+    .viewer-iframe {
       flex: 1;
       width: 100%;
       border: none;
-      background: #020817;
+      background: #050608;
       border-radius: 6px;
     }
+
     .binary-hint {
-      font-size: 10px;
+      font-size: 9px;
       color: #9ca3af;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     @media (max-width: 900px) {
       .layout { grid-template-columns: 210px 1fr; }
     }
+
     @media (max-width: 720px) {
       .layout { grid-template-columns: 1fr; }
       .sidebar { max-height: 40%; }
@@ -347,16 +490,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="app-header">
-    <div class="app-title">
-      <span class="logo-dot"></span>
-      <h1><span>STATIC REPO</span> <strong>File Explorer</strong></h1>
-    </div>
-    <div class="app-meta">
-      <div class="pill"><span class="dot"></span><span>Auto-synced on push</span></div>
-      <div class="pill"><span class="dot-orange"></span><span>Read-only • No API calls</span></div>
-    </div>
-  </div>
+  <!-- Removed top STATIC REPO File Explorer header -->
 
   <div class="layout">
     <aside class="sidebar">
@@ -379,22 +513,20 @@
         <div class="toolbar-left">
           <button class="btn" id="btn-back"><span class="icon">↶</span><span>Back</span></button>
           <button class="btn" id="btn-up"><span class="icon">⇡</span><span>Up</span></button>
-          <button class="btn" id="btn-collapse-all"><span class="icon">⊟</span><span>Collapse all</span></button>
+          <button class="btn" id="btn-collapse-all"><span class="icon">⊟</span><span>Collapse</span></button>
           <button class="btn" id="btn-expand-root"><span class="icon">⊞</span><span>Expand root</span></button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="btn-copy-path"><span class="icon">⧉</span><span>Copy path</span></button>
+          <button class="btn" id="btn-download"><span class="icon">⬇</span><span>Download</span></button>
           <button class="btn" id="btn-toggle-raw"><span class="icon">≋</span><span>Raw</span></button>
         </div>
       </div>
 
-      <div class="file-meta" id="file-meta">
-        <span><strong>Hint:</strong> Choose a file on the left to preview content.</span>
-      </div>
-
+      <!-- Removed Hint line -->
       <div class="viewer">
         <div class="viewer-header">
-          <div class="viewer-header-left">
+          <div class="viewer-header-left" style="display:flex;align-items:center;gap:5px;">
             <div class="viewer-header-dots">
               <div class="viewer-header-dot red"></div>
               <div class="viewer-header-dot yellow"></div>
@@ -409,11 +541,8 @@
         </div>
         <div class="viewer-body" id="viewer-body">
           <div class="placeholder">
-            <div class="title">Browse your repository like a local file manager.</div>
-            <div class="subtitle">
-              Tree is generated on each push by GitHub Actions.
-              No runtime GitHub API calls. Pure static, read-only view.
-            </div>
+            <div>Browse your repository like a local file manager.</div>
+            <div>Tree is generated on each push. No runtime GitHub API calls.</div>
           </div>
         </div>
       </div>
@@ -425,7 +554,7 @@
   </div>
 </div>
 
-<!-- Prism core + plugins (keep at bottom of body, before our script using it) -->
+<!-- Prism core + plugins -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/normalize-whitespace/prism-normalize-whitespace.min.js"></script>
@@ -433,14 +562,15 @@
 <script>
   // Configure Prism autoloader to load languages from CDN
   if (window.Prism && Prism.plugins && Prism.plugins.autoloader) {
-    Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    Prism.plugins.autoloader.languages_path =
+      'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
   }
 
   const IMAGE_EXTENSIONS = new Set(['png','jpg','jpeg','gif','bmp','webp','svg','ico']);
   const VIDEO_EXTENSIONS = new Set(['mp4','webm','ogg','mov']);
   const AUDIO_EXTENSIONS = new Set(['mp3','wav','ogg','flac']);
 
-  // Common text/code extensions mapped to Prism language ids
+  // Syntax map for Prism (many common languages)
   const SYNTAX_MAP = {
     'js': 'javascript',
     'mjs': 'javascript',
@@ -449,7 +579,7 @@
     'tsx': 'tsx',
     'jsx': 'jsx',
     'json': 'json',
-    'jsonc': 'js', // close enough
+    'jsonc': 'js',
     'css': 'css',
     'scss': 'scss',
     'sass': 'sass',
@@ -525,12 +655,12 @@
     'bib': 'latex'
   };
 
-  // Extensions we consider "binary-ish" / non-inline-preview (no diff, no executables)
+  // Non-previewed binary-ish types (executables, archives, fonts, etc.)
   const BINARY_LIKE = new Set([
     'exe','dll','so','dylib','bin','class','o','obj','a','lib',
     'zip','tar','gz','tgz','bz2','xz','7z','rar',
-    'pdf','woff','woff2','ttf','otf','eot',
-    'ico','icns','psd','ai','sketch','fig'
+    'woff','woff2','ttf','otf','eot',
+    'icns','psd','ai','sketch','fig'
   ]);
 
   let indexData = null;
@@ -552,7 +682,7 @@
       console.error(err);
       statusLabel.textContent = 'Failed to load index.json';
       document.getElementById('viewer-body').innerHTML =
-        '<div class="error">Unable to load index.json. Ensure GitHub Actions generated dist/index.json correctly.</div>';
+        '<div class="error">Unable to load index.json. Ensure it is generated correctly.</div>';
     }
   }
 
@@ -605,15 +735,15 @@
         childrenContainer.appendChild(createTreeNode(child));
       });
     } else {
-      // Mark previewable based on extension / heuristics if not already supplied
       const ext = getExt(node.name);
       const isBinary = BINARY_LIKE.has(ext);
       const isPreviewable =
         node.previewable === true ||
-        (!isBinary && (IMAGE_EXTENSIONS.has(ext) ||
-                       VIDEO_EXTENSIONS.has(ext) ||
-                       AUDIO_EXTENSIONS.has(ext) ||
-                       isLikelyTextExt(ext)));
+        (!isBinary &&
+         (IMAGE_EXTENSIONS.has(ext) ||
+          VIDEO_EXTENSIONS.has(ext) ||
+          AUDIO_EXTENSIONS.has(ext) ||
+          isLikelyTextExt(ext)));
 
       item.classList.add('file', isPreviewable ? 'previewable' : 'not-previewable', 'leaf');
       icon.textContent = '▤';
@@ -676,60 +806,50 @@
 
     highlightActiveTreeItem(filePath);
     document.getElementById('breadcrumb-path').textContent = filePath;
-    document.getElementById('viewer-title').textContent = filePath;
+    document.getElementById('viewer-title').textContent = filePath || 'No file opened';
 
     const ext = getExt(filePath);
-    const sizeStr = typeof node.size === 'number' ? formatBytes(node.size) : 'unknown';
     const isBinary = BINARY_LIKE.has(ext);
     const isTextish = isLikelyTextExt(ext);
+    const sizeStr = typeof node.size === 'number' ? formatBytes(node.size) : 'unknown';
 
-    document.getElementById('file-meta').innerHTML = `
-      <span><strong>File:</strong> ${escapeHtml(filePath)}</span>
-      <span class="dot"></span>
-      <span>${sizeStr}</span>
-      <span class="dot"></span>
-      <span>${getMetaLabel(ext, node, isBinary, isTextish)}</span>
-    `;
+    // Update meta-like info in status line message when opening
+    flashStatus(
+      (sizeStr !== 'unknown' ? sizeStr + ' • ' : '') +
+      getMetaLabel(ext, node, isBinary, isTextish)
+    );
 
     const viewerBody = document.getElementById('viewer-body');
 
-    // Media previews
+    // Media previews (always allowed)
     if (IMAGE_EXTENSIONS.has(ext)) { renderImage(filePath); return; }
     if (VIDEO_EXTENSIONS.has(ext)) { renderVideo(filePath); return; }
     if (AUDIO_EXTENSIONS.has(ext)) { renderAudio(filePath); return; }
 
-    // Handle obvious binary / archives / fonts etc.
-    if (isBinary && !rawMode) {
+    // Executable / archive / font etc -> no inline decode, but allow download/raw
+    if (isBinary) {
       renderBinaryMessage(filePath);
       return;
     }
 
-    // PDFs and other browser-viewable docs via <object>/<iframe>
+    // PDFs -> vendor inline via object
     if (ext === 'pdf') {
       renderEmbed(filePath, 'application/pdf', 'PDF preview (browser native)');
       return;
     }
 
-    // Fallback: if not obviously text and index marks non-previewable, show hint unless rawMode
-    if (!node.previewable && !rawMode && !isTextish) {
-      renderBinaryMessage(filePath);
-      return;
-    }
-
-    // Raw mode: always attempt fetch and show highlighted if text-ish
+    // Text-like content:
+    // - No filesize restriction: always try to show content (from index or direct).
     if (rawMode) {
       loadRawFile(filePath, ext);
       return;
     }
 
-    // Inline content from index.json if available
     if (node.previewable && typeof node.content === 'string') {
       renderText(node.content, ext);
-    } else if (isTextish || !isBinary) {
-      // Try fetching text for many plain/text-ish files even if index didn't inline content
-      loadRawFile(filePath, ext);
     } else {
-      renderBinaryMessage(filePath);
+      // Fallback: fetch from static host and show highlighted
+      loadRawFile(filePath, ext);
     }
   }
 
@@ -739,8 +859,12 @@
     fetch(pathStr, { cache: 'no-store' })
       .then(res => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        const contentType = res.headers.get('content-type') || '';
-        if (isProbablyBinaryContentType(contentType)) {
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        // Let text-ish content show; for obvious binary (images/media) we already handle elsewhere.
+        if (isProbablyBinaryContentType(ct) &&
+            !ct.includes('pdf') &&
+            !ct.includes('json') &&
+            !ct.startsWith('text/')) {
           throw new Error('Binary content, not rendering as text.');
         }
         return res.text();
@@ -763,7 +887,6 @@
     const lang = detectLanguage(ext, content);
     const className = lang ? 'language-' + lang : 'language-none';
 
-    // Use Prism's built-in line numbers instead of manual DOM-heavy approach
     const pre = document.createElement('pre');
     pre.className = className + ' line-numbers';
     const code = document.createElement('code');
@@ -813,7 +936,7 @@
     audio.src = pathStr;
     audio.controls = true;
     audio.style.width = '100%';
-    audio.style.marginTop = '12px';
+    audio.style.marginTop = '8px';
     viewerBody.appendChild(audio);
   }
 
@@ -825,13 +948,14 @@
 
     const top = document.createElement('div');
     top.className = 'preview-label';
-    top.innerHTML = `<span>${escapeHtml(label)}</span><span class="badge-mini">Static preview</span>`;
+    top.innerHTML =
+      `<span>${escapeHtml(label)}</span><span class="badge-mini">Static preview</span>`;
     wrapper.appendChild(top);
 
     const obj = document.createElement('object');
     obj.className = 'viewer-object';
     obj.data = pathStr;
-    obj.type = type || '';
+    if (type) obj.type = type;
     wrapper.appendChild(obj);
 
     viewerBody.appendChild(wrapper);
@@ -843,14 +967,13 @@
       <div class="preview-wrapper">
         <div class="preview-label">
           <span>This file is treated as binary / non-text.</span>
-          <span class="badge-mini">No diff</span>
           <span class="badge-mini">No inline decode</span>
         </div>
         <div class="binary-hint">
-          Use "Raw" to attempt a direct static download or let the browser handle it.
+          Use "Download" to save it, or "Raw" to let the browser handle it directly.
         </div>
         <div class="binary-hint">
-          Path: ${escapeHtml(pathStr)}
+          ${escapeHtml(pathStr)}
         </div>
       </div>
     `;
@@ -859,8 +982,7 @@
   function highlightActiveTreeItem(pathStr) {
     const tree = document.getElementById('tree');
     tree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
-    const sel = `.tree-item[data-path="${cssEscape(pathStr)}"]`;
-    const item = tree.querySelector(sel);
+    const item = tree.querySelector(`.tree-item[data-path="${cssEscape(pathStr)}"]`);
     if (item) {
       item.classList.add('active');
       expandParents(item);
@@ -886,10 +1008,9 @@
   function getExt(name) {
     if (!name) return '';
     const base = name.toLowerCase();
-    // handle dotfiles like .env, .gitignore, etc.
-    if (base.startsWith('.') && !base.includes('.', 1)) {
-      const dotExt = base.slice(1);
-      if (dotExt) return dotExt;
+    // dotfiles like .env, .gitignore
+    if (base.startsWith('.') && !base.slice(1).includes('.')) {
+      return base.slice(1);
     }
     const idx = base.lastIndexOf('.');
     if (idx === -1) return '';
@@ -905,27 +1026,25 @@
 
   function isProbablyBinaryContentType(ct) {
     if (!ct) return false;
-    const lower = ct.toLowerCase();
-    if (lower.startsWith('text/')) return false;
-    if (lower.includes('json') || lower.includes('xml') || lower.includes('javascript')) return false;
-    if (lower.includes('pdf')) return true;
-    if (lower.includes('image/') || lower.includes('audio/') || lower.includes('video/')) return true;
+    if (ct.startsWith('text/')) return false;
+    if (ct.includes('json') || ct.includes('xml') || ct.includes('javascript')) return false;
+    if (ct.includes('image/') || ct.includes('audio/') || ct.includes('video/')) return true;
     return false;
   }
 
   function detectLanguage(ext, content) {
     if (ext && SYNTAX_MAP[ext]) return SYNTAX_MAP[ext];
+    const src = (content || '').slice(0, 4000);
 
-    // simple heuristics for files without useful extension
-    const trimmed = (content || '').slice(0, 4000);
-    if (/^#!.*\bpython[0-9.]*\b/m.test(trimmed)) return 'python';
-    if (/^#!.*\b(node|bash|sh|zsh)\b/m.test(trimmed)) return 'bash';
-    if (/^\s*<!DOCTYPE html>/i.test(trimmed) || /<html[\s>]/i.test(trimmed)) return 'markup';
-    if (/^\s*import\s+React\s+from\s+['"]react['"]/m.test(trimmed)) return 'jsx';
-    if (/^\s*(import|export)\s+.+from\s+['"].+['"]/m.test(trimmed) && trimmed.includes('=>')) return 'javascript';
-    if (/^{[\s\S]*}\s*$/.test(trimmed) && /"[\w-]+":/.test(trimmed)) return 'json';
-    if (/^---\n[\s\S]*?\n---\n/.test(trimmed)) return 'yaml';
-    if (/^SELECT\s+/im.test(trimmed)) return 'sql';
+    if (/^#!.*\bpython[0-9.]*\b/m.test(src)) return 'python';
+    if (/^#!.*\b(node|bash|sh|zsh)\b/m.test(src)) return 'bash';
+    if (/^\s*<!DOCTYPE html>/i.test(src) || /<html[\s>]/i.test(src)) return 'markup';
+    if (/^\s*import\s+React\s+from\s+['"]react['"]/m.test(src)) return 'jsx';
+    if (/^\s*(import|export)\s+.+from\s+['"].+['"]/m.test(src)) return 'javascript';
+    if (/^{[\s\S]*}\s*$/.test(src) && /"[\w-]+":/.test(src)) return 'json';
+    if (/^---\n[\s\S]*?\n---\n/.test(src)) return 'yaml';
+    if (/^SELECT\s+/im.test(src)) return 'sql';
+
     return 'none';
   }
 
@@ -934,15 +1053,15 @@
     if (VIDEO_EXTENSIONS.has(ext)) return 'Video preview';
     if (AUDIO_EXTENSIONS.has(ext)) return 'Audio preview';
     if (ext === 'pdf') return 'PDF (inline-capable)';
-    if (isBinary) return 'Binary / archive / font (no inline view)';
+    if (isBinary) return 'Binary / archive / font';
     if (node.previewable) return 'Inline text preview (indexed)';
-    if (isTextish) return 'Text-like file (raw fetch on demand)';
+    if (isTextish) return 'Text-like file (raw fetch)';
     return 'Unknown type';
   }
 
   function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
-    if (!bytes || isNaN(bytes)) return 'unknown size';
+    if (!bytes || isNaN(bytes)) return 'unknown';
     const units = ['B','KB','MB','GB','TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     const val = bytes / Math.pow(1024, i);
@@ -951,13 +1070,19 @@
 
   function escapeHtml(str) {
     return (str || '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
     }[c]));
   }
 
   function cssEscape(str) {
     return (str || '').replace(/"/g, '\\"');
   }
+
+  // Toolbar actions
 
   document.getElementById('btn-back').addEventListener('click', () => {
     if (historyIndex > 0) {
@@ -979,8 +1104,8 @@
       document.getElementById('viewer-title').textContent = parentPath + '/';
       document.getElementById('viewer-body').innerHTML = `
         <div class="placeholder">
-          <div class="title">Directory selected: ${escapeHtml(parentPath)}/</div>
-          <div class="subtitle">Choose a file inside this folder from the tree to preview its contents.</div>
+          <div>Directory selected: ${escapeHtml(parentPath)}/</div>
+          <div>Select a file in this folder from the tree to preview.</div>
         </div>
       `;
     }
@@ -1014,6 +1139,17 @@
     }
   });
 
+  document.getElementById('btn-download').addEventListener('click', () => {
+    if (!currentFilePath) return;
+    const a = document.createElement('a');
+    a.href = currentFilePath;
+    a.download = currentFilePath.split('/').pop() || 'download';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    flashStatus('Download started');
+  });
+
   document.getElementById('btn-toggle-raw').addEventListener('click', () => {
     rawMode = !rawMode;
     const btn = document.getElementById('btn-toggle-raw');
@@ -1022,7 +1158,7 @@
       flashStatus('Raw mode: ON (direct static fetch)');
     } else {
       btn.classList.remove('primary');
-      flashStatus('Raw mode: OFF (use inlined index)');
+      flashStatus('Raw mode: OFF (prefer indexed content)');
     }
     if (currentFilePath) openFile(currentFilePath, false);
   });
@@ -1033,7 +1169,8 @@
     statusLabel.textContent = msg;
     statusLabel.style.color = '#bfdbfe';
     setTimeout(() => {
-      statusLabel.textContent = old.includes('Index loaded') ? 'Index loaded. Ready.' : old;
+      statusLabel.textContent =
+        old.includes('Index loaded') ? 'Index loaded. Ready.' : old;
       statusLabel.style.color = '';
     }, 1500);
   }

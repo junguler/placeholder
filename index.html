@@ -384,14 +384,11 @@
       padding: 6px;
       position: relative;
       background-color: #050608;
-
-      /* Force word-wrap globally in preview */
       word-wrap: break-word;
       overflow-wrap: break-word;
       white-space: pre-wrap;
     }
 
-    /* Ensure Prism code blocks also wrap */
     .viewer-body pre[class*="language-"] {
       white-space: pre-wrap !important;
       word-wrap: break-word;
@@ -404,9 +401,7 @@
       overflow-wrap: break-word;
     }
 
-    pre {
-      margin: 0;
-    }
+    pre { margin: 0; }
 
     .placeholder {
       height: 100%;
@@ -625,6 +620,9 @@
   let historyIndex = -1;
   let rawMode = false;
 
+  // Simple token to avoid race conditions when switching files quickly
+  let currentLoadToken = 0;
+
   async function loadIndex() {
     const statusLabel = document.getElementById('status-label');
     try {
@@ -744,13 +742,16 @@
     return current;
   }
 
-  function openFile(pathStr, pushHistory = true) {
+  async function openFile(pathStr, pushHistory = true) {
     if (!pathStr) return;
     const node = findNodeByPath(pathStr);
     if (!node || node.type !== 'file') return;
 
     const filePath = node.path || pathStr;
     currentFilePath = filePath;
+
+    // Invalidate previous loads
+    const loadToken = ++currentLoadToken;
 
     if (pushHistory) {
       historyStack = historyStack.slice(0, historyIndex + 1);
@@ -774,58 +775,99 @@
 
     const viewerBody = document.getElementById('viewer-body');
 
-    if (IMAGE_EXTENSIONS.has(ext)) { renderImage(filePath); return; }
-    if (VIDEO_EXTENSIONS.has(ext)) { renderVideo(filePath); return; }
-    if (AUDIO_EXTENSIONS.has(ext)) { renderAudio(filePath); return; }
+    // Show loading state immediately for this file
+    viewerBody.innerHTML = '<div class="not-previewable">Loading file…</div>';
 
+    // Media previews
+    if (IMAGE_EXTENSIONS.has(ext)) {
+      if (!(await renderImageAsync(filePath, loadToken))) return;
+      return;
+    }
+    if (VIDEO_EXTENSIONS.has(ext)) {
+      if (!(await renderVideoAsync(filePath, loadToken))) return;
+      return;
+    }
+    if (AUDIO_EXTENSIONS.has(ext)) {
+      if (!(await renderAudioAsync(filePath, loadToken))) return;
+      return;
+    }
+
+    // Binary like executables / archives / fonts
     if (isBinary) {
+      if (!isTokenCurrent(loadToken)) return;
       renderBinaryMessage(filePath);
       return;
     }
 
+    // PDF inline
     if (ext === 'pdf') {
+      if (!isTokenCurrent(loadToken)) return;
       renderEmbed(filePath, 'application/pdf', 'PDF preview (browser native)');
       return;
     }
 
-    if (rawMode) {
-      loadRawFile(filePath, ext);
-      return;
-    }
-
-    if (node.previewable && typeof node.content === 'string') {
-      renderText(node.content, ext);
-    } else {
-      loadRawFile(filePath, ext);
+    // Text-like files: prefer indexed content, otherwise raw fetch; no size limit.
+    try {
+      if (node.previewable && typeof node.content === 'string' && !rawMode) {
+        if (!isTokenCurrent(loadToken)) return;
+        renderText(node.content, ext);
+      } else {
+        await loadRawFile(filePath, ext, loadToken);
+      }
+    } catch (err) {
+      if (!isTokenCurrent(loadToken)) return;
+      console.error(err);
+      viewerBody.innerHTML =
+        '<div class="error">Failed to fully load file: ' +
+        escapeHtml(filePath) +
+        '.</div>';
     }
   }
 
-  function loadRawFile(pathStr, ext) {
+  function isTokenCurrent(token) {
+    return token === currentLoadToken;
+  }
+
+  async function loadRawFile(pathStr, ext, loadToken) {
     const viewerBody = document.getElementById('viewer-body');
     viewerBody.innerHTML = '<div class="not-previewable">Loading raw file…</div>';
-    fetch(pathStr, { cache: 'no-store' })
-      .then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const ct = (res.headers.get('content-type') || '').toLowerCase();
-        if (isProbablyBinaryContentType(ct) &&
-            !ct.includes('pdf') &&
-            !ct.includes('json') &&
-            !ct.startsWith('text/')) {
-          throw new Error('Binary content, not rendering as text.');
-        }
-        return res.text();
-      })
-      .then(text => {
-        if (!ext) ext = getExt(pathStr);
-        renderText(text, ext);
-      })
-      .catch(err => {
-        console.error(err);
-        viewerBody.innerHTML =
-          '<div class="error">Failed to load raw file from path: ' +
-          escapeHtml(pathStr) +
-          '.</div>';
-      });
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    try {
+      const res = await fetch(pathStr, { cache: 'no-store', signal });
+
+      if (!isTokenCurrent(loadToken)) {
+        controller.abort();
+        return;
+      }
+
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+
+      if (isProbablyBinaryContentType(ct) &&
+          !ct.includes('pdf') &&
+          !ct.includes('json') &&
+          !ct.startsWith('text/')) {
+        throw new Error('Binary content, not rendering as text.');
+      }
+
+      const text = await res.text();
+
+      if (!isTokenCurrent(loadToken)) return;
+
+      if (!ext) ext = getExt(pathStr);
+      renderText(text, ext);
+    } catch (err) {
+      if (!isTokenCurrent(loadToken)) return;
+      console.error(err);
+      viewerBody.innerHTML =
+        '<div class="error">Failed to load raw file: ' +
+        escapeHtml(pathStr) +
+        '.</div>';
+    }
   }
 
   function renderText(content, ext) {
@@ -848,42 +890,108 @@
     }
   }
 
-  function renderImage(pathStr) {
-    const viewerBody = document.getElementById('viewer-body');
-    viewerBody.innerHTML = '';
-    const img = document.createElement('img');
-    img.src = pathStr;
-    img.alt = pathStr;
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '100%';
-    img.style.display = 'block';
-    img.style.margin = '0 auto';
-    viewerBody.appendChild(img);
+  function renderImageAsync(pathStr, loadToken) {
+    return new Promise((resolve) => {
+      const viewerBody = document.getElementById('viewer-body');
+      const img = new Image();
+      img.src = pathStr;
+      img.alt = pathStr;
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '100%';
+      img.style.display = 'block';
+      img.style.margin = '0 auto';
+
+      img.onload = () => {
+        if (!isTokenCurrent(loadToken)) return resolve(false);
+        viewerBody.innerHTML = '';
+        viewerBody.appendChild(img);
+        resolve(true);
+      };
+      img.onerror = () => {
+        if (!isTokenCurrent(loadToken)) return resolve(false);
+        viewerBody.innerHTML =
+          '<div class="error">Failed to load image: ' +
+          escapeHtml(pathStr) +
+          '.</div>';
+        resolve(false);
+      };
+    });
   }
 
-  function renderVideo(pathStr) {
-    const viewerBody = document.getElementById('viewer-body');
-    viewerBody.innerHTML = '';
-    const video = document.createElement('video');
-    video.src = pathStr;
-    video.controls = true;
-    video.style.maxWidth = '100%';
-    video.style.maxHeight = '100%';
-    video.style.display = 'block';
-    video.style.margin = '0 auto';
-    video.style.backgroundColor = '#000';
-    viewerBody.appendChild(video);
+  function renderVideoAsync(pathStr, loadToken) {
+    return new Promise((resolve) => {
+      const viewerBody = document.getElementById('viewer-body');
+      const video = document.createElement('video');
+      video.src = pathStr;
+      video.controls = true;
+      video.preload = 'auto';
+      video.style.maxWidth = '100%';
+      video.style.maxHeight = '100%';
+      video.style.display = 'block';
+      video.style.margin = '0 auto';
+      video.style.backgroundColor = '#000';
+
+      let settled = false;
+
+      const finalize = (ok) => {
+        if (settled) return;
+        settled = true;
+        if (!isTokenCurrent(loadToken)) return resolve(false);
+        if (ok) {
+          viewerBody.innerHTML = '';
+          viewerBody.appendChild(video);
+          resolve(true);
+        } else {
+          viewerBody.innerHTML =
+            '<div class="error">Failed to load video: ' +
+            escapeHtml(pathStr) +
+            '.</div>';
+          resolve(false);
+        }
+      };
+
+      video.addEventListener('loadeddata', () => finalize(true), { once: true });
+      video.addEventListener('error', () => finalize(false), { once: true });
+
+      // Fallback: if neither fires in a while, keep current content (loading state)
+      setTimeout(() => finalize(true), 4000);
+    });
   }
 
-  function renderAudio(pathStr) {
-    const viewerBody = document.getElementById('viewer-body');
-    viewerBody.innerHTML = '';
-    const audio = document.createElement('audio');
-    audio.src = pathStr;
-    audio.controls = true;
-    audio.style.width = '100%';
-    audio.style.marginTop = '8px';
-    viewerBody.appendChild(audio);
+  function renderAudioAsync(pathStr, loadToken) {
+    return new Promise((resolve) => {
+      const viewerBody = document.getElementById('viewer-body');
+      const audio = document.createElement('audio');
+      audio.src = pathStr;
+      audio.controls = true;
+      audio.preload = 'auto';
+      audio.style.width = '100%';
+      audio.style.marginTop = '8px';
+
+      let settled = false;
+
+      const finalize = (ok) => {
+        if (settled) return;
+        settled = true;
+        if (!isTokenCurrent(loadToken)) return resolve(false);
+        if (ok) {
+          viewerBody.innerHTML = '';
+          viewerBody.appendChild(audio);
+          resolve(true);
+        } else {
+          viewerBody.innerHTML =
+            '<div class="error">Failed to load audio: ' +
+            escapeHtml(pathStr) +
+            '.</div>';
+          resolve(false);
+        }
+      };
+
+      audio.addEventListener('loadeddata', () => finalize(true), { once: true });
+      audio.addEventListener('error', () => finalize(false), { once: true });
+
+      setTimeout(() => finalize(true), 4000);
+    });
   }
 
   function renderEmbed(pathStr, type, label) {
@@ -902,8 +1010,19 @@
     obj.className = 'viewer-object';
     obj.data = pathStr;
     if (type) obj.type = type;
-    wrapper.appendChild(obj);
 
+    // Ensure we wait until the PDF/object is at least attempted
+    obj.onload = () => {
+      // nothing extra; we just ensure DOM is updated after load
+    };
+    obj.onerror = () => {
+      viewerBody.innerHTML =
+        '<div class="error">Failed to load embedded document: ' +
+        escapeHtml(pathStr) +
+        '.</div>';
+    };
+
+    wrapper.appendChild(obj);
     viewerBody.appendChild(wrapper);
   }
 

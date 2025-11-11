@@ -7,365 +7,184 @@
   <style>
     :root {
       --bg: #111827;
-      --bg-soft: #111827;
-      --bg-alt: #020817;
-      --border: #111827;
       --accent: #3b82f6;
-      --accent-soft: rgba(59,130,246,0.14);
-      --accent-hover: #60a5fa;
       --text: #e5e7eb;
       --muted: #9ca3af;
       --danger: #f97316;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --font-sans: system-ui, -apple-system, BlinkMacSystemFont, -system-ui, sans-serif;
-      --radius: 8px;
       --shadow-soft: 0 10px 40px rgba(15,23,42,0.55);
       --transition-fast: 0.16s ease-out;
-      --transition-med: 0.22s cubic-bezier(.2,.7,.4,1);
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%; width: 100%;
       overflow: hidden;
       font-family: var(--font-sans);
       background: radial-gradient(circle at top, #111827 0, #020817 52%, #000 100%);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
     }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
+    body { display: flex; flex-direction: column; }
     .app {
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       height: 100vh;
-      padding: 14px 14px 16px;
+      padding: 14px;
       gap: 10px;
     }
-
     .app-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px 8px;
-      background: radial-gradient(circle at top left, rgba(59,130,246,0.24), transparent 70%) , rgba(2,6,23,0.96);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px;
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.24), transparent 70%), rgba(2,6,23,0.96);
       border-radius: 14px;
       border: 1px solid rgba(148,163,253,0.18);
       box-shadow: 0 14px 45px rgba(15,23,42,0.75);
       backdrop-filter: blur(18px);
     }
-
-    .app-title {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
+    .app-title { display: flex; align-items: baseline; gap: 10px; }
+    .logo-dot {
+      width: 8px; height: 8px; border-radius: 999px;
+      background: var(--accent); box-shadow: 0 0 12px var(--accent);
     }
-
-    .app-title span.logo-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 12px var(--accent);
-    }
-
     .app-title h1 {
-      font-size: 16px;
-      font-weight: 500;
-      margin: 0;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      margin: 0; font-weight: 500;
+      font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase;
       color: #9ca3af;
     }
-
     .app-title strong {
-      font-size: 16px;
-      font-weight: 500;
-      color: #e5e7eb;
-      text-transform: none;
-      letter-spacing: 0.01em;
+      font-size: 16px; font-weight: 500;
+      color: #e5e7eb; letter-spacing: 0.01em; text-transform: none;
     }
-
     .app-meta {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      font-size: 11px;
-      color: var(--muted);
+      display: flex; gap: 12px; align-items: center;
+      font-size: 11px; color: var(--muted);
     }
-
     .pill {
-      padding: 3px 9px;
-      border-radius: 999px;
+      padding: 3px 9px; border-radius: 999px;
       border: 1px solid rgba(148,163,253,0.35);
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+      display: inline-flex; align-items: center; gap: 5px;
       background-color: rgba(12,18,32,0.96);
       backdrop-filter: blur(15px);
       box-shadow: 0 6px 18px rgba(15,23,42,0.6);
     }
-
-    .pill span.dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 8px #22c55e;
+    .pill .dot {
+      width: 6px; height: 6px; border-radius: 999px;
+      background: #22c55e; box-shadow: 0 0 8px #22c55e;
     }
-
-    .pill span.dot-orange {
-      background: var(--danger);
-      box-shadow: 0 0 8px var(--danger);
+    .pill .dot-orange {
+      background: var(--danger); box-shadow: 0 0 8px var(--danger);
     }
-
     .layout {
-      flex: 1;
-      display: grid;
+      flex: 1; display: grid;
       grid-template-columns: 260px 1fr;
-      gap: 10px;
-      min-height: 0;
+      gap: 10px; min-height: 0;
     }
-
     .sidebar {
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       background: radial-gradient(circle at top, rgba(15,23,42,0.9), rgba(2,6,23,0.98));
       border-radius: 14px;
       border: 1px solid rgba(75,85,99,0.65);
       box-shadow: var(--shadow-soft);
-      padding: 8px 8px 8px;
-      min-width: 0;
-      min-height: 0;
+      padding: 8px; min-width: 0; min-height: 0;
     }
-
     .sidebar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 2px 4px 6px;
-      color: var(--muted);
-      font-size: 11px;
-      gap: 6px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 2px 4px 6px; color: var(--muted); font-size: 11px; gap: 6px;
     }
-
-    .sidebar-actions {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-
+    .sidebar-actions { display: flex; gap: 4px; align-items: center; }
     .chip {
-      padding: 2px 7px;
-      border-radius: 999px;
+      padding: 2px 7px; border-radius: 999px;
       border: 1px solid rgba(75,85,99,0.9);
-      font-size: 10px;
-      color: var(--muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+      font-size: 10px; color: var(--muted);
+      display: inline-flex; align-items: center; gap: 4px;
       background-color: rgba(2,6,23,0.96);
     }
-
     .tree {
-      flex: 1;
-      overflow: auto;
-      padding: 4px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      line-height: 1.6;
+      flex: 1; overflow: auto; padding: 4px;
+      font-family: var(--font-mono); font-size: 11px; line-height: 1.6;
       color: #9ca3af;
     }
-
     .tree ul {
-      list-style: none;
-      margin: 0;
-      padding-left: 14px;
-      border-left: 1px solid rgba(55,65,81,0.55);
+      list-style: none; margin: 0;
+      padding-left: 14px; border-left: 1px solid rgba(55,65,81,0.55);
     }
-
-    .tree-root {
-      padding-left: 2px;
-      border-left: none;
-    }
-
+    .tree-root { padding-left: 2px; border-left: none; }
     .tree-item {
-      position: relative;
-      padding: 1px 3px 1px 0;
+      position: relative; padding: 1px 3px 1px 0;
       border-radius: 4px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      cursor: default;
-      user-select: none;
+      display: flex; align-items: center; gap: 4px;
+      cursor: default; user-select: none;
       transition: background-color var(--transition-fast), color var(--transition-fast), transform 0.06s ease-out;
     }
-
-    .tree-item span.icon {
-      width: 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #6b7280;
-      flex-shrink: 0;
-      font-size: 10px;
+    .tree-item .icon {
+      width: 14px; display: inline-flex; align-items: center; justify-content: center;
+      color: #6b7280; flex-shrink: 0; font-size: 10px;
     }
-
-    .tree-item span.name {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .tree-item .name {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
-    .tree-item.directory > span.name {
-      color: #9ca3af;
-      font-weight: 500;
-    }
-
-    .tree-item.file {
-      color: #6b7280;
-    }
-
-    .tree-item.file.previewable {
-      color: #9ca3af;
-    }
-
+    .tree-item.directory .name { color: #9ca3af; font-weight: 500; }
+    .tree-item.file { color: #6b7280; }
+    .tree-item.file.previewable { color: #9ca3af; }
     .tree-item:hover {
       background-color: rgba(31,41,55,0.9);
-      color: #e5e7eb;
-      transform: translateX(1px);
+      color: #e5e7eb; transform: translateX(1px);
     }
-
     .tree-item.active {
       background: linear-gradient(to right, rgba(59,130,246,0.24), rgba(15,23,42,0.98));
       color: #eff6ff;
       box-shadow: 0 3px 12px rgba(15,23,42,0.85);
     }
-
     .tree-item.active .icon,
-    .tree-item:hover .icon {
-      color: var(--accent);
-    }
-
+    .tree-item:hover .icon { color: var(--accent); }
     .tree-item .arrow {
-      width: 11px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      width: 11px; display: inline-flex; align-items: center; justify-content: center;
       color: #4b5563;
       transition: transform var(--transition-fast), color var(--transition-fast);
-      flex-shrink: 0;
-      font-size: 9px;
+      flex-shrink: 0; font-size: 9px;
     }
-
-    .tree-item.collapsed .arrow {
-      transform: rotate(-90deg);
-    }
-
-    .tree-item.expanded .arrow {
-      transform: rotate(0deg);
-    }
-
-    .tree-item.leaf .arrow {
-      visibility: hidden;
-    }
-
-    .tree-children {
-      margin: 0;
-      padding: 0 0 0 16px;
-    }
-
-    .tree-children.collapsed {
-      display: none;
-    }
-
+    .tree-item.collapsed .arrow { transform: rotate(-90deg); }
+    .tree-item.expanded .arrow { transform: rotate(0deg); }
+    .tree-item.leaf .arrow { visibility: hidden; }
+    .tree-children { margin: 0; padding: 0 0 0 16px; }
+    .tree-children.collapsed { display: none; }
     .main {
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       background: radial-gradient(circle at top right, rgba(15,23,42,0.92), rgba(2,6,23,0.99));
       border-radius: 14px;
       border: 1px solid rgba(75,85,99,0.7);
       box-shadow: var(--shadow-soft);
-      padding: 8px 8px 8px;
-      min-width: 0;
-      min-height: 0;
-      gap: 6px;
+      padding: 8px; min-width: 0; min-height: 0; gap: 6px;
     }
-
     .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--font-mono); font-size: 10px; color: #9ca3af;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
     .breadcrumb .label {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 999px;
+      font-size: 9px; padding: 2px 6px; border-radius: 999px;
       border: 1px solid rgba(75,85,99,0.9);
-      color: #9ca3af;
-      background-color: rgba(2,6,23,0.96);
+      color: #9ca3af; background-color: rgba(2,6,23,0.96);
     }
-
-    .breadcrumb-path {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
+    .breadcrumb-path { overflow: hidden; text-overflow: ellipsis; }
     .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      font-size: 10px;
-      color: var(--muted);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 6px; font-size: 10px; color: var(--muted);
     }
-
-    .toolbar-left,
-    .toolbar-right {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-wrap: wrap;
+    .toolbar-left, .toolbar-right {
+      display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
     }
-
     .btn {
       border: 1px solid rgba(75,85,99,0.85);
       background: rgba(2,6,23,0.98);
-      padding: 2px 7px;
-      border-radius: 7px;
-      font-size: 9px;
-      color: var(--muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      transition: all var(--transition-fast);
+      padding: 2px 7px; border-radius: 7px;
+      font-size: 9px; color: var(--muted);
+      display: inline-flex; align-items: center; gap: 4px;
+      cursor: pointer; transition: all var(--transition-fast);
       backdrop-filter: blur(10px);
     }
-
-    .btn span.icon {
-      font-size: 9px;
-      color: #6b7280;
-    }
-
+    .btn .icon { font-size: 9px; color: #6b7280; }
     .btn:hover {
       color: #e5e7eb;
       border-color: var(--accent);
@@ -373,248 +192,103 @@
       box-shadow: 0 4px 14px rgba(15,23,42,0.95);
       transform: translateY(-0.5px);
     }
-
     .btn.primary {
       border-color: var(--accent);
       color: #bfdbfe;
       background: radial-gradient(circle at top, rgba(37,99,235,0.22), rgba(2,6,23,1));
     }
-
-    .btn.primary:hover {
-      background: radial-gradient(circle at top, rgba(37,99,235,0.32), rgba(2,6,23,1));
-      color: #eff6ff;
-      box-shadow: 0 5px 18px rgba(37,99,235,0.5);
-    }
-
     .file-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 9px;
-      color: var(--muted);
-      opacity: 0.9;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 9px; color: var(--muted); opacity: 0.9;
     }
-
-    .file-meta span {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .file-meta span.dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 999px;
+    .file-meta .dot {
+      width: 4px; height: 4px; border-radius: 999px;
       background-color: rgba(75,85,99,1);
     }
-
     .viewer {
-      flex: 1;
-      position: relative;
+      flex: 1; position: relative;
       border-radius: 10px;
       background-color: #020817;
       border: 1px solid rgba(31,41,55,1);
       box-shadow: 0 10px 36px rgba(15,23,42,0.88);
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       min-height: 0;
     }
-
     .viewer-header {
       padding: 4px 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      font-size: 9px;
-      color: var(--muted);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 6px; font-size: 9px; color: var(--muted);
       background:
         radial-gradient(circle at top left, rgba(37,99,235,0.15), transparent 75%),
         radial-gradient(circle at top right, rgba(56,189,248,0.07), transparent 80%),
         rgba(2,6,23,0.98);
       border-bottom: 1px solid rgba(31,41,55,1);
     }
-
-    .viewer-header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .viewer-header-dots {
-      display: flex;
-      gap: 3px;
-    }
-
+    .viewer-header-dots { display: flex; gap: 3px; }
     .viewer-header-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
+      width: 6px; height: 6px; border-radius: 999px;
       background-color: rgba(75,85,99,1);
     }
-
-    .viewer-header-dot.red {
-      background-color: #f87171;
-    }
-
-    .viewer-header-dot.yellow {
-      background-color: #facc15;
-    }
-
-    .viewer-header-dot.green {
-      background-color: #22c55e;
-    }
-
+    .viewer-header-dot.red { background-color: #f87171; }
+    .viewer-header-dot.yellow { background-color: #facc15; }
+    .viewer-header-dot.green { background-color: #22c55e; }
     .viewer-header-title {
       font-family: var(--font-mono);
-      font-size: 9px;
-      color: #9ca3af;
-      opacity: 0.9;
+      font-size: 9px; color: #9ca3af; opacity: 0.9;
     }
-
-    .viewer-header-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
     .badge {
-      padding: 2px 5px;
-      border-radius: 6px;
+      padding: 2px 5px; border-radius: 6px;
       border: 1px solid rgba(75,85,99,0.9);
-      font-size: 8px;
-      color: #9ca3af;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+      font-size: 8px; color: #9ca3af;
+      display: inline-flex; align-items: center; gap: 4px;
       background-color: rgba(2,6,23,0.98);
     }
-
     .badge.accent {
       border-color: rgba(59,130,246,0.9);
-      color: #bfdbfe;
-      background-color: rgba(15,23,42,0.98);
+      color: #bfdbfe; background-color: rgba(15,23,42,0.98);
     }
-
     .viewer-body {
-      flex: 1;
-      overflow: auto;
+      flex: 1; overflow: auto;
       font-family: var(--font-mono);
-      font-size: 11px;
-      line-height: 1.5;
-      color: #e5e7eb;
-      padding: 8px;
-      position: relative;
+      font-size: 11px; line-height: 1.5;
+      color: #e5e7eb; padding: 8px; position: relative;
     }
-
-    pre {
-      margin: 0;
-      white-space: pre;
-      overflow: visible;
-      color: #e5e7eb;
-    }
-
-    code {
-      font-family: var(--font-mono);
-    }
-
+    pre { margin: 0; white-space: pre; color: #e5e7eb; }
     .placeholder {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      color: #6b7280;
-      text-align: center;
+      height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px; color: #6b7280; text-align: center;
       pointer-events: none;
     }
-
-    .placeholder .title {
-      font-size: 11px;
-      color: #9ca3af;
-    }
-
-    .placeholder .subtitle {
-      font-size: 9px;
-    }
-
     .status {
-      font-size: 9px;
-      color: var(--muted);
+      font-size: 9px; color: var(--muted);
       padding: 3px 8px 0;
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
-      opacity: 0.85;
+      display: flex; justify-content: flex-end;
+      gap: 6px; opacity: 0.85;
     }
-
-    .status span {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+    .status .dot {
+      width: 4px; height: 4px; border-radius: 999px;
+      background-color: var(--accent); box-shadow: 0 0 6px var(--accent);
     }
-
-    .status span.dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 999px;
-      background-color: var(--accent);
-      box-shadow: 0 0 6px var(--accent);
-    }
-
-    .line-numbers {
-      counter-reset: line;
-    }
-
-    .line {
-      display: flex;
-      align-items: flex-start;
-    }
-
+    .line-numbers { counter-reset: line; }
+    .line { display: flex; align-items: flex-start; }
     .line-number {
       counter-increment: line;
-      width: 32px;
-      padding-right: 6px;
-      text-align: right;
-      color: #4b5563;
-      user-select: none;
-      flex-shrink: 0;
+      width: 32px; padding-right: 6px;
+      text-align: right; color: #4b5563;
+      user-select: none; flex-shrink: 0;
     }
-
-    .line-number::before {
-      content: counter(line);
-    }
-
-    .line-content {
-      white-space: pre;
-      flex: 1;
-    }
-
-    .not-previewable {
-      font-size: 10px;
-      color: #9ca3af;
-    }
-
-    .error {
-      font-size: 10px;
-      color: #f97316;
-    }
-
+    .line-number::before { content: counter(line); }
+    .line-content { white-space: pre; flex: 1; }
+    .not-previewable { font-size: 10px; color: #9ca3af; }
+    .error { font-size: 10px; color: #f97316; }
     @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: 210px 1fr;
-      }
+      .layout { grid-template-columns: 210px 1fr; }
     }
-
     @media (max-width: 720px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-      .sidebar {
-        max-height: 40%;
-      }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { max-height: 40%; }
     }
   </style>
 </head>
@@ -623,20 +297,11 @@
   <div class="app-header">
     <div class="app-title">
       <span class="logo-dot"></span>
-      <h1>
-        <span>STATIC REPO</span>
-        <strong>File Explorer</strong>
-      </h1>
+      <h1><span>STATIC REPO</span> <strong>File Explorer</strong></h1>
     </div>
     <div class="app-meta">
-      <div class="pill">
-        <span class="dot"></span>
-        <span>Auto-synced on push</span>
-      </div>
-      <div class="pill">
-        <span class="dot-orange"></span>
-        <span>Read-only • No API calls</span>
-      </div>
+      <div class="pill"><span class="dot"></span><span>Auto-synced on push</span></div>
+      <div class="pill"><span class="dot-orange"></span><span>Read-only • No API calls</span></div>
     </div>
   </div>
 
@@ -645,10 +310,7 @@
       <div class="sidebar-header">
         <span>Repository tree</span>
         <div class="sidebar-actions">
-          <div class="chip">
-            <span>⮞</span>
-            <span>Folders collapsed</span>
-          </div>
+          <div class="chip"><span>⮞</span><span>Folders collapsed</span></div>
         </div>
       </div>
       <div id="tree" class="tree"></div>
@@ -662,32 +324,14 @@
 
       <div class="toolbar">
         <div class="toolbar-left">
-          <button class="btn" id="btn-back">
-            <span class="icon">↶</span>
-            <span>Back</span>
-          </button>
-          <button class="btn" id="btn-up">
-            <span class="icon">⇡</span>
-            <span>Up</span>
-          </button>
-          <button class="btn" id="btn-collapse-all">
-            <span class="icon">⊟</span>
-            <span>Collapse all</span>
-          </button>
-          <button class="btn" id="btn-expand-root">
-            <span class="icon">⊞</span>
-            <span>Expand root</span>
-          </button>
+          <button class="btn" id="btn-back"><span class="icon">↶</span><span>Back</span></button>
+          <button class="btn" id="btn-up"><span class="icon">⇡</span><span>Up</span></button>
+          <button class="btn" id="btn-collapse-all"><span class="icon">⊟</span><span>Collapse all</span></button>
+          <button class="btn" id="btn-expand-root"><span class="icon">⊞</span><span>Expand root</span></button>
         </div>
         <div class="toolbar-right">
-          <button class="btn" id="btn-copy-path">
-            <span class="icon">⧉</span>
-            <span>Copy path</span>
-          </button>
-          <button class="btn" id="btn-toggle-raw">
-            <span class="icon">≋</span>
-            <span>Raw</span>
-          </button>
+          <button class="btn" id="btn-copy-path"><span class="icon">⧉</span><span>Copy path</span></button>
+          <button class="btn" id="btn-toggle-raw"><span class="icon">≋</span><span>Raw</span></button>
         </div>
       </div>
 
@@ -703,53 +347,35 @@
               <div class="viewer-header-dot yellow"></div>
               <div class="viewer-header-dot green"></div>
             </div>
-            <div class="viewer-header-title" id="viewer-title">
-              No file opened
-            </div>
+            <div class="viewer-header-title" id="viewer-title">No file opened</div>
           </div>
           <div class="viewer-header-right">
-            <div class="badge">
-              <span>RO</span>
-              <span>Read-only</span>
-            </div>
-            <div class="badge accent">
-              <span>Indexed</span>
-              <span>Offline tree</span>
-            </div>
+            <div class="badge"><span>RO</span><span>Read-only</span></div>
+            <div class="badge accent"><span>Indexed</span><span>Offline tree</span></div>
           </div>
         </div>
         <div class="viewer-body" id="viewer-body">
           <div class="placeholder">
             <div class="title">Browse your repository like a local file manager.</div>
             <div class="subtitle">
-              Directory tree is generated on each push by GitHub Actions.
-              No runtime GitHub API calls. No write access. Just static files.
+              Tree is generated on each push by GitHub Actions.
+              No runtime GitHub API calls. Pure static, read-only view.
             </div>
           </div>
         </div>
       </div>
 
       <div class="status">
-        <span>
-          <span class="dot"></span>
-          <span id="status-label">Awaiting index.json …</span>
-        </span>
+        <span><span class="dot"></span><span id="status-label">Awaiting index.json …</span></span>
       </div>
     </main>
   </div>
 </div>
 
 <script>
-  // Media extensions for native preview
-  const IMAGE_EXTENSIONS = new Set([
-    'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'
-  ]);
-  const VIDEO_EXTENSIONS = new Set([
-    'mp4', 'webm', 'ogg', 'mov'
-  ]);
-  const AUDIO_EXTENSIONS = new Set([
-    'mp3', 'wav', 'ogg', 'flac'
-  ]);
+  const IMAGE_EXTENSIONS = new Set(['png','jpg','jpeg','gif','bmp','webp','svg','ico']);
+  const VIDEO_EXTENSIONS = new Set(['mp4','webm','ogg','mov']);
+  const AUDIO_EXTENSIONS = new Set(['mp3','wav','ogg','flac']);
 
   let indexData = null;
   let currentFilePath = null;
@@ -762,17 +388,15 @@
     try {
       statusLabel.textContent = 'Loading index.json …';
       const res = await fetch('index.json', { cache: 'no-store' });
-      if (!res.ok) {
-        throw new Error('HTTP ' + res.status);
-      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       indexData = await res.json();
       statusLabel.textContent = 'Index loaded. Ready.';
       renderTree();
     } catch (err) {
       console.error(err);
       statusLabel.textContent = 'Failed to load index.json';
-      const viewerBody = document.getElementById('viewer-body');
-      viewerBody.innerHTML = '<div class="error">Unable to load index.json. Ensure GitHub Actions generated dist/index.json correctly.</div>';
+      document.getElementById('viewer-body').innerHTML =
+        '<div class="error">Unable to load index.json. Ensure GitHub Actions generated dist/index.json correctly.</div>';
     }
   }
 
@@ -783,20 +407,14 @@
       treeEl.textContent = 'No index data.';
       return;
     }
-
     const rootUl = document.createElement('ul');
     rootUl.className = 'tree-root';
-
-    indexData.children.forEach(child => {
-      rootUl.appendChild(createTreeNode(child));
-    });
-
+    indexData.children.forEach(child => rootUl.appendChild(createTreeNode(child)));
     treeEl.appendChild(rootUl);
   }
 
   function createTreeNode(node) {
     const li = document.createElement('li');
-
     const item = document.createElement('div');
     item.classList.add('tree-item');
     item.dataset.path = node.path || '';
@@ -827,46 +445,35 @@
       childrenContainer = document.createElement('ul');
       childrenContainer.className = 'tree-children collapsed';
 
-      if (node.children && node.children.length) {
-        node.children.forEach(child => {
-          childrenContainer.appendChild(createTreeNode(child));
-        });
-      }
-    } else {
-      item.classList.add('file', node.previewable ? 'previewable' : 'not-previewable');
-      icon.textContent = '▤';
-      item.classList.add('leaf');
-      arrow.style.visibility = 'hidden';
-
-      item.addEventListener('click', () => {
-        openFile(node.path);
+      (node.children || []).forEach(child => {
+        childrenContainer.appendChild(createTreeNode(child));
       });
+    } else {
+      item.classList.add('file', node.previewable ? 'previewable' : 'not-previewable', 'leaf');
+      icon.textContent = '▤';
+      arrow.style.visibility = 'hidden';
+      item.addEventListener('click', () => openFile(node.path));
     }
 
     item.appendChild(arrow);
     item.appendChild(icon);
     item.appendChild(name);
-
     li.appendChild(item);
-    if (childrenContainer) {
-      li.appendChild(childrenContainer);
-    }
-
+    if (childrenContainer) li.appendChild(childrenContainer);
     return li;
   }
 
   function toggleDirectory(item) {
     const li = item.parentElement;
-    const childrenContainer = li.querySelector('.tree-children');
-    if (!childrenContainer) return;
-
-    const collapsed = childrenContainer.classList.contains('collapsed');
+    const children = li.querySelector('.tree-children');
+    if (!children) return;
+    const collapsed = children.classList.contains('collapsed');
     if (collapsed) {
-      childrenContainer.classList.remove('collapsed');
+      children.classList.remove('collapsed');
       item.classList.remove('collapsed');
       item.classList.add('expanded');
     } else {
-      childrenContainer.classList.add('collapsed');
+      children.classList.add('collapsed');
       item.classList.remove('expanded');
       item.classList.add('collapsed');
     }
@@ -876,10 +483,8 @@
     if (!indexData || !indexData.children) return null;
     const norm = (pathStr || '').replace(/^\/+/, '');
     if (!norm) return null;
-
     const parts = norm.split('/');
     let current = { children: indexData.children };
-
     for (const part of parts) {
       if (!current.children) return null;
       const next = current.children.find(c => c.name === part);
@@ -904,16 +509,11 @@
     }
 
     highlightActiveTreeItem(filePath);
+    document.getElementById('breadcrumb-path').textContent = filePath;
+    document.getElementById('viewer-title').textContent = filePath;
 
-    const breadcrumb = document.getElementById('breadcrumb-path');
-    breadcrumb.textContent = filePath;
-
-    const viewerTitle = document.getElementById('viewer-title');
-    viewerTitle.textContent = filePath;
-
-    const fileMeta = document.getElementById('file-meta');
     const sizeStr = typeof node.size === 'number' ? formatBytes(node.size) : 'unknown';
-    fileMeta.innerHTML = `
+    document.getElementById('file-meta').innerHTML = `
       <span><strong>File:</strong> ${escapeHtml(filePath)}</span>
       <span class="dot"></span>
       <span>${sizeStr}</span>
@@ -922,33 +522,17 @@
     `;
 
     const viewerBody = document.getElementById('viewer-body');
-
     const ext = (filePath.split('.').pop() || '').toLowerCase();
 
-    // 1) Media: use native browser viewers via direct URL
-    if (IMAGE_EXTENSIONS.has(ext)) {
-      renderImage(filePath);
-      return;
-    }
-    if (VIDEO_EXTENSIONS.has(ext)) {
-      renderVideo(filePath);
-      return;
-    }
-    if (AUDIO_EXTENSIONS.has(ext)) {
-      renderAudio(filePath);
-      return;
-    }
+    if (IMAGE_EXTENSIONS.has(ext)) { renderImage(filePath); return; }
+    if (VIDEO_EXTENSIONS.has(ext)) { renderVideo(filePath); return; }
+    if (AUDIO_EXTENSIONS.has(ext)) { renderAudio(filePath); return; }
 
-    // 2) Non-media:
     if (!node.previewable && !rawMode) {
       viewerBody.innerHTML = `
         <div class="viewer-body-inner">
-          <p class="not-previewable">
-            This file is not inlined for preview (too large or non-text).
-          </p>
-          <p class="not-previewable">
-            Toggle "Raw" to attempt a direct fetch from this static host, or download it from the repository.
-          </p>
+          <p class="not-previewable">This file is not inlined for preview (too large or non-text).</p>
+          <p class="not-previewable">Toggle "Raw" to attempt direct fetch from this static host, or download it.</p>
         </div>
       `;
       return;
@@ -960,13 +544,9 @@
     }
 
     if (node.previewable && typeof node.content === 'string') {
-      renderText(node.content, filePath);
+      renderText(node.content);
     } else {
-      viewerBody.innerHTML = `
-        <div class="not-previewable">
-          No inline content available for this file.
-        </div>
-      `;
+      viewerBody.innerHTML = '<div class="not-previewable">No inline content available for this file.</div>';
     }
   }
 
@@ -974,47 +554,33 @@
     const viewerBody = document.getElementById('viewer-body');
     viewerBody.innerHTML = '<div class="not-previewable">Loading raw file…</div>';
     fetch(pathStr, { cache: 'no-store' })
-      .then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.text();
-      })
-      .then(text => {
-        renderText(text, pathStr);
-      })
+      .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+      .then(text => renderText(text))
       .catch(err => {
         console.error(err);
-        viewerBody.innerHTML = `
-          <div class="error">
-            Failed to load raw file from path: ${escapeHtml(pathStr)}.
-            Ensure your deployment serves repository files in a compatible structure.
-          </div>
-        `;
+        viewerBody.innerHTML =
+          '<div class="error">Failed to load raw file from path: ' +
+          escapeHtml(pathStr) +
+          '.</div>';
       });
   }
 
-  function renderText(content, pathStr) {
+  function renderText(content) {
     const viewerBody = document.getElementById('viewer-body');
     const lines = content.replace(/\r\n/g, '\n').split('\n');
-
     const container = document.createElement('div');
     container.className = 'line-numbers';
-
     lines.forEach(line => {
       const lineEl = document.createElement('div');
       lineEl.className = 'line';
-
       const numEl = document.createElement('div');
       numEl.className = 'line-number';
-
       const contentEl = document.createElement('div');
       contentEl.className = 'line-content';
       contentEl.textContent = line || '\u200B';
-
-      lineEl.appendChild(numEl);
-      lineEl.appendChild(contentEl);
+      lineEl.appendChild(numEl); lineEl.appendChild(contentEl);
       container.appendChild(lineEl);
     });
-
     viewerBody.innerHTML = '';
     const pre = document.createElement('pre');
     const code = document.createElement('code');
@@ -1026,7 +592,6 @@
   function renderImage(pathStr) {
     const viewerBody = document.getElementById('viewer-body');
     viewerBody.innerHTML = '';
-
     const img = document.createElement('img');
     img.src = pathStr;
     img.alt = pathStr;
@@ -1034,14 +599,12 @@
     img.style.maxHeight = '100%';
     img.style.display = 'block';
     img.style.margin = '0 auto';
-
     viewerBody.appendChild(img);
   }
 
   function renderVideo(pathStr) {
     const viewerBody = document.getElementById('viewer-body');
     viewerBody.innerHTML = '';
-
     const video = document.createElement('video');
     video.src = pathStr;
     video.controls = true;
@@ -1050,20 +613,17 @@
     video.style.display = 'block';
     video.style.margin = '0 auto';
     video.style.backgroundColor = '#000';
-
     viewerBody.appendChild(video);
   }
 
   function renderAudio(pathStr) {
     const viewerBody = document.getElementById('viewer-body');
     viewerBody.innerHTML = '';
-
     const audio = document.createElement('audio');
     audio.src = pathStr;
     audio.controls = true;
     audio.style.width = '100%';
     audio.style.marginTop = '12px';
-
     viewerBody.appendChild(audio);
   }
 
@@ -1104,7 +664,7 @@
 
   function escapeHtml(str) {
     return (str || '').replace(/[&<>"']/g, c => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
   }
 
@@ -1112,13 +672,10 @@
     return (str || '').replace(/"/g, '\\"');
   }
 
-  // Toolbar actions
-
   document.getElementById('btn-back').addEventListener('click', () => {
     if (historyIndex > 0) {
       historyIndex--;
-      const path = historyStack[historyIndex];
-      openFile(path, false);
+      openFile(historyStack[historyIndex], false);
     }
   });
 
@@ -1129,15 +686,11 @@
     if (!parts.length) return;
     const parentPath = parts.join('/');
     const node = findNodeByPath(parentPath);
-    const viewerBody = document.getElementById('viewer-body');
-
     if (node && node.type === 'directory') {
       highlightActiveTreeItem(parentPath);
-      const breadcrumb = document.getElementById('breadcrumb-path');
-      breadcrumb.textContent = parentPath + '/';
-      const viewerTitle = document.getElementById('viewer-title');
-      viewerTitle.textContent = parentPath + '/';
-      viewerBody.innerHTML = `
+      document.getElementById('breadcrumb-path').textContent = parentPath + '/';
+      document.getElementById('viewer-title').textContent = parentPath + '/';
+      document.getElementById('viewer-body').innerHTML = `
         <div class="placeholder">
           <div class="title">Directory selected: ${escapeHtml(parentPath)}/</div>
           <div class="subtitle">Choose a file inside this folder from the tree to preview its contents.</div>
@@ -1179,17 +732,12 @@
     const btn = document.getElementById('btn-toggle-raw');
     if (rawMode) {
       btn.classList.add('primary');
-      flashStatus('Raw mode: ON (attempts direct static fetch)');
-      if (currentFilePath) {
-        openFile(currentFilePath, false);
-      }
+      flashStatus('Raw mode: ON (direct static fetch)');
     } else {
       btn.classList.remove('primary');
-      flashStatus('Raw mode: OFF (using inlined index when available)');
-      if (currentFilePath) {
-        openFile(currentFilePath, false);
-      }
+      flashStatus('Raw mode: OFF (use inlined index)');
     }
+    if (currentFilePath) openFile(currentFilePath, false);
   });
 
   function flashStatus(msg) {
@@ -1203,7 +751,6 @@
     }, 1500);
   }
 
-  // Init
   loadIndex();
 </script>
 </body>

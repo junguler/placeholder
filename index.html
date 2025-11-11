@@ -1,2144 +1,1183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Repository File Viewer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg-color: #282c34;
-            --sidebar-bg: #21252b;
-            --text-color: #abb2bf;
-            --border-color: #3e4451;
-            --hover-bg: #2c313c;
-            --accent-color: #61afef;
-            --file-size-color: #8b929e;
-            --button-bg: #3a3f4b;
-            --button-hover: #4a5060;
-            --search-bg: #2c313c;
-            --search-border: #3e4451;
-            --success-color: #98c379;
-            --warning-color: #e5c07b;
-            --error-color: #e06c75;
-        }
-
-        * {
-            transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Top Search Header */
-        .search-header {
-            background-color: var(--sidebar-bg);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .sidebar-toggle {
-            background: var(--button-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 101;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .sidebar-toggle:hover {
-            background: var(--button-hover);
-        }
-
-        .theme-toggle {
-            background: var(--button-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .theme-toggle:hover {
-            background: var(--button-hover);
-        }
-
-        .search-container {
-            flex: 1;
-            position: relative;
-            width: 100%;
-        }
-        .search-help {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            color: var(--file-size-color);
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .search-help:focus {
-            outline: none;
-        }
-
-        .search-help-panel {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: calc(100% + 8px);
-            background: var(--sidebar-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            display: none;
-            z-index: 200;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-        }
-
-        .search-help-panel.show {
-            display: block;
-        }
-
-        .search-help-panel b { color: var(--accent-color); }
-
-        .search-box {
-            width: 100%;
-            padding: 12px 20px 12px 45px;
-            background-color: var(--search-bg);
-            border: 1px solid var(--search-border);
-            border-radius: 8px;
-            color: var(--text-color);
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .search-box:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(97, 175, 239, 0.2);
-        }
-
-        .search-box::placeholder {
-            color: var(--file-size-color);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--file-size-color);
-            pointer-events: none;
-        }
-
-        .search-filters {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        .filter-chip {
-            background: var(--button-bg);
-            border: 1px solid var(--border-color);
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .filter-chip:hover {
-            background: var(--button-hover);
-        }
-
-        .filter-chip.active {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .filter-chip .remove {
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /* Main Content Container */
-        .main-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 400px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease, width 0.3s ease;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .sidebar.collapsed {
-            width: 0;
-            transform: translateX(-100%);
-        }
-
-        .search-results-info {
-            padding: 8px 15px;
-            font-size: 12px;
-            color: var(--file-size-color);
-            border-bottom: 1px solid var(--border-color);
-            background-color: var(--hover-bg);
-        }
-
-        .breadcrumbs {
-            padding: 10px 15px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .breadcrumbs span {
-            cursor: pointer;
-            color: var(--accent-color);
-        }
-
-        .breadcrumbs span:hover {
-            text-decoration: underline;
-        }
-
-        .back-button {
-            background: var(--button-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            flex-shrink: 0;
-        }
-
-        .back-button:hover {
-            background: var(--button-hover);
-            transform: translateY(-1px);
-        }
-
-        .back-button:active {
-            transform: translateY(0);
-        }
-
-        .back-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .back-button:disabled:hover {
-            background: var(--button-bg);
-            transform: none;
-        }
-
-        /* Virtual Scrolling Container */
-        .virtual-scroll-container {
-            flex: 1;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .virtual-scroll-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-        }
-
-        .file-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .file-list li {
-            padding: 8px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            position: relative;
-            height: 40px;
-            box-sizing: border-box;
-        }
-
-        .file-list li:hover {
-            background-color: var(--hover-bg);
-        }
-
-        .file-list li.selected {
-            background-color: var(--hover-bg);
-            border-left: 3px solid var(--accent-color);
-        }
-
-        .file-list li.search-result {
-            background-color: var(--hover-bg);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .file-list li.search-result:hover {
-            background-color: #353b45;
-        }
-
-        .file-list .file-info {
-            display: flex;
-            align-items: center;
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-        }
-
-        .file-list .icon {
-            margin-right: 10px;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .file-list .file-name {
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-list .file-path {
-            font-size: 11px;
-            color: var(--file-size-color);
-            margin-top: 2px;
-        }
-
-        .file-list .file-size {
-            color: var(--file-size-color);
-            font-size: 12px;
-            margin-left: 10px;
-            flex-shrink: 0;
-            font-family: 'Consolas', 'Monaco', monospace;
-        }
-
-        .highlight {
-            background-color: rgba(97, 175, 239, 0.3);
-            padding: 1px 2px;
-            border-radius: 2px;
-        }
-
-        /* Content Viewer */
-        .content-viewer {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        .content-viewer pre {
-            margin: 0;
-            background-color: transparent !important;
-            white-space: pre;
-            overflow-x: auto;
-            position: relative;
-            padding: 0;
-        }
-
-        .content-viewer img {
-            max-width: 100%;
-            height: auto;
-        }
-
-        .content-viewer .markdown-content {
-            line-height: 1.6;
-        }
-        
-        .content-viewer .markdown-content h1, 
-        .content-viewer .markdown-content h2, 
-        .content-viewer .markdown-content h3 {
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.3em;
-        }
-
-        .content-viewer .markdown-content a {
-            color: var(--accent-color);
-        }
-        
-        .content-viewer .markdown-content code {
-            background-color: var(--hover-bg);
-            padding: 0.2em 0.4em;
-            border-radius: 3px;
-            font-size: 85%;
-        }
-
-        .content-viewer .markdown-content table {
-            display: block;
-            overflow-x: auto;
-            white-space: nowrap;
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        .content-viewer .markdown-content th,
-        .content-viewer .markdown-content td {
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            text-align: left;
-        }
-
-        .content-viewer .markdown-content th {
-            background-color: var(--hover-bg);
-        }
-
-        /* Skeleton Loader */
-        .skeleton {
-            background: linear-gradient(90deg, 
-                var(--hover-bg) 25%, 
-                var(--border-color) 50%, 
-                var(--hover-bg) 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 4px;
-        }
-
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .skeleton-text {
-            height: 16px;
-            margin: 8px 0;
-        }
-
-        .skeleton-title {
-            height: 24px;
-            width: 60%;
-            margin: 16px 0;
-        }
-
-        /* Welcome Screen */
-        .welcome-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            text-align: center;
-            padding: 20px;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-
-
-        .shortcuts-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            width: 100%;
-            max-width: 600px;
-            margin-top: 10px;
-        }
-
-        .shortcut-card {
-            background: var(--sidebar-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .shortcut-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border-color: var(--accent-color);
-        }
-
-        .shortcut-key {
-            display: inline-block;
-            background: var(--button-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 3px 6px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-weight: bold;
-            margin: 0 3px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            font-size: 0.85em;
-        }
-
-        .shortcut-description {
-            margin-top: 8px;
-            color: var(--text-color);
-            font-size: 0.9em;
-        }
-
-        /* File header info */
-        .file-header {
-            background-color: var(--sidebar-bg);
-            padding: 15px 20px;
-            margin: -20px -20px 20px -20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .file-header .file-title {
-            display: flex;
-            align-items: center;
-            font-size: 18px;
-            font-weight: 500;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .file-header .file-title .icon {
-            margin-right: 10px;
-            font-size: 24px;
-            flex-shrink: 0;
-        }
-
-        .file-header .file-meta {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            color: var(--file-size-color);
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .file-header .file-actions {
-            display: flex;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .file-header .file-actions button {
-            background-color: var(--button-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.2s ease;
-        }
-
-        .file-header .file-actions button:hover {
-            background-color: var(--button-hover);
-            transform: translateY(-1px);
-        }
-
-        .file-header .file-actions button:active {
-            transform: translateY(0);
-        }
-
-        /* Copy Code Button */
-        .copy-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: var(--button-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            z-index: 5;
-        }
-
-        .line-numbers-wrapper:hover .copy-button {
-            opacity: 1;
-        }
-
-        .copy-button:hover {
-            background: var(--button-hover);
-        }
-
-        .copy-button.copied {
-            background: var(--success-color);
-            color: white;
-        }
-
-        /* Line Numbers */
-        .line-numbers-wrapper {
-            display: flex;
-            background-color: var(--sidebar-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            overflow: auto;
-            margin: 10px 0;
-            max-height: calc(100vh - 200px);
-            position: relative;
-        }
-
-        .line-numbers {
-            width: 60px;
-            padding: 15px 10px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            text-align: right;
-            color: var(--file-size-color);
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            user-select: none;
-            flex-shrink: 0;
-            position: sticky;
-            left: 0;
-        }
-
-        .code-content {
-            flex: 1;
-            padding: 15px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            white-space: pre;
-            overflow: visible;
-            min-width: 0;
-        }
-
-        .code-content pre {
-            margin: 0;
-            padding: 0;
-            background: transparent !important;
-            overflow: visible;
-        }
-
-        .code-content code {
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            white-space: pre;
-            display: block;
-        }
-
-        /* Word Wrap Toggle */
-        .wrap-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--button-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 10px 15px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s ease;
-            z-index: 100;
-        }
-
-        .wrap-toggle:hover {
-            background: var(--button-hover);
-            transform: translateY(-2px);
-        }
-
-        .wrap-toggle.active {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        /* Toast Notifications */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--sidebar-bg);
-            border: 1px solid var(--border-color);
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
-        .toast.success {
-            border-color: var(--success-color);
-            background: rgba(152, 195, 121, 0.1);
-            color: var(--success-color);
-        }
-
-        .toast.error {
-            border-color: var(--error-color);
-            background: rgba(224, 108, 117, 0.1);
-            color: var(--error-color);
-        }
-
-        /* Advanced Help Modal (centered, large text, minimal horizontal padding) */
-        .adv-help-overlay {
-            position: fixed;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.45);
-            z-index: 1200;
-        }
-
-        .adv-help-modal {
-            background: var(--sidebar-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 12px 8px; /* minimal horizontal padding */
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            max-width: 90%;
-            width: auto;
-            font-size: 2em; /* twice as big text size */
-            line-height: 1.3;
-            text-align: left;
-        }
-
-        /* Make sure small screens still center properly */
-        @media (max-width: 480px) {
-            .adv-help-modal { font-size: 1.6em; padding: 10px 6px; }
-        }
-
-        /* Error Boundary */
-        .error-boundary {
-            padding: 20px;
-            background: var(--error-color);
-            color: white;
-            border-radius: 8px;
-            margin: 20px;
-        }
-
-        .error-boundary h3 {
-            margin-top: 0;
-        }
-
-        .error-boundary pre {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-
-        /* Focus indicators */
-        :focus-visible {
-            outline: 2px solid var(--accent-color);
-            outline-offset: 2px;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                z-index: 50;
-                height: 100%;
-            }
-            
-            .sidebar.collapsed {
-                transform: translateX(-100%);
-            }
-            
-            .file-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .file-header .file-meta {
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-
-            .shortcuts-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                max-width: 400px;
-            }
-
-            .shortcut-card {
-                padding: 15px;
-            }
-
-
-            .line-numbers {
-                width: 40px;
-                padding: 10px 5px;
-            }
-
-            .search-filters {
-                display: none;
-            }
-        }
-
-        /* Light theme */
-        body.light-theme {
-            --bg-color: #ffffff;
-            --sidebar-bg: #f6f8fa;
-            --text-color: #24292e;
-            --border-color: #d1d5da;
-            --hover-bg: #f3f4f6;
-            --accent-color: #0366d6;
-            --file-size-color: #6a737d;
-            --button-bg: #fafbfc;
-            --button-hover: #e1e4e8;
-            --search-bg: #fafbfc;
-            --search-border: #d1d5da;
-        }
-
-        /* Solarized theme */
-        body.solarized-theme {
-            --bg-color: #002b36;
-            --sidebar-bg: #073642;
-            --text-color: #839496;
-            --border-color: #586e75;
-            --hover-bg: #073642;
-            --accent-color: #268bd2;
-            --file-size-color: #657b83;
-            --button-bg: #073642;
-            --button-hover: #586e75;
-            --search-bg: #073642;
-            --search-border: #586e75;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Repository Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* Layout */
+    :root {
+      --bg: #111827;
+      --bg-soft: #111827;
+      --bg-alt: #020817;
+      --border: #111827;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59,130,246,0.14);
+      --accent-hover: #60a5fa;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97316;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, -system-ui, sans-serif;
+      --radius: 8px;
+      --shadow-soft: 0 10px 40px rgba(15,23,42,0.55);
+      --transition-fast: 0.16s ease-out;
+      --transition-med: 0.22s cubic-bezier(.2,.7,.4,1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      background: radial-gradient(circle at top, #111827 0, #020817 52%, #000 100%);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 14px 14px 16px;
+      gap: 10px;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px 8px;
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.24), transparent 70%) , rgba(2,6,23,0.96);
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,253,0.18);
+      box-shadow: 0 14px 45px rgba(15,23,42,0.75);
+      backdrop-filter: blur(18px);
+    }
+
+    .app-title {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .app-title span.logo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    .app-title h1 {
+      font-size: 16px;
+      font-weight: 500;
+      margin: 0;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .app-title strong {
+      font-size: 16px;
+      font-weight: 500;
+      color: #e5e7eb;
+      text-transform: none;
+      letter-spacing: 0.01em;
+    }
+
+    .app-meta {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pill {
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,253,0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background-color: rgba(12,18,32,0.96);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 6px 18px rgba(15,23,42,0.6);
+    }
+
+    .pill span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .pill span.dot-orange {
+      background: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+    }
+
+    .layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at top, rgba(15,23,42,0.9), rgba(2,6,23,0.98));
+      border-radius: 14px;
+      border: 1px solid rgba(75,85,99,0.65);
+      box-shadow: var(--shadow-soft);
+      padding: 8px 8px 8px;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 4px 6px;
+      color: var(--muted);
+      font-size: 11px;
+      gap: 6px;
+    }
+
+    .sidebar-header span {
+      opacity: 0.9;
+    }
+
+    .sidebar-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .chip {
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.9);
+      font-size: 10px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background-color: rgba(2,6,23,0.96);
+    }
+
+    .tree {
+      flex: 1;
+      overflow: auto;
+      padding: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.6;
+      color: #9ca3af;
+    }
+
+    .tree ul {
+      list-style: none;
+      margin: 0;
+      padding-left: 14px;
+      border-left: 1px solid rgba(55,65,81,0.55);
+    }
+
+    .tree-root {
+      padding-left: 2px;
+      border-left: none;
+    }
+
+    .tree-item {
+      position: relative;
+      padding: 1px 3px 1px 0;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: default;
+      user-select: none;
+      transition: background-color var(--transition-fast), color var(--transition-fast), transform 0.06s ease-out;
+    }
+
+    .tree-item span.icon {
+      width: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+
+    .tree-item span.name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tree-item.directory > span.name {
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .tree-item.file {
+      color: #6b7280;
+    }
+
+    .tree-item.file.previewable {
+      color: #9ca3af;
+    }
+
+    .tree-item:hover {
+      background-color: rgba(31,41,55,0.9);
+      color: #e5e7eb;
+      transform: translateX(1px);
+    }
+
+    .tree-item.active {
+      background: linear-gradient(to right, rgba(59,130,246,0.24), rgba(15,23,42,0.98));
+      color: #eff6ff;
+      box-shadow: 0 3px 12px rgba(15,23,42,0.85);
+    }
+
+    .tree-item.active .icon,
+    .tree-item:hover .icon {
+      color: var(--accent);
+    }
+
+    .tree-item .arrow {
+      width: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #4b5563;
+      transition: transform var(--transition-fast), color var(--transition-fast);
+      flex-shrink: 0;
+      font-size: 9px;
+    }
+
+    .tree-item.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .tree-item.expanded .arrow {
+      transform: rotate(0deg);
+    }
+
+    .tree-item.leaf .arrow {
+      visibility: hidden;
+    }
+
+    .tree-children {
+      margin: 0;
+      padding: 0 0 0 16px;
+    }
+
+    .tree-children.collapsed {
+      display: none;
+    }
+
+    /* Main viewer */
+    .main {
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at top right, rgba(15,23,42,0.92), rgba(2,6,23,0.99));
+      border-radius: 14px;
+      border: 1px solid rgba(75,85,99,0.7);
+      box-shadow: var(--shadow-soft);
+      padding: 8px 8px 8px;
+      min-width: 0;
+      min-height: 0;
+      gap: 6px;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .breadcrumb .label {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.9);
+      color: #9ca3af;
+      background-color: rgba(2,6,23,0.96);
+    }
+
+    .breadcrumb-path {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid rgba(75,85,99,0.85);
+      background: rgba(2,6,23,0.98);
+      padding: 2px 7px;
+      border-radius: 7px;
+      font-size: 9px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn span.icon {
+      font-size: 9px;
+      color: #6b7280;
+    }
+
+    .btn:hover {
+      color: #e5e7eb;
+      border-color: var(--accent);
+      background: radial-gradient(circle at top, rgba(37,99,235,0.16), rgba(2,6,23,1));
+      box-shadow: 0 4px 14px rgba(15,23,42,0.95);
+      transform: translateY(-0.5px);
+    }
+
+    .btn.primary {
+      border-color: var(--accent);
+      color: #bfdbfe;
+      background: radial-gradient(circle at top, rgba(37,99,235,0.22), rgba(2,6,23,1));
+    }
+
+    .btn.primary:hover {
+      background: radial-gradient(circle at top, rgba(37,99,235,0.32), rgba(2,6,23,1));
+      color: #eff6ff;
+      box-shadow: 0 5px 18px rgba(37,99,235,0.5);
+    }
+
+    .file-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 9px;
+      color: var(--muted);
+      opacity: 0.9;
+    }
+
+    .file-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .file-meta span.dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background-color: rgba(75,85,99,1);
+    }
+
+    .viewer {
+      flex: 1;
+      position: relative;
+      border-radius: 10px;
+      background-color: #020817;
+      border: 1px solid rgba(31,41,55,1);
+      box-shadow: 0 10px 36px rgba(15,23,42,0.88);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .viewer-header {
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 9px;
+      color: var(--muted);
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,0.15), transparent 75%),
+        radial-gradient(circle at top right, rgba(56,189,248,0.07), transparent 80%),
+        rgba(2,6,23,0.98);
+      border-bottom: 1px solid rgba(31,41,55,1);
+    }
+
+    .viewer-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .viewer-header-dots {
+      display: flex;
+      gap: 3px;
+    }
+
+    .viewer-header-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background-color: rgba(75,85,99,1);
+    }
+
+    .viewer-header-dot.red {
+      background-color: #f87171;
+    }
+
+    .viewer-header-dot.yellow {
+      background-color: #facc15;
+    }
+
+    .viewer-header-dot.green {
+      background-color: #22c55e;
+    }
+
+    .viewer-header-title {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: #9ca3af;
+      opacity: 0.9;
+    }
+
+    .viewer-header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge {
+      padding: 2px 5px;
+      border-radius: 6px;
+      border: 1px solid rgba(75,85,99,0.9);
+      font-size: 8px;
+      color: #9ca3af;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background-color: rgba(2,6,23,0.98);
+    }
+
+    .badge.accent {
+      border-color: rgba(59,130,246,0.9);
+      color: #bfdbfe;
+      background-color: rgba(15,23,42,0.98);
+    }
+
+    .viewer-body {
+      flex: 1;
+      overflow: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.5;
+      color: #e5e7eb;
+      padding: 8px;
+      position: relative;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre;
+      overflow: visible;
+      color: #e5e7eb;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    .placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #6b7280;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .placeholder .title {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .placeholder .subtitle {
+      font-size: 9px;
+    }
+
+    .status {
+      font-size: 9px;
+      color: var(--muted);
+      padding: 3px 8px 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      opacity: 0.85;
+    }
+
+    .status span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status span.dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background-color: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    .line-numbers {
+      counter-reset: line;
+    }
+
+    .line {
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .line-number {
+      counter-increment: line;
+      width: 32px;
+      padding-right: 6px;
+      text-align: right;
+      color: #4b5563;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .line-number::before {
+      content: counter(line);
+    }
+
+    .line-content {
+      white-space: pre;
+      flex: 1;
+    }
+
+    .not-previewable {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+
+    .error {
+      font-size: 10px;
+      color: #f97316;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 210px 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        max-height: 40%;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header class="search-header">
-        <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
-            <i class="fas fa-bars"></i>
-            <span>Files</span>
-        </button>
-        <div class="search-container">
-            <i class="fas fa-search search-icon"></i>
-            <input 
-                type="text" 
-                class="search-box" 
-                id="search-box" 
-                placeholder="🔍 Search files... (use ext:, size:, path:, type: filters)"
-                autocomplete="off"
-            >
-            <div class="search-filters" id="search-filters"></div>
-        </div>
-        <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
-            <i class="fas fa-moon"></i>
-        </button>
-    </header>
-
-    <div class="main-container">
-        <aside class="sidebar" id="sidebar">
-            <nav class="breadcrumbs" id="breadcrumbs">
-                <span>root</span>
-            </nav>
-            <div class="search-results-info" id="search-results-info" style="display: none;"></div>
-            <div class="virtual-scroll-container" id="virtual-scroll-container">
-                <div class="virtual-scroll-content" id="virtual-scroll-content">
-                    <ul class="file-list" id="file-list">
-                        <li class="loading">
-                            <div class="skeleton skeleton-text"></div>
-                            <div class="skeleton skeleton-text"></div>
-                            <div class="skeleton skeleton-text" style="width: 70%;"></div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </aside>
-
-        <main class="content-viewer" id="content-viewer">
-            <!-- welcome-screen removed from static HTML to avoid a brief duplicate flash.
-                 renderDirectory([]) will render the welcome screen consistently. -->
-        </main>
+<div class="app">
+  <div class="app-header">
+    <div class="app-title">
+      <span class="logo-dot"></span>
+      <h1>
+        <span>STATIC REPO</span>
+        <strong>File Explorer</strong>
+      </h1>
     </div>
-
-    <!-- Advanced Help Modal -->
-    <div id="adv-help-modal" class="adv-help-overlay" aria-hidden="true">
-        <div class="adv-help-modal" role="dialog" id="adv-help-content">
-            <div><b>Advanced search examples</b></div>
-            <div style="margin-top:8px;">
-                <div><b>ext:</b> js, py, md — e.g. <code>ext:js</code></div>
-                <div><b>size:</b> comparison (>, >=, <, <=, =) with k/m/g — e.g. <code>size:>10k</code></div>
-                <div><b>path:</b> match anywhere in path — e.g. <code>path:src/components</code></div>
-                <div><b>type:</b> file or folder — e.g. <code>type:folder</code></div>
-            </div>
-            <div style="margin-top:10px;color:var(--file-size-color);font-size:0.6em;">Press <kbd>h</kbd> again or click/press any key to dismiss.</div>
-        </div>
+    <div class="app-meta">
+      <div class="pill">
+        <span class="dot"></span>
+        <span>Auto-synced on push</span>
+      </div>
+      <div class="pill">
+        <span class="dot-orange"></span>
+        <span>Read-only • No API calls</span>
+      </div>
     </div>
-
-    <button class="wrap-toggle" id="wrap-toggle" title="Toggle Word Wrap" style="display: none;">
-        <i class="fas fa-text-width"></i>
-        <span>Wrap</span>
-    </button>
-
-    <div class="toast" id="toast"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Global state management
-            const state = {
-                fullFileTree: [],
-                currentPath: [],
-                allFiles: [],
-                searchResults: [],
-                currentTheme: localStorage.getItem('theme') || 'dark',
-                selectedIndex: -1,
-                wordWrap: false,
-                currentFileContent: '',
-                searchFilters: {},
-                virtualScroll: {
-                    itemHeight: 40,
-                    visibleItems: 0,
-                    startIndex: 0,
-                    scrollTop: 0
-                },
-                // advanced help state
-                advHelpOpenTime: 0
-            };
-
-            // DOM elements
-            const elements = {
-                fileListEl: document.getElementById('file-list'),
-                breadcrumbsEl: document.getElementById('breadcrumbs'),
-                contentViewerEl: document.getElementById('content-viewer'),
-                searchBox: document.getElementById('search-box'),
-                searchResultsInfo: document.getElementById('search-results-info'),
-                searchFiltersEl: document.getElementById('search-filters'),
-                sidebarToggle: document.getElementById('sidebar-toggle'),
-                sidebar: document.getElementById('sidebar'),
-                wrapToggle: document.getElementById('wrap-toggle'),
-                toast: document.getElementById('toast'),
-                themeToggle: document.getElementById('theme-toggle'),
-                virtualScrollContainer: document.getElementById('virtual-scroll-container'),
-                virtualScrollContent: document.getElementById('virtual-scroll-content'),
-                advHelpModal: document.getElementById('adv-help-modal')
-            };
-            // handlers reference so we can remove listeners reliably
-            const advHelpHandlers = { pointer: null, key: null };
-
-            // File type icon mapping
-            const fileIcons = {
-                'js': '🟨', 'jsx': '🟨', 'ts': '🔷', 'tsx': '🔷', 'py': '🐍',
-                'java': '☕', 'cpp': '🔷', 'c': '🔹', 'cs': '🔷', 'php': '🐘',
-                'rb': '💎', 'go': '🐹', 'rs': '🦀', 'swift': '🍎', 'kt': '🎯',
-                'dart': '🎯', 'scala': '🔴', 'lua': '🌙', 'r': '📊', 'm': '🔷',
-                'sh': '⌨️', 'bash': '⌨️', 'zsh': '⌨️', 'ps1': '💙', 'sql': '🗃️',
-                'html': '🌐', 'htm': '🌐', 'css': '🎨', 'scss': '🎨', 'sass': '🎨',
-                'less': '🎨', 'vue': '💚', 'svelte': '🧡', 'json': '📋', 'xml': '📄',
-                'yaml': '📄', 'yml': '📄', 'toml': '📄', 'ini': '⚙️', 'conf': '⚙️',
-                'env': '🔐', 'lock': '🔒', 'md': '📝', 'txt': '📄', 'pdf': '📕',
-                'doc': '📘', 'docx': '📘', 'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️',
-                'gif': '🖼️', 'svg': '🎨', 'webp': '🖼️', 'ico': '🖼️', 'bmp': '🖼️',
-                'mp4': '🎬', 'avi': '🎬', 'mov': '🎬', 'wmv': '🎬', 'webm': '🎬',
-                'mkv': '🎬', 'flv': '🎬', 'mp3': '🎵', 'wav': '🎵', 'flac': '🎵',
-                'aac': '🎵', 'ogg': '🎵', 'm4a': '🎵', 'zip': '📦', 'rar': '📦',
-                'tar': '📦', 'gz': '📦', '7z': '📦', 'exe': '⚙️', 'dll': '⚙️',
-                'so': '⚙️', 'app': '📱', 'apk': '📱', 'ipa': '📱',
-            };
-
-            // Theme definitions
-            const themes = {
-                dark: { icon: 'fas fa-moon', class: '' },
-                light: { icon: 'fas fa-sun', class: 'light-theme' },
-                solarized: { icon: 'fas fa-sun', class: 'solarized-theme' }
-            };
-
-            // Error boundary
-            class ErrorBoundary {
-                constructor() {
-                    this.setupGlobalHandlers();
-                }
-
-                setupGlobalHandlers() {
-                    window.addEventListener('error', this.handleError.bind(this));
-                    window.addEventListener('unhandledrejection', this.handlePromiseRejection.bind(this));
-                }
-
-                handleError(event) {
-                    console.error('Global error:', event.error);
-                    this.showErrorToast('An unexpected error occurred');
-                    this.renderErrorScreen(event.error);
-                    event.preventDefault();
-                }
-
-                handlePromiseRejection(event) {
-                    console.error('Unhandled promise rejection:', event.reason);
-                    this.showErrorToast('Operation failed');
-                    event.preventDefault();
-                }
-
-                showErrorToast(message) {
-                    showToast(message, 'error');
-                }
-
-                renderErrorScreen(error) {
-                    elements.contentViewerEl.innerHTML = `
-                        <div class="error-boundary">
-                            <h3><i class="fas fa-exclamation-triangle"></i> Something went wrong</h3>
-                            <p>${error.message || 'An unexpected error occurred'}</p>
-                            <details>
-                                <summary>Error Details</summary>
-                                <pre>${error.stack || 'No stack trace available'}</pre>
-                            </details>
-                            <button onclick="location.reload()" style="margin-top: 10px;">
-                                <i class="fas fa-redo"></i> Reload Page
-                            </button>
-                        </div>
-                    `;
-                }
-            }
-
-            // Virtual scrolling implementation
-            class VirtualScroller {
-                constructor(container, itemHeight = 40) {
-                    this.container = container;
-                    this.itemHeight = itemHeight;
-                    this.visibleItems = Math.ceil(container.clientHeight / itemHeight) + 2;
-                    this.scrollTop = 0;
-                    this.startIndex = 0;
-                    this.items = [];
-                    this.setupListeners();
-                }
-
-                setupListeners() {
-                    this.container.addEventListener('scroll', this.handleScroll.bind(this));
-                    window.addEventListener('resize', this.handleResize.bind(this));
-                }
-
-                handleScroll() {
-                    const newScrollTop = this.container.scrollTop;
-                    const newStartIndex = Math.floor(newScrollTop / this.itemHeight);
-                    
-                    if (newStartIndex !== this.startIndex) {
-                        this.startIndex = newStartIndex;
-                        this.render();
-                    }
-                    
-                    state.virtualScroll.scrollTop = newScrollTop;
-                }
-
-                handleResize() {
-                    this.visibleItems = Math.ceil(this.container.clientHeight / this.itemHeight) + 2;
-                    this.render();
-                }
-
-                setItems(items) {
-                    this.items = items;
-                    this.updateContainerHeight();
-                    this.render();
-                }
-
-                updateContainerHeight() {
-                    const totalHeight = this.items.length * this.itemHeight;
-                    elements.virtualScrollContent.style.height = `${totalHeight}px`;
-                }
-
-                render() {
-                    const endIndex = Math.min(this.startIndex + this.visibleItems, this.items.length);
-                    const visibleItems = this.items.slice(this.startIndex, endIndex);
-                    
-                    elements.fileListEl.innerHTML = '';
-                    
-                    visibleItems.forEach((item, index) => {
-                        const actualIndex = this.startIndex + index;
-                        const li = this.createListItem(item, actualIndex);
-                        li.style.position = 'absolute';
-                        li.style.top = `${actualIndex * this.itemHeight}px`;
-                        li.style.width = '100%';
-                        elements.fileListEl.appendChild(li);
-                    });
-                }
-
-                createListItem(item, index) {
-                    const li = document.createElement('li');
-                    li.dataset.index = index;
-
-                    if (index === state.selectedIndex) {
-                        li.classList.add('selected');
-                    }
-
-                    if (item.type === 'folder') {
-                        if (item.name === '..') {
-                            li.innerHTML = `
-                                <div class="file-info">
-                                    <span class="icon">📁</span>
-                                    <span class="file-name">..</span>
-                                </div>
-                                <span class="file-size">Parent</span>
-                            `;
-                            li.onclick = () => goBackOneFolder();
-                        } else {
-                            li.innerHTML = `
-                                <div class="file-info">
-                                    <span class="icon">📁</span>
-                                    <span class="file-name">${item.name}</span>
-                                </div>
-                            `;
-                            li.onclick = () => renderDirectory([...state.currentPath, item.name]);
-                        }
-                    } else {
-                        const icon = getFileIcon(item.name);
-                        const size = item.size ? formatFileSize(item.size) : '';
-
-                        const dirDisplay = item.directory || '';
-
-                        if (item.isSearchResult && dirDisplay) {
-                            li.innerHTML = `
-                                <div class="file-info" style="min-width:0;">
-                                    <span class="icon">${icon}</span>
-                                    <div style="display:flex;flex-direction:column;overflow:hidden;min-width:0;">
-                                        <span class="file-path" style="font-size:11px;color:var(--file-size-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dirDisplay}</span>
-                                        <span class="file-name">${item.name}</span>
-                                    </div>
-                                </div>
-                                <span class="file-size">${size}</span>
-                            `;
-                        } else {
-                            li.innerHTML = `
-                                <div class="file-info">
-                                    <span class="icon">${icon}</span>
-                                    <span class="file-name">${item.name}</span>
-                                </div>
-                                <span class="file-size">${size}</span>
-                            `;
-                        }
-
-                        li.onclick = () => renderFile(item.path, item.name, item.size);
-                    }
-
-                    return li;
-                }
-            }
-
-            // Touch gestures for mobile
-            class TouchGestures {
-                constructor(element) {
-                    this.element = element;
-                    this.startX = 0;
-                    this.startY = 0;
-                    this.threshold = 50;
-                    this.setupListeners();
-                }
-
-                setupListeners() {
-                    this.element.addEventListener('touchstart', this.handleStart.bind(this), { passive: true });
-                    this.element.addEventListener('touchend', this.handleEnd.bind(this), { passive: true });
-                }
-
-                handleStart(e) {
-                    this.startX = e.touches[0].clientX;
-                    this.startY = e.touches[0].clientY;
-                }
-
-                handleEnd(e) {
-                    const endX = e.changedTouches[0].clientX;
-                    const endY = e.changedTouches[0].clientY;
-                    const deltaX = endX - this.startX;
-                    const deltaY = endY - this.startY;
-                    
-                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > this.threshold) {
-                        if (deltaX > 0) {
-                            this.onSwipeRight();
-                        } else {
-                            this.onSwipeLeft();
-                        }
-                    }
-                }
-
-                onSwipeRight() {
-                    if (elements.sidebar.classList.contains('collapsed')) {
-                        elements.sidebar.classList.remove('collapsed');
-                    }
-                }
-
-                onSwipeLeft() {
-                    if (!elements.sidebar.classList.contains('collapsed')) {
-                        elements.sidebar.classList.add('collapsed');
-                    }
-                }
-            }
-
-            // Initialize components
-            const errorBoundary = new ErrorBoundary();
-            let virtualScroller;
-            let touchGestures;
-
-            // Initialize virtual scroller
-            function initializeVirtualScroller() {
-                virtualScroller = new VirtualScroller(elements.virtualScrollContainer);
-            }
-
-            // Initialize touch gestures
-            function initializeTouchGestures() {
-                if ('ontouchstart' in window) {
-                    touchGestures = new TouchGestures(document.body);
-                }
-            }
-
-            // Theme management
-            function switchTheme(themeName) {
-                const theme = themes[themeName];
-                if (!theme) return;
-                
-                // Remove all theme classes
-                document.body.classList.remove('light-theme', 'solarized-theme');
-                
-                // Add new theme class if not dark
-                if (themeName !== 'dark') {
-                    document.body.classList.add(theme.class);
-                }
-                
-                // Update button icon
-                elements.themeToggle.innerHTML = `<i class="${theme.icon}"></i>`;
-                
-                // Save preference
-                state.currentTheme = themeName;
-                localStorage.setItem('theme', themeName);
-                
-                // showToast(`Switched to ${themeName} theme`); // Disabled theme notification
-            }
-
-            // Advanced search with filters
-            const searchOperators = {
-                'ext:': (file, value) => {
-                    const ext = file.name.split('.').pop().toLowerCase();
-                    return value.split(',').includes(ext);
-                },
-                'size:': (file, value) => {
-                    const match = value.match(/(>=|<=|>|<|=)(\d+)(k|m|g)?/i);
-                    if (!match) return false;
-                    const [, operator, size, unit] = match;
-                    const fileSize = file.size || 0;
-                    const multiplier = unit ? { k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024 }[unit.toLowerCase()] || 1 : 1;
-                    const targetSize = parseInt(size) * multiplier;
-                    
-                    switch (operator) {
-                        case '>=': return fileSize >= targetSize;
-                        case '<=': return fileSize <= targetSize;
-                        case '>': return fileSize > targetSize;
-                        case '<': return fileSize < targetSize;
-                        case '=': return fileSize === targetSize;
-                        default: return false;
-                    }
-                },
-                'path:': (file, value) => file.path.toLowerCase().includes(value.toLowerCase()),
-                'type:': (file, value) => file.type === value
-            };
-
-            function parseSearchQuery(query) {
-                const filters = {};
-                let searchText = query;
-                
-                for (const [operator, filter] of Object.entries(searchOperators)) {
-                    const regex = new RegExp(`${operator}([^\\s]+)`, 'g');
-                    let match;
-                    while ((match = regex.exec(query)) !== null) {
-                        filters[operator] = match[1];
-                        searchText = searchText.replace(match[0], '').trim();
-                    }
-                }
-                
-                return { searchText, filters };
-            }
-
-            function renderSearchFilters(filters) {
-                elements.searchFiltersEl.innerHTML = '';
-                
-                Object.entries(filters).forEach(([operator, value]) => {
-                    const chip = document.createElement('div');
-                    chip.className = 'filter-chip active';
-                    chip.innerHTML = `
-                        ${operator}${value}
-                        <span class="remove" data-operator="${operator}">×</span>
-                    `;
-                    
-                    chip.querySelector('.remove').onclick = (e) => {
-                        e.stopPropagation();
-                        delete state.searchFilters[operator];
-                        updateSearchQuery();
-                    };
-                    
-                    elements.searchFiltersEl.appendChild(chip);
-                });
-            }
-
-            function updateSearchQuery() {
-                const queryParts = [];
-                
-                Object.entries(state.searchFilters).forEach(([operator, value]) => {
-                    queryParts.push(`${operator}${value}`);
-                });
-                
-                if (state.searchQuery) {
-                    queryParts.push(state.searchQuery);
-                }
-                
-                elements.searchBox.value = queryParts.join(' ');
-                searchFiles(elements.searchBox.value);
-            }
-
-            function searchFiles(query) {
-                if (!query) {
-                    renderDirectory(state.currentPath);
-                    elements.searchResultsInfo.style.display = 'none';
-                    elements.searchFiltersEl.innerHTML = '';
-                    state.searchFilters = {};
-                    return;
-                }
-                
-                const { searchText, filters } = parseSearchQuery(query);
-                state.searchQuery = searchText;
-                state.searchFilters = filters;
-                
-                renderSearchFilters(filters);
-                
-                const results = [];
-                for (const file of state.allFiles) {
-                    // Apply filters
-                    let passesFilters = true;
-                    for (const [operator, value] of Object.entries(filters)) {
-                        if (!searchOperators[operator](file, value)) {
-                            passesFilters = false;
-                            break;
-                        }
-                    }
-                    
-                    if (!passesFilters) continue;
-                    
-                    // Apply text search
-                    if (searchText) {
-                        const searchResult = fuzzySearch(searchText, file.fullPath);
-                        if (searchResult) {
-                            results.push({
-                                ...file,
-                                score: searchResult.score,
-                                matches: searchResult.matches
-                            });
-                        }
-                    } else {
-                        results.push(file);
-                    }
-                }
-                
-                if (searchText) {
-                    results.sort((a, b) => b.score - a.score);
-                }
-                
-                renderSearchResults(results, searchText);
-            }
-
-            // Fuzzy search implementation
-            function fuzzySearch(query, text) {
-                query = query.toLowerCase();
-                text = text.toLowerCase();
-                
-                let queryIndex = 0;
-                let textIndex = 0;
-                let score = 0;
-                let consecutiveMatches = 0;
-                let matches = [];
-                
-                while (queryIndex < query.length && textIndex < text.length) {
-                    if (query[queryIndex] === text[textIndex]) {
-                        matches.push(textIndex);
-                        score += (1 + consecutiveMatches * 0.5);
-                        consecutiveMatches++;
-                        queryIndex++;
-                    } else {
-                        consecutiveMatches = 0;
-                    }
-                    textIndex++;
-                }
-                
-                if (queryIndex === query.length) {
-                    score += (text.length - textIndex) * 0.1;
-                    return { score, matches };
-                }
-                
-                return null;
-            }
-
-            // Highlight matches in text
-            function highlightMatches(text, matches) {
-                if (!matches || matches.length === 0) return text;
-                
-                let result = '';
-                let lastIndex = 0;
-                
-                for (const matchIndex of matches) {
-                    result += text.substring(lastIndex, matchIndex);
-                    result += `<span class="highlight">${text[matchIndex]}</span>`;
-                    lastIndex = matchIndex + 1;
-                }
-                result += text.substring(lastIndex);
-                
-                return result;
-            }
-
-            // Toast notification
-            function showToast(message, type = 'success') {
-                elements.toast.textContent = message;
-                elements.toast.className = `toast ${type}`;
-                setTimeout(() => elements.toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    elements.toast.classList.remove('show');
-                }, 3000);
-            }
-
-            // Default icon for unknown file types
-            function getFileIcon(fileName) {
-                const extension = fileName.split('.').pop().toLowerCase();
-                return fileIcons[extension] || '📄';
-            }
-
-            // Format file size
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 B';
-                const k = 1024;
-                const sizes = ['B', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-            }
-
-            // Flatten file tree
-            function flattenFileTree(nodes, path = '') {
-                let files = [];
-                for (const node of nodes) {
-                    const currentPath = path ? `${path}/${node.name}` : node.name;
-                    if (node.type === 'file') {
-                        files.push({ ...node, fullPath: currentPath, directory: path });
-                    } else if (node.children) {
-                        files = files.concat(flattenFileTree(node.children, currentPath));
-                    }
-                }
-                return files;
-            }
-
-            // Render search results
-            function renderSearchResults(results, query) {
-                elements.fileListEl.innerHTML = '';
-                elements.breadcrumbsEl.style.display = 'none';
-                elements.searchResultsInfo.style.display = 'block';
-                elements.searchResultsInfo.textContent = `Found ${results.length} file${results.length !== 1 ? 's' : ''} matching "${query}"`;
-                // start selection at first result so keyboard navigation works immediately
-                state.selectedIndex = results.length > 0 ? 0 : -1;
-                
-                if (results.length === 0) {
-                    elements.fileListEl.innerHTML = '<li class="loading" style="color: var(--file-size-color);">No files found</li>';
-                    return;
-                }
-                
-                const items = results.map((file, index) => ({
-                    ...file,
-                    type: 'file',
-                    isSearchResult: true,
-                    originalIndex: index
-                }));
-                
-                virtualScroller.setItems(items);
-                // ensure selected item is visible after setting items
-                setTimeout(updateSelection, 0);
-            }
-
-            // Update selection
-            function updateSelection() {
-                // Re-render to apply the 'selected' class correctly based on state.selectedIndex
-                virtualScroller.render();
-
-                if (state.selectedIndex === -1) return;
-
-                // Manually calculate and adjust scroll position for the virtual list
-                const container = elements.virtualScrollContainer;
-                const itemHeight = state.virtualScroll.itemHeight;
-
-                const itemTop = state.selectedIndex * itemHeight;
-                const itemBottom = itemTop + itemHeight;
-                const viewTop = container.scrollTop;
-                const viewBottom = viewTop + container.clientHeight;
-
-                if (itemTop < viewTop) {
-                    container.scrollTop = itemTop;
-                } else if (itemBottom > viewBottom) {
-                    container.scrollTop = itemBottom - container.clientHeight;
-                }
-            }
-
-            // Load file tree
-            async function loadFileTree() {
-                try {
-                    const response = await fetch('./index.json');
-                    if (!response.ok) throw new Error('Failed to load index.json');
-                    state.fullFileTree = await response.json();
-                    state.allFiles = flattenFileTree(state.fullFileTree);
-                    renderDirectory([]);
-                } catch (error) {
-                    elements.fileListEl.innerHTML = `<li class="loading" style="color: var(--error-color);">Error: ${error.message}</li>`;
-                    showToast(`Error loading file tree: ${error.message}`, 'error');
-                    console.error(error);
-                }
-            }
-
-            function getNodeAtPath(pathArray) {
-                let currentNode = { children: state.fullFileTree };
-                for (const folder of pathArray) {
-                    const nextNode = currentNode.children.find(item => item.name === folder && item.type === 'folder');
-                    if (!nextNode) return null;
-                    currentNode = nextNode;
-                }
-                return currentNode;
-            }
-
-            function renderBreadcrumbs(pathArray) {
-                let html = '';
-                
-                // Add root and path breadcrumbs
-                html += `<span onclick="renderDirectory([])">root</span>`;
-                let pathSoFar = [];
-                for (const folder of pathArray) {
-                    pathSoFar.push(folder);
-                    html += ` / <span onclick="renderDirectory(${JSON.stringify(pathSoFar)})">${folder}</span>`;
-                }
-                
-                elements.breadcrumbsEl.innerHTML = html;
-            }
-
-            function renderDirectory(pathArray) {
-                state.currentPath = pathArray;
-                const node = getNodeAtPath(pathArray);
-                if (!node || !node.children) return;
-
-                elements.fileListEl.innerHTML = '';
-                elements.breadcrumbsEl.style.display = 'block';
-                elements.searchResultsInfo.style.display = 'none';
-                elements.searchFiltersEl.innerHTML = '';
-                renderBreadcrumbs(pathArray);
-                elements.virtualScrollContainer.scrollTop = 0; // Reset scroll on directory change
-                state.selectedIndex = -1;
-                
-                // Show welcome screen if in root
-                if (pathArray.length === 0) {
-                    elements.contentViewerEl.innerHTML = `
-                        <div class="welcome-screen">
-                            <div class="shortcuts-grid">
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">↑</span>
-                                        <span class="shortcut-key">↓</span>
-                                    </div>
-                                    <div class="shortcut-description">Navigate file list</div>
-                                </div>
-                                
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">Enter</span>
-                                    </div>
-                                    <div class="shortcut-description">Open file/folder</div>
-                                </div>
-                                
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">←</span>
-                                        <span class="shortcut-key">→</span>
-                                    </div>
-                                    <div class="shortcut-description">Go back/Enter</div>
-                                </div>
-                                
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">/</span>
-                                    </div>
-                                    <div class="shortcut-description">Focus search</div>
-                                </div>
-                                
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">Esc</span>
-                                    </div>
-                                    <div class="shortcut-description">Clear search</div>
-                                </div>
-
-                                <!-- Advanced help keybind card added here (keeps welcome screen consistent) -->
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">h</span>
-                                    </div>
-                                    <div class="shortcut-description">Advanced search tips</div>
-                                </div>
-                                
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">T</span>
-                                    </div>
-                                    <div class="shortcut-description">Toggle theme</div>
-                                </div>
-
-                                <!-- Added shortcuts -->
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">B</span>
-                                    </div>
-                                    <div class="shortcut-description">Toggle sidebar</div>
-                                </div>
-
-                                <div class="shortcut-card">
-                                    <div>
-                                        <span class="shortcut-key">Ctrl</span>
-                                        <span class="shortcut-key">C</span>
-                                    </div>
-                                    <div class="shortcut-description">Copy file content</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    elements.wrapToggle.style.display = 'none';
-                } else {
-                    elements.contentViewerEl.innerHTML = `<p>Select a file to preview.</p>`;
-                }
-
-                // Prepare items for virtual scroller
-                const items = [];
-                
-                // Add ".." if not in root
-                if (pathArray.length > 0) {
-                    items.push({
-                        type: 'folder',
-                        name: '..',
-                        isBack: true
-                    });
-                }
-
-                // Sort items
-                node.children.sort((a, b) => {
-                    if (a.type !== b.type) {
-                        return a.type === 'folder' ? -1 : 1;
-                    }
-                    return a.name.localeCompare(b.name);
-                });
-
-                node.children.forEach(item => {
-                    items.push(item);
-                });
-
-                virtualScroller.setItems(items);
-            }
-
-            // Add copy button to code blocks
-            function addCopyButton(wrapperElement, content) {
-                const button = document.createElement('button');
-                button.className = 'copy-button';
-                button.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                button.onclick = async () => {
-                    try {
-                        await navigator.clipboard.writeText(content);
-                        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                        button.classList.add('copied');
-                        showToast('Code copied to clipboard');
-                        setTimeout(() => {
-                            button.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                            button.classList.remove('copied');
-                        }, 2000);
-                    } catch (err) {
-                        showToast('Failed to copy code', 'error');
-                    }
-                };
-                wrapperElement.appendChild(button);
-            }
-
-            // Add line numbers with syntax highlighting
-            function addLineNumbers(content, lang) {
-                const lines = content.split('\n');
-                const wrapper = document.createElement('div');
-                wrapper.className = 'line-numbers-wrapper';
-                
-                const lineNumbers = document.createElement('div');
-                lineNumbers.className = 'line-numbers';
-                lineNumbers.innerHTML = lines.map((_, i) => i + 1).join('<br>');
-                
-                // Create code element with syntax highlighting
-                const codeElement = document.createElement('code');
-                codeElement.className = `language-${lang}`;
-                codeElement.textContent = content;
-                
-                // Apply syntax highlighting
-                if (Prism.languages[lang]) {
-                    codeElement.innerHTML = Prism.highlight(content, Prism.languages[lang], lang);
-                }
-                
-                // Create pre element
-                const preElement = document.createElement('pre');
-                preElement.appendChild(codeElement);
-                
-                // Create code content div
-                const codeContent = document.createElement('div');
-                codeContent.className = 'code-content';
-                codeContent.appendChild(preElement);
-                
-                wrapper.appendChild(lineNumbers);
-                wrapper.appendChild(codeContent);
-                
-                return wrapper;
-            }
-
-            // Toggle word wrap
-            function toggleWordWrap() {
-                state.wordWrap = !state.wordWrap;
-                const codeContent = elements.contentViewerEl.querySelector('.code-content code');
-                if (codeContent) {
-                    if (state.wordWrap) {
-                        codeContent.style.whiteSpace = 'pre-wrap';
-                        codeContent.style.wordBreak = 'break-word';
-                        elements.wrapToggle.classList.add('active');
-                    } else {
-                        codeContent.style.whiteSpace = 'pre';
-                        codeContent.style.wordBreak = 'normal';
-                        elements.wrapToggle.classList.remove('active');
-                    }
-                }
-            }
-
-            async function renderFile(filePath, fileName, fileSize) {
-                const icon = getFileIcon(fileName);
-                const size = fileSize ? formatFileSize(fileSize) : 'Unknown size';
-                
-                elements.contentViewerEl.innerHTML = `
-                    <div class="file-header">
-                        <div class="file-title">
-                            <span class="icon">${icon}</span>
-                            <span>${fileName}</span>
-                        </div>
-                        <div class="file-meta">
-                            <span><i class="fas fa-chart-bar"></i> ${size}</span>
-                            <span><i class="fas fa-folder"></i> ${filePath}</span>
-                        </div>
-                        <div class="file-actions">
-                            <button id="back-btn" onclick="renderDirectory([])">
-                                <i class="fas fa-arrow-left"></i> Back
-                            </button>
-                            <button id="raw-btn" onclick="viewRaw('${filePath}')">
-                                <i class="fas fa-file"></i> Raw
-                            </button>
-                            <button id="download-btn" onclick="downloadFile('${filePath}', '${fileName}')">
-                                <i class="fas fa-download"></i> Download
-                            </button>
-                        </div>
-                    </div>
-                    <div class="loading">
-                        <div class="skeleton skeleton-title"></div>
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text" style="width: 80%;"></div>
-                    </div>
-                `;
-                
-                elements.wrapToggle.style.display = 'flex';
-                
-                try {
-                    const response = await fetch(`./${filePath}`);
-                    if (!response.ok) throw new Error(`Could not fetch ${filePath}`);
-                    const content = await response.text();
-                    state.currentFileContent = content;
-                    const fileExtension = fileName.split('.').pop().toLowerCase();
-
-                    let contentElement = null;
-                    if (fileExtension === 'md') {
-                        contentElement = document.createElement('div');
-                        contentElement.className = 'markdown-content';
-                        contentElement.innerHTML = marked.parse(content);
-                    } else if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico'].includes(fileExtension)) {
-                        contentElement = document.createElement('img');
-                        contentElement.src = `./${filePath}`;
-                        contentElement.alt = fileName;
-                    } else if (['mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'mkv', 'flv'].includes(fileExtension)) {
-                        contentElement = document.createElement('video');
-                        contentElement.src = `./${filePath}`;
-                        contentElement.controls = true;
-                        contentElement.style.maxWidth = '100%';
-                        contentElement.style.height = 'auto';
-                    } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(fileExtension)) {
-                        contentElement = document.createElement('audio');
-                        contentElement.src = `./${filePath}`;
-                        contentElement.controls = true;
-                        contentElement.style.width = '100%';
-                        contentElement.style.outline = 'none';
-                    } else if (['pdf'].includes(fileExtension)) {
-                        contentElement = document.createElement('embed');
-                        contentElement.src = `./${filePath}`;
-                        contentElement.type = 'application/pdf';
-                        contentElement.width = '100%';
-                        contentElement.height = '600px';
-                    } else {
-                        // Create code block with line numbers and syntax highlighting
-                        const lang = Prism.languages[fileExtension] ? fileExtension : 'plaintext';
-                        const wrapper = addLineNumbers(content, lang);
-                        addCopyButton(wrapper, content);
-                        contentElement = wrapper;
-                        
-                        // Apply current word wrap state
-                        if (state.wordWrap) {
-                            const codeElement = wrapper.querySelector('code');
-                            if (codeElement) {
-                                codeElement.style.whiteSpace = 'pre-wrap';
-                                codeElement.style.wordBreak = 'break-word';
-                                elements.wrapToggle.classList.add('active');
-                            }
-                        }
-                    }
-                    
-                    const headerEl = elements.contentViewerEl.querySelector('.file-header');
-                    elements.contentViewerEl.innerHTML = '';
-                    if (headerEl) elements.contentViewerEl.appendChild(headerEl);
-                    if (contentElement) elements.contentViewerEl.appendChild(contentElement);
-                    
-                } catch (error) {
-                    elements.contentViewerEl.innerHTML = `
-                        <div class="file-header">
-                            <div class="file-title">
-                                <span class="icon">${icon}</span>
-                                <span>${fileName}</span>
-                            </div>
-                            <div class="file-meta">
-                                <span><i class="fas fa-chart-bar"></i> ${size}</span>
-                                <span><i class="fas fa-folder"></i> ${filePath}</span>
-                            </div>
-                            <div class="file-actions">
-                                <button id="back-btn" onclick="renderDirectory([])">
-                                    <i class="fas fa-arrow-left"></i> Back
-                                </button>
-                            </div>
-                        </div>
-                        <p style="color: var(--error-color);">Error loading file: ${error.message}</p>
-                    `;
-                    showToast(`Error loading file: ${error.message}`, 'error');
-                    console.error(error);
-                }
-            }
-
-            // View raw file
-            function viewRaw(filePath) {
-                window.open(`./${filePath}`, '_blank');
-            }
-
-            // Download file
-            async function downloadFile(filePath, fileName) {
-                try {
-                    const response = await fetch(`./${filePath}`);
-                    if (!response.ok) throw new Error(`Could not fetch ${filePath}`);
-                    
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    showToast(`Downloaded ${fileName}`);
-                } catch (error) {
-                    console.error('Download failed:', error);
-                    showToast(`Failed to download ${fileName}: ${error.message}`, 'error');
-                }
-            }
-
-            // Event listeners
-            elements.sidebarToggle.addEventListener('click', () => {
-                elements.sidebar.classList.toggle('collapsed');
-            });
-
-            elements.wrapToggle.addEventListener('click', toggleWordWrap);
-
-            elements.themeToggle.addEventListener('click', () => {
-                const themeKeys = Object.keys(themes);
-                const currentIndex = themeKeys.indexOf(state.currentTheme);
-                const nextIndex = (currentIndex + 1) % themeKeys.length;
-                switchTheme(themeKeys[nextIndex]);
-            });
-
-            // Search with debouncing
-            let searchTimeout;
-            elements.searchBox.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    searchFiles(e.target.value);
-                }, 150);
-            });
-            
-            // Advanced help modal functions (opened by keybind '?')
-            function showAdvancedHelp() {
-                // Toggle behaviour: if already open, close
-                const overlay = elements.advHelpModal;
-                if (!overlay) return;
-                if (overlay.style.display === 'flex') {
-                    hideAdvancedHelp();
-                    return;
-                }
-                
-                // Open modal and note the open time to avoid immediately reacting to the same key event
-                overlay.style.display = 'flex';
-                overlay.setAttribute('aria-hidden', 'false');
-                state.advHelpOpenTime = performance.now();
-                
-                // add handlers that will close the modal on next pointer or key input
-                advHelpHandlers.pointer = (e) => {
-                    hideAdvancedHelp();
-                };
-                advHelpHandlers.key = (e) => {
-                    // ignore the event that opened the modal (very recent events)
-                    const now = performance.now();
-                    if (now - state.advHelpOpenTime < 50) return;
-                    hideAdvancedHelp();
-                };
-                document.addEventListener('pointerdown', advHelpHandlers.pointer, true);
-                document.addEventListener('keydown', advHelpHandlers.key, true);
-            }
-
-            function hideAdvancedHelp() {
-                const overlay = elements.advHelpModal;
-                if (!overlay) return;
-                overlay.style.display = 'none';
-                overlay.setAttribute('aria-hidden', 'true');
-                // remove any attached handlers
-                if (advHelpHandlers.pointer) {
-                    document.removeEventListener('pointerdown', advHelpHandlers.pointer, true);
-                    advHelpHandlers.pointer = null;
-                }
-                if (advHelpHandlers.key) {
-                    document.removeEventListener('keydown', advHelpHandlers.key, true);
-                    advHelpHandlers.key = null;
-                }
-             }
-
-            // Clear search on Escape
-            elements.searchBox.addEventListener('keydown', (e) => {
-                 // keep Escape behaviour when typing
-                 if (e.key === 'Escape') {
-                     elements.searchBox.value = '';
-                     elements.searchBox.blur();
-                     renderDirectory(state.currentPath);
-                 }
-             });
-              
-              // Keyboard navigation
-              document.addEventListener('keydown', (e) => {
-                 const items = virtualScroller.items;
-                 const activeIsSearch = document.activeElement === elements.searchBox;
- 
-                 // If search box is focused, allow arrow navigation and Enter to select results
-                 if (activeIsSearch) {
-                    // allow opening advanced help even when search is focused (key 'h', case-insensitive)
-                    if (e.key && e.key.toLowerCase() === 'h') {
-                        e.preventDefault();
-                        showAdvancedHelp();
-                        return;
-                    }
-                     if (!items || items.length === 0) return;
-                     if (['ArrowUp','ArrowDown','Enter'].includes(e.key)) {
-                         e.preventDefault();
-                         if (e.key === 'ArrowUp') {
-                             state.selectedIndex = Math.max(0, state.selectedIndex - 1);
-                             updateSelection();
-                             return;
-                         }
-                         if (e.key === 'ArrowDown') {
-                             state.selectedIndex = Math.min(items.length - 1, state.selectedIndex + 1);
-                             updateSelection();
-                             return;
-                         }
-                         if (e.key === 'Enter') {
-                             const selectedItem = items[state.selectedIndex];
-                             if (selectedItem) {
-                                 if (selectedItem.isBack) {
-                                     renderDirectory(state.currentPath.slice(0, -1));
-                                 } else if (selectedItem.type === 'folder') {
-                                     renderDirectory([...state.currentPath, selectedItem.name]);
-                                 } else {
-                                     renderFile(selectedItem.path, selectedItem.name, selectedItem.size);
-                                 }
-                             }
-                         return;
-                         }
-                     }
-                     // Escape key handled elsewhere (searchBox keydown) — let typing work for other keys
-                     return;
-                 }
- 
-                 // Not focused in search box: keep existing behavior
-                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                     if (e.key === 'Escape') {
-                         e.target.blur();
-                     }
-                     return;
-                 }
- 
-                 if (!items || items.length === 0) return;
-                 // top-level toggle key for advanced help (h/H)
-                 if (e.key && e.key.toLowerCase() === 'h') {
-                     e.preventDefault();
-                     showAdvancedHelp();
-                     return;
-                 }
-                 switch(e.key) {
-                      case 'ArrowUp':
-                          e.preventDefault();
-                          state.selectedIndex = Math.max(0, state.selectedIndex - 1);
-                          updateSelection();
-                          break;
-                     case 'ArrowDown':
-                         e.preventDefault();
-                         state.selectedIndex = Math.min(items.length - 1, state.selectedIndex + 1);
-                         updateSelection();
-                         break;
-                     case 'ArrowLeft':
-                         e.preventDefault();
-                         if (state.currentPath.length > 0) {
-                             renderDirectory(state.currentPath.slice(0, -1));
-                         } else {
-                             renderDirectory([]);
-                         }
-                         break;
-                     case 'ArrowRight':
-                     case 'Enter':
-                         e.preventDefault();
-                         if (state.selectedIndex >= 0 && items[state.selectedIndex]) {
-                             const selectedItem = items[state.selectedIndex];
-                             if (selectedItem.isBack) {
-                                 renderDirectory(state.currentPath.slice(0, -1));
-                             } else if (selectedItem.type === 'folder') {
-                                 renderDirectory([...state.currentPath, selectedItem.name]);
-                             } else {
-                                 renderFile(selectedItem.path, selectedItem.name, selectedItem.size);
-                             }
-                         }
-                         break;
-                     case '/':
-                         e.preventDefault();
-                         elements.searchBox.focus();
-                         break;
-                     case 'Escape':
-                         e.preventDefault();
-                         if (elements.searchBox.value) {
-                             elements.searchBox.value = '';
-                             renderDirectory(state.currentPath);
-                         } else {
-                             renderDirectory([]);
-                         }
-                         break;
-                     case 'b':
-                     case 'B':
-                         e.preventDefault();
-                         elements.sidebar.classList.toggle('collapsed');
-                         break;
-                     case 't':
-                     case 'T':
-                         e.preventDefault();
-                         const themeKeys = Object.keys(themes);
-                         const currentIndex = themeKeys.indexOf(state.currentTheme);
-                         const nextIndex = (currentIndex + 1) % themeKeys.length;
-                         switchTheme(themeKeys[nextIndex]);
-                         break;
-                     case 'c':
-                     case 'C':
-                         if (e.ctrlKey || e.metaKey) {
-                             e.preventDefault();
-                             const codeContent = elements.contentViewerEl.querySelector('.code-content code');
-                             if (codeContent) {
-                                 navigator.clipboard.writeText(codeContent.textContent);
-                                 showToast('File content copied to clipboard');
-                             }
-                         }
-                         break;
-                 }
-              });
-            
-            // Go back one folder
-            function goBackOneFolder() {
-                if (state.currentPath.length > 0) {
-                    renderDirectory(state.currentPath.slice(0, -1));
-                }
-            }
-
-            // Make functions globally accessible
-            window.renderDirectory = renderDirectory;
-            window.viewRaw = viewRaw;
-            window.downloadFile = downloadFile;
-            window.goBackOneFolder = goBackOneFolder;
-
-            // Initialize everything
-            initializeVirtualScroller();
-            initializeTouchGestures();
-            switchTheme(state.currentTheme);
-            loadFileTree();
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span>Repository tree</span>
+        <div class="sidebar-actions">
+          <div class="chip">
+            <span>⮞</span>
+            <span>Folders like local</span>
+          </div>
+        </div>
+      </div>
+      <div id="tree" class="tree"></div>
+    </aside>
+
+    <main class="main">
+      <div class="breadcrumb">
+        <span class="label">SELECTION</span>
+        <div id="breadcrumb-path" class="breadcrumb-path">No file selected</div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button class="btn" id="btn-back">
+            <span class="icon">↶</span>
+            <span>Back</span>
+          </button>
+          <button class="btn" id="btn-up">
+            <span class="icon">⇡</span>
+            <span>Up</span>
+          </button>
+          <button class="btn" id="btn-collapse-all">
+            <span class="icon">⊟</span>
+            <span>Collapse all</span>
+          </button>
+          <button class="btn" id="btn-expand-root">
+            <span class="icon">⊞</span>
+            <span>Expand root</span>
+          </button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="btn-copy-path">
+            <span class="icon">⧉</span>
+            <span>Copy path</span>
+          </button>
+          <button class="btn" id="btn-toggle-raw">
+            <span class="icon">≋</span>
+            <span>Raw</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="file-meta" id="file-meta">
+        <span><strong>Hint:</strong> Choose a file on the left to preview content.</span>
+      </div>
+
+      <div class="viewer">
+        <div class="viewer-header">
+          <div class="viewer-header-left">
+            <div class="viewer-header-dots">
+              <div class="viewer-header-dot red"></div>
+              <div class="viewer-header-dot yellow"></div>
+              <div class="viewer-header-dot green"></div>
+            </div>
+            <div class="viewer-header-title" id="viewer-title">
+              No file opened
+            </div>
+          </div>
+          <div class="viewer-header-right">
+            <div class="badge">
+              <span>RO</span>
+              <span>Read-only</span>
+            </div>
+            <div class="badge accent">
+              <span>Indexed</span>
+              <span>Offline tree</span>
+            </div>
+          </div>
+        </div>
+        <div class="viewer-body" id="viewer-body">
+          <div class="placeholder">
+            <div class="title">Browse your repository like a local file manager.</div>
+            <div class="subtitle">
+              Directory tree is generated on each push by GitHub Actions.
+              No runtime GitHub API calls. No write access. Just static files.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="status">
+        <span>
+          <span class="dot"></span>
+          <span id="status-label">Awaiting index.json …</span>
+        </span>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // Simple "local file manager" behavior backed by index.json
+
+  let indexData = null;
+  let currentFilePath = null;
+  let historyStack = [];
+  let historyIndex = -1;
+  let rawMode = false;
+
+  async function loadIndex() {
+    const statusLabel = document.getElementById('status-label');
+    try {
+      statusLabel.textContent = 'Loading index.json …';
+      const res = await fetch('index.json', { cache: 'no-store' });
+      if (!res.ok) {
+        throw new Error('HTTP ' + res.status);
+      }
+      indexData = await res.json();
+      statusLabel.textContent = 'Index loaded. Ready.';
+      renderTree();
+      // Expand first level
+      autoExpandRoot();
+    } catch (err) {
+      console.error(err);
+      statusLabel.textContent = 'Failed to load index.json';
+      const viewerBody = document.getElementById('viewer-body');
+      viewerBody.innerHTML = '<div class="error">Unable to load index.json. Ensure GitHub Actions generated dist/index.json correctly.</div>';
+    }
+  }
+
+  function renderTree() {
+    const treeEl = document.getElementById('tree');
+    treeEl.innerHTML = '';
+    if (!indexData || !Array.isArray(indexData.children)) {
+      treeEl.textContent = 'No index data.';
+      return;
+    }
+
+    const rootUl = document.createElement('ul');
+    rootUl.className = 'tree-root';
+
+    indexData.children.forEach(child => {
+      rootUl.appendChild(createTreeNode(child));
+    });
+
+    treeEl.appendChild(rootUl);
+  }
+
+  function createTreeNode(node) {
+    const li = document.createElement('li');
+
+    const item = document.createElement('div');
+    item.classList.add('tree-item');
+    item.dataset.path = node.path || '';
+
+    const arrow = document.createElement('span');
+    arrow.classList.add('arrow');
+    arrow.textContent = '▾';
+
+    const icon = document.createElement('span');
+    icon.classList.add('icon');
+
+    const name = document.createElement('span');
+    name.classList.add('name');
+    name.textContent = node.name || '(root)';
+
+    let childrenContainer = null;
+
+    if (node.type === 'directory') {
+      item.classList.add('directory', 'expanded');
+      icon.textContent = '▣';
+      item.addEventListener('click', (e) => {
+        if (e.target === name || e.target === icon || e.target === arrow || e.target === item) {
+          toggleDirectory(item, childrenContainer);
+        }
+      });
+
+      if (node.children && node.children.length) {
+        childrenContainer = document.createElement('ul');
+        childrenContainer.className = 'tree-children';
+        node.children.forEach(child => {
+          childrenContainer.appendChild(createTreeNode(child));
         });
-    </script>
+      } else {
+        childrenContainer = document.createElement('ul');
+        childrenContainer.className = 'tree-children';
+      }
+    } else {
+      item.classList.add('file', node.previewable ? 'previewable' : 'not-previewable');
+      icon.textContent = '▤';
+      item.classList.add('leaf');
+      item.querySelector?.('.arrow')?.classList?.add('hidden');
+      item.addEventListener('click', () => {
+        openFile(node.path);
+      });
+      // For files, use a hidden arrow placeholder to align if needed
+      arrow.style.visibility = 'hidden';
+    }
+
+    item.appendChild(arrow);
+    item.appendChild(icon);
+    item.appendChild(name);
+
+    li.appendChild(item);
+    if (childrenContainer) {
+      li.appendChild(childrenContainer);
+    }
+
+    return li;
+  }
+
+  function toggleDirectory(item, childrenContainer) {
+    const path = item.dataset.path || '';
+    if (!childrenContainer) {
+      // Find next sibling UL
+      const li = item.parentElement;
+      const next = li.querySelector('.tree-children');
+      childrenContainer = next || null;
+    }
+    if (!childrenContainer) return;
+
+    const collapsed = childrenContainer.classList.contains('collapsed');
+    if (collapsed) {
+      childrenContainer.classList.remove('collapsed');
+      item.classList.remove('collapsed');
+      item.classList.add('expanded');
+    } else {
+      childrenContainer.classList.add('collapsed');
+      item.classList.remove('expanded');
+      item.classList.add('collapsed');
+    }
+  }
+
+  function autoExpandRoot() {
+    const tree = document.getElementById('tree');
+    const firstDirs = tree.querySelectorAll('.tree-item.directory');
+    firstDirs.forEach((dir, index) => {
+      const children = dir.parentElement.querySelector('.tree-children');
+      if (!children) return;
+      // Expand only top-level by default
+      if (dir.parentElement.parentElement.classList.contains('tree-root')) {
+        children.classList.remove('collapsed');
+        dir.classList.add('expanded');
+      }
+    });
+  }
+
+  function findNodeByPath(pathStr) {
+    if (!indexData || !indexData.children) return null;
+    const norm = (pathStr || '').replace(/^\/+/, '');
+    if (!norm) return null;
+
+    const parts = norm.split('/');
+    let current = { children: indexData.children };
+
+    for (const part of parts) {
+      if (!current.children) return null;
+      const next = current.children.find(c => c.name === part);
+      if (!next) return null;
+      current = next;
+    }
+    return current;
+  }
+
+  function openFile(pathStr, pushHistory = true) {
+    if (!pathStr) return;
+    const node = findNodeByPath(pathStr);
+    if (!node || node.type !== 'file') return;
+
+    const filePath = node.path || pathStr;
+    currentFilePath = filePath;
+
+    if (pushHistory) {
+      // Trim forward history
+      historyStack = historyStack.slice(0, historyIndex + 1);
+      historyStack.push(filePath);
+      historyIndex = historyStack.length - 1;
+    }
+
+    // Update UI state in tree
+    highlightActiveTreeItem(filePath);
+
+    // Update breadcrumb, titles, meta
+    const breadcrumb = document.getElementById('breadcrumb-path');
+    breadcrumb.textContent = filePath;
+
+    const viewerTitle = document.getElementById('viewer-title');
+    viewerTitle.textContent = filePath;
+
+    const fileMeta = document.getElementById('file-meta');
+    const sizeStr = typeof node.size === 'number' ? formatBytes(node.size) : 'unknown';
+    const prevStr = node.previewable ? 'inline preview' : 'no inline preview';
+    fileMeta.innerHTML = `
+      <span><strong>File:</strong> ${escapeHtml(filePath)}</span>
+      <span class="dot"></span>
+      <span>${sizeStr}</span>
+      <span class="dot"></span>
+      <span>${prevStr}</span>
+      ${!node.previewable ? '<span class="dot"></span><span>Use "Raw" if this is a supported text file.</span>' : ''}
+    `;
+
+    const viewerBody = document.getElementById('viewer-body');
+
+    if (!node.previewable && !rawMode) {
+      viewerBody.innerHTML = `
+        <div class="viewer-body-inner">
+          <p class="not-previewable">
+            This file isn't inlined for preview (too large or binary).
+          </p>
+          <p class="not-previewable">
+            Toggle "Raw" to attempt direct fetch from this static host (if available),
+            or download the file via your hosting environment.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    if (rawMode && (!node.content || node.size > 0)) {
+      // In raw mode, try to fetch the file itself relative to index.html.
+      // This only works if your hosting also serves the repo files alongside dist.
+      loadRawFile(filePath);
+      return;
+    }
+
+    if (node.previewable && typeof node.content === 'string') {
+      renderText(node.content, filePath);
+    } else {
+      viewerBody.innerHTML = `
+        <div class="not-previewable">
+          No inline content available for this file.
+        </div>
+      `;
+    }
+  }
+
+  function loadRawFile(pathStr) {
+    const viewerBody = document.getElementById('viewer-body');
+    viewerBody.innerHTML = '<div class="not-previewable">Loading raw file…</div>';
+    fetch(pathStr, { cache: 'no-store' })
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      })
+      .then(text => {
+        renderText(text, pathStr);
+      })
+      .catch(err => {
+        console.error(err);
+        viewerBody.innerHTML = `
+          <div class="error">
+            Failed to load raw file from path: ${escapeHtml(pathStr)}.
+            Ensure your deployment serves repository files in a compatible structure.
+          </div>
+        `;
+      });
+  }
+
+  function renderText(content, pathStr) {
+    const viewerBody = document.getElementById('viewer-body');
+    const ext = (pathStr.split('.').pop() || '').toLowerCase();
+    const isCode = true; // treat everything as code-ish for consistent feel
+
+    const lines = content.replace(/\r\n/g, '\n').split('\n');
+
+    const container = document.createElement('div');
+    container.className = 'line-numbers';
+
+    lines.forEach(line => {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'line';
+
+      const numEl = document.createElement('div');
+      numEl.className = 'line-number';
+
+      const contentEl = document.createElement('div');
+      contentEl.className = 'line-content';
+      contentEl.textContent = line || '\u200B';
+
+      lineEl.appendChild(numEl);
+      lineEl.appendChild(contentEl);
+      container.appendChild(lineEl);
+    });
+
+    viewerBody.innerHTML = '';
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    code.appendChild(container);
+    pre.appendChild(code);
+    viewerBody.appendChild(pre);
+  }
+
+  function highlightActiveTreeItem(pathStr) {
+    const tree = document.getElementById('tree');
+    tree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+    const item = tree.querySelector(`.tree-item[data-path="${cssEscape(pathStr)}"]`);
+    if (item) {
+      item.classList.add('active');
+      // Ensure parents expanded
+      expandParents(item);
+      // Scroll into view (like a local file manager)
+      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  function expandParents(el) {
+    let current = el.parentElement;
+    while (current && current.id !== 'tree') {
+      if (current.tagName === 'UL' && current.classList.contains('tree-children')) {
+        current.classList.remove('collapsed');
+        const parentItem = current.parentElement.querySelector('.tree-item.directory');
+        if (parentItem) {
+          parentItem.classList.add('expanded');
+          parentItem.classList.remove('collapsed');
+        }
+      }
+      current = current.parentElement;
+    }
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    if (!bytes || isNaN(bytes)) return 'unknown size';
+    const units = ['B','KB','MB','GB','TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const val = bytes / Math.pow(1024, i);
+    return val.toFixed(val >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
+  }
+
+  function escapeHtml(str) {
+    return (str || '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function cssEscape(str) {
+    return (str || '').replace(/"/g, '\\"');
+  }
+
+  // Toolbar actions
+
+  document.getElementById('btn-back').addEventListener('click', () => {
+    if (historyIndex > 0) {
+      historyIndex--;
+      const path = historyStack[historyIndex];
+      openFile(path, false);
+    }
+  });
+
+  document.getElementById('btn-up').addEventListener('click', () => {
+    if (!currentFilePath) return;
+    const parts = currentFilePath.split('/');
+    parts.pop();
+    if (!parts.length) return;
+    const parentPath = parts.join('/');
+    const node = findNodeByPath(parentPath);
+    if (node && node.type === 'directory' && node.children && node.children.length) {
+      // Choose first file or directory inside as focus?
+      // We'll just highlight directory.
+      highlightActiveTreeItem(parentPath);
+      const breadcrumb = document.getElementById('breadcrumb-path');
+      breadcrumb.textContent = parentPath + '/';
+      const viewerTitle = document.getElementById('viewer-title');
+      viewerTitle.textContent = parentPath + '/';
+      const viewerBody = document.getElementById('viewer-body');
+      viewerBody.innerHTML = `
+        <div class="placeholder">
+          <div class="title">Directory selected: ${escapeHtml(parentPath)}/</div>
+          <div class="subtitle">Choose a file inside this folder from the tree to preview its contents.</div>
+        </div>
+      `;
+    }
+  });
+
+  document.getElementById('btn-collapse-all').addEventListener('click', () => {
+    const tree = document.getElementById('tree');
+    tree.querySelectorAll('.tree-children').forEach(ul => ul.classList.add('collapsed'));
+    tree.querySelectorAll('.tree-item.directory').forEach(item => {
+      item.classList.remove('expanded');
+      item.classList.add('collapsed');
+    });
+  });
+
+  document.getElementById('btn-expand-root').addEventListener('click', () => {
+    const tree = document.getElementById('tree');
+    tree.querySelectorAll('.tree-root > li > .tree-children').forEach(ul => ul.classList.remove('collapsed'));
+    tree.querySelectorAll('.tree-root > li > .tree-item.directory').forEach(item => {
+      item.classList.add('expanded');
+      item.classList.remove('collapsed');
+    });
+  });
+
+  document.getElementById('btn-copy-path').addEventListener('click', async () => {
+    if (!currentFilePath) return;
+    try {
+      await navigator.clipboard.writeText(currentFilePath);
+      flashStatus('Path copied');
+    } catch {
+      flashStatus('Unable to copy path');
+    }
+  });
+
+  document.getElementById('btn-toggle-raw').addEventListener('click', () => {
+    rawMode = !rawMode;
+    const btn = document.getElementById('btn-toggle-raw');
+    if (rawMode) {
+      btn.classList.add('primary');
+      flashStatus('Raw mode: ON (attempts direct static fetch)');
+      if (currentFilePath) {
+        openFile(currentFilePath, false);
+      }
+    } else {
+      btn.classList.remove('primary');
+      flashStatus('Raw mode: OFF (using inlined index when available)');
+      if (currentFilePath) {
+        openFile(currentFilePath, false);
+      }
+    }
+  });
+
+  function flashStatus(msg) {
+    const statusLabel = document.getElementById('status-label');
+    const old = statusLabel.textContent;
+    statusLabel.textContent = msg;
+    statusLabel.style.color = '#bfdbfe';
+    setTimeout(() => {
+      statusLabel.textContent = old.includes('Index loaded') ? 'Index loaded. Ready.' : old;
+      statusLabel.style.color = '';
+    }, 1500);
+  }
+
+  // Start
+  loadIndex();
+</script>
 </body>
 </html>

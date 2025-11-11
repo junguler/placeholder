@@ -1,10 +1,10 @@
-# .github/workflows/deploy.yml
-name: Build and Deploy File Manager
+name: Build & Deploy File Explorer
 
 on:
   push:
     branches:
-      - main # Or your default branch name
+      - main
+      - master
 
 permissions:
   contents: read
@@ -13,38 +13,46 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Setup Node.js
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Generate index.json
-        run: node generate_index.js
+      - name: Install dependencies (if any)
+        run: |
+          if [ -f package.json ]; then
+            npm ci || npm install
+          fi
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Generate index.json and static viewer
+        run: |
+          node generate_index.js
 
-      - name: Upload artifact
+      - name: Upload build artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository, including the generated index.json
-          path: '.'
+          path: dist
 
   deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

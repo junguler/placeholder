@@ -1,286 +1,559 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Repo File Manager</title>
   <style>
     :root {
-      --bg-color: #f6f8fa;
-      --sidebar-bg: #ffffff;
-      --text-color: #24292f;
-      --border-color: #d0d7de;
-      --hover-bg: #f3f4f6;
-      --selected-bg: #e8f3ff;
-      --icon-color: #57606a;
-      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --bg: #0f1115;
+      --panel: #151922;
+      --panel-2: #1a1f2b;
+      --text: #e6e9ef;
+      --muted: #9aa3b2;
+      --accent: #4ea1ff;
+      --border: #252b3a;
+      --green: #65c466;
+      --red: #ff6b6b;
+      --yellow: #ffcc66;
+      --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
-      font-family: var(--font-family);
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      height: 100vh;
-      display: flex;
-      overflow: hidden;
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: var(--font); -webkit-font-smoothing: antialiased;
     }
-
-    .sidebar {
-      width: 300px;
-      background-color: var(--sidebar-bg);
-      border-right: 1px solid var(--border-color);
-      overflow-y: auto;
-      flex-shrink: 0;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .app {
+      display: grid; grid-template-columns: 360px 1fr; gap: 0;
+      height: 100%;
     }
-
-    .main-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+    .left {
+      background: var(--panel); border-right: 1px solid var(--border);
+      display: grid; grid-template-rows: auto 1fr;
     }
-
-    .header {
-      padding: 16px;
-      border-bottom: 1px solid var(--border-color);
-      background-color: var(--sidebar-bg);
-      font-size: 14px;
-      color: var(--icon-color);
+    .right {
+      background: var(--panel-2); display: grid; grid-template-rows: auto 1fr;
     }
-
-    .file-tree {
-      padding: 8px 0;
+    .toolbar {
+      display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border);
     }
-
-    .tree-item {
-      display: flex;
-      align-items: center;
-      padding: 6px 12px;
-      cursor: pointer;
-      user-select: none;
+    .title { font-weight: 600; }
+    .crumbs {
+      padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-
-    .tree-item:hover {
-      background-color: var(--hover-bg);
+    .crumb {
+      padding: 4px 8px; border-radius: 6px; background: transparent; cursor: pointer; border: 1px solid transparent;
     }
-
-    .tree-item.selected {
-      background-color: var(--selected-bg);
+    .crumb:hover { background: rgba(255,255,255,0.06); border-color: var(--border); }
+    .search {
+      margin-left: auto; position: relative;
     }
-
-    .tree-item.file {
-      padding-left: 32px;
+    .search input {
+      background: #0d1017; border: 1px solid var(--border); color: var(--text);
+      padding: 6px 10px; border-radius: 6px; outline: none; width: 220px;
     }
-
-    .tree-item.dir::before {
-      content: "📁";
-      margin-right: 8px;
-      width: 16px;
-      text-align: center;
+    .filelist {
+      overflow: auto; padding: 8px;
     }
-
-    .tree-item.file::before {
-      content: "📄";
-      margin-right: 8px;
-      width: 16px;
-      text-align: center;
+    .file-item {
+      display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center;
+      padding: 6px 8px; border-radius: 6px; cursor: pointer;
     }
-
-    .content-viewer {
-      flex: 1;
-      padding: 20px;
-      overflow: auto;
-      background-color: white;
+    .file-item:hover { background: rgba(255,255,255,0.05); }
+    .file-item.selected { background: rgba(78,161,255,0.12); outline: 1px solid rgba(78,161,255,0.35); }
+    .file-icon { text-align: center; color: var(--muted); }
+    .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-size { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .preview-header {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border);
     }
-
-    .file-info {
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-color);
+    .preview-body { overflow: auto; padding: 12px; }
+    pre, code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
     }
-
-    .file-name {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .file-meta {
-      font-size: 14px;
-      color: var(--icon-color);
-    }
-
     pre {
-      white-space: pre-wrap;
-      word-break: break-all;
-      line-height: 1.5;
+      background: #0d1017; border: 1px solid var(--border); padding: 12px; border-radius: 8px;
+      overflow: auto;
     }
-
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--icon-color);
+    .muted { color: var(--muted); }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--muted); }
+    .actions { margin-left: auto; display: flex; gap: 6px; }
+    .btn {
+      background: #0d1017; border: 1px solid var(--border); color: var(--text);
+      padding: 6px 10px; border-radius: 6px; cursor: pointer;
     }
-
-    .empty-state p {
-      margin-top: 16px;
-      font-size: 18px;
+    .btn:hover { background: rgba(255,255,255,0.06); }
+    .thumb {
+      display: flex; justify-content: center; align-items: center;
+      background: #0d1017; border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px;
     }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      font-size: 18px;
-    }
+    .thumb img { max-width: 100%; max-height: 70vh; border-radius: 4px; }
+    .empty { color: var(--muted); text-align: center; padding: 24px; }
+    .dir-icon::before { content: "📁"; }
+    .file-icon::before { content: "📄"; }
+    .image-icon::before { content: "🖼️"; }
+    .pdf-icon::before { content: "📕"; }
+    .md-icon::before { content: "📝"; }
+    .json-icon::before { content: "🧩"; }
+    .code-icon::before { content: "💻"; }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <div class="header">Repository Files</div>
-    <div class="file-tree" id="fileTree"></div>
-  </div>
-  <div class="main-content">
-    <div class="content-viewer" id="contentViewer">
-      <div class="empty-state">
-        <div>📁</div>
-        <p>Select a file to view its contents</p>
+<div class="app">
+  <div class="left">
+    <div class="toolbar">
+      <div class="title">Files</div>
+      <div class="pill" id="totalCount">0 items</div>
+      <div class="search">
+        <input id="searchInput" placeholder="Filter (Fuzzy)" />
       </div>
     </div>
+    <div id="crumbs" class="crumbs"></div>
+    <div id="filelist" class="filelist" role="tree" aria-label="Files"></div>
   </div>
+  <div class="right">
+    <div class="preview-header">
+      <div id="previewTitle" class="muted">Nothing selected</div>
+      <div class="actions">
+        <button class="btn" id="copyRawBtn" title="Copy raw URL (GitHub Pages or raw content host)" disabled>Copy Raw URL</button>
+        <button class="btn" id="downloadBtn" title="Download current file" disabled>Download</button>
+      </div>
+    </div>
+    <div id="preview" class="preview-body">
+      <div class="empty">Select a file to preview. Use Enter to open, Backspace to go up.</div>
+    </div>
+  </div>
+</div>
 
-  <script>
-    let currentFile = null;
-    let fileData = null;
+<script>
+(function() {
+  const $ = sel => document.querySelector(sel);
+  const filelistEl = $('#filelist');
+  const crumbsEl = $('#crumbs');
+  const previewEl = $('#preview');
+  const previewTitleEl = $('#previewTitle');
+  const totalCountEl = $('#totalCount');
+  const searchInput = $('#searchInput');
+  const copyRawBtn = $('#copyRawBtn');
+  const downloadBtn = $('#downloadBtn');
 
-    // Format file size
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const PLACEHOLDER_RAW_PREFIX = 'REPLACE_WITH_YOUR_RAW_BASE';
+  let RAW_BASE = PLACEHOLDER_RAW_PREFIX; // e.g., https://<user>.github.io/<repo>/raw/<branch>/
+  const USE_GH_PAGES_RAW = true; // Set false if hosting raw elsewhere
+
+  const state = {
+    data: null,
+    root: null,
+    filter: '',
+    currentDirPath: '', // relative path from root
+    selectedEntry: null,
+    selectedIndex: -1
+  };
+
+  document.addEventListener('keydown', onKeyDown);
+
+  function onKeyDown(e) {
+    const items = getVisibleItems();
+    const dirItems = items.filter(x => x.entry.type === 'dir');
+    const fileItems = items.filter(x => x.entry.type === 'file');
+
+    if (e.key === 'ArrowDown' || e.key === 'j') {
+      e.preventDefault();
+      selectRelative(+1, items);
+    } else if (e.key === 'ArrowUp' || e.key === 'k') {
+      e.preventDefault();
+      selectRelative(-1, items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const sel = getSelected();
+      if (!sel) return;
+      if (sel.entry.type === 'dir') {
+        openDir(sel.entry.path);
+      } else {
+        showPreview(sel.entry.path);
+      }
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      goUpOne();
+    }
+  }
+
+  async function init() {
+    // Discover index.json via script tag or fallback to './index.json'
+    const indexUrl = (function() {
+      const tag = document.querySelector('script[data-index]');
+      if (tag && tag.dataset.index) return tag.dataset.index;
+      return './index.json';
+    })();
+
+    try {
+      const res = await fetch(indexUrl, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`Failed to fetch ${indexUrl}: ${res.status}`);
+      const data = await res.json();
+      state.data = data;
+      state.root = data.tree;
+      totalCountEl.textContent = `${data.files.length} files`;
+
+      // Set RAW_BASE based on current location for gh-pages
+      if (USE_GH_PAGES_RAW) {
+        RAW_BASE = `${location.origin}/${location.pathname.split('/').slice(0, -1).join('/')}/raw/`;
+      }
+
+      // Parse initial path from hash e.g. #/src/app
+      const initial = (location.hash || '').replace(/^#/, '');
+      if (initial) {
+        state.currentDirPath = normalizePathDir(initial);
+      } else {
+        state.currentDirPath = '';
+      }
+
+      renderAll();
+    } catch (e) {
+      previewEl.innerHTML = `<div class="empty">Error loading index.json: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function getSelected() {
+    if (!state.selectedEntry) return null;
+    const items = getVisibleItems();
+    const idx = items.findIndex(x => x.entry.path === state.selectedEntry.path && x.entry.type === state.selectedEntry.type);
+    if (idx >= 0) return items[idx].entry;
+    return null;
+  }
+
+  function selectRelative(delta, items) {
+    if (!items.length) return;
+    if (!state.selectedEntry) {
+      state.selectedEntry = items[0].entry;
+      state.selectedIndex = 0;
+      renderList();
+      return;
+    }
+    const currentIdx = items.findIndex(x => x.entry.path === state.selectedEntry.path && x.entry.type === state.selectedEntry.type);
+    const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + delta));
+    state.selectedEntry = items[nextIdx].entry;
+    state.selectedIndex = nextIdx;
+    renderList();
+  }
+
+  function getDirNode(dirPath) {
+    // dirPath is '' for root, or 'src/app'
+    let node = state.root;
+    const parts = dirPath ? dirPath.split('/').filter(Boolean) : [];
+    for (const part of parts) {
+      const child = (node.children || []).find(c => c.name === part && c.type === 'dir');
+      if (!child) return null;
+      node = child;
+    }
+    return node;
+  }
+
+  function getVisibleItems() {
+    const node = getDirNode(state.currentDirPath);
+    let items = (node ? node.children : state.root.children) || [];
+    // Filter by search
+    const q = state.filter.trim().toLowerCase();
+    if (q) {
+      items = items.filter(e => e.name.toLowerCase().includes(q));
+    }
+    // Ensure ordering (dirs first)
+    items = items.slice().sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
+    return items.map(entry => ({ entry }));
+  }
+
+  function renderCrumbs() {
+    const parts = state.currentDirPath ? state.currentDirPath.split('/').filter(Boolean) : [];
+    crumbsEl.innerHTML = '';
+
+    const rootCrumb = document.createElement('div');
+    rootCrumb.className = 'crumb';
+    rootCrumb.textContent = '/';
+    rootCrumb.title = 'Go to root';
+    rootCrumb.onclick = () => openDir('');
+    crumbsEl.appendChild(rootCrumb);
+
+    let acc = '';
+    for (const p of parts) {
+      const sep = document.createElement('span');
+      sep.className = 'muted';
+      sep.textContent = '/';
+      crumbsEl.appendChild(sep);
+
+      acc = acc ? acc + '/' + p : p;
+      const c = document.createElement('div');
+      c.className = 'crumb';
+      c.textContent = p;
+      c.title = `Go to ${acc}`;
+      c.onclick = () => openDir(acc);
+      crumbsEl.appendChild(c);
+    }
+  }
+
+  function renderList() {
+    const items = getVisibleItems();
+
+    // Select first item by default if none selected
+    if (!state.selectedEntry && items.length) {
+      state.selectedEntry = items[0].entry;
+      state.selectedIndex = 0;
     }
 
-    // Format date
-    function formatDate(timestamp) {
-      return new Date(timestamp).toLocaleString();
+    filelistEl.innerHTML = '';
+    for (const { entry } of items) {
+      const row = document.createElement('div');
+      row.className = 'file-item';
+      if (state.selectedEntry && state.selectedEntry.path === entry.path && state.selectedEntry.type === entry.type) {
+        row.classList.add('selected');
+      }
+      row.setAttribute('role', 'treeitem');
+      row.onclick = () => {
+        state.selectedEntry = entry;
+        renderList();
+      };
+      row.ondblclick = () => {
+        if (entry.type === 'dir') openDir(entry.path);
+        else showPreview(entry.path);
+      };
+
+      const icon = document.createElement('div');
+      icon.className = 'file-icon ' + iconClassFor(entry);
+      icon.textContent = ''; // icon font via ::before
+      row.appendChild(icon);
+
+      const name = document.createElement('div');
+      name.className = 'file-name';
+      name.textContent = entry.name;
+      row.appendChild(name);
+
+      const size = document.createElement('div');
+      size.className = 'file-size';
+      if (entry.type === 'file') {
+        size.textContent = formatSize(entry.size || 0);
+      } else {
+        size.textContent = '';
+      }
+      row.appendChild(size);
+
+      filelistEl.appendChild(row);
+    }
+  }
+
+  function iconClassFor(entry) {
+    if (entry.type === 'dir') return 'dir-icon';
+    const ext = (entry.name.split('.').pop() || '').toLowerCase();
+    if (['png','jpg','jpeg','gif','webp','svg','bmp','ico'].includes(ext)) return 'image-icon';
+    if (['pdf'].includes(ext)) return 'pdf-icon';
+    if (['md','markdown'].includes(ext)) return 'md-icon';
+    if (['json'].includes(ext)) return 'json-icon';
+    if (['js','mjs','cjs','ts','tsx','jsx','c','h','cpp','hpp','rb','go','py','rs','java','kt','kts','php','css','scss','less','html','htm','xml','yml','yaml','sh','bat','ps1'].includes(ext)) return 'code-icon';
+    return 'file-icon';
+  }
+
+  function renderPreviewPlaceholder() {
+    previewEl.innerHTML = '<div class="empty">Select a file to preview. Use Enter to open, Backspace to go up.</div>';
+    previewTitleEl.textContent = 'Nothing selected';
+    copyRawBtn.disabled = true;
+    downloadBtn.disabled = true;
+  }
+
+  function renderAll() {
+    renderCrumbs();
+    renderList();
+    renderPreviewPlaceholder();
+  }
+
+  function openDir(dirPath) {
+    state.currentDirPath = normalizePathDir(dirPath);
+    state.selectedEntry = null;
+    state.selectedIndex = -1;
+    location.hash = `#/${state.currentDirPath}`;
+    renderAll();
+  }
+
+  function goUpOne() {
+    const parts = state.currentDirPath ? state.currentDirPath.split('/').filter(Boolean) : [];
+    parts.pop();
+    openDir(parts.join('/'));
+  }
+
+  function normalizePathDir(p) {
+    if (!p) return '';
+    let out = p.replace(/^\/+/, '');
+    out = out.split('/').filter(Boolean).join('/');
+    return out;
+  }
+
+  function normalizePathFile(p) {
+    let out = p.replace(/^\/+/, '');
+    out = out.split('/').filter(Boolean).join('/');
+    return out;
+  }
+
+  function showPreview(relPath) {
+    relPath = normalizePathFile(relPath);
+    const parts = relPath.split('/');
+    const fileName = parts.pop();
+    const dirPath = parts.join('/');
+    state.currentDirPath = dirPath;
+    location.hash = `#/${relPath}`;
+
+    const node = getDirNode(dirPath);
+    const entry = (node.children || []).find(e => e.name === fileName && e.type === 'file');
+    if (!entry) {
+      renderPreviewPlaceholder();
+      return;
     }
 
-    // Render file tree
-    function renderTree(items, container, parentPath = '') {
-      items.forEach(item => {
-        const itemElement = document.createElement('div');
-        itemElement.className = `tree-item ${item.type}`;
-        itemElement.textContent = item.name;
-        itemElement.dataset.path = item.path;
-        
-        itemElement.addEventListener('click', () => {
-          // Update selection
-          document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('selected'));
-          itemElement.classList.add('selected');
-          
-          if (item.type === 'file') {
-            loadFileContent(item.path);
-          } else {
-            // For directories, just show empty state
-            document.getElementById('contentViewer').innerHTML = `
-              <div class="empty-state">
-                <div>📁</div>
-                <p>Directory: ${item.path}</p>
-              </div>
-            `;
-            currentFile = null;
-          }
-        });
-        
-        container.appendChild(itemElement);
-        
-        // Render children for directories
-        if (item.type === 'directory' && item.children) {
-          const childrenContainer = document.createElement('div');
-          childrenContainer.style.paddingLeft = '20px';
-          renderTree(item.children, childrenContainer, item.path);
-          container.appendChild(childrenContainer);
-        }
+    previewTitleEl.textContent = relPath;
+    copyRawBtn.disabled = false;
+    downloadBtn.disabled = false;
+
+    copyRawBtn.onclick = () => {
+      const url = buildRawUrl(relPath);
+      navigator.clipboard.writeText(url).then(() => {
+        toast('Raw URL copied');
       });
-    }
+    };
+    downloadBtn.onclick = () => {
+      const url = buildRawUrl(relPath);
+      window.open(url, '_blank', 'noopener');
+    };
 
-    // Load file content
-    async function loadFileContent(filePath) {
-      currentFile = filePath;
-      const viewer = document.getElementById('contentViewer');
-      
-      // Show loading state
-      viewer.innerHTML = '<div class="loading">Loading...</div>';
-      
-      try {
-        const response = await fetch(filePath);
-        if (!response.ok) throw new Error('File not found');
-        
-        const content = await response.text();
-        const file = fileData.files.find(f => f.path === filePath);
-        
-        viewer.innerHTML = `
-          <div class="file-info">
-            <div class="file-name">${filePath}</div>
-            <div class="file-meta">
-              Size: ${formatBytes(file.size)} | 
-              Last modified: ${formatDate(file.lastModified)}
-            </div>
-          </div>
-          <pre>${escapeHtml(content)}</pre>
-        `;
-      } catch (error) {
-        viewer.innerHTML = `
-          <div class="empty-state">
-            <div>⚠️</div>
-            <p>Error loading file: ${error.message}</p>
-          </div>
-        `;
+    const ext = (fileName.split('.').pop() || '').toLowerCase();
+    const isMd = ['md','markdown'].includes(ext);
+    const isJson = ext === 'json';
+    const isImage = ['png','jpg','jpeg','gif','webp','svg','bmp','ico'].includes(ext);
+    const isPdf = ext === 'pdf';
+
+    if (entry.textPreview) {
+      let content = entry.textPreview;
+      if (isMd) {
+        previewEl.innerHTML = `<div id="mdContainer"></div>`;
+        renderMarkdown(content, $('#mdContainer'));
+      } else if (isJson) {
+        try {
+          const pretty = JSON.stringify(JSON.parse(content), null, 2);
+          previewEl.innerHTML = `<pre><code>${escapeHtml(pretty)}</code></pre>`;
+        } catch {
+          previewEl.innerHTML = `<pre><code>${escapeHtml(content)}</code></pre>`;
+        }
+      } else {
+        previewEl.innerHTML = `<pre><code>${escapeHtml(content)}</code></pre>`;
       }
+      return;
     }
 
-    // HTML escape helper
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+    if (isImage) {
+      const url = buildRawUrl(relPath);
+      previewEl.innerHTML = `<div class="thumb"><img src="${escapeAttr(url)}" alt="${escapeAttr(fileName)}" /></div>`;
+      return;
     }
 
-    // Initialize
-    async function init() {
-      try {
-        const response = await fetch('index.json');
-        if (!response.ok) throw new Error('Failed to load index.json');
-        
-        const data = await response.json();
-        fileData = data;
-        
-        const treeContainer = document.getElementById('fileTree');
-        renderTree(data.files, treeContainer);
-      } catch (error) {
-        document.getElementById('contentViewer').innerHTML = `
-          <div class="empty-state">
-            <div>⚠️</div>
-            <p>Error loading file index: ${error.message}</p>
-          </div>
-        `;
-      }
+    if (isPdf) {
+      const url = buildRawUrl(relPath);
+      previewEl.innerHTML = `
+        <div class="thumb" style="padding:0">
+          <object data="${escapeAttr(url)}" type="application/pdf" width="100%" height="800">
+            <div class="empty">PDF preview not supported. <a href="${escapeAttr(url)}" target="_blank" rel="noopener">Open PDF</a></div>
+          </object>
+        </div>`;
+      return;
     }
 
-    // Start the app
-    init();
-  </script>
+    // No preview available
+    const url = buildRawUrl(relPath);
+    previewEl.innerHTML = `
+      <div class="empty">
+        No inline preview for this file.<br/>
+        <a href="${escapeAttr(url)}" target="_blank" rel="noopener">Open raw</a>
+      </div>
+    `;
+  }
+
+  function buildRawUrl(relPath) {
+    // Prefer gh-pages raw base so raw files resolve directly
+    const base = RAW_BASE && RAW_BASE !== PLACEHOLDER_RAW_PREFIX ? RAW_BASE : (location.origin + location.pathname.replace(/[^/]+$/, '') + 'raw/');
+    return base.replace(/\/?$/, '/') + relPath;
+  }
+
+  searchInput.addEventListener('input', () => {
+    state.filter = searchInput.value || '';
+    renderList();
+  });
+
+  function formatSize(bytes) {
+    const thresh = 1024;
+    if (Math.abs(bytes) < thresh) return bytes + ' B';
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let u = -1;
+    do { bytes /= thresh; ++u; } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(1) + ' ' + units[u];
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/"/g, '&quot;');
+  }
+
+  function toast(msg) {
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.position = 'fixed';
+    el.style.bottom = '16px';
+    el.style.right = '16px';
+    el.style.background = '#111827';
+    el.style.border = '1px solid #374151';
+    el.style.padding = '8px 12px';
+    el.style.borderRadius = '8px';
+    el.style.color = '#e5e7eb';
+    el.style.zIndex = '9999';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+
+  // Simple Markdown rendering
+  function renderMarkdown(md, container) {
+    // Minimal: headers, lists, code fences, links, paragraphs
+    const html = md
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+      .replace(/^\s*[-*+] (.*$)/gim, '<li>$1</li>')
+      .replace(/^\s*\d+\. (.*$)/gim, '<li>$1</li>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*)\*/gim, '<em>$1</em>')
+      .replace(/`([^`]+)`/gim, '<code>$1</code>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/\n{2,}/g, '\n\n');
+
+    const blocks = html.split(/\n\n/);
+    const out = blocks.map(b => {
+      if (/^<h\d|<blockquote|<li|<pre|<div/.test(b.trim())) return b;
+      return `<p>${b}</p>`;
+    }).join('\n');
+
+    container.innerHTML = out;
+  }
+
+  init();
+})();
+</script>
+
+<!-- Optional: hint where index.json lives; default is ./index.json -->
+<!-- <script data-index="./index.json"></script> -->
 </body>
 </html>

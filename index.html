@@ -1,1238 +1,586 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Repository Viewer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Prism.js for syntax highlighting -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css"
-  />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repository File Manager</title>
   <style>
-    :root {
-      --bg: #050608;
-      --bg-soft: #0b0e12;
-      --bg-elevated: #0f1319;
-      --border-subtle: #20232a;
-      --accent: #3b82f6;
-      --accent-soft: rgba(59,130,246,0.18);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --danger: #f97316;
-      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, -system-ui, sans-serif;
-      --shadow-soft: 0 10px 40px rgba(0,0,0,0.8);
-      --transition-fast: 0.16s ease-out;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
+    * {
       margin: 0;
       padding: 0;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      font-family: var(--font-sans);
-      background:
-        radial-gradient(circle at top, #111827 0, #020817 40%, #000 100%);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
+      box-sizing: border-box;
     }
 
-    body { display: flex; flex-direction: column; }
+    :root {
+      --bg-primary: #1e1e1e;
+      --bg-secondary: #252526;
+      --bg-tertiary: #2d2d30;
+      --bg-hover: #2a2d2e;
+      --border-color: #3e3e42;
+      --text-primary: #cccccc;
+      --text-secondary: #858585;
+      --text-highlight: #4ec9b0;
+      --accent: #007acc;
+      --accent-hover: #005a9e;
+      --folder-color: #dcb67a;
+      --file-color: #cccccc;
+    }
 
-    .app {
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    .container {
       display: flex;
-      flex-direction: column;
       height: 100vh;
-      padding: 10px;
-      gap: 8px;
-    }
-
-    .layout {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 8px;
-      min-height: 0;
-    }
-
-    .sidebar {
-      display: flex;
       flex-direction: column;
-      background: var(--bg-soft);
-      border-radius: 10px;
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-soft);
-      padding: 6px;
-      min-width: 0;
-      min-height: 0;
     }
 
-    .sidebar-header {
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 20px;
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      padding: 2px 2px 4px;
-      color: var(--muted);
-      font-size: 10px;
-      gap: 6px;
     }
 
-    .sidebar-actions {
-      display: flex;
-      gap: 4px;
-      align-items: center;
+    .header-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
     }
 
-    .chip {
-      padding: 1px 6px;
-      border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      font-size: 9px;
-      color: var(--muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background-color: #05070b;
-    }
-
-    .tree {
-      flex: 1;
-      overflow: auto;
-      padding: 4px 2px 4px 4px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      line-height: 1.6;
-      color: #9ca3af;
-    }
-
-    .tree ul {
-      list-style: none;
-      margin: 0;
-      padding-left: 12px;
-      border-left: 1px solid rgba(75,85,99,0.35);
-    }
-
-    .tree-root {
-      padding-left: 2px;
-      border-left: none;
-    }
-
-    .tree-item {
-      position: relative;
-      padding: 1px 3px 1px 0;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      cursor: default;
-      user-select: none;
-      transition:
-        background-color var(--transition-fast),
-        color var(--transition-fast),
-        transform 0.06s ease-out;
-    }
-
-    .tree-item .icon {
-      width: 12px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #6b7280;
-      flex-shrink: 0;
-      font-size: 9px;
-    }
-
-    .tree-item .name {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .tree-item.directory .name {
-      color: #9ca3af;
-      font-weight: 500;
-    }
-
-    .tree-item.file {
-      color: #6b7280;
-    }
-
-    .tree-item.file.previewable {
-      color: #9ca3af;
-    }
-
-    .tree-item:hover {
-      background-color: #151922;
-      color: #e5e7eb;
-      transform: translateX(1px);
-    }
-
-    .tree-item.active {
-      background: linear-gradient(
-        to right,
-        rgba(59,130,246,0.26),
-        rgba(10,15,25,1)
-      );
-      color: #eff6ff;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.9);
-    }
-
-    .tree-item.active .icon,
-    .tree-item:hover .icon {
-      color: var(--accent);
-    }
-
-    .tree-item .arrow {
-      width: 9px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #4b5563;
-      transition: transform var(--transition-fast), color var(--transition-fast);
-      flex-shrink: 0;
-      font-size: 8px;
-    }
-
-    .tree-item.collapsed .arrow { transform: rotate(-90deg); }
-    .tree-item.expanded .arrow { transform: rotate(0deg); }
-    .tree-item.leaf .arrow { visibility: hidden; }
-
-    .tree-children {
-      margin: 0;
-      padding: 0 0 0 14px;
-    }
-
-    .tree-children.collapsed {
-      display: none;
-    }
-
-    .main {
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-soft);
-      border-radius: 10px;
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-soft);
-      padding: 6px;
-      min-width: 0;
-      min-height: 0;
-      gap: 4px;
+    .header-info {
+      font-size: 12px;
+      color: var(--text-secondary);
     }
 
     .breadcrumb {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 20px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: #9ca3af;
+      gap: 8px;
+      font-size: 13px;
+      min-height: 36px;
+    }
+
+    .breadcrumb-item {
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 3px;
+      transition: background 0.2s;
+    }
+
+    .breadcrumb-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .breadcrumb-separator {
+      color: var(--text-secondary);
+    }
+
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 350px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .file-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid transparent;
+      transition: background 0.15s;
+      user-select: none;
+      font-size: 13px;
+    }
+
+    .file-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .file-item.selected {
+      background: var(--bg-tertiary);
+      border-left: 2px solid var(--accent);
+    }
+
+    .file-item.directory {
+      font-weight: 500;
+    }
+
+    .file-icon {
+      margin-right: 8px;
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .file-name {
+      flex: 1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .breadcrumb .label {
-      font-size: 8px;
-      padding: 1px 5px;
-      border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      color: #9ca3af;
-      background-color: #05070b;
+    .file-size {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-left: 12px;
     }
 
-    .breadcrumb-path {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 4px;
-      font-size: 9px;
-      color: var(--muted);
-    }
-
-    .toolbar-left,
-    .toolbar-right {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      border: 1px solid var(--border-subtle);
-      background: #05070b;
-      padding: 2px 7px;
-      border-radius: 6px;
-      font-size: 8px;
-      color: var(--muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      backdrop-filter: blur(6px);
-    }
-
-    .btn .icon {
-      font-size: 8px;
-      color: #6b7280;
-    }
-
-    .btn:hover {
-      color: #e5e7eb;
-      border-color: var(--accent);
-      background: radial-gradient(circle at top, var(--accent-soft), #020308);
-      box-shadow: 0 3px 10px rgba(0,0,0,0.9);
-      transform: translateY(-0.5px);
-    }
-
-    .btn.primary {
-      border-color: var(--accent);
-      color: #bfdbfe;
-      background: radial-gradient(circle at top, rgba(37,99,235,0.24), #020308);
-    }
-
-    .viewer {
+    .content-area {
       flex: 1;
-      position: relative;
-      border-radius: 8px;
-      background-color: #050608;
-      border: 1px solid #181b22;
-      box-shadow: 0 8px 26px rgba(0,0,0,0.95);
-      overflow: hidden;
       display: flex;
       flex-direction: column;
-      min-height: 0;
+      overflow: hidden;
     }
 
-    .viewer-header {
-      padding: 3px 7px;
+    .content-header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 4px;
-      font-size: 8px;
-      color: var(--muted);
-      background:
-        radial-gradient(circle at top left, rgba(37,99,235,0.16), transparent 70%),
-        radial-gradient(circle at top right, rgba(15,118,110,0.08), transparent 75%),
-        #05070b;
-      border-bottom: 1px solid #181b22;
     }
 
-    .viewer-header-dots {
+    .content-title {
+      font-size: 14px;
+      font-weight: 500;
       display: flex;
-      gap: 3px;
-    }
-
-    .viewer-header-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 999px;
-      background-color: #374151;
-    }
-
-    .viewer-header-dot.red { background-color: #f87171; }
-    .viewer-header-dot.yellow { background-color: #facc15; }
-    .viewer-header-dot.green { background-color: #22c55e; }
-
-    .viewer-header-title {
-      font-family: var(--font-mono);
-      font-size: 8px;
-      color: #9ca3af;
-      opacity: 0.9;
-    }
-
-    .badge {
-      padding: 1px 4px;
-      border-radius: 5px;
-      border: 1px solid #272b35;
-      font-size: 7px;
-      color: #9ca3af;
-      display: inline-flex;
       align-items: center;
-      gap: 3px;
-      background-color: #05070b;
+      gap: 10px;
     }
 
-    .badge.accent {
-      border-color: rgba(59,130,246,0.9);
-      color: #bfdbfe;
-      background-color: #05070b;
+    .content-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 15px;
     }
 
-    .viewer-body {
+    .content-body {
       flex: 1;
       overflow: auto;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      line-height: 1.5;
-      color: #e5e7eb;
-      padding: 6px;
-      position: relative;
-      background-color: #050608;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      white-space: pre-wrap;
+      padding: 20px;
     }
 
-    .viewer-body pre[class*="language-"] {
-      white-space: pre-wrap !important;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
+    pre {
+      margin: 0;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre;
+      overflow-x: auto;
     }
 
-    .viewer-body code {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
-
-    pre { margin: 0; }
-
-    .placeholder {
-      height: 100%;
+    .line-numbers {
       display: flex;
-      flex-direction: column;
+    }
+
+    .line-numbers-rows {
+      border-right: 1px solid var(--border-color);
+      padding-right: 12px;
+      margin-right: 12px;
+      color: var(--text-secondary);
+      text-align: right;
+      user-select: none;
+      min-width: 40px;
+    }
+
+    .line-numbers-rows span {
+      display: block;
+      line-height: 1.6;
+    }
+
+    .code-content {
+      flex: 1;
+    }
+
+    .empty-state {
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      color: #6b7280;
-      text-align: center;
-      pointer-events: none;
-      font-size: 10px;
-    }
-
-    .status {
-      font-size: 8px;
-      color: var(--muted);
-      padding: 2px 4px 0;
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
-      opacity: 0.9;
-    }
-
-    .status .dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 999px;
-      background-color: var(--accent);
-      box-shadow: 0 0 6px var(--accent);
-    }
-
-    .not-previewable {
-      font-size: 9px;
-      color: #9ca3af;
-    }
-
-    .error {
-      font-size: 9px;
-      color: var(--danger);
-    }
-
-    .preview-wrapper {
-      width: 100%;
       height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      color: var(--text-secondary);
+      font-size: 14px;
     }
 
-    .preview-label {
-      font-size: 8px;
-      color: var(--muted);
+    .loading {
       display: flex;
-      gap: 6px;
       align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-size: 14px;
+      color: var(--text-secondary);
     }
 
-    .badge-mini {
-      padding: 1px 4px;
+    .error-message {
+      background: #5a1d1d;
+      color: #f48771;
+      padding: 20px;
       border-radius: 4px;
-      border: 1px solid #272b35;
-      font-size: 7px;
-      color: #9ca3af;
-      background-color: #05070b;
+      margin: 20px;
+      font-size: 13px;
     }
 
-    .viewer-object,
-    .viewer-iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: #050608;
-      border-radius: 6px;
+    .info-message {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      padding: 20px;
+      border-radius: 4px;
+      font-size: 13px;
+      text-align: center;
     }
 
-    .binary-hint {
-      font-size: 9px;
-      color: #9ca3af;
-      margin-top: 4px;
+    .directory-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      padding: 20px;
     }
 
-    @media (max-width: 900px) {
-      .layout { grid-template-columns: 210px 1fr; }
+    .directory-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    @media (max-width: 720px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { max-height: 40%; }
+    .directory-card:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--accent);
+    }
+
+    .directory-card-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .directory-card-name {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .directory-card-info {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-tertiary);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3e3e42;
+    }
+
+    /* Code syntax highlighting */
+    .keyword { color: #569cd6; }
+    .string { color: #ce9178; }
+    .comment { color: #6a9955; }
+    .function { color: #dcdcaa; }
+    .number { color: #b5cea8; }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .main-content {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-<div class="app">
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <span>Repository tree</span>
-        <div class="sidebar-actions">
-          <div class="chip"><span>⮞</span><span>Folders collapsed</span></div>
-        </div>
-      </div>
-      <div id="tree" class="tree"></div>
-    </aside>
+  <div id="app" class="loading">Loading repository...</div>
 
-    <main class="main">
-      <div class="breadcrumb">
-        <span class="label">SELECTION</span>
-        <div id="breadcrumb-path" class="breadcrumb-path">No file selected</div>
-      </div>
+  <script>
+    class FileManager {
+      constructor() {
+        this.data = null;
+        this.currentPath = [];
+        this.selectedFile = null;
+        this.init();
+      }
 
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <button class="btn" id="btn-back"><span class="icon">↶</span><span>Back</span></button>
-          <button class="btn" id="btn-up"><span class="icon">⇡</span><span>Up</span></button>
-          <button class="btn" id="btn-collapse-all"><span class="icon">⊟</span><span>Collapse</span></button>
-          <button class="btn" id="btn-expand-root"><span class="icon">⊞</span><span>Expand root</span></button>
-        </div>
-        <div class="toolbar-right">
-          <button class="btn" id="btn-copy-path"><span class="icon">⧉</span><span>Copy path</span></button>
-          <button class="btn" id="btn-download"><span class="icon">⬇</span><span>Download</span></button>
-          <button class="btn" id="btn-toggle-raw"><span class="icon">≋</span><span>Raw</span></button>
-        </div>
-      </div>
+      async init() {
+        try {
+          const response = await fetch('index.json');
+          if (!response.ok) throw new Error('Failed to load repository data');
+          this.data = await response.json();
+          this.render();
+        } catch (error) {
+          this.renderError(error);
+        }
+      }
 
-      <div class="viewer">
-        <div class="viewer-header">
-          <div class="viewer-header-left" style="display:flex;align-items:center;gap:5px;">
-            <div class="viewer-header-dots">
-              <div class="viewer-header-dot red"></div>
-              <div class="viewer-header-dot yellow"></div>
-              <div class="viewer-header-dot green"></div>
+      getCurrentDirectory() {
+        let current = { children: this.data.structure };
+        for (const segment of this.currentPath) {
+          current = current.children.find(item => item.name === segment);
+          if (!current) return { children: [] };
+        }
+        return current;
+      }
+
+      navigateTo(path) {
+        this.currentPath = path;
+        this.selectedFile = null;
+        this.render();
+      }
+
+      openItem(item) {
+        if (item.type === 'directory') {
+          this.currentPath.push(item.name);
+          this.selectedFile = null;
+        } else {
+          this.selectedFile = item;
+        }
+        this.render();
+      }
+
+      formatSize(bytes) {
+        if (!bytes) return '0 B';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+      }
+
+      formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+      }
+
+      getFileIcon(item) {
+        if (item.type === 'directory') return '📁';
+        
+        const ext = item.name.split('.').pop().toLowerCase();
+        const iconMap = {
+          'js': '📜', 'jsx': '⚛️', 'ts': '📘', 'tsx': '⚛️',
+          'py': '🐍', 'java': '☕', 'c': '🔧', 'cpp': '🔧', 'cs': '🎯',
+          'html': '🌐', 'css': '🎨', 'scss': '🎨',
+          'json': '📋', 'xml': '📋', 'yml': '⚙️', 'yaml': '⚙️',
+          'md': '📝', 'txt': '📄',
+          'png': '🖼️', 'jpg': '🖼️', 'gif': '🖼️', 'svg': '🖼️',
+          'zip': '📦', 'tar': '📦', 'gz': '📦',
+          'pdf': '📕', 'doc': '📘', 'xls': '📗',
+        };
+        
+        return iconMap[ext] || '📄';
+      }
+
+      renderBreadcrumb() {
+        const items = ['Root', ...this.currentPath];
+        return items.map((item, index) => {
+          const isLast = index === items.length - 1;
+          const path = this.currentPath.slice(0, index);
+          
+          return `
+            ${index > 0 ? '<span class="breadcrumb-separator">/</span>' : ''}
+            <span class="breadcrumb-item ${isLast ? 'active' : ''}" 
+                  onclick="app.navigateTo(${JSON.stringify(path).replace(/"/g, '&quot;')})">
+              ${item}
+            </span>
+          `;
+        }).join('');
+      }
+
+      renderFileList() {
+        const current = this.getCurrentDirectory();
+        const items = current.children || [];
+
+        if (items.length === 0) {
+          return '<div class="empty-state">Empty directory</div>';
+        }
+
+        return items.map(item => `
+          <div class="file-item ${item.type} ${this.selectedFile?.path === item.path ? 'selected' : ''}"
+               onclick="app.openItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+            <span class="file-icon">${this.getFileIcon(item)}</span>
+            <span class="file-name">${item.name}</span>
+            ${item.size ? `<span class="file-size">${this.formatSize(item.size)}</span>` : ''}
+          </div>
+        `).join('');
+      }
+
+      renderContent() {
+        if (!this.selectedFile) {
+          const current = this.getCurrentDirectory();
+          if (this.currentPath.length === 0) {
+            return this.renderDirectoryGrid(current.children || []);
+          }
+          return '<div class="empty-state">Select a file to view its contents</div>';
+        }
+
+        const file = this.selectedFile;
+
+        if (file.error) {
+          return `<div class="error-message">Error: ${file.error}</div>`;
+        }
+
+        if (file.isBinary) {
+          return `
+            <div class="info-message">
+              <p>📦 Binary file (${this.formatSize(file.size)})</p>
+              <p>Preview not available</p>
             </div>
-            <div class="viewer-header-title" id="viewer-title">No file opened</div>
+          `;
+        }
+
+        if (!file.content) {
+          return '<div class="info-message">No preview available</div>';
+        }
+
+        return this.renderCodeWithLineNumbers(file.content);
+      }
+
+      renderCodeWithLineNumbers(content) {
+        const lines = content.split('\n');
+        const lineNumbers = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+        const escapedContent = this.escapeHtml(content);
+
+        return `
+          <div class="line-numbers">
+            <div class="line-numbers-rows">${lineNumbers}</div>
+            <pre class="code-content"><code>${escapedContent}</code></pre>
           </div>
-          <div class="viewer-header-right">
-            <div class="badge"><span>RO</span><span>Read-only</span></div>
-            <div class="badge accent"><span>Indexed</span><span>Offline tree</span></div>
+        `;
+      }
+
+      renderDirectoryGrid(items) {
+        if (items.length === 0) {
+          return '<div class="empty-state">Empty directory</div>';
+        }
+
+        return `
+          <div class="directory-view">
+            ${items.map(item => `
+              <div class="directory-card" onclick="app.openItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                <div class="directory-card-icon">${this.getFileIcon(item)}</div>
+                <div class="directory-card-name">${item.name}</div>
+                <div class="directory-card-info">
+                  ${item.type === 'directory' 
+                    ? `${item.children?.length || 0} items` 
+                    : this.formatSize(item.size)}
+                </div>
+              </div>
+            `).join('')}
           </div>
-        </div>
-        <div class="viewer-body" id="viewer-body">
-          <div class="placeholder">
-            <div>No file opened</div>
+        `;
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      render() {
+        const app = document.getElementById('app');
+        
+        app.innerHTML = `
+          <div class="container">
+            <header>
+              <div class="header-title">
+                📂 ${this.data.repository || 'Repository'} File Manager
+              </div>
+              <div class="header-info">
+                Last updated: ${new Date(this.data.generated).toLocaleString()}
+              </div>
+            </header>
+
+            <div class="breadcrumb">
+              ${this.renderBreadcrumb()}
+            </div>
+
+            <div class="main-content">
+              <div class="sidebar">
+                <div class="file-list">
+                  ${this.renderFileList()}
+                </div>
+              </div>
+
+              <div class="content-area">
+                ${this.selectedFile ? `
+                  <div class="content-header">
+                    <div class="content-title">
+                      <span>${this.getFileIcon(this.selectedFile)}</span>
+                      <span>${this.selectedFile.name}</span>
+                    </div>
+                    <div class="content-meta">
+                      ${this.selectedFile.size ? `<span>${this.formatSize(this.selectedFile.size)}</span>` : ''}
+                      ${this.selectedFile.lines ? `<span>${this.selectedFile.lines} lines</span>` : ''}
+                      ${this.selectedFile.fileType ? `<span>${this.selectedFile.fileType}</span>` : ''}
+                    </div>
+                  </div>
+                ` : ''}
+                <div class="content-body">
+                  ${this.renderContent()}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div class="status">
-        <span><span class="dot"></span><span id="status-label">Awaiting index.json …</span></span>
-      </div>
-    </main>
-  </div>
-</div>
-
-<!-- Prism core + plugins -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/normalize-whitespace/prism-normalize-whitespace.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-<script>
-  if (window.Prism && Prism.plugins && Prism.plugins.autoloader) {
-    Prism.plugins.autoloader.languages_path =
-      'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
-  }
-
-  const IMAGE_EXTENSIONS = new Set(['png','jpg','jpeg','gif','bmp','webp','svg','ico']);
-  const VIDEO_EXTENSIONS = new Set(['mp4','webm','ogg','mov']);
-  const AUDIO_EXTENSIONS = new Set(['mp3','wav','ogg','flac']);
-
-  const SYNTAX_MAP = {
-    'js': 'javascript','mjs': 'javascript','cjs': 'javascript',
-    'ts': 'typescript','tsx': 'tsx','jsx': 'jsx',
-    'json': 'json','jsonc': 'js',
-    'css': 'css','scss': 'scss','sass': 'sass','less': 'less',
-    'html': 'markup','htm': 'markup','xml': 'markup','svg': 'markup',
-    'md': 'markdown','markdown': 'markdown',
-    'yml': 'yaml','yaml': 'yaml','toml': 'toml','ini': 'ini',
-    'conf': 'bash','config': 'bash',
-    'sh': 'bash','bash': 'bash','zsh': 'bash',
-    'ps1': 'powershell','psm1': 'powershell',
-    'bat': 'batch','cmd': 'batch',
-    'py': 'python','pyw': 'python',
-    'rb': 'ruby','php': 'php','java': 'java',
-    'c': 'c','h': 'c',
-    'hpp': 'cpp','hh': 'cpp','hxx': 'cpp','c++': 'cpp','cc': 'cpp','cpp': 'cpp',
-    'cs': 'csharp',
-    'go': 'go','rs': 'rust','scala': 'scala',
-    'kt': 'kotlin','kts': 'kotlin',
-    'swift': 'swift','dart': 'dart','lua': 'lua','sql': 'sql',
-    'pl': 'perl','pm': 'perl','r': 'r','hs': 'haskell',
-    'clj': 'clojure','cljs': 'clojure','edn': 'clojure',
-    'erl': 'erlang','ex': 'elixir','exs': 'elixir',
-    'elm': 'elm',
-    'coffee': 'coffeescript','litcoffee': 'coffeescript',
-    'dockerfile': 'docker','docker': 'docker',
-    'makefile': 'makefile','cmake': 'cmake',
-    'gradle': 'groovy','groovy': 'groovy',
-    'nim': 'nim',
-    'vue': 'markup','svelte': 'markup',
-    'lock': 'json',
-    'log': 'none','txt': 'none',
-    'tex': 'latex','bib': 'latex'
-  };
-
-  const BINARY_LIKE = new Set([
-    'exe','dll','so','dylib','bin','class','o','obj','a','lib',
-    'zip','tar','gz','tgz','bz2','xz','7z','rar',
-    'woff','woff2','ttf','otf','eot',
-    'icns','psd','ai','sketch','fig'
-  ]);
-
-  let indexData = null;
-  let currentFilePath = null;
-  let historyStack = [];
-  let historyIndex = -1;
-  let rawMode = false;
-
-  // Simple token to avoid race conditions when switching files quickly
-  let currentLoadToken = 0;
-
-  async function loadIndex() {
-    const statusLabel = document.getElementById('status-label');
-    try {
-      statusLabel.textContent = 'Loading index.json …';
-      const res = await fetch('index.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      indexData = await res.json();
-      statusLabel.textContent = 'Index loaded. Ready.';
-      renderTree();
-    } catch (err) {
-      console.error(err);
-      statusLabel.textContent = 'Failed to load index.json';
-      document.getElementById('viewer-body').innerHTML =
-        '<div class="error">Unable to load index.json. Ensure it is generated correctly.</div>';
-    }
-  }
-
-  function renderTree() {
-    const treeEl = document.getElementById('tree');
-    treeEl.innerHTML = '';
-    if (!indexData || !Array.isArray(indexData.children)) {
-      treeEl.textContent = 'No index data.';
-      return;
-    }
-    const rootUl = document.createElement('ul');
-    rootUl.className = 'tree-root';
-    indexData.children.forEach(child => rootUl.appendChild(createTreeNode(child)));
-    treeEl.appendChild(rootUl);
-  }
-
-  function createTreeNode(node) {
-    const li = document.createElement('li');
-    const item = document.createElement('div');
-    item.classList.add('tree-item');
-    item.dataset.path = node.path || '';
-
-    const arrow = document.createElement('span');
-    arrow.classList.add('arrow');
-    arrow.textContent = '▾';
-
-    const icon = document.createElement('span');
-    icon.classList.add('icon');
-
-    const name = document.createElement('span');
-    name.classList.add('name');
-    name.textContent = node.name || '(root)';
-
-    let childrenContainer = null;
-
-    if (node.type === 'directory') {
-      item.classList.add('directory', 'collapsed');
-      icon.textContent = '▣';
-      item.addEventListener('click', (e) => {
-        if (e.target === name || e.target === icon || e.target === arrow || e.target === item) {
-          toggleDirectory(item);
-        }
-      });
-
-      childrenContainer = document.createElement('ul');
-      childrenContainer.className = 'tree-children collapsed';
-      (node.children || []).forEach(child => {
-        childrenContainer.appendChild(createTreeNode(child));
-      });
-    } else {
-      const ext = getExt(node.name);
-      const isBinary = BINARY_LIKE.has(ext);
-      const isPreviewable =
-        node.previewable === true ||
-        (!isBinary &&
-         (IMAGE_EXTENSIONS.has(ext) ||
-          VIDEO_EXTENSIONS.has(ext) ||
-          AUDIO_EXTENSIONS.has(ext) ||
-          isLikelyTextExt(ext)));
-
-      item.classList.add('file', isPreviewable ? 'previewable' : 'not-previewable', 'leaf');
-      icon.textContent = '▤';
-      arrow.style.visibility = 'hidden';
-      item.addEventListener('click', () => openFile(node.path));
-    }
-
-    item.appendChild(arrow);
-    item.appendChild(icon);
-    item.appendChild(name);
-    li.appendChild(item);
-    if (childrenContainer) li.appendChild(childrenContainer);
-    return li;
-  }
-
-  function toggleDirectory(item) {
-    const li = item.parentElement;
-    const children = li.querySelector('.tree-children');
-    if (!children) return;
-    const collapsed = children.classList.contains('collapsed');
-    if (collapsed) {
-      children.classList.remove('collapsed');
-      item.classList.remove('collapsed');
-      item.classList.add('expanded');
-    } else {
-      children.classList.add('collapsed');
-      item.classList.remove('expanded');
-      item.classList.add('collapsed');
-    }
-  }
-
-  function findNodeByPath(pathStr) {
-    if (!indexData || !indexData.children) return null;
-    const norm = (pathStr || '').replace(/^\/+/, '');
-    if (!norm) return null;
-    const parts = norm.split('/');
-    let current = { children: indexData.children };
-    for (const part of parts) {
-      if (!current.children) return null;
-      const next = current.children.find(c => c.name === part);
-      if (!next) return null;
-      current = next;
-    }
-    return current;
-  }
-
-  async function openFile(pathStr, pushHistory = true) {
-    if (!pathStr) return;
-    const node = findNodeByPath(pathStr);
-    if (!node || node.type !== 'file') return;
-
-    const filePath = node.path || pathStr;
-    currentFilePath = filePath;
-
-    // Invalidate previous loads
-    const loadToken = ++currentLoadToken;
-
-    if (pushHistory) {
-      historyStack = historyStack.slice(0, historyIndex + 1);
-      historyStack.push(filePath);
-      historyIndex = historyStack.length - 1;
-    }
-
-    highlightActiveTreeItem(filePath);
-    document.getElementById('breadcrumb-path').textContent = filePath;
-    document.getElementById('viewer-title').textContent = filePath || 'No file opened';
-
-    const ext = getExt(filePath);
-    const isBinary = BINARY_LIKE.has(ext);
-    const isTextish = isLikelyTextExt(ext);
-    const sizeStr = typeof node.size === 'number' ? formatBytes(node.size) : 'unknown';
-
-    flashStatus(
-      (sizeStr !== 'unknown' ? sizeStr + ' • ' : '') +
-      getMetaLabel(ext, node, isBinary, isTextish)
-    );
-
-    const viewerBody = document.getElementById('viewer-body');
-
-    // Show loading state immediately for this file
-    viewerBody.innerHTML = '<div class="not-previewable">Loading file…</div>';
-
-    // Media previews
-    if (IMAGE_EXTENSIONS.has(ext)) {
-      if (!(await renderImageAsync(filePath, loadToken))) return;
-      return;
-    }
-    if (VIDEO_EXTENSIONS.has(ext)) {
-      if (!(await renderVideoAsync(filePath, loadToken))) return;
-      return;
-    }
-    if (AUDIO_EXTENSIONS.has(ext)) {
-      if (!(await renderAudioAsync(filePath, loadToken))) return;
-      return;
-    }
-
-    // Binary like executables / archives / fonts
-    if (isBinary) {
-      if (!isTokenCurrent(loadToken)) return;
-      renderBinaryMessage(filePath);
-      return;
-    }
-
-    // PDF inline
-    if (ext === 'pdf') {
-      if (!isTokenCurrent(loadToken)) return;
-      renderEmbed(filePath, 'application/pdf', 'PDF preview (browser native)');
-      return;
-    }
-
-    // Text-like files: prefer indexed content, otherwise raw fetch; no size limit.
-    try {
-      if (node.previewable && typeof node.content === 'string' && !rawMode) {
-        if (!isTokenCurrent(loadToken)) return;
-        renderText(node.content, ext);
-      } else {
-        await loadRawFile(filePath, ext, loadToken);
-      }
-    } catch (err) {
-      if (!isTokenCurrent(loadToken)) return;
-      console.error(err);
-      viewerBody.innerHTML =
-        '<div class="error">Failed to fully load file: ' +
-        escapeHtml(filePath) +
-        '.</div>';
-    }
-  }
-
-  function isTokenCurrent(token) {
-    return token === currentLoadToken;
-  }
-
-  async function loadRawFile(pathStr, ext, loadToken) {
-    const viewerBody = document.getElementById('viewer-body');
-    viewerBody.innerHTML = '<div class="not-previewable">Loading raw file…</div>';
-
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    try {
-      const res = await fetch(pathStr, { cache: 'no-store', signal });
-
-      if (!isTokenCurrent(loadToken)) {
-        controller.abort();
-        return;
+        `;
       }
 
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-
-      const ct = (res.headers.get('content-type') || '').toLowerCase();
-
-      if (isProbablyBinaryContentType(ct) &&
-          !ct.includes('pdf') &&
-          !ct.includes('json') &&
-          !ct.startsWith('text/')) {
-        throw new Error('Binary content, not rendering as text.');
+      renderError(error) {
+        const app = document.getElementById('app');
+        app.innerHTML = `
+          <div class="loading">
+            <div class="error-message">
+              <strong>Error loading repository:</strong><br>
+              ${error.message}
+            </div>
+          </div>
+        `;
       }
-
-      const text = await res.text();
-
-      if (!isTokenCurrent(loadToken)) return;
-
-      if (!ext) ext = getExt(pathStr);
-      renderText(text, ext);
-    } catch (err) {
-      if (!isTokenCurrent(loadToken)) return;
-      console.error(err);
-      viewerBody.innerHTML =
-        '<div class="error">Failed to load raw file: ' +
-        escapeHtml(pathStr) +
-        '.</div>';
     }
-  }
 
-  function renderText(content, ext) {
-    const viewerBody = document.getElementById('viewer-body');
-    const lang = detectLanguage(ext, content);
-    const className = lang ? 'language-' + lang : 'language-none';
-
-    const pre = document.createElement('pre');
-    pre.className = className + ' line-numbers';
-    const code = document.createElement('code');
-    code.className = className;
-    code.textContent = content.replace(/\r\n/g, '\n');
-    pre.appendChild(code);
-
-    viewerBody.innerHTML = '';
-    viewerBody.appendChild(pre);
-
-    if (window.Prism) {
-      Prism.highlightElement(code);
-    }
-  }
-
-  function renderImageAsync(pathStr, loadToken) {
-    return new Promise((resolve) => {
-      const viewerBody = document.getElementById('viewer-body');
-      const img = new Image();
-      img.src = pathStr;
-      img.alt = pathStr;
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '100%';
-      img.style.display = 'block';
-      img.style.margin = '0 auto';
-
-      img.onload = () => {
-        if (!isTokenCurrent(loadToken)) return resolve(false);
-        viewerBody.innerHTML = '';
-        viewerBody.appendChild(img);
-        resolve(true);
-      };
-      img.onerror = () => {
-        if (!isTokenCurrent(loadToken)) return resolve(false);
-        viewerBody.innerHTML =
-          '<div class="error">Failed to load image: ' +
-          escapeHtml(pathStr) +
-          '.</div>';
-        resolve(false);
-      };
-    });
-  }
-
-  function renderVideoAsync(pathStr, loadToken) {
-    return new Promise((resolve) => {
-      const viewerBody = document.getElementById('viewer-body');
-      const video = document.createElement('video');
-      video.src = pathStr;
-      video.controls = true;
-      video.preload = 'auto';
-      video.style.maxWidth = '100%';
-      video.style.maxHeight = '100%';
-      video.style.display = 'block';
-      video.style.margin = '0 auto';
-      video.style.backgroundColor = '#000';
-
-      let settled = false;
-
-      const finalize = (ok) => {
-        if (settled) return;
-        settled = true;
-        if (!isTokenCurrent(loadToken)) return resolve(false);
-        if (ok) {
-          viewerBody.innerHTML = '';
-          viewerBody.appendChild(video);
-          resolve(true);
-        } else {
-          viewerBody.innerHTML =
-            '<div class="error">Failed to load video: ' +
-            escapeHtml(pathStr) +
-            '.</div>';
-          resolve(false);
-        }
-      };
-
-      video.addEventListener('loadeddata', () => finalize(true), { once: true });
-      video.addEventListener('error', () => finalize(false), { once: true });
-
-      // Fallback: if neither fires in a while, keep current content (loading state)
-      setTimeout(() => finalize(true), 4000);
-    });
-  }
-
-  function renderAudioAsync(pathStr, loadToken) {
-    return new Promise((resolve) => {
-      const viewerBody = document.getElementById('viewer-body');
-      const audio = document.createElement('audio');
-      audio.src = pathStr;
-      audio.controls = true;
-      audio.preload = 'auto';
-      audio.style.width = '100%';
-      audio.style.marginTop = '8px';
-
-      let settled = false;
-
-      const finalize = (ok) => {
-        if (settled) return;
-        settled = true;
-        if (!isTokenCurrent(loadToken)) return resolve(false);
-        if (ok) {
-          viewerBody.innerHTML = '';
-          viewerBody.appendChild(audio);
-          resolve(true);
-        } else {
-          viewerBody.innerHTML =
-            '<div class="error">Failed to load audio: ' +
-            escapeHtml(pathStr) +
-            '.</div>';
-          resolve(false);
-        }
-      };
-
-      audio.addEventListener('loadeddata', () => finalize(true), { once: true });
-      audio.addEventListener('error', () => finalize(false), { once: true });
-
-      setTimeout(() => finalize(true), 4000);
-    });
-  }
-
-  function renderEmbed(pathStr, type, label) {
-    const viewerBody = document.getElementById('viewer-body');
-    viewerBody.innerHTML = '';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'preview-wrapper';
-
-    const top = document.createElement('div');
-    top.className = 'preview-label';
-    top.innerHTML =
-      `<span>${escapeHtml(label)}</span><span class="badge-mini">Static preview</span>`;
-    wrapper.appendChild(top);
-
-    const obj = document.createElement('object');
-    obj.className = 'viewer-object';
-    obj.data = pathStr;
-    if (type) obj.type = type;
-
-    // Ensure we wait until the PDF/object is at least attempted
-    obj.onload = () => {
-      // nothing extra; we just ensure DOM is updated after load
-    };
-    obj.onerror = () => {
-      viewerBody.innerHTML =
-        '<div class="error">Failed to load embedded document: ' +
-        escapeHtml(pathStr) +
-        '.</div>';
-    };
-
-    wrapper.appendChild(obj);
-    viewerBody.appendChild(wrapper);
-  }
-
-  function renderBinaryMessage(pathStr) {
-    const viewerBody = document.getElementById('viewer-body');
-    viewerBody.innerHTML = `
-      <div class="preview-wrapper">
-        <div class="preview-label">
-          <span>This file is treated as binary / non-text.</span>
-          <span class="badge-mini">No inline decode</span>
-        </div>
-        <div class="binary-hint">
-          Use "Download" to save it, or "Raw" to let the browser handle it directly.
-        </div>
-        <div class="binary-hint">
-          ${escapeHtml(pathStr)}
-        </div>
-      </div>
-    `;
-  }
-
-  function highlightActiveTreeItem(pathStr) {
-    const tree = document.getElementById('tree');
-    tree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
-    const item = tree.querySelector(`.tree-item[data-path="${cssEscape(pathStr)}"]`);
-    if (item) {
-      item.classList.add('active');
-      expandParents(item);
-      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-  }
-
-  function expandParents(el) {
-    let current = el.parentElement;
-    while (current && current.id !== 'tree') {
-      if (current.tagName === 'UL' && current.classList.contains('tree-children')) {
-        current.classList.remove('collapsed');
-        const parentItem = current.parentElement.querySelector('.tree-item.directory');
-        if (parentItem) {
-          parentItem.classList.add('expanded');
-          parentItem.classList.remove('collapsed');
-        }
-      }
-      current = current.parentElement;
-    }
-  }
-
-  function getExt(name) {
-    if (!name) return '';
-    const base = name.toLowerCase();
-    if (base.startsWith('.') && !base.slice(1).includes('.')) {
-      return base.slice(1);
-    }
-    const idx = base.lastIndexOf('.');
-    if (idx === -1) return '';
-    return base.slice(idx + 1);
-  }
-
-  function isLikelyTextExt(ext) {
-    if (!ext) return true;
-    if (SYNTAX_MAP[ext]) return true;
-    if (BINARY_LIKE.has(ext)) return false;
-    return true;
-  }
-
-  function isProbablyBinaryContentType(ct) {
-    if (!ct) return false;
-    if (ct.startsWith('text/')) return false;
-    if (ct.includes('json') || ct.includes('xml') || ct.includes('javascript')) return false;
-    if (ct.includes('image/') || ct.includes('audio/') || ct.includes('video/')) return true;
-    return false;
-  }
-
-  function detectLanguage(ext, content) {
-    if (ext && SYNTAX_MAP[ext]) return SYNTAX_MAP[ext];
-    const src = (content || '').slice(0, 4000);
-
-    if (/^#!.*\bpython[0-9.]*\b/m.test(src)) return 'python';
-    if (/^#!.*\b(node|bash|sh|zsh)\b/m.test(src)) return 'bash';
-    if (/^\s*<!DOCTYPE html>/i.test(src) || /<html[\s>]/i.test(src)) return 'markup';
-    if (/^\s*import\s+React\s+from\s+['"]react['"]/m.test(src)) return 'jsx';
-    if (/^\s*(import|export)\s+.+from\s+['"].+['"]/m.test(src)) return 'javascript';
-    if (/^{[\s\S]*}\s*$/.test(src) && /"[\w-]+":/.test(src)) return 'json';
-    if (/^---\n[\s\S]*?\n---\n/.test(src)) return 'yaml';
-    if (/^SELECT\s+/im.test(src)) return 'sql';
-
-    return 'none';
-  }
-
-  function getMetaLabel(ext, node, isBinary, isTextish) {
-    if (IMAGE_EXTENSIONS.has(ext)) return 'Image preview';
-    if (VIDEO_EXTENSIONS.has(ext)) return 'Video preview';
-    if (AUDIO_EXTENSIONS.has(ext)) return 'Audio preview';
-    if (ext === 'pdf') return 'PDF (inline-capable)';
-    if (isBinary) return 'Binary / archive / font';
-    if (node.previewable) return 'Inline text preview (indexed)';
-    if (isTextish) return 'Text-like file (raw fetch)';
-    return 'Unknown type';
-  }
-
-  function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
-    if (!bytes || isNaN(bytes)) return 'unknown';
-    const units = ['B','KB','MB','GB','TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    const val = bytes / Math.pow(1024, i);
-    return val.toFixed(val >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
-  }
-
-  function escapeHtml(str) {
-    return (str || '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'
-    }[c]));
-  }
-
-  function cssEscape(str) {
-    return (str || '').replace(/"/g, '\\"');
-  }
-
-  document.getElementById('btn-back').addEventListener('click', () => {
-    if (historyIndex > 0) {
-      historyIndex--;
-      openFile(historyStack[historyIndex], false);
-    }
-  });
-
-  document.getElementById('btn-up').addEventListener('click', () => {
-    if (!currentFilePath) return;
-    const parts = currentFilePath.split('/');
-    parts.pop();
-    if (!parts.length) return;
-    const parentPath = parts.join('/');
-    const node = findNodeByPath(parentPath);
-    if (node && node.type === 'directory') {
-      highlightActiveTreeItem(parentPath);
-      document.getElementById('breadcrumb-path').textContent = parentPath + '/';
-      document.getElementById('viewer-title').textContent = parentPath + '/';
-      document.getElementById('viewer-body').innerHTML = `
-        <div class="placeholder">
-          <div>Directory selected: ${escapeHtml(parentPath)}/</div>
-          <div>Select a file in this folder from the tree to preview.</div>
-        </div>
-      `;
-    }
-  });
-
-  document.getElementById('btn-collapse-all').addEventListener('click', () => {
-    const tree = document.getElementById('tree');
-    tree.querySelectorAll('.tree-children').forEach(ul => ul.classList.add('collapsed'));
-    tree.querySelectorAll('.tree-item.directory').forEach(item => {
-      item.classList.remove('expanded');
-      item.classList.add('collapsed');
-    });
-  });
-
-  document.getElementById('btn-expand-root').addEventListener('click', () => {
-    const tree = document.getElementById('tree');
-    tree.querySelectorAll('.tree-root > li > .tree-children').forEach(ul => ul.classList.remove('collapsed'));
-    tree.querySelectorAll('.tree-root > li > .tree-item.directory').forEach(item => {
-      item.classList.add('expanded');
-      item.classList.remove('collapsed');
-    });
-  });
-
-  document.getElementById('btn-copy-path').addEventListener('click', async () => {
-    if (!currentFilePath) return;
-    try {
-      await navigator.clipboard.writeText(currentFilePath);
-      flashStatus('Path copied');
-    } catch {
-      flashStatus('Unable to copy path');
-    }
-  });
-
-  document.getElementById('btn-download').addEventListener('click', () => {
-    if (!currentFilePath) return;
-    const a = document.createElement('a');
-    a.href = currentFilePath;
-    a.download = currentFilePath.split('/').pop() || 'download';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    flashStatus('Download started');
-  });
-
-  document.getElementById('btn-toggle-raw').addEventListener('click', () => {
-    rawMode = !rawMode;
-    const btn = document.getElementById('btn-toggle-raw');
-    if (rawMode) {
-      btn.classList.add('primary');
-      flashStatus('Raw mode: ON (direct static fetch)');
-    } else {
-      btn.classList.remove('primary');
-      flashStatus('Raw mode: OFF (prefer indexed content)');
-    }
-    if (currentFilePath) openFile(currentFilePath, false);
-  });
-
-  function flashStatus(msg) {
-    const statusLabel = document.getElementById('status-label');
-    const old = statusLabel.textContent;
-    statusLabel.textContent = msg;
-    statusLabel.style.color = '#bfdbfe';
-    setTimeout(() => {
-      statusLabel.textContent =
-        old.includes('Index loaded') ? 'Index loaded. Ready.' : old;
-      statusLabel.style.color = '';
-    }, 1500);
-  }
-
-  loadIndex();
-</script>
+    // Initialize the app
+    const app = new FileManager();
+  </script>
 </body>
 </html>

@@ -1,586 +1,550 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Repository File Manager</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    :root {
-      --bg-primary: #1e1e1e;
-      --bg-secondary: #252526;
-      --bg-tertiary: #2d2d30;
-      --bg-hover: #2a2d2e;
-      --border-color: #3e3e42;
-      --text-primary: #cccccc;
-      --text-secondary: #858585;
-      --text-highlight: #4ec9b0;
-      --accent: #007acc;
-      --accent-hover: #005a9e;
-      --folder-color: #dcb67a;
-      --file-color: #cccccc;
-    }
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d30;
+            --bg-hover: #2a2d2e;
+            --border-color: #3e3e42;
+            --text-primary: #cccccc;
+            --text-secondary: #858585;
+            --accent: #007acc;
+            --accent-hover: #005a9e;
+        }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      overflow: hidden;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    .container {
-      display: flex;
-      height: 100vh;
-      flex-direction: column;
-    }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-    header {
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+        .header {
+            background: var(--bg-secondary);
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-    .header-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
+        .header h1 {
+            font-size: 16px;
+            font-weight: 500;
+        }
 
-    .header-info {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
+        .header-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
 
-    .breadcrumb {
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      padding: 8px 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      min-height: 36px;
-    }
+        .breadcrumb {
+            background: var(--bg-secondary);
+            padding: 8px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
 
-    .breadcrumb-item {
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 3px;
-      transition: background 0.2s;
-    }
+        .breadcrumb-item {
+            cursor: pointer;
+            color: var(--text-primary);
+        }
 
-    .breadcrumb-item:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-    }
+        .breadcrumb-item:hover {
+            color: var(--accent);
+        }
 
-    .breadcrumb-separator {
-      color: var(--text-secondary);
-    }
+        .breadcrumb-separator {
+            color: var(--text-secondary);
+            user-select: none;
+        }
 
-    .main-content {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
 
-    .sidebar {
-      width: 350px;
-      background: var(--bg-secondary);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+        .sidebar {
+            width: 300px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
 
-    .file-list {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: auto;
-    }
+        .file-list {
+            padding: 8px 0;
+        }
 
-    .file-item {
-      display: flex;
-      align-items: center;
-      padding: 6px 12px;
-      cursor: pointer;
-      border-bottom: 1px solid transparent;
-      transition: background 0.15s;
-      user-select: none;
-      font-size: 13px;
-    }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 20px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 13px;
+            white-space: nowrap;
+        }
 
-    .file-item:hover {
-      background: var(--bg-hover);
-    }
+        .file-item:hover {
+            background: var(--bg-hover);
+        }
 
-    .file-item.selected {
-      background: var(--bg-tertiary);
-      border-left: 2px solid var(--accent);
-    }
+        .file-item.selected {
+            background: var(--bg-tertiary);
+        }
 
-    .file-item.directory {
-      font-weight: 500;
-    }
+        .file-item.directory {
+            font-weight: 500;
+        }
 
-    .file-icon {
-      margin-right: 8px;
-      font-size: 16px;
-      width: 20px;
-      text-align: center;
-    }
+        .file-icon {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
 
-    .file-name {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+        .file-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .file-size {
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-left: 12px;
-    }
+        .file-size {
+            margin-left: 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
 
-    .content-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+        .nested {
+            padding-left: 20px;
+        }
 
-    .content-header {
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    .content-title {
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+        .content-header {
+            background: var(--bg-secondary);
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    .content-meta {
-      font-size: 12px;
-      color: var(--text-secondary);
-      display: flex;
-      gap: 15px;
-    }
+        .file-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
 
-    .content-body {
-      flex: 1;
-      overflow: auto;
-      padding: 20px;
-    }
+        .content-body {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+        }
 
-    pre {
-      margin: 0;
-      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-      white-space: pre;
-      overflow-x: auto;
-    }
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
 
-    .line-numbers {
-      display: flex;
-    }
+        pre {
+            margin: 0;
+            background: var(--bg-secondary) !important;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
 
-    .line-numbers-rows {
-      border-right: 1px solid var(--border-color);
-      padding-right: 12px;
-      margin-right: 12px;
-      color: var(--text-secondary);
-      text-align: right;
-      user-select: none;
-      min-width: 40px;
-    }
+        pre code {
+            display: block;
+            padding: 20px !important;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
 
-    .line-numbers-rows span {
-      display: block;
-      line-height: 1.6;
-    }
+        .error-message {
+            background: #5a1e1e;
+            border: 1px solid #8b3434;
+            border-radius: 6px;
+            padding: 20px;
+            color: #f48771;
+        }
 
-    .code-content {
-      flex: 1;
-    }
+        .error-message h3 {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
 
-    .empty-state {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-secondary);
-      font-size: 14px;
-    }
+        .error-message p {
+            font-size: 13px;
+            color: #cccccc;
+        }
 
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
+        .directory-view {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            padding: 20px;
+        }
 
-    .error-message {
-      background: #5a1d1d;
-      color: #f48771;
-      padding: 20px;
-      border-radius: 4px;
-      margin: 20px;
-      font-size: 13px;
-    }
+        .directory-view h3 {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
 
-    .info-message {
-      background: var(--bg-tertiary);
-      color: var(--text-secondary);
-      padding: 20px;
-      border-radius: 4px;
-      font-size: 13px;
-      text-align: center;
-    }
+        .directory-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+        }
 
-    .directory-view {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
-      padding: 20px;
-    }
+        .directory-item:hover {
+            background: var(--bg-tertiary);
+        }
 
-    .directory-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
 
-    .directory-card:hover {
-      background: var(--bg-tertiary);
-      border-color: var(--accent);
-    }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
 
-    .directory-card-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
 
-    .directory-card-name {
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 4px;
-      word-break: break-word;
-    }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+        }
 
-    .directory-card-info {
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3e3e42;
+        }
 
-    /* Scrollbar styling */
-    ::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
-    }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: -300px;
+                height: 100%;
+                z-index: 100;
+                transition: left 0.3s;
+            }
 
-    ::-webkit-scrollbar-track {
-      background: var(--bg-primary);
-    }
+            .sidebar.mobile-open {
+                left: 0;
+            }
 
-    ::-webkit-scrollbar-thumb {
-      background: var(--bg-tertiary);
-      border-radius: 5px;
-    }
+            .mobile-toggle {
+                display: block;
+                background: var(--accent);
+                border: none;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+        }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: #3e3e42;
-    }
-
-    /* Code syntax highlighting */
-    .keyword { color: #569cd6; }
-    .string { color: #ce9178; }
-    .comment { color: #6a9955; }
-    .function { color: #dcdcaa; }
-    .number { color: #b5cea8; }
-
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      .main-content {
-        flex-direction: column;
-      }
-    }
-  </style>
+        .mobile-toggle {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <div id="app" class="loading">Loading repository...</div>
+    <div id="app" class="container">
+        <div class="loading">Loading repository index...</div>
+    </div>
 
-  <script>
-    class FileManager {
-      constructor() {
-        this.data = null;
-        this.currentPath = [];
-        this.selectedFile = null;
-        this.init();
-      }
+    <script>
+        class FileManager {
+            constructor() {
+                this.data = null;
+                this.currentPath = [];
+                this.selectedFile = null;
+                this.init();
+            }
 
-      async init() {
-        try {
-          const response = await fetch('index.json');
-          if (!response.ok) throw new Error('Failed to load repository data');
-          this.data = await response.json();
-          this.render();
-        } catch (error) {
-          this.renderError(error);
-        }
-      }
+            async init() {
+                try {
+                    const response = await fetch('index.json');
+                    this.data = await response.json();
+                    this.render();
+                } catch (error) {
+                    document.getElementById('app').innerHTML = `
+                        <div class="error-message">
+                            <h3>Failed to load repository index</h3>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                }
+            }
 
-      getCurrentDirectory() {
-        let current = { children: this.data.structure };
-        for (const segment of this.currentPath) {
-          current = current.children.find(item => item.name === segment);
-          if (!current) return { children: [] };
-        }
-        return current;
-      }
+            getCurrentDirectory() {
+                let current = { children: this.data.tree };
+                for (const segment of this.currentPath) {
+                    current = current.children.find(item => item.name === segment);
+                    if (!current) return null;
+                }
+                return current;
+            }
 
-      navigateTo(path) {
-        this.currentPath = path;
-        this.selectedFile = null;
-        this.render();
-      }
+            navigateTo(path) {
+                this.currentPath = path;
+                this.selectedFile = null;
+                this.render();
+            }
 
-      openItem(item) {
-        if (item.type === 'directory') {
-          this.currentPath.push(item.name);
-          this.selectedFile = null;
-        } else {
-          this.selectedFile = item;
-        }
-        this.render();
-      }
+            selectFile(file) {
+                this.selectedFile = file;
+                this.render();
+            }
 
-      formatSize(bytes) {
-        if (!bytes) return '0 B';
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-      }
+            formatSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+            }
 
-      formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-      }
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleString();
+            }
 
-      getFileIcon(item) {
-        if (item.type === 'directory') return '📁';
-        
-        const ext = item.name.split('.').pop().toLowerCase();
-        const iconMap = {
-          'js': '📜', 'jsx': '⚛️', 'ts': '📘', 'tsx': '⚛️',
-          'py': '🐍', 'java': '☕', 'c': '🔧', 'cpp': '🔧', 'cs': '🎯',
-          'html': '🌐', 'css': '🎨', 'scss': '🎨',
-          'json': '📋', 'xml': '📋', 'yml': '⚙️', 'yaml': '⚙️',
-          'md': '📝', 'txt': '📄',
-          'png': '🖼️', 'jpg': '🖼️', 'gif': '🖼️', 'svg': '🖼️',
-          'zip': '📦', 'tar': '📦', 'gz': '📦',
-          'pdf': '📕', 'doc': '📘', 'xls': '📗',
-        };
-        
-        return iconMap[ext] || '📄';
-      }
+            getFileIcon(item) {
+                if (item.type === 'directory') {
+                    return '📁';
+                }
+                const ext = item.name.split('.').pop().toLowerCase();
+                const iconMap = {
+                    'js': '📜',
+                    'json': '📋',
+                    'html': '🌐',
+                    'css': '🎨',
+                    'md': '📝',
+                    'py': '🐍',
+                    'java': '☕',
+                    'png': '🖼️',
+                    'jpg': '🖼️',
+                    'gif': '🖼️',
+                    'pdf': '📄',
+                    'zip': '📦',
+                };
+                return iconMap[ext] || '📄';
+            }
 
-      renderBreadcrumb() {
-        const items = ['Root', ...this.currentPath];
-        return items.map((item, index) => {
-          const isLast = index === items.length - 1;
-          const path = this.currentPath.slice(0, index);
-          
-          return `
-            ${index > 0 ? '<span class="breadcrumb-separator">/</span>' : ''}
-            <span class="breadcrumb-item ${isLast ? 'active' : ''}" 
-                  onclick="app.navigateTo(${JSON.stringify(path).replace(/"/g, '&quot;')})">
-              ${item}
-            </span>
-          `;
-        }).join('');
-      }
+            renderBreadcrumb() {
+                const parts = [
+                    `<span class="breadcrumb-item" onclick="app.navigateTo([])">🏠 Root</span>`
+                ];
+                
+                let path = [];
+                for (const segment of this.currentPath) {
+                    path.push(segment);
+                    const pathCopy = [...path];
+                    parts.push(`<span class="breadcrumb-separator">/</span>`);
+                    parts.push(`<span class="breadcrumb-item" onclick="app.navigateTo(${JSON.stringify(pathCopy).replace(/"/g, '&quot;')})">${segment}</span>`);
+                }
+                
+                return `<div class="breadcrumb">${parts.join('')}</div>`;
+            }
 
-      renderFileList() {
-        const current = this.getCurrentDirectory();
-        const items = current.children || [];
+            renderFileTree(items, level = 0) {
+                if (!items || items.length === 0) return '';
+                
+                return items.map(item => {
+                    const icon = this.getFileIcon(item);
+                    const isSelected = this.selectedFile && this.selectedFile.path === item.path;
+                    
+                    if (item.type === 'directory') {
+                        const pathArray = item.path.split('/');
+                        return `
+                            <div class="file-item directory ${isSelected ? 'selected' : ''}" 
+                                 onclick="app.navigateTo(${JSON.stringify(pathArray).replace(/"/g, '&quot;')})"
+                                 style="padding-left: ${20 + level * 20}px">
+                                <span class="file-icon">${icon}</span>
+                                <span class="file-name">${item.name}</span>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="file-item ${isSelected ? 'selected' : ''}" 
+                                 onclick='app.selectFile(${JSON.stringify(item).replace(/'/g, "&#39;")})'
+                                 style="padding-left: ${20 + level * 20}px">
+                                <span class="file-icon">${icon}</span>
+                                <span class="file-name">${item.name}</span>
+                                <span class="file-size">${this.formatSize(item.size)}</span>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            }
 
-        if (items.length === 0) {
-          return '<div class="empty-state">Empty directory</div>';
-        }
+            renderCurrentDirectory() {
+                const current = this.getCurrentDirectory();
+                if (!current || !current.children) {
+                    return this.renderFileTree(this.data.tree);
+                }
+                return this.renderFileTree(current.children);
+            }
 
-        return items.map(item => `
-          <div class="file-item ${item.type} ${this.selectedFile?.path === item.path ? 'selected' : ''}"
-               onclick="app.openItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-            <span class="file-icon">${this.getFileIcon(item)}</span>
-            <span class="file-name">${item.name}</span>
-            ${item.size ? `<span class="file-size">${this.formatSize(item.size)}</span>` : ''}
-          </div>
-        `).join('');
-      }
+            renderContent() {
+                if (!this.selectedFile) {
+                    const current = this.getCurrentDirectory();
+                    if (current && current.children) {
+                        const dirs = current.children.filter(i => i.type === 'directory');
+                        const files = current.children.filter(i => i.type === 'file');
+                        
+                        return `
+                            <div class="directory-view">
+                                <h3>📁 ${this.currentPath[this.currentPath.length - 1] || 'Root Directory'}</h3>
+                                ${dirs.length > 0 ? `
+                                    <div style="margin-bottom: 20px;">
+                                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Directories (${dirs.length})</div>
+                                        ${dirs.map(dir => {
+                                            const pathArray = dir.path.split('/');
+                                            return `
+                                                <div class="directory-item" onclick="app.navigateTo(${JSON.stringify(pathArray).replace(/"/g, '&quot;')})">
+                                                    <span class="file-icon">📁</span>
+                                                    <span>${dir.name}</span>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : ''}
+                                ${files.length > 0 ? `
+                                    <div>
+                                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Files (${files.length})</div>
+                                        ${files.map(file => `
+                                            <div class="directory-item" onclick='app.selectFile(${JSON.stringify(file).replace(/'/g, "&#39;")})'>
+                                                <span class="file-icon">${this.getFileIcon(file)}</span>
+                                                <span>${file.name}</span>
+                                                <span style="margin-left: auto; font-size: 11px; color: var(--text-secondary);">${this.formatSize(file.size)}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }
+                    return '<div class="empty-state">Select a file to view its contents</div>';
+                }
 
-      renderContent() {
-        if (!this.selectedFile) {
-          const current = this.getCurrentDirectory();
-          if (this.currentPath.length === 0) {
-            return this.renderDirectoryGrid(current.children || []);
-          }
-          return '<div class="empty-state">Select a file to view its contents</div>';
-        }
+                if (this.selectedFile.error) {
+                    return `
+                        <div class="error-message">
+                            <h3>${this.selectedFile.error}</h3>
+                            <p>${this.selectedFile.message}</p>
+                        </div>
+                    `;
+                }
 
-        const file = this.selectedFile;
+                const content = this.selectedFile.content || '';
+                const language = this.selectedFile.language || 'text';
+                
+                return `<pre><code class="language-${language}">${this.escapeHtml(content)}</code></pre>`;
+            }
 
-        if (file.error) {
-          return `<div class="error-message">Error: ${file.error}</div>`;
-        }
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
 
-        if (file.isBinary) {
-          return `
-            <div class="info-message">
-              <p>📦 Binary file (${this.formatSize(file.size)})</p>
-              <p>Preview not available</p>
-            </div>
-          `;
-        }
-
-        if (!file.content) {
-          return '<div class="info-message">No preview available</div>';
-        }
-
-        return this.renderCodeWithLineNumbers(file.content);
-      }
-
-      renderCodeWithLineNumbers(content) {
-        const lines = content.split('\n');
-        const lineNumbers = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
-        const escapedContent = this.escapeHtml(content);
-
-        return `
-          <div class="line-numbers">
-            <div class="line-numbers-rows">${lineNumbers}</div>
-            <pre class="code-content"><code>${escapedContent}</code></pre>
-          </div>
-        `;
-      }
-
-      renderDirectoryGrid(items) {
-        if (items.length === 0) {
-          return '<div class="empty-state">Empty directory</div>';
-        }
-
-        return `
-          <div class="directory-view">
-            ${items.map(item => `
-              <div class="directory-card" onclick="app.openItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                <div class="directory-card-icon">${this.getFileIcon(item)}</div>
-                <div class="directory-card-name">${item.name}</div>
-                <div class="directory-card-info">
-                  ${item.type === 'directory' 
-                    ? `${item.children?.length || 0} items` 
-                    : this.formatSize(item.size)}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
-
-      render() {
-        const app = document.getElementById('app');
-        
-        app.innerHTML = `
-          <div class="container">
-            <header>
-              <div class="header-title">
-                📂 ${this.data.repository || 'Repository'} File Manager
-              </div>
-              <div class="header-info">
-                Last updated: ${new Date(this.data.generated).toLocaleString()}
-              </div>
-            </header>
-
-            <div class="breadcrumb">
-              ${this.renderBreadcrumb()}
-            </div>
-
-            <div class="main-content">
-              <div class="sidebar">
-                <div class="file-list">
-                  ${this.renderFileList()}
-                </div>
-              </div>
-
-              <div class="content-area">
-                ${this.selectedFile ? `
-                  <div class="content-header">
-                    <div class="content-title">
-                      <span>${this.getFileIcon(this.selectedFile)}</span>
-                      <span>${this.selectedFile.name}</span>
+            render() {
+                const app = document.getElementById('app');
+                
+                app.innerHTML = `
+                    <div class="header">
+                        <h1>📂 ${this.data.repository}</h1>
+                        <div class="header-info">
+                            Branch: ${this.data.branch} | Updated: ${this.formatDate(this.data.generated)}
+                        </div>
                     </div>
-                    <div class="content-meta">
-                      ${this.selectedFile.size ? `<span>${this.formatSize(this.selectedFile.size)}</span>` : ''}
-                      ${this.selectedFile.lines ? `<span>${this.selectedFile.lines} lines</span>` : ''}
-                      ${this.selectedFile.fileType ? `<span>${this.selectedFile.fileType}</span>` : ''}
+                    ${this.renderBreadcrumb()}
+                    <div class="main">
+                        <div class="sidebar">
+                            <div class="file-list">
+                                ${this.renderCurrentDirectory()}
+                            </div>
+                        </div>
+                        <div class="content">
+                            ${this.selectedFile ? `
+                                <div class="content-header">
+                                    <span>${this.selectedFile.name}</span>
+                                    <span class="file-meta">
+                                        ${this.formatSize(this.selectedFile.size)} | 
+                                        Modified: ${this.formatDate(this.selectedFile.modified)}
+                                    </span>
+                                </div>
+                            ` : ''}
+                            <div class="content-body">
+                                ${this.renderContent()}
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                ` : ''}
-                <div class="content-body">
-                  ${this.renderContent()}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }
+                `;
 
-      renderError(error) {
-        const app = document.getElementById('app');
-        app.innerHTML = `
-          <div class="loading">
-            <div class="error-message">
-              <strong>Error loading repository:</strong><br>
-              ${error.message}
-            </div>
-          </div>
-        `;
-      }
-    }
+                // Apply syntax highlighting
+                if (this.selectedFile && this.selectedFile.content) {
+                    document.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                }
+            }
+        }
 
-    // Initialize the app
-    const app = new FileManager();
-  </script>
+        const app = new FileManager();
+    </script>
 </body>
 </html>

@@ -16,19 +16,23 @@
   />
   <style>
     :root {
-      --bg: #050608;
-      --bg-soft: #0b0e12;
-      --bg-elevated: #0f1319;
-      --border-subtle: #20232a;
-      --accent: #3b82f6;
-      --accent-soft: rgba(59,130,246,0.18);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --danger: #f97316;
+      --bg: #000000;
+      --bg-soft: #050505;
+      --bg-elevated: #0f0f0f;
+      --border-subtle: #2a2a2a;
+      --accent: #ffffff;
+      --accent-soft: rgba(255, 255, 255, 0.12);
+      --text: #f5f5f5;
+      --muted: #aaaaaa;
+      --danger: #ff4d4d;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --font-sans: system-ui, -apple-system, BlinkMacSystemFont, -system-ui, sans-serif;
-      --shadow-soft: 0 10px 40px rgba(0,0,0,0.8);
+      --shadow-soft: 0 10px 40px rgba(0,0,0,0.9);
       --transition-fast: 0.16s ease-out;
+      --focus-outline: 1px solid #ffffff;
+      --focus-bg: #151515;
+      --focus-text: #ffffff;
+      --active-bg: linear-gradient(to right, #262626, #050505);
     }
 
     * { box-sizing: border-box; }
@@ -40,8 +44,7 @@
       width: 100%;
       overflow: hidden;
       font-family: var(--font-sans);
-      background:
-        radial-gradient(circle at top, #111827 0, #020817 40%, #000 100%);
+      background: #000000;
       color: var(--text);
       -webkit-font-smoothing: antialiased;
     }
@@ -54,6 +57,8 @@
       height: 100vh;
       padding: 10px;
       gap: 8px;
+      background:
+        radial-gradient(circle at top, #202020 0, #050505 40%, #000000 100%);
     }
 
     .layout {
@@ -101,24 +106,53 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background-color: #05070b;
+      background-color: #050505;
+    }
+
+    /* Search box */
+
+    .search-container {
+      padding: 2px 2px 4px;
+    }
+
+    #tree-search {
+      width: 100%;
+      padding: 3px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background-color: #050505;
+      color: var(--text);
+      font-size: 9px;
+      font-family: var(--font-mono);
+      outline: none;
+      transition: all var(--transition-fast);
+    }
+
+    #tree-search::placeholder {
+      color: #666666;
+    }
+
+    #tree-search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+      background-color: #0a0a0a;
     }
 
     .tree {
       flex: 1;
       overflow: auto;
-      padding: 4px 2px 4px 4px;
+      padding: 2px 2px 4px 4px;
       font-family: var(--font-mono);
       font-size: 10px;
       line-height: 1.6;
-      color: #9ca3af;
+      color: #b0b0b0;
     }
 
     .tree ul {
       list-style: none;
       margin: 0;
       padding-left: 12px;
-      border-left: 1px solid rgba(75,85,99,0.35);
+      border-left: 1px solid #222222;
     }
 
     .tree-root {
@@ -138,7 +172,8 @@
       transition:
         background-color var(--transition-fast),
         color var(--transition-fast),
-        transform 0.06s ease-out;
+        transform 0.06s ease-out,
+        box-shadow var(--transition-fast);
     }
 
     .tree-item .icon {
@@ -146,7 +181,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #6b7280;
+      color: #808080;
       flex-shrink: 0;
       font-size: 9px;
     }
@@ -158,37 +193,48 @@
     }
 
     .tree-item.directory .name {
-      color: #9ca3af;
+      color: #d0d0d0;
       font-weight: 500;
     }
 
     .tree-item.file {
-      color: #6b7280;
+      color: #888888;
     }
 
     .tree-item.file.previewable {
-      color: #9ca3af;
+      color: #d0d0d0;
     }
 
     .tree-item:hover {
-      background-color: #151922;
-      color: #e5e7eb;
+      background-color: #141414;
+      color: #ffffff;
       transform: translateX(1px);
     }
 
+    .tree-item:hover .icon {
+      color: #ffffff;
+    }
+
     .tree-item.active {
-      background: linear-gradient(
-        to right,
-        rgba(59,130,246,0.26),
-        rgba(10,15,25,1)
-      );
-      color: #eff6ff;
+      background: var(--active-bg);
+      color: #ffffff;
       box-shadow: 0 3px 10px rgba(0,0,0,0.9);
     }
 
-    .tree-item.active .icon,
-    .tree-item:hover .icon {
-      color: var(--accent);
+    .tree-item.active .icon {
+      color: #ffffff;
+    }
+
+    .tree-item.focused {
+      outline: var(--focus-outline);
+      outline-offset: 0;
+      background-color: var(--focus-bg);
+      color: var(--focus-text);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+    }
+
+    .tree-item.focused .icon {
+      color: var(--focus-text);
     }
 
     .tree-item .arrow {
@@ -196,7 +242,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #4b5563;
+      color: #666666;
       transition: transform var(--transition-fast), color var(--transition-fast);
       flex-shrink: 0;
       font-size: 8px;
@@ -213,6 +259,17 @@
 
     .tree-children.collapsed {
       display: none;
+    }
+
+    .tree-item.hidden-by-search {
+      display: none !important;
+    }
+
+    .tree-label-highlight {
+      background-color: #ffffff;
+      color: #000000;
+      padding: 0 1px;
+      border-radius: 2px;
     }
 
     .main {
@@ -234,7 +291,7 @@
       gap: 6px;
       font-family: var(--font-mono);
       font-size: 9px;
-      color: #9ca3af;
+      color: #999999;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -245,8 +302,8 @@
       padding: 1px 5px;
       border-radius: 999px;
       border: 1px solid var(--border-subtle);
-      color: #9ca3af;
-      background-color: #05070b;
+      color: #b0b0b0;
+      background-color: #050505;
     }
 
     .breadcrumb-path {
@@ -273,7 +330,7 @@
 
     .btn {
       border: 1px solid var(--border-subtle);
-      background: #05070b;
+      background: #050505;
       padding: 2px 7px;
       border-radius: 6px;
       font-size: 8px;
@@ -288,30 +345,30 @@
 
     .btn .icon {
       font-size: 8px;
-      color: #6b7280;
+      color: #777777;
     }
 
     .btn:hover {
-      color: #e5e7eb;
-      border-color: var(--accent);
-      background: radial-gradient(circle at top, var(--accent-soft), #020308);
-      box-shadow: 0 3px 10px rgba(0,0,0,0.9);
+      color: #ffffff;
+      border-color: #ffffff;
+      background: radial-gradient(circle at top, var(--accent-soft), #050505);
+      box-shadow: 0 3px 10px rgba(0,0,0,1);
       transform: translateY(-0.5px);
     }
 
     .btn.primary {
-      border-color: var(--accent);
-      color: #bfdbfe;
-      background: radial-gradient(circle at top, rgba(37,99,235,0.24), #020308);
+      border-color: #ffffff;
+      color: #ffffff;
+      background: radial-gradient(circle at top, rgba(255,255,255,0.16), #050505);
     }
 
     .viewer {
       flex: 1;
       position: relative;
       border-radius: 8px;
-      background-color: #050608;
-      border: 1px solid #181b22;
-      box-shadow: 0 8px 26px rgba(0,0,0,0.95);
+      background-color: #000000;
+      border: 1px solid #1a1a1a;
+      box-shadow: 0 8px 26px rgba(0,0,0,1);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -327,10 +384,10 @@
       font-size: 8px;
       color: var(--muted);
       background:
-        radial-gradient(circle at top left, rgba(37,99,235,0.16), transparent 70%),
-        radial-gradient(circle at top right, rgba(15,118,110,0.08), transparent 75%),
-        #05070b;
-      border-bottom: 1px solid #181b22;
+        radial-gradient(circle at top left, rgba(255,255,255,0.06), transparent 70%),
+        radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 75%),
+        #050505;
+      border-bottom: 1px solid #1a1a1a;
     }
 
     .viewer-header-dots {
@@ -342,36 +399,36 @@
       width: 5px;
       height: 5px;
       border-radius: 999px;
-      background-color: #374151;
+      background-color: #444444;
     }
 
-    .viewer-header-dot.red { background-color: #f87171; }
-    .viewer-header-dot.yellow { background-color: #facc15; }
-    .viewer-header-dot.green { background-color: #22c55e; }
+    .viewer-header-dot.red { background-color: #555555; }
+    .viewer-header-dot.yellow { background-color: #777777; }
+    .viewer-header-dot.green { background-color: #999999; }
 
     .viewer-header-title {
       font-family: var(--font-mono);
       font-size: 8px;
-      color: #9ca3af;
+      color: #b0b0b0;
       opacity: 0.9;
     }
 
     .badge {
       padding: 1px 4px;
       border-radius: 5px;
-      border: 1px solid #272b35;
+      border: 1px solid #303030;
       font-size: 7px;
-      color: #9ca3af;
+      color: #b0b0b0;
       display: inline-flex;
       align-items: center;
       gap: 3px;
-      background-color: #05070b;
+      background-color: #050505;
     }
 
     .badge.accent {
-      border-color: rgba(59,130,246,0.9);
-      color: #bfdbfe;
-      background-color: #05070b;
+      border-color: #ffffff;
+      color: #ffffff;
+      background-color: #050505;
     }
 
     .viewer-body {
@@ -380,10 +437,10 @@
       font-family: var(--font-mono);
       font-size: 11px;
       line-height: 1.5;
-      color: #e5e7eb;
+      color: #f5f5f5;
       padding: 6px;
       position: relative;
-      background-color: #050608;
+      background-color: #000000;
       word-wrap: break-word;
       overflow-wrap: break-word;
       white-space: pre-wrap;
@@ -393,6 +450,7 @@
       white-space: pre-wrap !important;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      background-color: #000000 !important;
     }
 
     .viewer-body code {
@@ -410,7 +468,7 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
-      color: #6b7280;
+      color: #777777;
       text-align: center;
       pointer-events: none;
       font-size: 10px;
@@ -430,13 +488,13 @@
       width: 4px;
       height: 4px;
       border-radius: 999px;
-      background-color: var(--accent);
-      box-shadow: 0 0 6px var(--accent);
+      background-color: #ffffff;
+      box-shadow: 0 0 6px #ffffff;
     }
 
     .not-previewable {
       font-size: 9px;
-      color: #9ca3af;
+      color: #b0b0b0;
     }
 
     .error {
@@ -463,10 +521,10 @@
     .badge-mini {
       padding: 1px 4px;
       border-radius: 4px;
-      border: 1px solid #272b35;
+      border: 1px solid #303030;
       font-size: 7px;
-      color: #9ca3af;
-      background-color: #05070b;
+      color: #b0b0b0;
+      background-color: #050505;
     }
 
     .viewer-object,
@@ -474,13 +532,13 @@
       flex: 1;
       width: 100%;
       border: none;
-      background: #050608;
+      background: #000000;
       border-radius: 6px;
     }
 
     .binary-hint {
       font-size: 9px;
-      color: #9ca3af;
+      color: #b0b0b0;
       margin-top: 4px;
     }
 
@@ -504,7 +562,15 @@
           <div class="chip"><span>⮞</span><span>Folders collapsed</span></div>
         </div>
       </div>
-      <div id="tree" class="tree"></div>
+      <div class="search-container">
+        <input
+          type="text"
+          id="tree-search"
+          placeholder="Search files and folders..."
+          autocomplete="off"
+        />
+      </div>
+      <div id="tree" class="tree" tabindex="0"></div>
     </aside>
 
     <main class="main">
@@ -516,6 +582,7 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <button class="btn" id="btn-back"><span class="icon">↶</span><span>Back</span></button>
+          <button class="btn" id="btn-forward"><span class="icon">↷</span><span>Forward</span></button>
           <button class="btn" id="btn-up"><span class="icon">⇡</span><span>Up</span></button>
           <button class="btn" id="btn-collapse-all"><span class="icon">⊟</span><span>Collapse</span></button>
           <button class="btn" id="btn-expand-root"><span class="icon">⊞</span><span>Expand root</span></button>
@@ -619,9 +686,10 @@
   let historyStack = [];
   let historyIndex = -1;
   let rawMode = false;
-
-  // Simple token to avoid race conditions when switching files quickly
   let currentLoadToken = 0;
+
+  // keyboard navigation state
+  let focusedTreeItem = null;
 
   async function loadIndex() {
     const statusLabel = document.getElementById('status-label');
@@ -651,6 +719,11 @@
     rootUl.className = 'tree-root';
     indexData.children.forEach(child => rootUl.appendChild(createTreeNode(child)));
     treeEl.appendChild(rootUl);
+    // initialize focus to first visible item
+    const firstItem = treeEl.querySelector('.tree-item');
+    if (firstItem) {
+      setFocusedTreeItem(firstItem);
+    }
   }
 
   function createTreeNode(node) {
@@ -675,9 +748,11 @@
     if (node.type === 'directory') {
       item.classList.add('directory', 'collapsed');
       icon.textContent = '▣';
+
       item.addEventListener('click', (e) => {
         if (e.target === name || e.target === icon || e.target === arrow || e.target === item) {
           toggleDirectory(item);
+          setFocusedTreeItem(item);
         }
       });
 
@@ -700,7 +775,15 @@
       item.classList.add('file', isPreviewable ? 'previewable' : 'not-previewable', 'leaf');
       icon.textContent = '▤';
       arrow.style.visibility = 'hidden';
-      item.addEventListener('click', () => openFile(node.path));
+
+      item.addEventListener('click', () => {
+        setFocusedTreeItem(item);
+        openFile(node.path);
+      });
+      // Hover preview via mouse
+      item.addEventListener('mouseenter', () => {
+        // no automatic preview on mouse hover (to avoid noise)
+      });
     }
 
     item.appendChild(arrow);
@@ -750,7 +833,6 @@
     const filePath = node.path || pathStr;
     currentFilePath = filePath;
 
-    // Invalidate previous loads
     const loadToken = ++currentLoadToken;
 
     if (pushHistory) {
@@ -774,11 +856,8 @@
     );
 
     const viewerBody = document.getElementById('viewer-body');
-
-    // Show loading state immediately for this file
     viewerBody.innerHTML = '<div class="not-previewable">Loading file…</div>';
 
-    // Media previews
     if (IMAGE_EXTENSIONS.has(ext)) {
       if (!(await renderImageAsync(filePath, loadToken))) return;
       return;
@@ -792,21 +871,18 @@
       return;
     }
 
-    // Binary like executables / archives / fonts
     if (isBinary) {
       if (!isTokenCurrent(loadToken)) return;
       renderBinaryMessage(filePath);
       return;
     }
 
-    // PDF inline
     if (ext === 'pdf') {
       if (!isTokenCurrent(loadToken)) return;
       renderEmbed(filePath, 'application/pdf', 'PDF preview (browser native)');
       return;
     }
 
-    // Text-like files: prefer indexed content, otherwise raw fetch; no size limit.
     try {
       if (node.previewable && typeof node.content === 'string' && !rawMode) {
         if (!isTokenCurrent(loadToken)) return;
@@ -900,6 +976,7 @@
       img.style.maxHeight = '100%';
       img.style.display = 'block';
       img.style.margin = '0 auto';
+      img.style.backgroundColor = '#000000';
 
       img.onload = () => {
         if (!isTokenCurrent(loadToken)) return resolve(false);
@@ -929,7 +1006,7 @@
       video.style.maxHeight = '100%';
       video.style.display = 'block';
       video.style.margin = '0 auto';
-      video.style.backgroundColor = '#000';
+      video.style.backgroundColor = '#000000';
 
       let settled = false;
 
@@ -952,8 +1029,6 @@
 
       video.addEventListener('loadeddata', () => finalize(true), { once: true });
       video.addEventListener('error', () => finalize(false), { once: true });
-
-      // Fallback: if neither fires in a while, keep current content (loading state)
       setTimeout(() => finalize(true), 4000);
     });
   }
@@ -989,7 +1064,6 @@
 
       audio.addEventListener('loadeddata', () => finalize(true), { once: true });
       audio.addEventListener('error', () => finalize(false), { once: true });
-
       setTimeout(() => finalize(true), 4000);
     });
   }
@@ -1011,10 +1085,6 @@
     obj.data = pathStr;
     if (type) obj.type = type;
 
-    // Ensure we wait until the PDF/object is at least attempted
-    obj.onload = () => {
-      // nothing extra; we just ensure DOM is updated after load
-    };
     obj.onerror = () => {
       viewerBody.innerHTML =
         '<div class="error">Failed to load embedded document: ' +
@@ -1051,7 +1121,8 @@
     if (item) {
       item.classList.add('active');
       expandParents(item);
-      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      ensureItemVisible(item);
+      setFocusedTreeItem(item, false);
     }
   }
 
@@ -1067,6 +1138,17 @@
         }
       }
       current = current.parentElement;
+    }
+  }
+
+  function ensureItemVisible(item) {
+    const tree = document.getElementById('tree');
+    const treeRect = tree.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    if (itemRect.top < treeRect.top) {
+      item.scrollIntoView({ block: 'nearest' });
+    } else if (itemRect.bottom > treeRect.bottom) {
+      item.scrollIntoView({ block: 'nearest' });
     }
   }
 
@@ -1142,31 +1224,28 @@
     return (str || '').replace(/"/g, '\\"');
   }
 
+  // History buttons
+
   document.getElementById('btn-back').addEventListener('click', () => {
-    if (historyIndex > 0) {
-      historyIndex--;
-      openFile(historyStack[historyIndex], false);
-    }
+    goHistory(-1);
   });
 
-  document.getElementById('btn-up').addEventListener('click', () => {
-    if (!currentFilePath) return;
-    const parts = currentFilePath.split('/');
-    parts.pop();
-    if (!parts.length) return;
-    const parentPath = parts.join('/');
-    const node = findNodeByPath(parentPath);
-    if (node && node.type === 'directory') {
-      highlightActiveTreeItem(parentPath);
-      document.getElementById('breadcrumb-path').textContent = parentPath + '/';
-      document.getElementById('viewer-title').textContent = parentPath + '/';
-      document.getElementById('viewer-body').innerHTML = `
-        <div class="placeholder">
-          <div>Directory selected: ${escapeHtml(parentPath)}/</div>
-          <div>Select a file in this folder from the tree to preview.</div>
-        </div>
-      `;
+  document.getElementById('btn-forward').addEventListener('click', () => {
+    goHistory(1);
+  });
+
+  function goHistory(direction) {
+    if (direction === -1 && historyIndex > 0) {
+      historyIndex--;
+      openFile(historyStack[historyIndex], false);
+    } else if (direction === 1 && historyIndex < historyStack.length - 1) {
+      historyIndex++;
+      openFile(historyStack[historyIndex], false);
     }
+  }
+
+  document.getElementById('btn-up').addEventListener('click', () => {
+    goUpDirectory();
   });
 
   document.getElementById('btn-collapse-all').addEventListener('click', () => {
@@ -1225,13 +1304,282 @@
     const statusLabel = document.getElementById('status-label');
     const old = statusLabel.textContent;
     statusLabel.textContent = msg;
-    statusLabel.style.color = '#bfdbfe';
+    statusLabel.style.color = '#ffffff';
     setTimeout(() => {
-      statusLabel.textContent =
-        old.includes('Index loaded') ? 'Index loaded. Ready.' : old;
+      if (old.includes('Index loaded')) {
+        statusLabel.textContent = 'Index loaded. Ready.';
+      } else {
+        statusLabel.textContent = old;
+      }
       statusLabel.style.color = '';
     }, 1500);
   }
+
+  function goUpDirectory() {
+    if (!currentFilePath) return;
+    const parts = currentFilePath.split('/');
+    parts.pop();
+    if (!parts.length) return;
+    const parentPath = parts.join('/');
+    const node = findNodeByPath(parentPath);
+    if (node && node.type === 'directory') {
+      const item = document.querySelector(`.tree-item[data-path="${cssEscape(parentPath)}"]`);
+      if (item) {
+        expandParents(item);
+        setFocusedTreeItem(item);
+      }
+      document.getElementById('breadcrumb-path').textContent = parentPath + '/';
+      document.getElementById('viewer-title').textContent = parentPath + '/';
+      document.getElementById('viewer-body').innerHTML = `
+        <div class="placeholder">
+          <div>Directory selected: ${escapeHtml(parentPath)}/</div>
+          <div>Select a file in this folder from the tree to preview.</div>
+        </div>
+      `;
+    }
+  }
+
+  // Search functionality
+
+  const searchInput = document.getElementById('tree-search');
+  searchInput.addEventListener('input', () => {
+    applyTreeSearch(searchInput.value.trim());
+  });
+
+  function applyTreeSearch(query) {
+    const tree = document.getElementById('tree');
+    const items = tree.querySelectorAll('.tree-item');
+
+    // reset
+    items.forEach(item => {
+      item.classList.remove('hidden-by-search');
+      const nameEl = item.querySelector('.name');
+      if (nameEl && nameEl.dataset.originalText) {
+        nameEl.textContent = nameEl.dataset.originalText;
+        delete nameEl.dataset.originalText;
+      }
+    });
+
+    if (!query) {
+      // restore default collapsed/expanded state only (no forced open/close)
+      return;
+    }
+
+    const q = query.toLowerCase();
+
+    items.forEach(item => {
+      const path = (item.dataset.path || '').toLowerCase();
+      const nameEl = item.querySelector('.name');
+      const name = nameEl ? nameEl.textContent.toLowerCase() : '';
+      const match = path.includes(q) || name.includes(q);
+
+      if (!match) {
+        item.classList.add('hidden-by-search');
+      } else {
+        // highlight text
+        if (nameEl) {
+          if (!nameEl.dataset.originalText) {
+            nameEl.dataset.originalText = nameEl.textContent;
+          }
+          const orig = nameEl.dataset.originalText;
+          const idx = orig.toLowerCase().indexOf(q);
+          if (idx !== -1) {
+            const before = orig.slice(0, idx);
+            const mid = orig.slice(idx, idx + q.length);
+            const after = orig.slice(idx + q.length);
+            nameEl.innerHTML =
+              escapeHtml(before) +
+              '<span class="tree-label-highlight">' +
+              escapeHtml(mid) +
+              '</span>' +
+              escapeHtml(after);
+          }
+        }
+
+        // ensure all parents visible and expanded
+        expandParents(item);
+        let parent = item.parentElement;
+        while (parent && parent.id !== 'tree') {
+          if (parent.classList && parent.classList.contains('tree-children')) {
+            const parentItem = parent.parentElement.querySelector('.tree-item.directory');
+            if (parentItem) {
+              parentItem.classList.remove('hidden-by-search');
+            }
+          }
+          parent = parent.parentElement;
+        }
+      }
+    });
+
+    // hide entire branches where all children are hidden
+    tree.querySelectorAll('ul').forEach(ul => {
+      const visibleChild = Array.from(ul.children).some(li => {
+        const item = li.querySelector('.tree-item');
+        return item && !item.classList.contains('hidden-by-search');
+      });
+      if (!visibleChild && ul !== tree.querySelector('.tree-root')) {
+        const parentItem = ul.parentElement.querySelector('.tree-item');
+        if (parentItem) {
+          parentItem.classList.add('hidden-by-search');
+        }
+      }
+    });
+
+    // adjust focused item to first visible match
+    const firstVisible = tree.querySelector('.tree-item:not(.hidden-by-search)');
+    if (firstVisible) {
+      setFocusedTreeItem(firstVisible);
+      ensureItemVisible(firstVisible);
+    }
+  }
+
+  // Keyboard navigation for tree + history
+  document.addEventListener('keydown', (e) => {
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+
+    const tree = document.getElementById('tree');
+    const items = getVisibleTreeItems();
+
+    if (!items.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveFocus(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveFocus(-1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      handleArrowLeft();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      handleArrowRight();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (focusedTreeItem) {
+        if (focusedTreeItem.classList.contains('directory')) {
+          toggleDirectory(focusedTreeItem);
+        } else if (focusedTreeItem.classList.contains('file')) {
+          const path = focusedTreeItem.dataset.path;
+          if (path) openFile(path);
+        }
+      }
+    } else if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goHistory(-1);
+    } else if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowRight') {
+      e.preventDefault();
+      goHistory(1);
+    }
+  });
+
+  function getVisibleTreeItems() {
+    const tree = document.getElementById('tree');
+    return Array.from(tree.querySelectorAll('.tree-item'))
+      .filter(item => isElementVisibleInTree(item));
+  }
+
+  function isElementVisibleInTree(item) {
+    if (item.classList.contains('hidden-by-search')) return false;
+    let el = item;
+    while (el && el.id !== 'tree') {
+      if (el.classList && el.classList.contains('tree-children') && el.classList.contains('collapsed')) {
+        return false;
+      }
+      el = el.parentElement;
+    }
+    return true;
+  }
+
+  function setFocusedTreeItem(item, scroll = true) {
+    const tree = document.getElementById('tree');
+    tree.querySelectorAll('.tree-item.focused').forEach(el => el.classList.remove('focused'));
+    if (item) {
+      item.classList.add('focused');
+      focusedTreeItem = item;
+      if (scroll) ensureItemVisible(item);
+      // keyboard hover behavior: preview file while navigating
+      if (item.classList.contains('file')) {
+        const path = item.dataset.path;
+        if (path) openFile(path);
+      }
+    }
+  }
+
+  function moveFocus(delta) {
+    const items = getVisibleTreeItems();
+    if (!items.length) return;
+    let idx = focusedTreeItem ? items.indexOf(focusedTreeItem) : -1;
+    if (idx === -1) {
+      idx = 0;
+    } else {
+      idx = Math.max(0, Math.min(items.length - 1, idx + delta));
+    }
+    const target = items[idx];
+    if (target) setFocusedTreeItem(target);
+  }
+
+  function handleArrowLeft() {
+    if (!focusedTreeItem) return;
+    if (focusedTreeItem.classList.contains('directory')) {
+      const li = focusedTreeItem.parentElement;
+      const children = li.querySelector('.tree-children');
+      if (children && !children.classList.contains('collapsed')) {
+        // collapse if expanded
+        toggleDirectory(focusedTreeItem);
+        return;
+      }
+    }
+    // otherwise, move to parent directory item if exists
+    const parentDirItem = findParentDirectoryItem(focusedTreeItem);
+    if (parentDirItem) {
+      setFocusedTreeItem(parentDirItem);
+    }
+  }
+
+  function handleArrowRight() {
+    if (!focusedTreeItem) return;
+    if (focusedTreeItem.classList.contains('directory')) {
+      const li = focusedTreeItem.parentElement;
+      const children = li.querySelector('.tree-children');
+      if (children && children.classList.contains('collapsed')) {
+        // expand
+        toggleDirectory(focusedTreeItem);
+      } else {
+        // move to first child if available
+        const firstChild = children
+          ? children.querySelector('.tree-item')
+          : null;
+        if (firstChild && isElementVisibleInTree(firstChild)) {
+          setFocusedTreeItem(firstChild);
+        }
+      }
+    } else if (focusedTreeItem.classList.contains('file')) {
+      const path = focusedTreeItem.dataset.path;
+      if (path) openFile(path);
+    }
+  }
+
+  function findParentDirectoryItem(item) {
+    let current = item.parentElement;
+    while (current && current.id !== 'tree') {
+      if (current.tagName === 'UL' && current.classList.contains('tree-children')) {
+        const parentItem = current.parentElement.querySelector('.tree-item.directory');
+        if (parentItem) return parentItem;
+      }
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  // Mouse click inside tree sets focus anchor
+  document.getElementById('tree').addEventListener('click', (e) => {
+    const item = e.target.closest('.tree-item');
+    if (item && isElementVisibleInTree(item)) {
+      setFocusedTreeItem(item);
+    }
+  });
 
   loadIndex();
 </script>

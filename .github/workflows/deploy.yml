@@ -1,35 +1,32 @@
-name: Generate File Index and Deploy
+name: Deploy File Manager
 
 on:
   push:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-permissions:
-  contents: write
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      
+          token: ${{ secrets.GITHUB_TOKEN }}  # For pushing to gh-pages
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      
-      - name: Generate index.json
+          node-version: '20'
+
+      - name: Generate index
         run: node generate_index.js
-      
-      - name: Deploy to GitHub Pages
+
+      - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          publish_branch: gh-pages
-          keep_files: false
+          publish_dir: .  # Publishes generated files from root
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Auto-deploy file manager on push'
+          force_orphan: true  # Clean slate for static files

@@ -1,175 +1,184 @@
 const fs = require('fs');
 const path = require('path');
 
-const IGNORE_PATTERNS = [
-  '.git',
-  'node_modules',
-  '.github',
-  'generate_index.js',
-  'index.json',
-  '.gitignore',
-  '.DS_Store'
-];
+function buildTree(dir, basePath = '') {
+  const items = fs.readdirSync(dir, { withFileTypes: true });
+  const tree = [];
 
-const BINARY_EXTENSIONS = [
-  '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg',
-  '.zip', '.tar', '.gz', '.rar', '.7z',
-  '.exe', '.dll', '.so', '.dylib',
-  '.pdf', '.doc', '.docx',
-  '.mp3', '.mp4', '.avi', '.mov',
-  '.ttf', '.woff', '.woff2', '.eot'
-];
+  items.forEach(item => {
+    const itemPath = path.join(dir, item.name);
+    const relPath = path.join(basePath, item.name).replace(/\\/g, '/');
 
-const MAX_FILE_SIZE = 1024 * 1024; // 1MB
-
-function shouldIgnore(name) {
-  return IGNORE_PATTERNS.some(pattern => {
-    if (pattern.startsWith('.')) {
-      return name === pattern;
+    // Skip hidden/system dirs and generated files
+    if (item.name.startsWith('.') || ['.git', '.github', 'node_modules', 'generate_index.js', 'index.html', 'index.json'].includes(item.name)) {
+      return;
     }
-    return name.includes(pattern);
+
+    if (item.isDirectory()) {
+      tree.push({
+        type: 'folder',
+        name: item.name,
+        path: relPath,
+        children: buildTree(itemPath, relPath)
+      });
+    } else if (item.isFile()) {
+      let content = null;
+      try {
+        const fileContent = fs.readFileSync(itemPath, 'utf8');
+        // Assume text if it parses as UTF-8; else null (binary)
+        content = fileContent;
+      } catch (e) {
+        // Binary file
+        content = null;
+      }
+      tree.push({
+        type: 'file',
+        name: item.name,
+        path: relPath,
+        content: content,
+        size: item.size  // For display
+      });
+    }
   });
-}
 
-function isBinaryFile(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  return BINARY_EXTENSIONS.includes(ext);
-}
-
-function getFileType(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  
-  const typeMap = {
-    '.js': 'javascript',
-    '.json': 'json',
-    '.html': 'html',
-    '.css': 'css',
-    '.md': 'markdown',
-    '.py': 'python',
-    '.java': 'java',
-    '.c': 'c',
-    '.cpp': 'cpp',
-    '.h': 'c',
-    '.cs': 'csharp',
-    '.php': 'php',
-    '.rb': 'ruby',
-    '.go': 'go',
-    '.rs': 'rust',
-    '.sql': 'sql',
-    '.xml': 'xml',
-    '.yml': 'yaml',
-    '.yaml': 'yaml',
-    '.sh': 'bash',
-    '.txt': 'text',
-  };
-  
-  return typeMap[ext] || 'text';
-}
-
-function readFileContent(filePath) {
-  try {
-    const stats = fs.statSync(filePath);
-    
-    if (stats.size > MAX_FILE_SIZE) {
-      return {
-        error: 'File too large',
-        message: `File size: ${(stats.size / 1024 / 1024).toFixed(2)}MB (max: 1MB)`
-      };
-    }
-    
-    if (isBinaryFile(filePath)) {
-      return {
-        error: 'Binary file',
-        message: 'Binary files cannot be previewed'
-      };
-    }
-    
-    const content = fs.readFileSync(filePath, 'utf8');
-    return { content };
-  } catch (error) {
-    return {
-      error: 'Read error',
-      message: error.message
-    };
-  }
-}
-
-function scanDirectory(dir, baseDir = dir) {
-  const items = [];
-  
-  try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    
-    for (const entry of entries) {
-      if (shouldIgnore(entry.name)) {
-        continue;
-      }
-      
-      const fullPath = path.join(dir, entry.name);
-      const relativePath = path.relative(baseDir, fullPath);
-      
-      if (entry.isDirectory()) {
-        const children = scanDirectory(fullPath, baseDir);
-        items.push({
-          name: entry.name,
-          type: 'directory',
-          path: relativePath.replace(/\\/g, '/'),
-          children: children
-        });
-      } else if (entry.isFile()) {
-        const stats = fs.statSync(fullPath);
-        const fileData = readFileContent(fullPath);
-        
-        items.push({
-          name: entry.name,
-          type: 'file',
-          path: relativePath.replace(/\\/g, '/'),
-          size: stats.size,
-          modified: stats.mtime.toISOString(),
-          language: getFileType(fullPath),
-          ...fileData
-        });
-      }
-    }
-  } catch (error) {
-    console.error(`Error scanning directory ${dir}:`, error.message);
-  }
-  
-  return items.sort((a, b) => {
-    if (a.type !== b.type) {
-      return a.type === 'directory' ? -1 : 1;
-    }
+  // Sort: folders first, then files alphabetically
+  return tree.sort((a, b) => {
+    if (a.type === 'folder' && b.type === 'file') return -1;
+    if (a.type === 'file' && b.type === 'folder') return 1;
     return a.name.localeCompare(b.name);
   });
 }
 
-function generateIndex() {
-  console.log('Generating index.json...');
-  
-  const rootDir = process.cwd();
-  const fileTree = scanDirectory(rootDir);
-  
-  const index = {
-    generated: new Date().toISOString(),
-    repository: process.env.GITHUB_REPOSITORY || 'Unknown Repository',
-    branch: process.env.GITHUB_REF_NAME || 'main',
-    tree: fileTree
-  };
-  
-  fs.writeFileSync('index.json', JSON.stringify(index, null, 2));
-  console.log('index.json generated successfully!');
-  console.log(`Total items: ${countItems(fileTree)}`);
-}
+const rootTree = { type: 'folder', name: '/', path: '', children: buildTree('.') };
 
-function countItems(tree) {
-  let count = 0;
-  for (const item of tree) {
-    count++;
-    if (item.type === 'directory' && item.children) {
-      count += countItems(item.children);
+// Write index.json
+fs.writeFileSync('index.json', JSON.stringify(rootTree, null, 2));
+
+// Generate index.html
+const htmlTemplate = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repo File Manager</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: #f5f5f5; }
+    #sidebar { width: 300px; border-right: 1px solid #ddd; overflow-y: auto; background: white; }
+    #content { flex: 1; padding: 20px; overflow-y: auto; background: white; }
+    .tree { padding-left: 20px; }
+    .folder { cursor: pointer; font-weight: bold; }
+    .folder.closed::before { content: '▶ '; }
+    .folder.open::before { content: '▼ '; }
+    .file { cursor: pointer; padding: 2px 0; }
+    .file:hover, .folder:hover { background: #f0f0f0; }
+    .selected { background: #e3f2fd; }
+    .breadcrumb { margin-bottom: 10px; }
+    .breadcrumb a { color: #1976d2; text-decoration: none; cursor: pointer; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+    .binary { text-align: center; color: #666; }
+    button { background: #1976d2; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #1565c0; }
+  </style>
+</head>
+<body>
+  <div id="sidebar"></div>
+  <div id="content">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <button onclick="loadIndex()">Refresh</button>
+    <div id="preview"></div>
+  </div>
+  <script>
+    let treeData = null;
+    let currentPath = ['/'];
+
+    async function loadIndex() {
+      try {
+        const res = await fetch('index.json');
+        treeData = await res.json();
+        renderTree(treeData, document.getElementById('sidebar'));
+        updateBreadcrumbs();
+        navigateToPath(currentPath.join('/'));
+      } catch (e) {
+        document.getElementById('preview').innerHTML = '<p>Error loading index.json</p>';
+      }
     }
-  }
-  return count;
-}
 
-generateIndex();
+    function renderTree(node, container) {
+      container.innerHTML = '';
+      if (node.type === 'folder') {
+        const div = document.createElement('div');
+        div.className = 'folder ' + (currentPath.join('/').startsWith(node.path) ? 'open' : 'closed');
+        div.textContent = node.name || '/';
+        div.onclick = (e) => toggleFolder(e, node, div);
+        container.appendChild(div);
+
+        const childrenDiv = document.createElement('div');
+        childrenDiv.className = 'tree';
+        node.children.forEach(child => renderTree(child, childrenDiv));
+        container.appendChild(childrenDiv);
+      } else if (node.type === 'file') {
+        const div = document.createElement('div');
+        div.className = 'file';
+        div.textContent = node.name;
+        div.onclick = () => previewFile(node);
+        container.appendChild(div);
+      }
+    }
+
+    function toggleFolder(e, node, div) {
+      e.stopPropagation();
+      div.classList.toggle('open');
+      div.classList.toggle('closed');
+      const tree = div.nextElementSibling;
+      tree.style.display = div.classList.contains('open') ? 'block' : 'none';
+    }
+
+    function updateBreadcrumbs() {
+      const bc = document.getElementById('breadcrumb');
+      bc.innerHTML = currentPath.map((p, i) => 
+        i === currentPath.length - 1 
+          ? p 
+          : \`<a onclick="navigateToPath(\${currentPath.slice(0, i+1).join('/')})">\${p}</a> / \`
+      ).join(' / ');
+    }
+
+    function navigateToPath(newPath) {
+      currentPath = newPath === '' ? ['/'] : newPath.split('/').filter(Boolean);
+      updateBreadcrumbs();
+      // Re-render tree to highlight
+      renderTree(treeData, document.getElementById('sidebar'));
+      // Preview current dir/files (simplified)
+      const preview = document.getElementById('preview');
+      preview.innerHTML = '<h3>' + currentPath.join('/') + '</h3><p>Folder contents above.</p>';
+      window.location.hash = currentPath.join('/');
+    }
+
+    function previewFile(file) {
+      const preview = document.getElementById('preview');
+      if (file.content) {
+        preview.innerHTML = '<h3>' + file.name + '</h3><pre>' + escapeHtml(file.content) + '</pre>';
+      } else {
+        preview.innerHTML = '<h3>' + file.name + '</h3><div class="binary">Binary file. <a href="https://raw.githubusercontent.com/${{ github.repository }}/main/' + file.path + '" target="_blank">Download/View Raw</a></div>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Init
+    window.addEventListener('load', loadIndex);
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.slice(1) || '/';
+      navigateToPath(hash);
+    });
+  </script>
+</body>
+</html>`;
+
+fs.writeFileSync('index.html', htmlTemplate);
+
+console.log('Generated index.json and index.html');

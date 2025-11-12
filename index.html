@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repository File Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f6f8fa; height: 100vh; overflow: hidden;
+        }
+        .container { display: flex; height: 100vh; }
+        .sidebar {
+            width: 250px; background: #ffffff; border-right: 1px solid #d0d7de;
+            overflow-y: auto; padding: 16px;
+        }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .header {
+            background: #ffffff; border-bottom: 1px solid #d0d7de;
+            padding: 16px; display: flex; align-items: center; gap: 8px;
+        }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 4px; font-size: 14px;
+        }
+        .breadcrumb-item {
+            cursor: pointer; color: #0969da; padding: 4px 8px; border-radius: 4px;
+        }
+        .breadcrumb-item:hover { background: #ddf4ff; }
+        .content { flex: 1; overflow-y: auto; padding: 16px; }
+        .file-list { display: table; width: 100%; border-collapse: collapse; }
+        .file-row { display: table-row; cursor: pointer; }
+        .file-row:hover { background: #ddf4ff; }
+        .file-cell { display: table-cell; padding: 8px 12px; border-bottom: 1px solid #eaeef2; }
+        .file-icon { width: 20px; height: 20px; margin-right: 8px; display: inline-block; }
+        .folder-icon::before { content: "📁"; }
+        .file-icon::before { content: "📄"; }
+        .preview-pane {
+            background: #ffffff; border: 1px solid #d0d7de; margin-top: 16px;
+            padding: 16px; border-radius: 8px; display: none; max-height: 400px; overflow: auto;
+        }
+        .preview-pane.active { display: block; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .close-preview { cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+        .close-preview:hover { background: #eaeef2; }
+        .code-preview {
+            background: #f6f8fa; padding: 16px; border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace; font-size: 12px; overflow-x: auto;
+        }
+        .tree-node { margin-left: 16px; }
+        .tree-item {
+            display: flex; align-items: center; padding: 4px 8px;
+            cursor: pointer; border-radius: 4px;
+        }
+        .tree-item:hover { background: #ddf4ff; }
+        .tree-item.active { background: #0969da; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h3 style="margin-bottom: 16px;">Repository</h3>
+            <div id="tree-view"></div>
+        </div>
+        
+        <div class="main">
+            <div class="header">
+                <div class="breadcrumb" id="breadcrumb">
+                    <span class="breadcrumb-item" data-path="">Root</span>
+                </div>
+            </div>
+            
+            <div class="content">
+                <div class="file-list" id="file-list"></div>
+                <div class="preview-pane" id="preview-pane">
+                    <div class="preview-header">
+                        <h3 id="preview-title"></h3>
+                        <span class="close-preview" onclick="closePreview()">✕</span>
+                    </div>
+                    <div id="preview-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fileTree = null;
+        let currentPath = '';
+        
+        async function loadFileTree() {
+            try {
+                const response = await fetch('index.json');
+                fileTree = await response.json();
+                renderTreeView(fileTree);
+                navigateTo('');
+            } catch (error) {
+                console.error('Failed to load file tree:', error);
+                document.getElementById('file-list').innerHTML = 
+                    '<p style="color: red;">Error loading file tree. Please check if index.json exists.</p>';
+            }
+        }
+        
+        function renderTreeView(node, container = document.getElementById('tree-view')) {
+            const item = document.createElement('div');
+            item.className = 'tree-item';
+            item.dataset.path = node.path;
+            item.innerHTML = `<span class="folder-icon"></span> ${node.name}`;
+            item.onclick = () => navigateTo(node.path);
+            container.appendChild(item);
+            
+            if (node.children && node.type === 'directory') {
+                const childContainer = document.createElement('div');
+                childContainer.className = 'tree-node';
+                container.appendChild(childContainer);
+                
+                node.children
+                    .filter(child => child.type === 'directory')
+                    .forEach(child => renderTreeView(child, childContainer));
+            }
+        }
+        
+        function navigateTo(path) {
+            currentPath = path;
+            const node = findNodeByPath(fileTree, path);
+            if (node && node.type === 'directory') {
+                renderBreadcrumb(path);
+                renderFileList(node);
+            }
+        }
+        
+        function findNodeByPath(node, path) {
+            if (node.path === path) return node;
+            if (node.children) {
+                for (let child of node.children) {
+                    const found = findNodeByPath(child, path);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+        
+        function renderBreadcrumb(path) {
+            const breadcrumb = document.getElementById('breadcrumb');
+            breadcrumb.innerHTML = '';
+            
+            const parts = path.split('/').filter(p => p);
+            let currentPath = '';
+            
+            const rootItem = document.createElement('span');
+            rootItem.className = 'breadcrumb-item';
+            rootItem.textContent = 'Root';
+            rootItem.dataset.path = '';
+            rootItem.onclick = () => navigateTo('');
+            breadcrumb.appendChild(rootItem);
+            
+            parts.forEach((part, index) => {
+                currentPath += (currentPath ? '/' : '') + part;
+                const separator = document.createElement('span');
+                separator.textContent = '/';
+                breadcrumb.appendChild(separator);
+                
+                const item = document.createElement('span');
+                item.className = 'breadcrumb-item';
+                item.textContent = part;
+                item.dataset.path = currentPath;
+                item.onclick = () => navigateTo(currentPath);
+                breadcrumb.appendChild(item);
+            });
+        }
+        
+        function renderFileList(directory) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            if (!directory.children || directory.children.length === 0) {
+                fileList.innerHTML = '<p style="padding: 16px; color: #666;">This folder is empty</p>';
+                return;
+            }
+            
+            const sortedChildren = directory.children.sort((a, b) => {
+                if (a.type === 'directory' && b.type !== 'directory') return -1;
+                if (a.type !== 'directory' && b.type === 'directory') return 1;
+                return a.name.localeCompare(b.name);
+            });
+            
+            sortedChildren.forEach(child => {
+                const row = document.createElement('div');
+                row.className = 'file-row';
+                
+                const iconClass = child.type === 'directory' ? 'folder-icon' : 'file-icon';
+                const size = child.type === 'file' ? formatFileSize(child.size) : '';
+                
+                row.innerHTML = `
+                    <div class="file-cell">
+                        <span class="file-icon ${iconClass}"></span>
+                        <span class="file-name">${child.name}</span>
+                    </div>
+                    <div class="file-cell" style="text-align: right; color: #666;">
+                        ${size}
+                    </div>
+                `;
+                
+                row.onclick = () => {
+                    if (child.type === 'directory') {
+                        navigateTo(child.path);
+                    } else {
+                        previewFile(child);
+                    }
+                };
+                
+                fileList.appendChild(row);
+            });
+        }
+        
+        async function previewFile(fileInfo) {
+            const previewPane = document.getElementById('preview-pane');
+            const previewTitle = document.getElementById('preview-title');
+            const previewContent = document.getElementById('preview-content');
+            
+            previewTitle.textContent = fileInfo.name;
+            
+            try {
+                const textExtensions = ['.txt', '.md', '.js', '.json', '.html', '.css', '.yml', '.yaml', '.xml'];
+                if (textExtensions.includes(fileInfo.extension)) {
+                    const response = await fetch(fileInfo.path);
+                    const content = await response.text();
+                    previewContent.innerHTML = `<pre class="code-preview">${escapeHtml(content)}</pre>`;
+                } else {
+                    previewContent.innerHTML = '<p>Preview not available for this file type.</p>';
+                }
+                
+                previewPane.classList.add('active');
+            } catch (error) {
+                previewContent.innerHTML = `<p style="color: red;">Error loading file: ${error.message}</p>`;
+                previewPane.classList.add('active');
+            }
+        }
+        
+        function closePreview() {
+            document.getElementById('preview-pane').classList.remove('active');
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        loadFileTree();
+    </script>
+</body>
+</html>

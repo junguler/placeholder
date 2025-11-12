@@ -1,259 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repository File Manager</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f6f8fa; height: 100vh; overflow: hidden;
-        }
-        .container { display: flex; height: 100vh; }
-        .sidebar {
-            width: 250px; background: #ffffff; border-right: 1px solid #d0d7de;
-            overflow-y: auto; padding: 16px;
-        }
-        .main { flex: 1; display: flex; flex-direction: column; }
-        .header {
-            background: #ffffff; border-bottom: 1px solid #d0d7de;
-            padding: 16px; display: flex; align-items: center; gap: 8px;
-        }
-        .breadcrumb {
-            display: flex; align-items: center; gap: 4px; font-size: 14px;
-        }
-        .breadcrumb-item {
-            cursor: pointer; color: #0969da; padding: 4px 8px; border-radius: 4px;
-        }
-        .breadcrumb-item:hover { background: #ddf4ff; }
-        .content { flex: 1; overflow-y: auto; padding: 16px; }
-        .file-list { display: table; width: 100%; border-collapse: collapse; }
-        .file-row { display: table-row; cursor: pointer; }
-        .file-row:hover { background: #ddf4ff; }
-        .file-cell { display: table-cell; padding: 8px 12px; border-bottom: 1px solid #eaeef2; }
-        .file-icon { width: 20px; height: 20px; margin-right: 8px; display: inline-block; }
-        .folder-icon::before { content: "📁"; }
-        .file-icon::before { content: "📄"; }
-        .preview-pane {
-            background: #ffffff; border: 1px solid #d0d7de; margin-top: 16px;
-            padding: 16px; border-radius: 8px; display: none; max-height: 400px; overflow: auto;
-        }
-        .preview-pane.active { display: block; }
-        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .close-preview { cursor: pointer; padding: 4px 8px; border-radius: 4px; }
-        .close-preview:hover { background: #eaeef2; }
-        .code-preview {
-            background: #f6f8fa; padding: 16px; border-radius: 4px;
-            font-family: 'Monaco', 'Courier New', monospace; font-size: 12px; overflow-x: auto;
-        }
-        .tree-node { margin-left: 16px; }
-        .tree-item {
-            display: flex; align-items: center; padding: 4px 8px;
-            cursor: pointer; border-radius: 4px;
-        }
-        .tree-item:hover { background: #ddf4ff; }
-        .tree-item.active { background: #0969da; color: white; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repo File Manager</title>
+  <style>
+    :root {
+      --bg-color: #f6f8fa;
+      --sidebar-bg: #ffffff;
+      --text-color: #24292f;
+      --border-color: #d0d7de;
+      --hover-bg: #f3f4f6;
+      --selected-bg: #e8f3ff;
+      --icon-color: #57606a;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 300px;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--sidebar-bg);
+      font-size: 14px;
+      color: var(--icon-color);
+    }
+
+    .file-tree {
+      padding: 8px 0;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tree-item:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .tree-item.selected {
+      background-color: var(--selected-bg);
+    }
+
+    .tree-item.file {
+      padding-left: 32px;
+    }
+
+    .tree-item.dir::before {
+      content: "📁";
+      margin-right: 8px;
+      width: 16px;
+      text-align: center;
+    }
+
+    .tree-item.file::before {
+      content: "📄";
+      margin-right: 8px;
+      width: 16px;
+      text-align: center;
+    }
+
+    .content-viewer {
+      flex: 1;
+      padding: 20px;
+      overflow: auto;
+      background-color: white;
+    }
+
+    .file-info {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .file-name {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .file-meta {
+      font-size: 14px;
+      color: var(--icon-color);
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--icon-color);
+    }
+
+    .empty-state p {
+      margin-top: 16px;
+      font-size: 18px;
+    }
+
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <h3 style="margin-bottom: 16px;">Repository</h3>
-            <div id="tree-view"></div>
-        </div>
-        
-        <div class="main">
-            <div class="header">
-                <div class="breadcrumb" id="breadcrumb">
-                    <span class="breadcrumb-item" data-path="">Root</span>
-                </div>
-            </div>
-            
-            <div class="content">
-                <div class="file-list" id="file-list"></div>
-                <div class="preview-pane" id="preview-pane">
-                    <div class="preview-header">
-                        <h3 id="preview-title"></h3>
-                        <span class="close-preview" onclick="closePreview()">✕</span>
-                    </div>
-                    <div id="preview-content"></div>
-                </div>
-            </div>
-        </div>
+  <div class="sidebar">
+    <div class="header">Repository Files</div>
+    <div class="file-tree" id="fileTree"></div>
+  </div>
+  <div class="main-content">
+    <div class="content-viewer" id="contentViewer">
+      <div class="empty-state">
+        <div>📁</div>
+        <p>Select a file to view its contents</p>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let fileTree = null;
-        let currentPath = '';
+  <script>
+    let currentFile = null;
+    let fileData = null;
+
+    // Format file size
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Format date
+    function formatDate(timestamp) {
+      return new Date(timestamp).toLocaleString();
+    }
+
+    // Render file tree
+    function renderTree(items, container, parentPath = '') {
+      items.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.className = `tree-item ${item.type}`;
+        itemElement.textContent = item.name;
+        itemElement.dataset.path = item.path;
         
-        async function loadFileTree() {
-            try {
-                const response = await fetch('index.json');
-                fileTree = await response.json();
-                renderTreeView(fileTree);
-                navigateTo('');
-            } catch (error) {
-                console.error('Failed to load file tree:', error);
-                document.getElementById('file-list').innerHTML = 
-                    '<p style="color: red;">Error loading file tree. Please check if index.json exists.</p>';
-            }
+        itemElement.addEventListener('click', () => {
+          // Update selection
+          document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('selected'));
+          itemElement.classList.add('selected');
+          
+          if (item.type === 'file') {
+            loadFileContent(item.path);
+          } else {
+            // For directories, just show empty state
+            document.getElementById('contentViewer').innerHTML = `
+              <div class="empty-state">
+                <div>📁</div>
+                <p>Directory: ${item.path}</p>
+              </div>
+            `;
+            currentFile = null;
+          }
+        });
+        
+        container.appendChild(itemElement);
+        
+        // Render children for directories
+        if (item.type === 'directory' && item.children) {
+          const childrenContainer = document.createElement('div');
+          childrenContainer.style.paddingLeft = '20px';
+          renderTree(item.children, childrenContainer, item.path);
+          container.appendChild(childrenContainer);
         }
+      });
+    }
+
+    // Load file content
+    async function loadFileContent(filePath) {
+      currentFile = filePath;
+      const viewer = document.getElementById('contentViewer');
+      
+      // Show loading state
+      viewer.innerHTML = '<div class="loading">Loading...</div>';
+      
+      try {
+        const response = await fetch(filePath);
+        if (!response.ok) throw new Error('File not found');
         
-        function renderTreeView(node, container = document.getElementById('tree-view')) {
-            const item = document.createElement('div');
-            item.className = 'tree-item';
-            item.dataset.path = node.path;
-            item.innerHTML = `<span class="folder-icon"></span> ${node.name}`;
-            item.onclick = () => navigateTo(node.path);
-            container.appendChild(item);
-            
-            if (node.children && node.type === 'directory') {
-                const childContainer = document.createElement('div');
-                childContainer.className = 'tree-node';
-                container.appendChild(childContainer);
-                
-                node.children
-                    .filter(child => child.type === 'directory')
-                    .forEach(child => renderTreeView(child, childContainer));
-            }
-        }
+        const content = await response.text();
+        const file = fileData.files.find(f => f.path === filePath);
         
-        function navigateTo(path) {
-            currentPath = path;
-            const node = findNodeByPath(fileTree, path);
-            if (node && node.type === 'directory') {
-                renderBreadcrumb(path);
-                renderFileList(node);
-            }
-        }
+        viewer.innerHTML = `
+          <div class="file-info">
+            <div class="file-name">${filePath}</div>
+            <div class="file-meta">
+              Size: ${formatBytes(file.size)} | 
+              Last modified: ${formatDate(file.lastModified)}
+            </div>
+          </div>
+          <pre>${escapeHtml(content)}</pre>
+        `;
+      } catch (error) {
+        viewer.innerHTML = `
+          <div class="empty-state">
+            <div>⚠️</div>
+            <p>Error loading file: ${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // HTML escape helper
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize
+    async function init() {
+      try {
+        const response = await fetch('index.json');
+        if (!response.ok) throw new Error('Failed to load index.json');
         
-        function findNodeByPath(node, path) {
-            if (node.path === path) return node;
-            if (node.children) {
-                for (let child of node.children) {
-                    const found = findNodeByPath(child, path);
-                    if (found) return found;
-                }
-            }
-            return null;
-        }
+        const data = await response.json();
+        fileData = data;
         
-        function renderBreadcrumb(path) {
-            const breadcrumb = document.getElementById('breadcrumb');
-            breadcrumb.innerHTML = '';
-            
-            const parts = path.split('/').filter(p => p);
-            let currentPath = '';
-            
-            const rootItem = document.createElement('span');
-            rootItem.className = 'breadcrumb-item';
-            rootItem.textContent = 'Root';
-            rootItem.dataset.path = '';
-            rootItem.onclick = () => navigateTo('');
-            breadcrumb.appendChild(rootItem);
-            
-            parts.forEach((part, index) => {
-                currentPath += (currentPath ? '/' : '') + part;
-                const separator = document.createElement('span');
-                separator.textContent = '/';
-                breadcrumb.appendChild(separator);
-                
-                const item = document.createElement('span');
-                item.className = 'breadcrumb-item';
-                item.textContent = part;
-                item.dataset.path = currentPath;
-                item.onclick = () => navigateTo(currentPath);
-                breadcrumb.appendChild(item);
-            });
-        }
-        
-        function renderFileList(directory) {
-            const fileList = document.getElementById('file-list');
-            fileList.innerHTML = '';
-            
-            if (!directory.children || directory.children.length === 0) {
-                fileList.innerHTML = '<p style="padding: 16px; color: #666;">This folder is empty</p>';
-                return;
-            }
-            
-            const sortedChildren = directory.children.sort((a, b) => {
-                if (a.type === 'directory' && b.type !== 'directory') return -1;
-                if (a.type !== 'directory' && b.type === 'directory') return 1;
-                return a.name.localeCompare(b.name);
-            });
-            
-            sortedChildren.forEach(child => {
-                const row = document.createElement('div');
-                row.className = 'file-row';
-                
-                const iconClass = child.type === 'directory' ? 'folder-icon' : 'file-icon';
-                const size = child.type === 'file' ? formatFileSize(child.size) : '';
-                
-                row.innerHTML = `
-                    <div class="file-cell">
-                        <span class="file-icon ${iconClass}"></span>
-                        <span class="file-name">${child.name}</span>
-                    </div>
-                    <div class="file-cell" style="text-align: right; color: #666;">
-                        ${size}
-                    </div>
-                `;
-                
-                row.onclick = () => {
-                    if (child.type === 'directory') {
-                        navigateTo(child.path);
-                    } else {
-                        previewFile(child);
-                    }
-                };
-                
-                fileList.appendChild(row);
-            });
-        }
-        
-        async function previewFile(fileInfo) {
-            const previewPane = document.getElementById('preview-pane');
-            const previewTitle = document.getElementById('preview-title');
-            const previewContent = document.getElementById('preview-content');
-            
-            previewTitle.textContent = fileInfo.name;
-            
-            try {
-                const textExtensions = ['.txt', '.md', '.js', '.json', '.html', '.css', '.yml', '.yaml', '.xml'];
-                if (textExtensions.includes(fileInfo.extension)) {
-                    const response = await fetch(fileInfo.path);
-                    const content = await response.text();
-                    previewContent.innerHTML = `<pre class="code-preview">${escapeHtml(content)}</pre>`;
-                } else {
-                    previewContent.innerHTML = '<p>Preview not available for this file type.</p>';
-                }
-                
-                previewPane.classList.add('active');
-            } catch (error) {
-                previewContent.innerHTML = `<p style="color: red;">Error loading file: ${error.message}</p>`;
-                previewPane.classList.add('active');
-            }
-        }
-        
-        function closePreview() {
-            document.getElementById('preview-pane').classList.remove('active');
-        }
-        
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-        
-        function escapeHtml(text) {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-        
-        loadFileTree();
-    </script>
+        const treeContainer = document.getElementById('fileTree');
+        renderTree(data.files, treeContainer);
+      } catch (error) {
+        document.getElementById('contentViewer').innerHTML = `
+          <div class="empty-state">
+            <div>⚠️</div>
+            <p>Error loading file index: ${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Start the app
+    init();
+  </script>
 </body>
 </html>

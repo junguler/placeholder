@@ -1,12 +1,13 @@
-name: Build and Deploy File Viewer
+# .github/workflows/deploy.yml
+name: Build and Deploy File Manager
 
 on:
   push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
+    branches:
+      - main # Or your default branch name
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -15,36 +16,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies for script (optional; none by default)
-        run: npm ci --ignore-scripts || true
-
       - name: Generate index.json
-        run: node generate_index.js --output index.json
-
-      - name: Commit index.json to repo root (optional but recommended)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.json
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: update index.json"
-            git push
-          else
-            echo "No changes to index.json"
-          fi
+        run: node generate_index.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -52,9 +36,16 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
-          include_all_branch_files: false
+          # Upload entire repository, including the generated index.json
+          path: '.'
 
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

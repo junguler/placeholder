@@ -1,1234 +1,1169 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>File Viewer</title>
-    <style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Viewer</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-hover: #30363d;
+      --border-color: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --radius: 6px;
+      --radius-lg: 8px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.4);
+      --transition: 0.15s ease;
+    }
+
+    @media (prefers-color-scheme: light) {
       :root {
-        --bg-primary: #0d1117;
-        --bg-secondary: #161b22;
-        --bg-tertiary: #21262d;
-        --bg-hover: #30363d;
-        --border-color: #30363d;
-        --text-primary: #e6edf3;
-        --text-secondary: #8b949e;
-        --text-muted: #6e7681;
-        --accent: #58a6ff;
-        --accent-hover: #79b8ff;
-        --success: #3fb950;
-        --warning: #d29922;
-        --danger: #f85149;
-        --radius: 8px;
-        --radius-lg: 12px;
-        --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      @media (prefers-color-scheme: light) {
-        :root {
-          --bg-primary: #ffffff;
-          --bg-secondary: #f6f8fa;
-          --bg-tertiary: #eaeef2;
-          --bg-hover: #d0d7de;
-          --border-color: #d0d7de;
-          --text-primary: #1f2328;
-          --text-secondary: #656d76;
-          --text-muted: #8c959f;
-          --accent: #0969da;
-          --accent-hover: #0550ae;
-          --shadow: 0 8px 24px rgba(140, 149, 159, 0.2);
-        }
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      html {
-        font-size: 16px;
-      }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
-          Helvetica, Arial, sans-serif;
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        line-height: 1.5;
-        min-height: 100vh;
-      }
-
-      .header {
-        background: var(--bg-secondary);
-        border-bottom: 1px solid var(--border-color);
-        padding: 1rem 1.5rem;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        backdrop-filter: blur(12px);
-      }
-
-      .header-content {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        flex-wrap: wrap;
-      }
-
-      .logo {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        text-decoration: none;
-        cursor: pointer;
-      }
-
-      .logo svg {
-        width: 28px;
-        height: 28px;
-      }
-
-      .breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        flex-wrap: wrap;
-        font-size: 0.9rem;
-      }
-
-      .breadcrumb-item {
-        color: var(--accent);
-        text-decoration: none;
-        padding: 0.25rem 0.5rem;
-        border-radius: var(--radius);
-        transition: background var(--transition);
-        cursor: pointer;
-      }
-
-      .breadcrumb-item:hover {
-        background: var(--bg-hover);
-      }
-
-      .breadcrumb-item.current {
-        color: var(--text-primary);
-        cursor: default;
-      }
-
-      .breadcrumb-item.current:hover {
-        background: transparent;
-      }
-
-      .breadcrumb-separator {
-        color: var(--text-muted);
-      }
-
-      .header-actions {
-        display: flex;
-        gap: 0.5rem;
-      }
-
-      .view-toggle {
-        display: flex;
-        background: var(--bg-tertiary);
-        border-radius: var(--radius);
-        padding: 0.25rem;
-      }
-
-      .view-btn {
-        padding: 0.5rem;
-        background: none;
-        border: none;
-        color: var(--text-secondary);
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all var(--transition);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .view-btn:hover {
-        color: var(--text-primary);
-      }
-
-      .view-btn.active {
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-      }
-
-      .view-btn svg {
-        width: 18px;
-        height: 18px;
-      }
-
-      .search-container {
-        position: relative;
-        width: 100%;
-        max-width: 400px;
-      }
-
-      .search-input {
-        width: 100%;
-        padding: 0.625rem 1rem 0.625rem 2.5rem;
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius);
-        color: var(--text-primary);
-        font-size: 0.9rem;
-        transition: all var(--transition);
-      }
-
-      .search-input:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
-      }
-
-      .search-input::placeholder {
-        color: var(--text-muted);
-      }
-
-      .search-icon {
-        position: absolute;
-        left: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-        width: 16px;
-        height: 16px;
-        pointer-events: none;
-      }
-
-      .main {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 1.5rem;
-      }
-
-      .stats-bar {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-      }
-
-      .stat {
-        display: flex;
-        align-items: center;
-        gap: 0.375rem;
-      }
-
-      .stat svg {
-        width: 16px;
-        height: 16px;
-      }
-
-      .file-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-      }
-
-      .file-list {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .file-card {
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-lg);
-        padding: 1.25rem;
-        cursor: pointer;
-        transition: all var(--transition);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 0.75rem;
-        text-decoration: none;
-        color: inherit;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .file-card:hover {
-        border-color: var(--accent);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow);
-      }
-
-      .file-card.directory {
-        background: linear-gradient(
-          135deg,
-          var(--bg-secondary) 0%,
-          var(--bg-tertiary) 100%
-        );
-      }
-
-      .file-icon {
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius);
-        background: var(--bg-tertiary);
-        flex-shrink: 0;
-      }
-
-      .file-icon svg {
-        width: 28px;
-        height: 28px;
-      }
-
-      .file-icon.folder {
-        color: #8b949e;
-        background: rgba(139, 148, 158, 0.1);
-      }
-
-      .file-icon.image {
-        color: #a371f7;
-        background: rgba(163, 113, 247, 0.1);
-      }
-
-      .file-icon.video {
-        color: #f85149;
-        background: rgba(248, 81, 73, 0.1);
-      }
-
-      .file-icon.audio {
-        color: #3fb950;
-        background: rgba(63, 185, 80, 0.1);
-      }
-
-      .file-icon.code {
-        color: #58a6ff;
-        background: rgba(88, 166, 255, 0.1);
-      }
-
-      .file-icon.document {
-        color: #f0883e;
-        background: rgba(240, 136, 62, 0.1);
-      }
-
-      .file-icon.text {
-        color: #8b949e;
-        background: rgba(139, 148, 158, 0.1);
-      }
-
-      .file-icon.data {
-        color: #d29922;
-        background: rgba(210, 153, 34, 0.1);
-      }
-
-      .file-icon.archive {
-        color: #a5d6ff;
-        background: rgba(165, 214, 255, 0.1);
-      }
-
-      .file-name {
-        font-weight: 500;
-        word-break: break-word;
-        font-size: 0.9rem;
-        max-width: 100%;
-      }
-
-      .file-meta {
-        font-size: 0.75rem;
-        color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .file-thumbnail {
-        width: 100%;
-        aspect-ratio: 16 / 10;
-        object-fit: cover;
-        border-radius: var(--radius);
-        background: var(--bg-tertiary);
-        margin-bottom: 0.25rem;
-      }
-
-      .file-thumbnail.lazy {
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      .file-thumbnail.loaded {
-        opacity: 1;
-      }
-
-      .file-list .file-card {
-        flex-direction: row;
-        text-align: left;
-        padding: 0.75rem 1rem;
-        border-radius: var(--radius);
-        gap: 1rem;
-      }
-
-      .file-list .file-card:hover {
-        transform: none;
-      }
-
-      .file-list .file-icon {
-        width: 36px;
-        height: 36px;
-      }
-
-      .file-list .file-icon svg {
-        width: 20px;
-        height: 20px;
-      }
-
-      .file-list .file-info {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .file-list .file-name {
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-      }
-
-      .file-list .file-meta {
-        margin-top: 0.125rem;
-      }
-
-      .file-list .file-size {
-        margin-left: auto;
-        color: var(--text-muted);
-        font-size: 0.85rem;
-        padding-left: 1rem;
-      }
-
-      .file-list .file-thumbnail {
-        display: none;
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: var(--text-secondary);
-      }
-
-      .empty-state svg {
-        width: 64px;
-        height: 64px;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-      }
-
-      .empty-state h2 {
-        font-size: 1.25rem;
-        margin-bottom: 0.5rem;
-        color: var(--text-primary);
-      }
-
-      .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        padding: 1rem;
-      }
-
-      .modal-overlay.active {
-        opacity: 1;
-        visibility: visible;
-      }
-
-      .modal {
-        background: var(--bg-secondary);
-        border-radius: var(--radius-lg);
-        max-width: 95vw;
-        max-height: 95vh;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        transform: scale(0.95);
-        transition: transform 0.3s ease;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-      }
-
-      .modal-overlay.active .modal {
-        transform: scale(1);
-      }
-
-      .modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-        gap: 1rem;
-      }
-
-      .modal-title {
-        font-size: 1rem;
-        font-weight: 600;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex: 1;
-      }
-
-      .modal-actions {
-        display: flex;
-        gap: 0.5rem;
-      }
-
-      .modal-btn {
-        padding: 0.5rem;
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius);
-        color: var(--text-primary);
-        cursor: pointer;
-        transition: all var(--transition);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .modal-btn:hover {
-        background: var(--bg-hover);
-        border-color: var(--accent);
-      }
-
-      .modal-btn svg {
-        width: 18px;
-        height: 18px;
-      }
-
-      .modal-body {
-        flex: 1;
-        overflow: auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--bg-primary);
-      }
-
-      .preview-image {
-        max-width: 100%;
-        max-height: 85vh;
-        object-fit: contain;
-      }
-
-      .preview-video,
-      .preview-audio {
-        max-width: 100%;
-        max-height: 85vh;
-      }
-
-      .preview-audio {
-        width: 100%;
-        max-width: 500px;
-        padding: 2rem;
-      }
-
-      .preview-code {
-        width: 100%;
-        height: 100%;
-        padding: 1.5rem;
-        overflow: auto;
-        background: var(--bg-primary);
-      }
-
-      .preview-code pre {
-        margin: 0;
-        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-          monospace;
-        font-size: 0.875rem;
-        line-height: 1.6;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-
-      .preview-code.line-numbers pre {
-        counter-reset: line;
-      }
-
-      .preview-code.line-numbers pre .line {
-        display: block;
-        counter-increment: line;
-      }
-
-      .preview-code.line-numbers pre .line::before {
-        content: counter(line);
-        display: inline-block;
-        width: 3em;
-        margin-right: 1.5em;
-        text-align: right;
-        color: var(--text-muted);
-        user-select: none;
-      }
-
-      .preview-pdf {
-        width: 100%;
-        height: 85vh;
-        border: none;
-      }
-
-      .preview-unavailable {
-        text-align: center;
-        padding: 3rem;
-        color: var(--text-secondary);
-      }
-
-      .preview-unavailable svg {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-      }
-
-      .preview-unavailable h3 {
-        margin-bottom: 0.5rem;
-        color: var(--text-primary);
-      }
-
-      .download-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 1rem;
-        padding: 0.625rem 1.25rem;
-        background: var(--accent);
-        color: white;
-        text-decoration: none;
-        border-radius: var(--radius);
-        font-weight: 500;
-        transition: background var(--transition);
-      }
-
-      .download-btn:hover {
-        background: var(--accent-hover);
-      }
-
-      .loading {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 4rem 2rem;
-        color: var(--text-secondary);
-      }
-
-      .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid var(--border-color);
-        border-top-color: var(--accent);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 1rem;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      @media (max-width: 768px) {
-        .header-content {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .header-actions {
-          justify-content: space-between;
-        }
-
-        .search-container {
-          max-width: none;
-        }
-
-        .file-grid {
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        }
-
-        .modal-header {
-          flex-wrap: wrap;
-        }
-
-        .modal-title {
-          order: 1;
-          width: 100%;
-          margin-bottom: 0.5rem;
-        }
-      }
-
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      ::-webkit-scrollbar-thumb {
-        background: var(--border-color);
-        border-radius: 4px;
-      }
-
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--text-muted);
-      }
-    </style>
-  </head>
-  <body>
-    <header class="header">
-      <div class="header-content">
-        <div class="logo" id="logoHome">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"
-            />
+        --bg-primary: #ffffff;
+        --bg-secondary: #f6f8fa;
+        --bg-tertiary: #eaeef2;
+        --bg-hover: #d0d7de;
+        --border-color: #d0d7de;
+        --text-primary: #1f2328;
+        --text-secondary: #656d76;
+        --text-muted: #8c959f;
+        --accent: #0969da;
+        --accent-hover: #0550ae;
+        --shadow: 0 4px 12px rgba(140,149,159,0.2);
+      }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-size: 14px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.4;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .logo svg { width: 20px; height: 20px; }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 0.125rem;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .breadcrumb-item {
+      color: var(--accent);
+      padding: 0.125rem 0.375rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .breadcrumb-item:hover { background: var(--bg-hover); }
+    .breadcrumb-item.current { color: var(--text-primary); cursor: default; }
+    .breadcrumb-item.current:hover { background: transparent; }
+    .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
+
+    .header-actions { display: flex; gap: 0.375rem; align-items: center; }
+
+    .search-container {
+      position: relative;
+      width: 200px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.375rem 0.5rem 0.375rem 1.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .search-icon {
+      position: absolute;
+      left: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      width: 14px;
+      height: 14px;
+    }
+
+    .view-toggle {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+      padding: 2px;
+    }
+
+    .view-btn {
+      padding: 0.25rem 0.375rem;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .view-btn:hover { color: var(--text-primary); }
+    .view-btn.active {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .view-btn svg { width: 16px; height: 16px; }
+
+    /* Layout */
+    .app-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Tree Panel */
+    .tree-panel {
+      width: 240px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      overflow: auto;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    .tree-panel.visible { display: block; }
+
+    .tree-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+    }
+
+    .tree-content { padding: 0.25rem 0; }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      border-left: 2px solid transparent;
+    }
+
+    .tree-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .tree-item.active {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border-left-color: var(--accent);
+    }
+
+    .tree-item svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .tree-item-name { 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+      white-space: nowrap;
+    }
+
+    .tree-children { margin-left: 0.75rem; }
+
+    .tree-toggle {
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tree-toggle svg {
+      width: 10px;
+      height: 10px;
+      transition: transform var(--transition);
+    }
+
+    .tree-toggle.expanded svg { transform: rotate(90deg); }
+    .tree-toggle.empty { visibility: hidden; }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      overflow: auto;
+      padding: 0.75rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .stat { display: flex; align-items: center; gap: 0.25rem; }
+    .stat svg { width: 12px; height: 12px; }
+
+    /* File Grid */
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    /* File Card */
+    .file-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 0.625rem;
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.375rem;
+    }
+
+    .file-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
+    .file-card.directory {
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    }
+
+    .file-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+    }
+
+    .file-icon svg { width: 20px; height: 20px; }
+    .file-icon.folder { color: #8b949e; background: rgba(139,148,158,0.1); }
+    .file-icon.image { color: #a371f7; background: rgba(163,113,247,0.1); }
+    .file-icon.video { color: #f85149; background: rgba(248,81,73,0.1); }
+    .file-icon.audio { color: #3fb950; background: rgba(63,185,80,0.1); }
+    .file-icon.code { color: #58a6ff; background: rgba(88,166,255,0.1); }
+    .file-icon.document { color: #f0883e; background: rgba(240,136,62,0.1); }
+    .file-icon.text { color: #8b949e; background: rgba(139,148,158,0.1); }
+    .file-icon.data { color: #d29922; background: rgba(210,153,34,0.1); }
+    .file-icon.archive { color: #a5d6ff; background: rgba(165,214,255,0.1); }
+
+    .file-name {
+      font-weight: 500;
+      word-break: break-word;
+      font-size: 0.8rem;
+      max-width: 100%;
+      line-height: 1.2;
+    }
+
+    .file-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .file-thumbnail {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+    }
+
+    .file-thumbnail.lazy { opacity: 0; transition: opacity 0.2s; }
+    .file-thumbnail.loaded { opacity: 1; }
+
+    /* List View */
+    .file-list .file-card {
+      flex-direction: row;
+      text-align: left;
+      padding: 0.375rem 0.5rem;
+      gap: 0.5rem;
+      border-radius: 4px;
+    }
+
+    .file-list .file-card:hover { box-shadow: none; }
+    .file-list .file-icon { width: 24px; height: 24px; }
+    .file-list .file-icon svg { width: 14px; height: 14px; }
+    .file-list .file-info { flex: 1; min-width: 0; }
+    .file-list .file-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-list .file-meta { font-size: 0.7rem; }
+    .file-list .file-size {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+    .file-list .file-thumbnail { display: none; }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
+    .empty-state h2 { font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary); }
+    .empty-state p { font-size: 0.85rem; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+      padding: 0.5rem;
+    }
+
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      max-width: 95vw;
+      max-height: 95vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.95);
+      transition: transform 0.2s;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-overlay.active .modal { transform: scale(1); }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      gap: 0.5rem;
+    }
+
+    .modal-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .modal-actions { display: flex; gap: 0.25rem; }
+
+    .modal-btn {
+      padding: 0.375rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .modal-btn svg { width: 16px; height: 16px; }
+
+    .modal-body {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-primary);
+    }
+
+    /* Preview Content */
+    .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; }
+
+    .preview-media-container {
+      width: 100%;
+      max-width: 900px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .preview-video {
+      width: 100%;
+      max-height: 80vh;
+      background: #000;
+      border-radius: var(--radius);
+    }
+
+    .preview-audio-container {
+      width: 100%;
+      max-width: 500px;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .audio-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--bg-tertiary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .audio-icon svg { width: 40px; height: 40px; }
+
+    .preview-audio {
+      width: 100%;
+      height: 40px;
+    }
+
+    .preview-code {
+      width: 100%;
+      height: 100%;
+      padding: 0.5rem;
+      overflow: auto;
+      background: var(--bg-primary);
+    }
+
+    .preview-code pre {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      line-height: 1.3;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .preview-code.line-numbers pre { counter-reset: line; }
+
+    .preview-code.line-numbers pre .line {
+      display: block;
+      counter-increment: line;
+    }
+
+    .preview-code.line-numbers pre .line::before {
+      content: counter(line);
+      display: inline-block;
+      width: 3em;
+      margin-right: 1em;
+      text-align: right;
+      color: var(--text-muted);
+      user-select: none;
+      font-size: 0.75rem;
+    }
+
+    .preview-pdf { width: 100%; height: 90vh; border: none; }
+
+    .preview-unavailable {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
+    .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1rem; }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: var(--radius);
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    .download-btn:hover { background: var(--accent-hover); }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 0.5rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .search-container { width: 150px; }
+      .tree-panel { width: 180px; }
+      .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    }
+
+    @media (max-width: 480px) {
+      .tree-panel { display: none !important; }
+      .search-container { width: 120px; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="logo" id="logoHome">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+        </svg>
+        <span>File Viewer</span>
+      </div>
+      <nav class="breadcrumb" id="breadcrumb"></nav>
+      <div class="header-actions">
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
           </svg>
-          <span>File Viewer</span>
+          <input type="text" class="search-input" id="search" placeholder="Search..." autocomplete="off">
         </div>
-        <nav class="breadcrumb" id="breadcrumb"></nav>
-        <div class="header-actions">
-          <div class="search-container">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
-              />
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="grid" title="Grid">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
             </svg>
-            <input
-              type="text"
-              class="search-input"
-              id="search"
-              placeholder="Search files..."
-              autocomplete="off"
-            />
-          </div>
-          <div class="view-toggle">
-            <button class="view-btn active" data-view="grid" title="Grid view">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"
-                />
-              </svg>
-            </button>
-            <button class="view-btn" data-view="list" title="List view">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"
-                />
-              </svg>
-            </button>
-          </div>
+          </button>
+          <button class="view-btn" data-view="list" title="List">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/>
+            </svg>
+          </button>
+          <button class="view-btn" data-view="tree" title="Tree">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/>
+            </svg>
+          </button>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
+  <div class="app-container">
+    <aside class="tree-panel" id="treePanel">
+      <div class="tree-header">Folders</div>
+      <div class="tree-content" id="treeContent"></div>
+    </aside>
     <main class="main" id="main">
       <div class="loading">
         <div class="spinner"></div>
-        <span>Loading files...</span>
+        <span>Loading...</span>
       </div>
     </main>
+  </div>
 
-    <div class="modal-overlay" id="modal">
-      <div class="modal" id="modalContent">
-        <div class="modal-header">
-          <span class="modal-title" id="modalTitle">File Preview</span>
-          <div class="modal-actions">
-            <a class="modal-btn" id="downloadBtn" title="Download" download>
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
-              </svg>
-            </a>
-            <a
-              class="modal-btn"
-              id="rawBtn"
-              title="Open raw"
-              target="_blank"
-              rel="noopener"
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"
-                />
-              </svg>
-            </a>
-            <button class="modal-btn" id="closeBtn" title="Close">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                />
-              </svg>
-            </button>
-          </div>
+  <div class="modal-overlay" id="modal">
+    <div class="modal" id="modalContent">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">File Preview</span>
+        <div class="modal-actions">
+          <a class="modal-btn" id="downloadBtn" title="Download" download>
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+          </a>
+          <a class="modal-btn" id="rawBtn" title="Open raw" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+            </svg>
+          </a>
+          <button class="modal-btn" id="closeBtn" title="Close">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
         </div>
-        <div class="modal-body" id="modalBody"></div>
       </div>
+      <div class="modal-body" id="modalBody"></div>
     </div>
+  </div>
 
-    <script>
-      // State
-      let fileIndex = null;
-      let currentPath = [];
-      let currentView = "grid";
-      let searchQuery = "";
-      let intersectionObserver = null;
+  <script>
+    let fileIndex = null;
+    let currentPath = [];
+    let currentView = 'grid';
+    let searchQuery = '';
+    let intersectionObserver = null;
+    let expandedFolders = new Set(['']);
 
-      // Icons
-      const icons = {
-        folder: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
-        image: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`,
-        video: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>`,
-        audio: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`,
-        code: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
-        document: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
-        text: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
-        data: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`,
-        archive: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/></svg>`,
-        font: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>`,
-        markup: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
-        style: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.53 19.65l1.34.56v-9.03l-2.43 5.86c-.41 1.02.08 2.19 1.09 2.61zm19.5-3.7L17.07 3.98c-.31-.75-1.04-1.21-1.81-1.23-.26 0-.53.04-.79.15L7.1 5.95c-.75.31-1.21 1.03-1.23 1.8-.01.27.04.54.15.8l4.96 11.97c.31.76 1.05 1.22 1.83 1.23.26 0 .52-.05.77-.15l7.36-3.05c1.02-.42 1.51-1.59 1.09-2.6zm-9.2 3.8L7.87 7.79l7.35-3.04h.01l4.95 11.95-7.35 3.05z"/></svg>`,
-        other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
-      };
+    const icons = {
+      folder: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
+      image: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`,
+      video: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>`,
+      audio: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`,
+      code: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
+      document: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
+      text: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
+      data: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`,
+      archive: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/></svg>`,
+      font: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>`,
+      markup: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
+      style: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.53 19.65l1.34.56v-9.03l-2.43 5.86c-.41 1.02.08 2.19 1.09 2.61zm19.5-3.7L17.07 3.98c-.31-.75-1.04-1.21-1.81-1.23-.26 0-.53.04-.79.15L7.1 5.95c-.75.31-1.21 1.03-1.23 1.8-.01.27.04.54.15.8l4.96 11.97c.31.76 1.05 1.22 1.83 1.23.26 0 .52-.05.77-.15l7.36-3.05c1.02-.42 1.51-1.59 1.09-2.6zm-9.2 3.8L7.87 7.79l7.35-3.04h.01l4.95 11.95-7.35 3.05z"/></svg>`,
+      other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
+      chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`
+    };
 
-      // Initialize
-      async function init() {
-        try {
-          const response = await fetch("./file_index.json");
-          if (!response.ok) throw new Error("Failed to load file index");
-          fileIndex = await response.json();
-          setupEventListeners();
-          setupIntersectionObserver();
-          render();
-        } catch (error) {
-          console.error(error);
-          document.getElementById("main").innerHTML = `
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-              </svg>
-              <h2>Could not load files</h2>
-              <p>Make sure file_index.json exists and the page is served correctly.</p>
-            </div>
-          `;
-        }
-      }
-
-      // Setup all event listeners
-      function setupEventListeners() {
-        // Search
-        const search = document.getElementById("search");
-        let debounceTimer;
-        search.addEventListener("input", (e) => {
-          clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => {
-            searchQuery = e.target.value.toLowerCase().trim();
-            render();
-          }, 150);
-        });
-
-        // Logo click
-        document.getElementById("logoHome").addEventListener("click", () => {
-          navigateTo([]);
-        });
-
-        // View toggle buttons
-        document.querySelectorAll(".view-btn").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            setView(btn.dataset.view);
-          });
-        });
-
-        // Modal close button
-        document.getElementById("closeBtn").addEventListener("click", closeModal);
-
-        // Modal overlay click
-        document.getElementById("modal").addEventListener("click", (e) => {
-          if (e.target === e.currentTarget) closeModal();
-        });
-
-        // Prevent modal content click from closing
-        document.getElementById("modalContent").addEventListener("click", (e) => {
-          e.stopPropagation();
-        });
-
-        // Keyboard navigation
-        document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") closeModal();
-          if (e.key === "/" && document.activeElement.tagName !== "INPUT") {
-            e.preventDefault();
-            document.getElementById("search").focus();
-          }
-        });
-
-        // Event delegation for file cards
-        document.getElementById("main").addEventListener("click", handleCardClick);
-      }
-
-      // Handle card clicks via event delegation
-      function handleCardClick(e) {
-        const card = e.target.closest(".file-card");
-        if (!card) return;
-
-        if (card.dataset.directory) {
-          const path = JSON.parse(card.dataset.path);
-          navigateTo(path);
-        } else if (card.dataset.file) {
-          const filePath = card.dataset.file;
-          const category = card.dataset.category;
-          const name = card.dataset.name;
-          openFile(filePath, category, name);
-        }
-      }
-
-      // Intersection Observer for lazy loading
-      function setupIntersectionObserver() {
-        intersectionObserver = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                const img = entry.target;
-                if (img.dataset.src) {
-                  img.src = img.dataset.src;
-                  img.onload = () => img.classList.add("loaded");
-                  img.onerror = () => (img.style.display = "none");
-                  delete img.dataset.src;
-                  intersectionObserver.unobserve(img);
-                }
-              }
-            });
-          },
-          { rootMargin: "50px" }
-        );
-      }
-
-      // Get current directory contents
-      function getCurrentItems() {
-        let items = fileIndex.root;
-        for (const dir of currentPath) {
-          const found = items.find(
-            (i) => i.name === dir && i.type === "directory"
-          );
-          if (found) items = found.children;
-          else return [];
-        }
-        return items;
-      }
-
-      // Filter items by search
-      function filterItems(items, query) {
-        if (!query) return items;
-
-        const results = [];
-        const searchInItems = (list, path = []) => {
-          for (const item of list) {
-            if (item.name.toLowerCase().includes(query)) {
-              results.push({ ...item, searchPath: [...path, item.name] });
-            }
-            if (item.type === "directory" && item.children) {
-              searchInItems(item.children, [...path, item.name]);
-            }
-          }
-        };
-        searchInItems(items);
-        return results;
-      }
-
-      // Set view mode
-      function setView(view) {
-        currentView = view;
-        document.querySelectorAll(".view-btn").forEach((btn) => {
-          btn.classList.toggle("active", btn.dataset.view === view);
-        });
+    async function init() {
+      try {
+        const response = await fetch('./file_index.json');
+        if (!response.ok) throw new Error('Failed to load file index');
+        fileIndex = await response.json();
+        setupEventListeners();
+        setupIntersectionObserver();
         render();
-      }
-
-      // Navigate to path
-      function navigateTo(path) {
-        currentPath = path;
-        searchQuery = "";
-        document.getElementById("search").value = "";
-        render();
-      }
-
-      // Render breadcrumb
-      function renderBreadcrumb() {
-        const breadcrumb = document.getElementById("breadcrumb");
-        let html = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
-
-        currentPath.forEach((dir, i) => {
-          const isLast = i === currentPath.length - 1;
-          const path = JSON.stringify(currentPath.slice(0, i + 1));
-          html += `<span class="breadcrumb-separator">/</span>`;
-          html += `<span class="breadcrumb-item${isLast ? " current" : ""}" data-path='${path}'>${escapeHtml(dir)}</span>`;
-        });
-
-        breadcrumb.innerHTML = html;
-
-        // Add click handlers to breadcrumb items
-        breadcrumb.querySelectorAll(".breadcrumb-item:not(.current)").forEach((item) => {
-          item.addEventListener("click", () => {
-            const path = JSON.parse(item.dataset.path);
-            navigateTo(path);
-          });
-        });
-      }
-
-      // Render file grid/list
-      function render() {
-        renderBreadcrumb();
-
-        let items = searchQuery
-          ? filterItems(fileIndex.root, searchQuery)
-          : getCurrentItems();
-
-        const main = document.getElementById("main");
-
-        if (items.length === 0) {
-          main.innerHTML = `
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-              </svg>
-              <h2>${searchQuery ? "No results found" : "This folder is empty"}</h2>
-              <p>${searchQuery ? "Try a different search term" : "No viewable files in this directory"}</p>
-            </div>
-          `;
-          return;
-        }
-
-        const isImage = (item) => item.category === "image";
-        const viewClass = currentView === "list" ? "file-list" : "file-grid";
-
-        let html = `
-          <div class="stats-bar">
-            <span class="stat">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
-              ${items.filter((i) => i.type === "file").length} files
-            </span>
-            <span class="stat">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
-              ${items.filter((i) => i.type === "directory").length} folders
-            </span>
+      } catch (error) {
+        console.error(error);
+        document.getElementById('main').innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <h2>Could not load files</h2>
+            <p>Make sure file_index.json exists.</p>
           </div>
-          <div class="${viewClass}">
         `;
+      }
+    }
 
-        for (const item of items) {
-          const icon =
-            item.type === "directory" ? "folder" : item.category || "other";
-          const iconHtml = icons[icon] || icons.other;
+    function setupEventListeners() {
+      const search = document.getElementById('search');
+      let debounceTimer;
+      search.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          searchQuery = e.target.value.toLowerCase().trim();
+          render();
+        }, 150);
+      });
 
-          if (item.type === "directory") {
-            const path = item.searchPath
-              ? item.searchPath.slice(0, -1).concat(item.name)
-              : [...currentPath, item.name];
+      document.getElementById('logoHome').addEventListener('click', () => navigateTo([]));
 
-            html += `
-              <div class="file-card directory" data-directory="true" data-path='${JSON.stringify(path)}'>
-                <div class="file-icon folder">${icons.folder}</div>
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', () => setView(btn.dataset.view));
+      });
+
+      document.getElementById('closeBtn').addEventListener('click', closeModal);
+      document.getElementById('modal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeModal();
+      });
+      document.getElementById('modalContent').addEventListener('click', (e) => e.stopPropagation());
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+          e.preventDefault();
+          document.getElementById('search').focus();
+        }
+      });
+
+      document.getElementById('main').addEventListener('click', handleCardClick);
+      document.getElementById('treeContent').addEventListener('click', handleTreeClick);
+    }
+
+    function handleCardClick(e) {
+      const card = e.target.closest('.file-card');
+      if (!card) return;
+
+      if (card.dataset.directory) {
+        const path = JSON.parse(card.dataset.path);
+        navigateTo(path);
+      } else if (card.dataset.file) {
+        openFile(card.dataset.file, card.dataset.category, card.dataset.name);
+      }
+    }
+
+    function handleTreeClick(e) {
+      const toggle = e.target.closest('.tree-toggle');
+      const item = e.target.closest('.tree-item');
+      
+      if (toggle && !toggle.classList.contains('empty')) {
+        e.stopPropagation();
+        const path = toggle.dataset.path;
+        if (expandedFolders.has(path)) {
+          expandedFolders.delete(path);
+        } else {
+          expandedFolders.add(path);
+        }
+        renderTree();
+        return;
+      }
+
+      if (item) {
+        const path = JSON.parse(item.dataset.path);
+        navigateTo(path);
+      }
+    }
+
+    function setupIntersectionObserver() {
+      intersectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            if (img.dataset.src) {
+              img.src = img.dataset.src;
+              img.onload = () => img.classList.add('loaded');
+              img.onerror = () => img.style.display = 'none';
+              delete img.dataset.src;
+              intersectionObserver.unobserve(img);
+            }
+          }
+        });
+      }, { rootMargin: '50px' });
+    }
+
+    function getCurrentItems() {
+      let items = fileIndex.root;
+      for (const dir of currentPath) {
+        const found = items.find(i => i.name === dir && i.type === 'directory');
+        if (found) items = found.children;
+        else return [];
+      }
+      return items;
+    }
+
+    function filterItems(items, query) {
+      if (!query) return items;
+      const results = [];
+      const searchInItems = (list, path = []) => {
+        for (const item of list) {
+          if (item.name.toLowerCase().includes(query)) {
+            results.push({ ...item, searchPath: [...path, item.name] });
+          }
+          if (item.type === 'directory' && item.children) {
+            searchInItems(item.children, [...path, item.name]);
+          }
+        }
+      };
+      searchInItems(items);
+      return results;
+    }
+
+    function setView(view) {
+      currentView = view;
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+      });
+      document.getElementById('treePanel').classList.toggle('visible', view === 'tree');
+      render();
+    }
+
+    function navigateTo(path) {
+      currentPath = path;
+      searchQuery = '';
+      document.getElementById('search').value = '';
+      
+      // Auto-expand tree path
+      let expandPath = '';
+      for (const dir of path) {
+        expandPath += (expandPath ? '/' : '') + dir;
+        expandedFolders.add(expandPath);
+      }
+      
+      render();
+    }
+
+    function renderBreadcrumb() {
+      const breadcrumb = document.getElementById('breadcrumb');
+      let html = `<span class="breadcrumb-item${currentPath.length === 0 ? ' current' : ''}" data-path="[]">Home</span>`;
+
+      currentPath.forEach((dir, i) => {
+        const isLast = i === currentPath.length - 1;
+        const path = JSON.stringify(currentPath.slice(0, i + 1));
+        html += `<span class="breadcrumb-separator">/</span>`;
+        html += `<span class="breadcrumb-item${isLast ? ' current' : ''}" data-path='${path}'>${escapeHtml(dir)}</span>`;
+      });
+
+      breadcrumb.innerHTML = html;
+
+      breadcrumb.querySelectorAll('.breadcrumb-item:not(.current)').forEach(item => {
+        item.addEventListener('click', () => navigateTo(JSON.parse(item.dataset.path)));
+      });
+    }
+
+    function renderTree() {
+      const container = document.getElementById('treeContent');
+      
+      function renderFolder(items, path = '', depth = 0) {
+        let html = '';
+        const folders = items.filter(i => i.type === 'directory');
+        
+        for (const folder of folders) {
+          const folderPath = path ? `${path}/${folder.name}` : folder.name;
+          const pathArray = folderPath.split('/').filter(Boolean);
+          const isExpanded = expandedFolders.has(folderPath);
+          const isActive = JSON.stringify(pathArray) === JSON.stringify(currentPath);
+          const hasChildren = folder.children?.some(c => c.type === 'directory');
+
+          html += `
+            <div class="tree-item${isActive ? ' active' : ''}" data-path='${JSON.stringify(pathArray)}' style="padding-left: ${depth * 12 + 8}px">
+              <span class="tree-toggle${hasChildren ? (isExpanded ? ' expanded' : '') : ' empty'}" data-path="${folderPath}">
+                ${icons.chevron}
+              </span>
+              ${icons.folder}
+              <span class="tree-item-name">${escapeHtml(folder.name)}</span>
+            </div>
+          `;
+
+          if (isExpanded && folder.children) {
+            html += `<div class="tree-children">${renderFolder(folder.children, folderPath, depth + 1)}</div>`;
+          }
+        }
+        return html;
+      }
+
+      // Add root item
+      const isRootActive = currentPath.length === 0;
+      let html = `
+        <div class="tree-item${isRootActive ? ' active' : ''}" data-path="[]" style="padding-left: 8px">
+          <span class="tree-toggle${fileIndex.root.some(i => i.type === 'directory') ? ' expanded' : ' empty'}" data-path="">
+            ${icons.chevron}
+          </span>
+          ${icons.folder}
+          <span class="tree-item-name">Root</span>
+        </div>
+      `;
+      
+      html += renderFolder(fileIndex.root);
+      container.innerHTML = html;
+    }
+
+    function render() {
+      renderBreadcrumb();
+      
+      if (currentView === 'tree') {
+        renderTree();
+      }
+
+      let items = searchQuery ? filterItems(fileIndex.root, searchQuery) : getCurrentItems();
+      const main = document.getElementById('main');
+
+      if (items.length === 0) {
+        main.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+            </svg>
+            <h2>${searchQuery ? 'No results' : 'Empty folder'}</h2>
+            <p>${searchQuery ? 'Try different terms' : 'No files here'}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const viewClass = currentView === 'list' || currentView === 'tree' ? 'file-list' : 'file-grid';
+
+      let html = `
+        <div class="stats-bar">
+          <span class="stat">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
+            ${items.filter(i => i.type === 'file').length} files
+          </span>
+          <span class="stat">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+            ${items.filter(i => i.type === 'directory').length} folders
+          </span>
+        </div>
+        <div class="${viewClass}">
+      `;
+
+      for (const item of items) {
+        const icon = item.type === 'directory' ? 'folder' : (item.category || 'other');
+        const iconHtml = icons[icon] || icons.other;
+
+        if (item.type === 'directory') {
+          const path = item.searchPath 
+            ? item.searchPath.slice(0, -1).concat(item.name)
+            : [...currentPath, item.name];
+
+          html += `
+            <div class="file-card directory" data-directory="true" data-path='${JSON.stringify(path)}'>
+              <div class="file-icon folder">${icons.folder}</div>
+              <div class="file-info">
                 <span class="file-name">${escapeHtml(item.name)}</span>
                 <span class="file-meta">${item.children?.length || 0} items</span>
               </div>
-            `;
-          } else {
-            const filePath = item.searchPath
-              ? item.searchPath.join("/")
-              : (currentPath.length ? currentPath.join("/") + "/" : "") +
-                item.name;
+            </div>
+          `;
+        } else {
+          const filePath = item.searchPath
+            ? item.searchPath.join('/')
+            : (currentPath.length ? currentPath.join('/') + '/' : '') + item.name;
 
-            let thumbnailHtml = "";
-            if (currentView === "grid" && isImage(item)) {
-              thumbnailHtml = `<img class="file-thumbnail lazy" data-src="./${filePath}" alt="" loading="lazy">`;
-            }
-
-            html += `
-              <div class="file-card" data-file="${escapeHtml(filePath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}">
-                ${thumbnailHtml}
-                <div class="file-icon ${icon}">${iconHtml}</div>
-                <div class="file-info">
-                  <span class="file-name">${escapeHtml(item.name)}</span>
-                  <span class="file-meta">${item.sizeFormatted}</span>
-                </div>
-                ${currentView === "list" ? `<span class="file-size">${item.sizeFormatted}</span>` : ""}
-              </div>
-            `;
+          let thumbnailHtml = '';
+          if (currentView === 'grid' && item.category === 'image') {
+            thumbnailHtml = `<img class="file-thumbnail lazy" data-src="./${filePath}" alt="" loading="lazy">`;
           }
+
+          html += `
+            <div class="file-card" data-file="${escapeHtml(filePath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}">
+              ${thumbnailHtml}
+              <div class="file-icon ${icon}">${iconHtml}</div>
+              <div class="file-info">
+                <span class="file-name">${escapeHtml(item.name)}</span>
+                <span class="file-meta">${item.sizeFormatted}</span>
+              </div>
+              ${currentView !== 'grid' ? `<span class="file-size">${item.sizeFormatted}</span>` : ''}
+            </div>
+          `;
         }
-
-        html += "</div>";
-        main.innerHTML = html;
-
-        // Setup lazy loading for images
-        document.querySelectorAll(".file-thumbnail.lazy").forEach((img) => {
-          intersectionObserver.observe(img);
-        });
       }
 
-      // Open file preview
-      async function openFile(path, category, name) {
-        const modal = document.getElementById("modal");
-        const modalTitle = document.getElementById("modalTitle");
-        const modalBody = document.getElementById("modalBody");
-        const downloadBtn = document.getElementById("downloadBtn");
-        const rawBtn = document.getElementById("rawBtn");
+      html += '</div>';
+      main.innerHTML = html;
 
-        modalTitle.textContent = name;
-        downloadBtn.href = `./${path}`;
-        downloadBtn.download = name;
-        rawBtn.href = `./${path}`;
+      document.querySelectorAll('.file-thumbnail.lazy').forEach(img => {
+        intersectionObserver.observe(img);
+      });
+    }
 
-        modalBody.innerHTML =
-          '<div class="loading"><div class="spinner"></div></div>';
-        modal.classList.add("active");
+    async function openFile(path, category, name) {
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalBody = document.getElementById('modalBody');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const rawBtn = document.getElementById('rawBtn');
 
-        const fileUrl = `./${path}`;
+      modalTitle.textContent = name;
+      downloadBtn.href = `./${path}`;
+      downloadBtn.download = name;
+      rawBtn.href = `./${path}`;
 
-        try {
-          switch (category) {
-            case "image":
-              modalBody.innerHTML = `<img class="preview-image" src="${fileUrl}" alt="${escapeHtml(name)}">`;
-              break;
+      modalBody.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      modal.classList.add('active');
 
-            case "video":
-              modalBody.innerHTML = `
-                <video class="preview-video" controls autoplay>
+      const fileUrl = `./${path}`;
+
+      try {
+        switch (category) {
+          case 'image':
+            modalBody.innerHTML = `<img class="preview-image" src="${fileUrl}" alt="${escapeHtml(name)}">`;
+            break;
+
+          case 'video':
+            modalBody.innerHTML = `
+              <div class="preview-media-container">
+                <video class="preview-video" controls autoplay controlsList="nodownload">
                   <source src="${fileUrl}">
                   Your browser does not support video playback.
                 </video>
-              `;
-              break;
+              </div>
+            `;
+            break;
 
-            case "audio":
-              modalBody.innerHTML = `
-                <audio class="preview-audio" controls autoplay>
+          case 'audio':
+            modalBody.innerHTML = `
+              <div class="preview-audio-container">
+                <div class="audio-icon">${icons.audio}</div>
+                <div style="font-weight: 500; text-align: center;">${escapeHtml(name)}</div>
+                <audio class="preview-audio" controls autoplay controlsList="nodownload">
                   <source src="${fileUrl}">
                   Your browser does not support audio playback.
                 </audio>
-              `;
-              break;
+              </div>
+            `;
+            break;
 
-            case "document":
-              if (name.toLowerCase().endsWith(".pdf")) {
-                modalBody.innerHTML = `<iframe class="preview-pdf" src="${fileUrl}"></iframe>`;
-              } else {
-                showUnavailable(modalBody, name, fileUrl);
-              }
-              break;
+          case 'document':
+            if (name.toLowerCase().endsWith('.pdf')) {
+              modalBody.innerHTML = `<iframe class="preview-pdf" src="${fileUrl}"></iframe>`;
+            } else {
+              showUnavailable(modalBody, name, fileUrl);
+            }
+            break;
 
-            case "code":
-            case "markup":
-            case "style":
-            case "data":
-            case "text":
-              const response = await fetch(fileUrl);
-              if (response.ok) {
-                const text = await response.text();
-                const lines = text.split("\n").slice(0, 5000);
-                const content = lines
-                  .map(
-                    (line) => `<span class="line">${escapeHtml(line)}</span>`
-                  )
-                  .join("\n");
-                modalBody.innerHTML = `
-                  <div class="preview-code line-numbers">
-                    <pre>${content}</pre>
-                  </div>
-                `;
-              } else {
-                showUnavailable(modalBody, name, fileUrl);
-              }
-              break;
-
-            case "font":
-              const fontName = "PreviewFont" + Date.now();
-              const fontFace = new FontFace(fontName, `url(${fileUrl})`);
-              await fontFace.load();
-              document.fonts.add(fontFace);
+          case 'code':
+          case 'markup':
+          case 'style':
+          case 'data':
+          case 'text':
+            const response = await fetch(fileUrl);
+            if (response.ok) {
+              const text = await response.text();
+              const lines = text.split('\n').slice(0, 10000);
+              const content = lines.map(line => `<span class="line">${escapeHtml(line)}</span>`).join('\n');
               modalBody.innerHTML = `
-                <div style="padding: 2rem; text-align: center; font-family: '${fontName}', sans-serif;">
-                  <p style="font-size: 3rem; margin-bottom: 1rem;">The quick brown fox jumps over the lazy dog</p>
-                  <p style="font-size: 2rem; margin-bottom: 1rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
-                  <p style="font-size: 2rem; margin-bottom: 1rem;">abcdefghijklmnopqrstuvwxyz</p>
-                  <p style="font-size: 2rem;">0123456789!@#$%^&*()</p>
+                <div class="preview-code line-numbers">
+                  <pre>${content}</pre>
                 </div>
               `;
-              break;
-
-            default:
+            } else {
               showUnavailable(modalBody, name, fileUrl);
-          }
-        } catch (error) {
-          console.error(error);
-          showUnavailable(modalBody, name, fileUrl);
+            }
+            break;
+
+          case 'font':
+            const fontName = 'PreviewFont' + Date.now();
+            const fontFace = new FontFace(fontName, `url(${fileUrl})`);
+            await fontFace.load();
+            document.fonts.add(fontFace);
+            modalBody.innerHTML = `
+              <div style="padding: 1.5rem; text-align: center; font-family: '${fontName}', sans-serif;">
+                <p style="font-size: 2rem; margin-bottom: 0.75rem;">The quick brown fox jumps over the lazy dog</p>
+                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">abcdefghijklmnopqrstuvwxyz</p>
+                <p style="font-size: 1.5rem;">0123456789!@#$%^&*()</p>
+              </div>
+            `;
+            break;
+
+          default:
+            showUnavailable(modalBody, name, fileUrl);
         }
+      } catch (error) {
+        console.error(error);
+        showUnavailable(modalBody, name, fileUrl);
       }
+    }
 
-      function showUnavailable(container, name, url) {
-        container.innerHTML = `
-          <div class="preview-unavailable">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+    function showUnavailable(container, name, url) {
+      container.innerHTML = `
+        <div class="preview-unavailable">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+          </svg>
+          <h3>Preview not available</h3>
+          <p>This file cannot be previewed.</p>
+          <a class="download-btn" href="${url}" download="${escapeHtml(name)}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
             </svg>
-            <h3>Preview not available</h3>
-            <p>This file type cannot be previewed in the browser.</p>
-            <a class="download-btn" href="${url}" download="${escapeHtml(name)}">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-              </svg>
-              Download file
-            </a>
-          </div>
-        `;
-      }
+            Download
+          </a>
+        </div>
+      `;
+    }
 
-      // Close modal
-      function closeModal() {
-        const modal = document.getElementById("modal");
-        modal.classList.remove("active");
-        // Stop any playing media
-        const video = modal.querySelector("video");
-        const audio = modal.querySelector("audio");
-        if (video) video.pause();
-        if (audio) audio.pause();
-      }
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.remove('active');
+      const video = modal.querySelector('video');
+      const audio = modal.querySelector('audio');
+      if (video) video.pause();
+      if (audio) audio.pause();
+    }
 
-      // Escape HTML
-      function escapeHtml(text) {
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
-      }
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
 
-      // Start
-      init();
-    </script>
-  </body>
+    init();
+  </script>
+</body>
 </html>

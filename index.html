@@ -48,9 +48,10 @@
       background: var(--bg-primary);
       color: var(--text-primary);
       line-height: 1.4;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     /* Header */
@@ -58,9 +59,7 @@
       background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-color);
       padding: 0.5rem 1rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      flex-shrink: 0;
     }
 
     .header-content {
@@ -181,12 +180,12 @@
       width: 240px;
       background: var(--bg-secondary);
       border-right: 1px solid var(--border-color);
-      overflow: auto;
       display: none;
       flex-shrink: 0;
+      flex-direction: column;
     }
 
-    .tree-panel.visible { display: block; }
+    .tree-panel.visible { display: flex; }
 
     .tree-header {
       padding: 0.5rem 0.75rem;
@@ -196,12 +195,19 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       border-bottom: 1px solid var(--border-color);
-      position: sticky;
-      top: 0;
-      background: var(--bg-secondary);
+      flex-shrink: 0;
     }
 
-    .tree-content { padding: 0.25rem 0; }
+    .tree-content {
+      padding: 0.25rem 0;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .tree-content:not(.needs-scroll) {
+      overflow-y: visible;
+    }
 
     .tree-item {
       display: flex;
@@ -257,6 +263,12 @@
       flex: 1;
       overflow: auto;
       padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-content {
+      flex: 1;
     }
 
     .stats-bar {
@@ -378,6 +390,80 @@
     }
     .file-list .file-thumbnail { display: none; }
 
+    /* Welcome Screen */
+    .welcome-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .welcome-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .welcome-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .shortcut-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .shortcut-key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      height: 2rem;
+      padding: 0 0.5rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex-shrink: 0;
+    }
+
+    .shortcut-info {
+      text-align: left;
+    }
+
+    .shortcut-action {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .shortcut-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
     /* Empty State */
     .empty-state {
       text-align: center;
@@ -429,6 +515,7 @@
       padding: 0.5rem 0.75rem;
       border-bottom: 1px solid var(--border-color);
       gap: 0.5rem;
+      flex-shrink: 0;
     }
 
     .modal-title {
@@ -460,19 +547,23 @@
     .modal-body {
       flex: 1;
       overflow: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background: var(--bg-primary);
     }
 
     /* Preview Content */
-    .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; }
+    .preview-image {
+      max-width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+      display: block;
+      margin: auto;
+    }
 
     .preview-media-container {
       width: 100%;
       max-width: 900px;
       padding: 1rem;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -489,6 +580,7 @@
       width: 100%;
       max-width: 500px;
       padding: 2rem 1rem;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -515,9 +607,8 @@
 
     .preview-code {
       width: 100%;
-      height: 100%;
+      min-height: 100%;
       padding: 0.5rem;
-      overflow: auto;
       background: var(--bg-primary);
     }
 
@@ -602,6 +693,7 @@
       .search-container { width: 150px; }
       .tree-panel { width: 180px; }
       .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      .shortcuts-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 480px) {
@@ -634,7 +726,7 @@
           <input type="text" class="search-input" id="search" placeholder="Search..." autocomplete="off">
         </div>
         <div class="view-toggle">
-          <button class="view-btn active" data-view="grid" title="Grid">
+          <button class="view-btn" data-view="grid" title="Grid">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
             </svg>
@@ -644,7 +736,7 @@
               <path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/>
             </svg>
           </button>
-          <button class="view-btn" data-view="tree" title="Tree">
+          <button class="view-btn active" data-view="tree" title="Tree">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/>
             </svg>
@@ -655,7 +747,7 @@
   </header>
 
   <div class="app-container">
-    <aside class="tree-panel" id="treePanel">
+    <aside class="tree-panel visible" id="treePanel">
       <div class="tree-header">Folders</div>
       <div class="tree-content" id="treeContent"></div>
     </aside>
@@ -696,10 +788,11 @@
   <script>
     let fileIndex = null;
     let currentPath = [];
-    let currentView = 'grid';
+    let currentView = 'tree';
     let searchQuery = '';
     let intersectionObserver = null;
     let expandedFolders = new Set(['']);
+    let isFirstLoad = true;
 
     const icons = {
       folder: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
@@ -717,6 +810,15 @@
       other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
       chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`
     };
+
+    const shortcuts = [
+      { key: '/', action: 'Search', desc: 'Focus the search input' },
+      { key: 'Esc', action: 'Close', desc: 'Close preview modal' },
+      { key: 'Click', action: 'Open', desc: 'Click file to preview' },
+      { key: '←', action: 'Navigate', desc: 'Use breadcrumbs to go back' },
+      { key: '▶', action: 'Expand', desc: 'Toggle folder in tree' },
+      { key: '↓', action: 'Download', desc: 'Download button in preview' }
+    ];
 
     async function init() {
       try {
@@ -747,6 +849,7 @@
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           searchQuery = e.target.value.toLowerCase().trim();
+          isFirstLoad = false;
           render();
         }, 150);
       });
@@ -779,6 +882,8 @@
       const card = e.target.closest('.file-card');
       if (!card) return;
 
+      isFirstLoad = false;
+
       if (card.dataset.directory) {
         const path = JSON.parse(card.dataset.path);
         navigateTo(path);
@@ -804,6 +909,7 @@
       }
 
       if (item) {
+        isFirstLoad = false;
         const path = JSON.parse(item.dataset.path);
         navigateTo(path);
       }
@@ -867,7 +973,6 @@
       searchQuery = '';
       document.getElementById('search').value = '';
       
-      // Auto-expand tree path
       let expandPath = '';
       for (const dir of path) {
         expandPath += (expandPath ? '/' : '') + dir;
@@ -891,12 +996,26 @@
       breadcrumb.innerHTML = html;
 
       breadcrumb.querySelectorAll('.breadcrumb-item:not(.current)').forEach(item => {
-        item.addEventListener('click', () => navigateTo(JSON.parse(item.dataset.path)));
+        item.addEventListener('click', () => {
+          isFirstLoad = false;
+          navigateTo(JSON.parse(item.dataset.path));
+        });
       });
     }
 
     function renderTree() {
       const container = document.getElementById('treeContent');
+      
+      function countFolders(items) {
+        let count = 0;
+        for (const item of items) {
+          if (item.type === 'directory') {
+            count++;
+            if (item.children) count += countFolders(item.children);
+          }
+        }
+        return count;
+      }
       
       function renderFolder(items, path = '', depth = 0) {
         let html = '';
@@ -926,11 +1045,12 @@
         return html;
       }
 
-      // Add root item
       const isRootActive = currentPath.length === 0;
+      const hasRootFolders = fileIndex.root.some(i => i.type === 'directory');
+      
       let html = `
         <div class="tree-item${isRootActive ? ' active' : ''}" data-path="[]" style="padding-left: 8px">
-          <span class="tree-toggle${fileIndex.root.some(i => i.type === 'directory') ? ' expanded' : ' empty'}" data-path="">
+          <span class="tree-toggle${hasRootFolders ? ' expanded' : ' empty'}" data-path="">
             ${icons.chevron}
           </span>
           ${icons.folder}
@@ -940,6 +1060,32 @@
       
       html += renderFolder(fileIndex.root);
       container.innerHTML = html;
+      
+      // Check if scrolling is needed
+      const totalFolders = countFolders(fileIndex.root) + 1;
+      const containerHeight = container.parentElement.clientHeight - 32; // minus header
+      const estimatedHeight = totalFolders * 28; // approximate item height
+      container.classList.toggle('needs-scroll', estimatedHeight > containerHeight);
+    }
+
+    function renderWelcomeScreen() {
+      return `
+        <div class="welcome-screen">
+          <h1 class="welcome-title">Welcome to File Viewer</h1>
+          <p class="welcome-subtitle">Select a folder from the tree or browse files below</p>
+          <div class="shortcuts-grid">
+            ${shortcuts.map(s => `
+              <div class="shortcut-card">
+                <span class="shortcut-key">${s.key}</span>
+                <div class="shortcut-info">
+                  <div class="shortcut-action">${s.action}</div>
+                  <div class="shortcut-desc">${s.desc}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
     }
 
     function render() {
@@ -949,8 +1095,15 @@
         renderTree();
       }
 
-      let items = searchQuery ? filterItems(fileIndex.root, searchQuery) : getCurrentItems();
       const main = document.getElementById('main');
+
+      // Show welcome screen on first load in tree view
+      if (isFirstLoad && currentView === 'tree' && currentPath.length === 0 && !searchQuery) {
+        main.innerHTML = renderWelcomeScreen();
+        return;
+      }
+
+      let items = searchQuery ? filterItems(fileIndex.root, searchQuery) : getCurrentItems();
 
       if (items.length === 0) {
         main.innerHTML = `
@@ -978,7 +1131,8 @@
             ${items.filter(i => i.type === 'directory').length} folders
           </span>
         </div>
-        <div class="${viewClass}">
+        <div class="main-content">
+          <div class="${viewClass}">
       `;
 
       for (const item of items) {
@@ -1023,7 +1177,7 @@
         }
       }
 
-      html += '</div>';
+      html += '</div></div>';
       main.innerHTML = html;
 
       document.querySelectorAll('.file-thumbnail.lazy').forEach(img => {

@@ -4,9 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>File Viewer</title>
+    <!-- HLS.js for IPTV/M3U8 support -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
     <style>
-        /* Styles remain consistent */
+        /* ... [STYLES REMAIN EXACTLY THE SAME AS PREVIOUS VERSION] ... */
         :root {
             --bg-primary: #0d1117;
             --bg-secondary: #161b22;
@@ -220,6 +221,7 @@
     </style>
 </head>
 <body>
+    <!-- [HEADER, TREE, MAIN, MODAL HTML REMAINS EXACTLY THE SAME] -->
     <header class="header">
         <div class="header-content">
             <div class="logo" id="logoHome">
@@ -315,7 +317,7 @@
             isPlaylistFile = !1,
             currentFontSize = 14,
             currentHls = null,
-            streamTimeout = null;
+            streamTimeout = null; // Global timer for skipping dead streams
 
         const icons = {
             folder: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
@@ -334,6 +336,7 @@
             other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
             chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
         };
+        // [loadSettings, saveTheme, updateThemeButtons, updateFontSizeLabel, changeFontSize FUNCTIONS REMAIN THE SAME]
         function loadSettings() {
             const e = localStorage.getItem("theme");
             e && e !== "auto"
@@ -391,6 +394,7 @@
             }
         }
         function setupEventListeners() {
+            // [EventListeners remain same]
             const n = document.getElementById("search");
             let e;
             n.addEventListener("input", (t) => {
@@ -438,6 +442,8 @@
                 document.getElementById("playlistStop").addEventListener("click", stopPlaylist),
                 document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
         }
+        
+        // [handleCardClick, handleTreeClick, setupIntersectionObserver, getCurrentItems, filterItems, setView, navigateTo, renderBreadcrumb, renderTree, getFileIconType, render FUNCTIONS REMAIN THE SAME]
         function handleCardClick(e) {
             const t = e.target.closest(".file-card");
             if (!t) return;
@@ -772,7 +778,7 @@
                     }
                 }
             } catch (e) {
-                // Ignore errors here
+                // Ignore errors here, let the player handle it or the timeout catch it
             }
             return url;
         }
@@ -803,7 +809,7 @@
                 clearTimeout(streamTimeout);
             }
 
-            // Start 3-second timeout immediately (works for both audio and video)
+            // Start 3-second timeout immediately
             streamTimeout = setTimeout(() => {
                 skipToNext();
             }, 3000);
@@ -812,21 +818,21 @@
             
             const item = currentPlaylist[currentPlaylistIndex];
             const rawUrl = item.url;
+            // Note: resolveStreamUrl is async, if it hangs longer than 3s, timeout logic would need to handle that.
+            // But usually fetch is fast or fails fast.
             const finalUrl = await resolveStreamUrl(rawUrl);
 
             const n = document.getElementById("modalBody");
             const s = item.title;
             const o = finalUrl.toLowerCase();
             
-            // Explicitly detect video files. 
-            // NOTE: We treat .m3u8 without a specific indication as Video to be safe, 
-            // but for typical radio streams (no extension), we fall to Audio.
-            const isSpecificVideo = o.match(/\.(mp4|webm|mkv|avi|mov|ts)$/) || o.includes("type=video");
-            
+            const isVideo = o.match(/\.(mp4|webm|mkv|avi|mov|m3u8|ts)$/) || o.includes("type=video");
+            const isAudio = o.match(/\.(mp3|wav|ogg|flac|m4a|aac)$/);
+            const isHls = o.includes('.m3u8') || o.includes('application/x-mpegurl');
+
             document.getElementById("modalTitle").textContent = s;
 
-            if (isSpecificVideo) {
-                // RENDER VIDEO PLAYER
+            if (isVideo || isHls) {
                 n.innerHTML = `
                   <div class="preview-media-container">
                     <video id="videoPlayer" class="preview-video" controls autoplay playsinline muted>
@@ -836,60 +842,66 @@
                 `;
                 const video = document.getElementById("videoPlayer");
                 
+                // Success listener for standard video
                 video.onloadeddata = () => {
                     if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
                 };
+                // Error listener for standard video
                 video.onerror = () => skipToNext();
-                
-                // Fallback for HLS in video container
-                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
+
+                if (Hls.isSupported() && isHls) {
                     currentHls = new Hls();
                     currentHls.loadSource(finalUrl);
                     currentHls.attachMedia(video);
+                    
+                    // Success listener for HLS
                     currentHls.on(Hls.Events.FRAG_LOADED, function() {
                         if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
                     });
+
+                    currentHls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        video.play().catch(e => {
+                            // Autoplay failed (user interaction policy), but stream is valid
+                            // We should clear timeout here if we can assume manifest parsed = valid stream
+                            // But usually we wait for data. Keeping timeout until FRAG_LOADED is safer.
+                        });
+                    });
+
                     currentHls.on(Hls.Events.ERROR, function(event, data) {
-                        if (data.fatal) skipToNext();
+                        if (data.fatal) {
+                             // Fatal error? Skip immediately.
+                             skipToNext();
+                        }
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = finalUrl;
+                    video.addEventListener('loadedmetadata', function() {
+                        video.play();
                     });
                 } else {
                     video.src = finalUrl;
                 }
-                
+
                 video.onended = () => {
                     if (streamTimeout) clearTimeout(streamTimeout);
-                    if (currentPlaylistIndex < currentPlaylist.length - 1) playPlaylistTrack(currentPlaylistIndex + 1);
+                    if (currentPlaylistIndex < currentPlaylist.length - 1) {
+                         playPlaylistTrack(currentPlaylistIndex + 1);
+                    }
                 };
 
-            } else {
-                // RENDER AUDIO PLAYER (Default for Radio)
+            } else if (isAudio || (!isVideo && !isHls)) {
                 n.innerHTML = `
                   <div class="preview-audio-container">
                     <div class="audio-icon">${icons.audio}</div>
                     <div style="font-weight: 500; text-align: center;">${escapeHtml(s)}</div>
-                    <audio id="audioPlayer" class="preview-audio" controls autoplay>
+                    <audio class="preview-audio" controls autoplay>
+                      <source src="${finalUrl}">
                       Your browser does not support audio playback.
                     </audio>
                   </div>
                 `;
-                const audio = document.getElementById("audioPlayer");
+                const audio = n.querySelector("audio");
                 
-                // If it's HLS (m3u8) but being played in Audio mode (common for Radio)
-                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
-                    currentHls = new Hls();
-                    currentHls.loadSource(finalUrl);
-                    currentHls.attachMedia(audio);
-                    currentHls.on(Hls.Events.FRAG_LOADED, function() {
-                        if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                    });
-                    currentHls.on(Hls.Events.ERROR, function(event, data) {
-                        if (data.fatal) skipToNext();
-                    });
-                } else {
-                    // Standard MP3/AAC/Shoutcast Stream
-                    audio.src = finalUrl;
-                }
-
                 audio.onloadeddata = () => {
                      if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
                 };

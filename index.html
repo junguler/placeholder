@@ -60,7 +60,6 @@
         min-height: 100vh;
       }
 
-      /* Header */
       .header {
         background: var(--bg-secondary);
         border-bottom: 1px solid var(--border-color);
@@ -89,6 +88,7 @@
         font-weight: 600;
         color: var(--text-primary);
         text-decoration: none;
+        cursor: pointer;
       }
 
       .logo svg {
@@ -170,7 +170,6 @@
         height: 18px;
       }
 
-      /* Search */
       .search-container {
         position: relative;
         width: 100%;
@@ -209,14 +208,12 @@
         pointer-events: none;
       }
 
-      /* Main Content */
       .main {
         max-width: 1400px;
         margin: 0 auto;
         padding: 1.5rem;
       }
 
-      /* Stats Bar */
       .stats-bar {
         display: flex;
         gap: 1.5rem;
@@ -236,7 +233,6 @@
         height: 16px;
       }
 
-      /* File Grid */
       .file-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -249,7 +245,6 @@
         gap: 2px;
       }
 
-      /* File Card */
       .file-card {
         background: var(--bg-secondary);
         border: 1px solid var(--border-color);
@@ -358,7 +353,6 @@
         gap: 0.5rem;
       }
 
-      /* Thumbnail */
       .file-thumbnail {
         width: 100%;
         aspect-ratio: 16 / 10;
@@ -377,7 +371,6 @@
         opacity: 1;
       }
 
-      /* List View */
       .file-list .file-card {
         flex-direction: row;
         text-align: left;
@@ -428,7 +421,6 @@
         display: none;
       }
 
-      /* Empty State */
       .empty-state {
         text-align: center;
         padding: 4rem 2rem;
@@ -448,7 +440,6 @@
         color: var(--text-primary);
       }
 
-      /* Modal */
       .modal-overlay {
         position: fixed;
         inset: 0;
@@ -542,7 +533,6 @@
         background: var(--bg-primary);
       }
 
-      /* Preview Content */
       .preview-image {
         max-width: 100%;
         max-height: 85vh;
@@ -640,7 +630,6 @@
         background: var(--accent-hover);
       }
 
-      /* Loading */
       .loading {
         display: flex;
         flex-direction: column;
@@ -666,7 +655,6 @@
         }
       }
 
-      /* Responsive */
       @media (max-width: 768px) {
         .header-content {
           flex-direction: column;
@@ -696,7 +684,6 @@
         }
       }
 
-      /* Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -719,14 +706,14 @@
   <body>
     <header class="header">
       <div class="header-content">
-        <a class="logo" href="#" onclick="navigateTo([])">
+        <div class="logo" id="logoHome">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"
             />
           </svg>
           <span>File Viewer</span>
-        </a>
+        </div>
         <nav class="breadcrumb" id="breadcrumb"></nav>
         <div class="header-actions">
           <div class="search-container">
@@ -744,24 +731,14 @@
             />
           </div>
           <div class="view-toggle">
-            <button
-              class="view-btn active"
-              data-view="grid"
-              title="Grid view"
-              onclick="setView('grid')"
-            >
+            <button class="view-btn active" data-view="grid" title="Grid view">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path
                   d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"
                 />
               </svg>
             </button>
-            <button
-              class="view-btn"
-              data-view="list"
-              title="List view"
-              onclick="setView('list')"
-            >
+            <button class="view-btn" data-view="list" title="List view">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path
                   d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"
@@ -780,16 +757,14 @@
       </div>
     </main>
 
-    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
-      <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-overlay" id="modal">
+      <div class="modal" id="modalContent">
         <div class="modal-header">
           <span class="modal-title" id="modalTitle">File Preview</span>
           <div class="modal-actions">
             <a class="modal-btn" id="downloadBtn" title="Download" download>
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
-                />
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
               </svg>
             </a>
             <a
@@ -805,7 +780,7 @@
                 />
               </svg>
             </a>
-            <button class="modal-btn" onclick="closeModal()" title="Close">
+            <button class="modal-btn" id="closeBtn" title="Close">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path
                   d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
@@ -849,26 +824,26 @@
           const response = await fetch("./file_index.json");
           if (!response.ok) throw new Error("Failed to load file index");
           fileIndex = await response.json();
-          setupSearch();
-          setupKeyboardNav();
+          setupEventListeners();
           setupIntersectionObserver();
           render();
         } catch (error) {
           console.error(error);
           document.getElementById("main").innerHTML = `
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                        </svg>
-                        <h2>Could not load files</h2>
-                        <p>Make sure file_index.json exists and the page is served correctly.</p>
-                    </div>
-                `;
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              <h2>Could not load files</h2>
+              <p>Make sure file_index.json exists and the page is served correctly.</p>
+            </div>
+          `;
         }
       }
 
-      // Setup search
-      function setupSearch() {
+      // Setup all event listeners
+      function setupEventListeners() {
+        // Search
         const search = document.getElementById("search");
         let debounceTimer;
         search.addEventListener("input", (e) => {
@@ -878,10 +853,33 @@
             render();
           }, 150);
         });
-      }
 
-      // Keyboard navigation
-      function setupKeyboardNav() {
+        // Logo click
+        document.getElementById("logoHome").addEventListener("click", () => {
+          navigateTo([]);
+        });
+
+        // View toggle buttons
+        document.querySelectorAll(".view-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            setView(btn.dataset.view);
+          });
+        });
+
+        // Modal close button
+        document.getElementById("closeBtn").addEventListener("click", closeModal);
+
+        // Modal overlay click
+        document.getElementById("modal").addEventListener("click", (e) => {
+          if (e.target === e.currentTarget) closeModal();
+        });
+
+        // Prevent modal content click from closing
+        document.getElementById("modalContent").addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+
+        // Keyboard navigation
         document.addEventListener("keydown", (e) => {
           if (e.key === "Escape") closeModal();
           if (e.key === "/" && document.activeElement.tagName !== "INPUT") {
@@ -889,6 +887,25 @@
             document.getElementById("search").focus();
           }
         });
+
+        // Event delegation for file cards
+        document.getElementById("main").addEventListener("click", handleCardClick);
+      }
+
+      // Handle card clicks via event delegation
+      function handleCardClick(e) {
+        const card = e.target.closest(".file-card");
+        if (!card) return;
+
+        if (card.dataset.directory) {
+          const path = JSON.parse(card.dataset.path);
+          navigateTo(path);
+        } else if (card.dataset.file) {
+          const filePath = card.dataset.file;
+          const category = card.dataset.category;
+          const name = card.dataset.name;
+          openFile(filePath, category, name);
+        }
       }
 
       // Intersection Observer for lazy loading
@@ -916,7 +933,9 @@
       function getCurrentItems() {
         let items = fileIndex.root;
         for (const dir of currentPath) {
-          const found = items.find((i) => i.name === dir && i.type === "directory");
+          const found = items.find(
+            (i) => i.name === dir && i.type === "directory"
+          );
           if (found) items = found.children;
           else return [];
         }
@@ -962,16 +981,24 @@
       // Render breadcrumb
       function renderBreadcrumb() {
         const breadcrumb = document.getElementById("breadcrumb");
-        let html = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" onclick="navigateTo([])">Home</span>`;
+        let html = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
 
         currentPath.forEach((dir, i) => {
           const isLast = i === currentPath.length - 1;
-          const path = currentPath.slice(0, i + 1);
+          const path = JSON.stringify(currentPath.slice(0, i + 1));
           html += `<span class="breadcrumb-separator">/</span>`;
-          html += `<span class="breadcrumb-item${isLast ? " current" : ""}" onclick="navigateTo(${JSON.stringify(path)})">${dir}</span>`;
+          html += `<span class="breadcrumb-item${isLast ? " current" : ""}" data-path='${path}'>${escapeHtml(dir)}</span>`;
         });
 
         breadcrumb.innerHTML = html;
+
+        // Add click handlers to breadcrumb items
+        breadcrumb.querySelectorAll(".breadcrumb-item:not(.current)").forEach((item) => {
+          item.addEventListener("click", () => {
+            const path = JSON.parse(item.dataset.path);
+            navigateTo(path);
+          });
+        });
       }
 
       // Render file grid/list
@@ -986,14 +1013,14 @@
 
         if (items.length === 0) {
           main.innerHTML = `
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-                        </svg>
-                        <h2>${searchQuery ? "No results found" : "This folder is empty"}</h2>
-                        <p>${searchQuery ? "Try a different search term" : "No viewable files in this directory"}</p>
-                    </div>
-                `;
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+              </svg>
+              <h2>${searchQuery ? "No results found" : "This folder is empty"}</h2>
+              <p>${searchQuery ? "Try a different search term" : "No viewable files in this directory"}</p>
+            </div>
+          `;
           return;
         }
 
@@ -1001,38 +1028,41 @@
         const viewClass = currentView === "list" ? "file-list" : "file-grid";
 
         let html = `
-                <div class="stats-bar">
-                    <span class="stat">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
-                        ${items.filter((i) => i.type === "file").length} files
-                    </span>
-                    <span class="stat">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
-                        ${items.filter((i) => i.type === "directory").length} folders
-                    </span>
-                </div>
-                <div class="${viewClass}">
-            `;
+          <div class="stats-bar">
+            <span class="stat">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
+              ${items.filter((i) => i.type === "file").length} files
+            </span>
+            <span class="stat">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+              ${items.filter((i) => i.type === "directory").length} folders
+            </span>
+          </div>
+          <div class="${viewClass}">
+        `;
 
         for (const item of items) {
-          const icon = item.type === "directory" ? "folder" : item.category || "other";
+          const icon =
+            item.type === "directory" ? "folder" : item.category || "other";
           const iconHtml = icons[icon] || icons.other;
 
           if (item.type === "directory") {
             const path = item.searchPath
               ? item.searchPath.slice(0, -1).concat(item.name)
               : [...currentPath, item.name];
+
             html += `
-                        <div class="file-card directory" onclick="navigateTo(${JSON.stringify(path)})">
-                            <div class="file-icon folder">${icons.folder}</div>
-                            <span class="file-name">${escapeHtml(item.name)}</span>
-                            <span class="file-meta">${item.children?.length || 0} items</span>
-                        </div>
-                    `;
+              <div class="file-card directory" data-directory="true" data-path='${JSON.stringify(path)}'>
+                <div class="file-icon folder">${icons.folder}</div>
+                <span class="file-name">${escapeHtml(item.name)}</span>
+                <span class="file-meta">${item.children?.length || 0} items</span>
+              </div>
+            `;
           } else {
             const filePath = item.searchPath
               ? item.searchPath.join("/")
-              : (currentPath.length ? currentPath.join("/") + "/" : "") + item.name;
+              : (currentPath.length ? currentPath.join("/") + "/" : "") +
+                item.name;
 
             let thumbnailHtml = "";
             if (currentView === "grid" && isImage(item)) {
@@ -1040,16 +1070,16 @@
             }
 
             html += `
-                        <div class="file-card" onclick="openFile('${escapeHtml(filePath)}', '${item.category}', '${escapeHtml(item.name)}')">
-                            ${thumbnailHtml}
-                            <div class="file-icon ${icon}">${iconHtml}</div>
-                            <div class="file-info">
-                                <span class="file-name">${escapeHtml(item.name)}</span>
-                                <span class="file-meta">${item.sizeFormatted}</span>
-                            </div>
-                            ${currentView === "list" ? `<span class="file-size">${item.sizeFormatted}</span>` : ""}
-                        </div>
-                    `;
+              <div class="file-card" data-file="${escapeHtml(filePath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}">
+                ${thumbnailHtml}
+                <div class="file-icon ${icon}">${iconHtml}</div>
+                <div class="file-info">
+                  <span class="file-name">${escapeHtml(item.name)}</span>
+                  <span class="file-meta">${item.sizeFormatted}</span>
+                </div>
+                ${currentView === "list" ? `<span class="file-size">${item.sizeFormatted}</span>` : ""}
+              </div>
+            `;
           }
         }
 
@@ -1075,7 +1105,8 @@
         downloadBtn.download = name;
         rawBtn.href = `./${path}`;
 
-        modalBody.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+        modalBody.innerHTML =
+          '<div class="loading"><div class="spinner"></div></div>';
         modal.classList.add("active");
 
         const fileUrl = `./${path}`;
@@ -1088,20 +1119,20 @@
 
             case "video":
               modalBody.innerHTML = `
-                            <video class="preview-video" controls autoplay>
-                                <source src="${fileUrl}">
-                                Your browser does not support video playback.
-                            </video>
-                        `;
+                <video class="preview-video" controls autoplay>
+                  <source src="${fileUrl}">
+                  Your browser does not support video playback.
+                </video>
+              `;
               break;
 
             case "audio":
               modalBody.innerHTML = `
-                            <audio class="preview-audio" controls autoplay>
-                                <source src="${fileUrl}">
-                                Your browser does not support audio playback.
-                            </audio>
-                        `;
+                <audio class="preview-audio" controls autoplay>
+                  <source src="${fileUrl}">
+                  Your browser does not support audio playback.
+                </audio>
+              `;
               break;
 
             case "document":
@@ -1122,13 +1153,15 @@
                 const text = await response.text();
                 const lines = text.split("\n").slice(0, 5000);
                 const content = lines
-                  .map((line) => `<span class="line">${escapeHtml(line)}</span>`)
+                  .map(
+                    (line) => `<span class="line">${escapeHtml(line)}</span>`
+                  )
                   .join("\n");
                 modalBody.innerHTML = `
-                                <div class="preview-code line-numbers">
-                                    <pre>${content}</pre>
-                                </div>
-                            `;
+                  <div class="preview-code line-numbers">
+                    <pre>${content}</pre>
+                  </div>
+                `;
               } else {
                 showUnavailable(modalBody, name, fileUrl);
               }
@@ -1140,13 +1173,13 @@
               await fontFace.load();
               document.fonts.add(fontFace);
               modalBody.innerHTML = `
-                            <div style="padding: 2rem; text-align: center; font-family: '${fontName}', sans-serif;">
-                                <p style="font-size: 3rem; margin-bottom: 1rem;">The quick brown fox jumps over the lazy dog</p>
-                                <p style="font-size: 2rem; margin-bottom: 1rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
-                                <p style="font-size: 2rem; margin-bottom: 1rem;">abcdefghijklmnopqrstuvwxyz</p>
-                                <p style="font-size: 2rem;">0123456789!@#$%^&*()</p>
-                            </div>
-                        `;
+                <div style="padding: 2rem; text-align: center; font-family: '${fontName}', sans-serif;">
+                  <p style="font-size: 3rem; margin-bottom: 1rem;">The quick brown fox jumps over the lazy dog</p>
+                  <p style="font-size: 2rem; margin-bottom: 1rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+                  <p style="font-size: 2rem; margin-bottom: 1rem;">abcdefghijklmnopqrstuvwxyz</p>
+                  <p style="font-size: 2rem;">0123456789!@#$%^&*()</p>
+                </div>
+              `;
               break;
 
             default:
@@ -1160,25 +1193,24 @@
 
       function showUnavailable(container, name, url) {
         container.innerHTML = `
-                <div class="preview-unavailable">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
-                    </svg>
-                    <h3>Preview not available</h3>
-                    <p>This file type cannot be previewed in the browser.</p>
-                    <a class="download-btn" href="${url}" download="${escapeHtml(name)}">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                        </svg>
-                        Download file
-                    </a>
-                </div>
-            `;
+          <div class="preview-unavailable">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+            </svg>
+            <h3>Preview not available</h3>
+            <p>This file type cannot be previewed in the browser.</p>
+            <a class="download-btn" href="${url}" download="${escapeHtml(name)}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+              </svg>
+              Download file
+            </a>
+          </div>
+        `;
       }
 
       // Close modal
-      function closeModal(event) {
-        if (event && event.target !== event.currentTarget) return;
+      function closeModal() {
         const modal = document.getElementById("modal");
         modal.classList.remove("active");
         // Stop any playing media

@@ -317,11 +317,7 @@
             currentFontSize = 14,
             currentHls = null,
             streamTimeout = null,
-            allFiles = [],
-            audioContext = null,
-            compressorNode = null,
-            gainNode = null,
-            savedVolume = 0.5; // Default volume set to 50%
+            allFiles = []; // Optimization: Store flattened files
 
         const icons = {
             folder: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
@@ -340,88 +336,52 @@
             other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
             chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
         };
-
-        // Initialize Web Audio API
-        function initAudioContext() {
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    compressorNode = audioContext.createDynamicsCompressor();
-                    gainNode = audioContext.createGain();
-
-                    // Set up industry-standard audio normalization
-                    // These values provide smooth loudness normalization
-                    compressorNode.threshold.value = -24;
-                    compressorNode.knee.value = 30;
-                    compressorNode.ratio.value = 12;
-                    compressorNode.attack.value = 0.003;
-                    compressorNode.release.value = 0.25;
-
-                    // Connect nodes: source -> compressor -> gain -> destination
-                    gainNode.gain.value = savedVolume;
-
-                    // Connect to destination when needed
-                } catch (e) {
-                    console.log("Web Audio API not supported, falling back to basic audio");
-                }
-            }
-        }
-
         function loadSettings() {
             const e = localStorage.getItem("theme");
             e && e !== "auto"
                 ? document.documentElement.setAttribute("data-theme", e)
                 : document.documentElement.removeAttribute("data-theme");
-
             const t = localStorage.getItem("fontSize");
             t &&
                 ((currentFontSize = parseInt(t)),
-                document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px"));
-
-            // Load saved volume
-            const savedVol = localStorage.getItem("audioVolume");
-            if (savedVol) {
-                savedVolume = parseFloat(savedVol);
-            }
-
-            updateThemeButtons();
-            updateFontSizeLabel();
+                document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px")),
+                updateThemeButtons(),
+                updateFontSizeLabel();
         }
-
         function saveTheme(e) {
             e === "auto"
                 ? (localStorage.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
                 : (localStorage.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
                 updateThemeButtons();
         }
-
         function updateThemeButtons() {
             const e = localStorage.getItem("theme") || "auto";
             document.querySelectorAll(".theme-btn").forEach((t) => {
                 t.classList.toggle("active", t.dataset.theme === e);
             });
         }
-
         function updateFontSizeLabel() {
             document.getElementById("fontSizeLabel").textContent = currentFontSize + "px";
         }
-
         function changeFontSize(e) {
             (currentFontSize = Math.max(10, Math.min(20, currentFontSize + e))),
                 document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px"),
                 localStorage.setItem("fontSize", currentFontSize),
                 updateFontSizeLabel();
         }
-
         function isPlaylistExtension(e) {
             const t = e.toLowerCase();
             return t.endsWith(".m3u") || t.endsWith(".m3u8");
         }
 
+        // Optimization: Recursively flatten file tree on init for O(n) search
         function preprocessFiles(nodes, pathPrefix = "") {
             for (const node of nodes) {
                 const currentPathStr = pathPrefix ? `${pathPrefix}/${node.name}` : node.name;
+                // Pre-calculate lower case string for faster searching
                 const searchKey = currentPathStr.toLowerCase();
+                
+                // Store navPath so search results can still be navigated to
                 const navPath = pathPrefix ? [...pathPrefix.split('/'), node.name] : [node.name];
 
                 allFiles.push({
@@ -439,14 +399,12 @@
 
         async function init() {
             loadSettings();
-            initAudioContext();
             try {
                 const e = await fetch("./file_index.json");
                 if (!e.ok) throw new Error("Failed to load file index");
-                (fileIndex = await e.json()),
-
-                preprocessFiles(fileIndex.root),
-
+                (fileIndex = await e.json()), 
+                // Build the flat index immediately
+                preprocessFiles(fileIndex.root), 
                 setupEventListeners(), setupIntersectionObserver(), render();
             } catch (e) {
                 console.error(e),
@@ -461,7 +419,6 @@
         `);
             }
         }
-
         function setupEventListeners() {
             const n = document.getElementById("search");
             let e;
@@ -510,7 +467,6 @@
                 document.getElementById("playlistStop").addEventListener("click", stopPlaylist),
                 document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
         }
-
         function handleCardClick(e) {
             const t = e.target.closest(".file-card");
             if (!t) return;
@@ -519,7 +475,6 @@
                 navigateTo(e);
             } else t.dataset.file && openFile(t.dataset.file, t.dataset.category, t.dataset.name);
         }
-
         function handleTreeClick(e) {
             const t = e.target.closest(".tree-toggle"),
                 n = e.target.closest(".tree-item");
@@ -534,7 +489,6 @@
                 navigateTo(e);
             }
         }
-
         function setupIntersectionObserver() {
             intersectionObserver = new IntersectionObserver(
                 (e) => {
@@ -553,7 +507,6 @@
                 { rootMargin: "50px" }
             );
         }
-
         function getCurrentItems() {
             let e = fileIndex.root;
             for (const n of currentPath) {
@@ -564,6 +517,9 @@
             return e;
         }
 
+        // Replaced old filterItems with direct array filter in render()
+        // function filterItems(e, t) { ... } (Removed)
+
         function setView(e) {
             (currentView = e),
                 document.querySelectorAll(".view-btn").forEach((t) => {
@@ -572,14 +528,12 @@
                 document.getElementById("treePanel").classList.toggle("visible", e === "tree"),
                 render();
         }
-
         function navigateTo(e) {
             (currentPath = e), (searchQuery = ""), (document.getElementById("search").value = "");
             let t = "";
             for (const n of e) (t += (t ? "/" : "") + n), expandedFolders.add(t);
             render();
         }
-
         function renderBreadcrumb() {
             const t = document.getElementById("breadcrumb");
             let e = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
@@ -596,7 +550,6 @@
                     });
                 });
         }
-
         function renderTree() {
             const e = document.getElementById("treeContent");
             function t(e) {
@@ -643,16 +596,16 @@
                 c = a * 28;
             e.classList.toggle("needs-scroll", c > r);
         }
-
         function getFileIconType(e) {
             return isPlaylistExtension(e) ? "playlist" : null;
         }
-
         function render() {
             renderBreadcrumb(), currentView === "tree" && renderTree();
             const n = document.getElementById("main");
-
+            
             let e = [];
+            // Optimization: Filter the flat list instead of recursive tree walk
+            // Limit results to 100 to prevent DOM lag
             if (searchQuery) {
                 e = allFiles.filter(item => item.searchKey.includes(searchQuery)).slice(0, 100);
             } else {
@@ -672,7 +625,8 @@
                 return;
             }
             const s = currentView === "list" || currentView === "tree" ? "file-list" : "file-grid";
-
+            
+            // Calculate stats based on whether we are searching or browsing
             let fileCount, folderCount;
             if (searchQuery) {
                  fileCount = e.filter(i => i.type === 'file').length;
@@ -685,7 +639,7 @@
             let t = `
         <div class="stats-bar">
           <span class="stat">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
             ${fileCount} files ${searchQuery && e.length >= 100 ? '(Showing top 100)' : ''}
           </span>
           <span class="stat">
@@ -699,14 +653,17 @@
             for (const item of e) {
                 const s = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other",
                     o = icons[s] || icons.other;
-
+                
+                // Determine logic based on search vs browse
                 let clickPath, fullDisplayPath, parentPathArr;
-
+                
                 if (searchQuery) {
+                    // Search mode: use pre-calculated paths
                     clickPath = item.fullPath;
                     fullDisplayPath = item.fullPath;
-                    parentPathArr = item.navPath;
+                    parentPathArr = item.navPath; // Used for directory navigation
                 } else {
+                    // Browse mode: construct based on current path
                     fullDisplayPath = (currentPath.length ? currentPath.join("/") + "/" : "") + item.name;
                     clickPath = fullDisplayPath;
                     parentPathArr = [...currentPath, item.name];
@@ -752,7 +709,6 @@
                     intersectionObserver.observe(e);
                 });
         }
-
         async function parsePlaylist(e, t) {
             try {
                 const n = await fetch(t);
@@ -760,14 +716,14 @@
                 const s = await n.text(),
                     o = e.substring(0, e.lastIndexOf("/") + 1),
                     lines = s.split(/\r?\n/);
-
+                
                 const playlistItems = [];
                 let currentTitle = null;
 
                 for (let line of lines) {
                     line = line.trim();
                     if (!line) continue;
-
+                    
                     if (line.startsWith("#EXTINF:")) {
                         const commaIndex = line.indexOf(',');
                         if (commaIndex !== -1) {
@@ -785,7 +741,6 @@
                 return console.error("Error parsing playlist:", e), [];
             }
         }
-
         function updatePlaylistUI() {
             const e = document.getElementById("playlistBar"),
                 t = document.getElementById("playlistTrack"),
@@ -799,7 +754,6 @@
                     (s.disabled = currentPlaylistIndex >= currentPlaylist.length - 1);
             } else e.classList.remove("active");
         }
-
         async function startPlaylistMode() {
             if (!isPlaylistFile || !currentFilePath) return;
             const e = `./${currentFilePath}`,
@@ -813,14 +767,13 @@
                 : (document.getElementById("modalBody").innerHTML = `
       <div class="preview-unavailable">
         <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 2c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+          <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
         </svg>
         <h3>Empty or invalid playlist</h3>
         <p>No playable items found in this playlist.</p>
       </div>
     `);
         }
-
         function stopPlaylist() {
             if (currentHls) {
                 currentHls.destroy();
@@ -836,7 +789,6 @@
                 isPlaylistFile &&
                     (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText());
         }
-
         async function showPlaylistAsText() {
             const e = `./${currentFilePath}`;
             try {
@@ -866,7 +818,7 @@
             try {
                 const response = await fetch(url);
                 const contentType = response.headers.get("content-type");
-
+                
                 if (response.ok && (lowerUrl.endsWith('.m3u') || (contentType && (contentType.includes('mpegurl') || contentType.includes('text'))))) {
                     const text = await response.text();
                     if (text.includes("#EXTM3U")) {
@@ -900,37 +852,9 @@
             }
         }
 
-        function setupAudioElement(audioElement) {
-            // Set default volume
-            audioElement.volume = savedVolume;
-
-            // Add volume change listener to save volume
-            audioElement.addEventListener('volumechange', () => {
-                savedVolume = audioElement.volume;
-                localStorage.setItem("audioVolume", savedVolume);
-
-                // Update gain node if Web Audio is available
-                if (gainNode) {
-                    gainNode.gain.value = savedVolume;
-                }
-            });
-
-            // Connect to Web Audio API if available
-            if (audioContext && compressorNode && gainNode) {
-                try {
-                    const source = audioContext.createMediaElementSource(audioElement);
-                    source.connect(compressorNode);
-                    compressorNode.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                } catch (e) {
-                    console.log("Could not connect to Web Audio API:", e);
-                }
-            }
-        }
-
         async function playPlaylistTrack(e) {
             if (e < 0 || e >= currentPlaylist.length) return;
-
+            
             // Cleanup
             if (currentHls) {
                 currentHls.destroy();
@@ -946,7 +870,7 @@
             }, 5000);
 
             (currentPlaylistIndex = e), updatePlaylistUI();
-
+            
             const item = currentPlaylist[currentPlaylistIndex];
             const rawUrl = item.url;
             const finalUrl = await resolveStreamUrl(rawUrl);
@@ -954,9 +878,9 @@
             const n = document.getElementById("modalBody");
             const s = item.title;
             const o = finalUrl.toLowerCase();
-
+            
             const isSpecificVideo = o.match(/\.(mp4|webm|mkv|avi|mov|ts)$/) || o.includes("type=video");
-
+            
             document.getElementById("modalTitle").textContent = s;
 
             if (isSpecificVideo) {
@@ -968,12 +892,12 @@
                   </div>
                 `;
                 const video = document.getElementById("videoPlayer");
-
+                
                 video.onloadeddata = () => {
                     if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
                 };
                 video.onerror = () => skipToNext();
-
+                
                 if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
                     currentHls = new Hls();
                     currentHls.loadSource(finalUrl);
@@ -987,7 +911,7 @@
                 } else {
                     video.src = finalUrl;
                 }
-
+                
                 video.onended = () => {
                     if (streamTimeout) clearTimeout(streamTimeout);
                     if (currentPlaylistIndex < currentPlaylist.length - 1) playPlaylistTrack(currentPlaylistIndex + 1);
@@ -1004,10 +928,7 @@
                   </div>
                 `;
                 const audio = document.getElementById("audioPlayer");
-
-                // Set up audio element with volume persistence and normalization
-                setupAudioElement(audio);
-
+                
                 if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
                     currentHls = new Hls();
                     currentHls.loadSource(finalUrl);
@@ -1084,11 +1005,6 @@
                 </audio>
               </div>
             `;
-                        // Set up audio element for single audio files too
-                        const audioElement = document.querySelector('.preview-audio');
-                        if (audioElement) {
-                            setupAudioElement(audioElement);
-                        }
                         break;
                     case "document":
                         n.toLowerCase().endsWith(".pdf")
@@ -1136,7 +1052,6 @@
                 console.error(e), showUnavailable(s, n, o);
             }
         }
-
         function showUnavailable(e, t, n) {
             e.innerHTML = `
         <div class="preview-unavailable">
@@ -1154,11 +1069,10 @@
         </div>
       `;
         }
-
         function closeModal() {
             const e = document.getElementById("modal");
             e.classList.remove("active");
-
+            
             if (currentHls) {
                 currentHls.destroy();
                 currentHls = null;
@@ -1180,12 +1094,10 @@
                 document.getElementById("playlistBar").classList.remove("active"),
                 document.getElementById("playPlaylistBtn").classList.add("hidden");
         }
-
         function escapeHtml(e) {
             const t = document.createElement("div");
             return (t.textContent = e), t.innerHTML;
         }
-
         init();
     </script>
 </body>

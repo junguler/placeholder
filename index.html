@@ -1,1144 +1,1264 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>File Viewer</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
-    <style>
-        /* Styles remain consistent */
-        :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --bg-hover: #30363d;
-            --border-color: #30363d;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --text-muted: #6e7681;
-            --accent: #58a6ff;
-            --accent-hover: #79b8ff;
-            --success: #3fb950;
-            --warning: #d29922;
-            --danger: #f85149;
-            --radius: 6px;
-            --radius-lg: 8px;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            --transition: 0.15s ease;
-            --font-size-base: 14px;
-        }
-        [data-theme="light"] {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f6f8fa;
-            --bg-tertiary: #eaeef2;
-            --bg-hover: #d0d7de;
-            --border-color: #d0d7de;
-            --text-primary: #1f2328;
-            --text-secondary: #656d76;
-            --text-muted: #8c959f;
-            --accent: #0969da;
-            --accent-hover: #0550ae;
-            --shadow: 0 4px 12px rgba(140, 149, 159, 0.2);
-        }
-        @media (prefers-color-scheme: light) {
-            :root:not([data-theme]) {
-                --bg-primary: #ffffff;
-                --bg-secondary: #f6f8fa;
-                --bg-tertiary: #eaeef2;
-                --bg-hover: #d0d7de;
-                --border-color: #d0d7de;
-                --text-primary: #1f2328;
-                --text-secondary: #656d76;
-                --text-muted: #8c959f;
-                --accent: #0969da;
-                --accent-hover: #0550ae;
-                --shadow: 0 4px 12px rgba(140, 149, 159, 0.2);
-            }
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { font-size: var(--font-size-base); }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, segoe ui, noto sans, Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.4;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 0.5rem 1rem; flex-shrink: 0; }
-        .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-        .logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; color: var(--text-primary); cursor: pointer; flex-shrink: 0; }
-        .logo svg { width: 20px; height: 20px; }
-        .breadcrumb { display: flex; align-items: center; gap: 0.125rem; flex-wrap: wrap; font-size: 0.85rem; flex: 1; min-width: 0; }
-        .breadcrumb-item { color: var(--accent); padding: 0.125rem 0.375rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
-        .breadcrumb-item:hover { background: var(--bg-hover); }
-        .breadcrumb-item.current { color: var(--text-primary); cursor: default; }
-        .breadcrumb-item.current:hover { background: 0 0; }
-        .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
-        .header-actions { display: flex; gap: 0.375rem; align-items: center; }
-        .search-container { position: relative; width: 200px; }
-        .search-input { width: 100%; padding: 0.375rem 0.5rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
-        .search-input:focus { outline: none; border-color: var(--accent); }
-        .search-input::placeholder { color: var(--text-muted); }
-        .search-icon { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; height: 14px; }
-        .settings-dropdown { position: relative; }
-        .settings-btn { padding: 0.375rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .settings-btn:hover { color: var(--text-primary); border-color: var(--accent); }
-        .settings-btn svg { width: 16px; height: 16px; }
-        .settings-menu { position: absolute; top: 100%; right: 0; margin-top: 0.25rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 200px; z-index: 100; display: none; }
-        .settings-menu.active { display: block; }
-        .settings-section { padding: 0.5rem; }
-        .settings-section-title { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.375rem; }
-        .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.25rem 0; }
-        .settings-label { font-size: 0.85rem; color: var(--text-secondary); }
-        .settings-control { display: flex; gap: 0.25rem; }
-        .settings-control button { padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); cursor: pointer; font-size: 0.75rem; }
-        .settings-control button:hover { color: var(--text-primary); border-color: var(--accent); }
-        .settings-control button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .theme-toggle { display: flex; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; }
-        .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; }
-        .theme-btn:hover { color: var(--text-primary); }
-        .theme-btn.active { background: var(--bg-primary); color: var(--text-primary); }
-        .theme-btn svg { width: 12px; height: 12px; }
-        .view-toggle { display: flex; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; }
-        .view-btn { padding: 0.25rem 0.375rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .view-btn:hover { color: var(--text-primary); }
-        .view-btn.active { background: var(--bg-primary); color: var(--text-primary); }
-        .view-btn svg { width: 16px; height: 16px; }
-        .app-container { flex: 1; display: flex; overflow: hidden; }
-        .tree-panel { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
-        .tree-panel.visible { display: flex; }
-        .tree-header { padding: 0.5rem 0.75rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
-        .tree-content { padding: 0.25rem 0; overflow-y: auto; flex: 1; min-height: 0; }
-        .tree-content:not(.needs-scroll) { overflow-y: visible; }
-        .tree-item { display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); border-left: 2px solid transparent; }
-        .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .tree-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
-        .tree-item svg { width: 14px; height: 14px; flex-shrink: 0; }
-        .tree-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .tree-children { margin-left: 0.75rem; }
-        .tree-toggle { width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .tree-toggle svg { width: 10px; height: 10px; transition: transform var(--transition); }
-        .tree-toggle.expanded svg { transform: rotate(90deg); }
-        .tree-toggle.empty { visibility: hidden; }
-        .main { flex: 1; overflow: auto; padding: 0.75rem; display: flex; flex-direction: column; }
-        .main-content { flex: 1; }
-        .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--text-muted); }
-        .stat { display: flex; align-items: center; gap: 0.25rem; }
-        .stat svg { width: 12px; height: 12px; }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
-        .file-list { display: flex; flex-direction: column; gap: 1px; }
-        .file-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
-        .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
-        .file-card.directory { background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); }
-        .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: var(--bg-tertiary); }
-        .file-icon svg { width: 20px; height: 20px; }
-        .file-icon.folder { color: #8b949e; background: rgba(139, 148, 158, 0.1); }
-        .file-icon.image { color: #a371f7; background: rgba(163, 113, 247, 0.1); }
-        .file-icon.video { color: #f85149; background: rgba(248, 81, 73, 0.1); }
-        .file-icon.audio { color: #3fb950; background: rgba(63, 185, 80, 0.1); }
-        .file-icon.code { color: #58a6ff; background: rgba(88, 166, 255, 0.1); }
-        .file-icon.document { color: #f0883e; background: rgba(240, 136, 62, 0.1); }
-        .file-icon.text { color: #8b949e; background: rgba(139, 148, 158, 0.1); }
-        .file-icon.data { color: #d29922; background: rgba(210, 153, 34, 0.1); }
-        .file-icon.archive { color: #a5d6ff; background: rgba(165, 214, 255, 0.1); }
-        .file-icon.playlist { color: #f778ba; background: rgba(247, 120, 186, 0.1); }
-        .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
-        .file-meta { font-size: 0.7rem; color: var(--text-muted); }
-        .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
-        .file-thumbnail { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 4px; background: var(--bg-tertiary); }
-        .file-thumbnail.lazy { opacity: 0; transition: opacity 0.2s; }
-        .file-thumbnail.loaded { opacity: 1; }
-        .file-list .file-card { flex-direction: row; text-align: left; padding: 0.375rem 0.5rem; gap: 0.5rem; border-radius: 4px; }
-        .file-list .file-card:hover { box-shadow: none; }
-        .file-list .file-icon { width: 24px; height: 24px; }
-        .file-list .file-icon svg { width: 14px; height: 14px; }
-        .file-list .file-info { flex: 1; min-width: 0; }
-        .file-list .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .file-list .file-meta { font-size: 0.7rem; }
-        .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
-        .file-list .file-thumbnail { display: none; }
-        .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
-        .empty-state svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
-        .empty-state h2 { font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary); }
-        .empty-state p { font-size: 0.85rem; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.2s; padding: 0.5rem; }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: 1px solid var(--border-color); }
-        .modal-overlay.active .modal { transform: scale(1); }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
-        .modal-title { font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-        .modal-actions { display: flex; gap: 0.25rem; }
-        .modal-btn { padding: 0.375rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
-        .modal-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
-        .modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .modal-btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
-        .modal-btn svg { width: 16px; height: 16px; }
-        .modal-btn.play-playlist-btn { padding: 0.375rem 0.5rem; font-size: 0.75rem; color: var(--accent); }
-        .modal-btn.play-playlist-btn:hover { color: var(--text-primary); }
-        .modal-btn.hidden { display: none; }
-        .playlist-bar { display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
-        .playlist-bar.active { display: flex; }
-        .playlist-controls { display: flex; gap: 0.25rem; }
-        .playlist-btn { padding: 0.375rem 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.75rem; }
-        .playlist-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
-        .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .playlist-btn svg { width: 14px; height: 14px; }
-        .playlist-info { flex: 1; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .playlist-track { color: var(--text-primary); font-weight: 500; }
-        .playlist-stop-btn { padding: 0.375rem 0.5rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
-        .playlist-stop-btn:hover { opacity: 0.9; }
-        .modal-body { flex: 1; overflow: auto; background: var(--bg-primary); }
-        .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; display: block; margin: auto; }
-        .preview-media-container { width: 100%; max-width: 900px; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
-        .preview-video { width: 100%; max-height: 80vh; background: #000; border-radius: var(--radius); }
-        .preview-audio-container { width: 100%; max-width: 500px; padding: 2rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-        .audio-icon { width: 80px; height: 80px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); }
-        .audio-icon svg { width: 40px; height: 40px; }
-        .preview-audio { width: 100%; height: 40px; }
-        .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
-        .preview-code pre { margin: 0; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; }
-        .preview-code.line-numbers pre { counter-reset: line; }
-        .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
-        .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.75rem; }
-        .preview-pdf { width: 100%; height: 90vh; border: none; }
-        .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
-        .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
-        .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1rem; }
-        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: #fff; text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
-        .download-btn:hover { background: var(--accent-hover); }
-        .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
-        .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 768px) { .search-container { width: 150px; } .tree-panel { width: 180px; } .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); } }
-        @media (max-width: 480px) { .tree-panel { display: none !important; } .search-container { width: 120px; } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: 0 0; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Viewer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --bg-hover: #292e36;
+    --bg-active: #1f6feb22;
+    --border: #30363d;
+    --border-light: #3d444d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #656d76;
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --accent-dim: #1f6feb;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --pink: #f778ba;
+    --cyan: #39d2c0;
+    --scrollbar-bg: #161b22;
+    --scrollbar-thumb: #30363d;
+    --shadow: 0 8px 24px rgba(0,0,0,0.4);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html { font-size: 14px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+  .app { display: flex; height: 100vh; flex-direction: column; }
+
+  /* Top Bar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    flex-shrink: 0;
+  }
+
+  .topbar-logo svg { flex-shrink: 0; }
+
+  .search-container {
+    flex: 1;
+    max-width: 560px;
+    position: relative;
+  }
+
+  .search-container input {
+    width: 100%;
+    padding: 7px 12px 7px 36px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.93rem;
+    outline: none;
+    transition: border var(--transition), box-shadow var(--transition);
+  }
+
+  .search-container input:focus {
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.2);
+  }
+
+  .search-container input::placeholder { color: var(--text-muted); }
+
+  .search-container .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .topbar-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .topbar-stats span { white-space: nowrap; }
+
+  .stat-num {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* Layout */
+  .main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 300px;
+    min-width: 240px;
+    max-width: 500px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: width var(--transition);
+  }
+
+  .sidebar-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header h2 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+  }
+
+  .sidebar-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color var(--transition), background var(--transition);
+    display: flex;
+    align-items: center;
+  }
+
+  .sidebar-toggle:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+  }
+
+  .tree-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .tree-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 16px;
+    cursor: pointer;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: background var(--transition);
+    user-select: none;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    border-left: 2px solid transparent;
+  }
+
+  .tree-item:hover { background: var(--bg-hover); }
+  .tree-item.active {
+    background: var(--bg-active);
+    border-left-color: var(--accent);
+  }
+
+  .tree-item .indent {
+    flex-shrink: 0;
+  }
+
+  .tree-item .icon {
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  .tree-item .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tree-dir > .icon { color: var(--accent); }
+  .tree-file.type-image > .icon { color: var(--purple); }
+  .tree-file.type-audio > .icon { color: var(--pink); }
+  .tree-file.type-video > .icon { color: var(--red); }
+  .tree-file.type-pdf > .icon { color: var(--orange); }
+  .tree-file.type-font > .icon { color: var(--cyan); }
+  .tree-file.type-text > .icon { color: var(--text-secondary); }
+  .tree-file.type-binary > .icon { color: var(--text-muted); }
+
+  .dir-chevron {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+    color: var(--text-muted);
+  }
+
+  .dir-chevron.open { transform: rotate(90deg); }
+
+  /* Content */
+  .content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .breadcrumb {
+    padding: 10px 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    min-height: 42px;
+  }
+
+  .breadcrumb-item {
+    color: var(--accent);
+    cursor: pointer;
+    transition: color var(--transition);
+  }
+
+  .breadcrumb-item:hover { color: var(--accent-hover); text-decoration: underline; }
+  .breadcrumb-sep { color: var(--text-muted); }
+  .breadcrumb-current { color: var(--text-primary); font-weight: 600; }
+
+  .viewer {
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .viewer-inner {
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  /* Welcome Screen */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: var(--text-secondary);
+    gap: 16px;
+    padding: 40px;
+  }
+
+  .welcome svg { opacity: 0.3; }
+  .welcome h2 { font-size: 1.5rem; color: var(--text-primary); font-weight: 600; }
+  .welcome p { font-size: 1rem; max-width: 400px; }
+
+  /* File Header */
+  .file-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .file-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+  }
+
+  .file-header-info .file-icon { font-size: 1.1rem; }
+  .file-header-info .file-name { font-weight: 600; }
+  .file-header-info .file-meta { color: var(--text-secondary); }
+
+  .file-header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+    text-decoration: none;
+  }
+
+  .btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-light);
+  }
+
+  .btn-primary {
+    background: var(--accent-dim);
+    border-color: var(--accent-dim);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* Code Viewer */
+  .code-viewer {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    overflow: auto;
+    max-height: calc(100vh - 220px);
+  }
+
+  .code-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    tab-size: 4;
+  }
+
+  .code-table td {
+    padding: 0 16px;
+    vertical-align: top;
+    white-space: pre;
+  }
+
+  .code-table .line-num {
+    width: 1%;
+    min-width: 50px;
+    padding: 0 12px;
+    text-align: right;
+    color: var(--text-muted);
+    user-select: none;
+    border-right: 1px solid var(--border);
+    position: sticky;
+    left: 0;
+    background: var(--bg-primary);
+  }
+
+  .code-table .line-content {
+    padding-left: 16px;
+  }
+
+  .code-table tr:hover { background: var(--bg-hover); }
+
+  /* Media Viewers */
+  .media-viewer {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: 32px;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+  }
+
+  .media-viewer img {
+    max-width: 100%;
+    max-height: calc(100vh - 280px);
+    border-radius: var(--radius);
+    object-fit: contain;
+    background-image:
+      linear-gradient(45deg, #1a1e24 25%, transparent 25%),
+      linear-gradient(-45deg, #1a1e24 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #1a1e24 75%),
+      linear-gradient(-45deg, transparent 75%, #1a1e24 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  }
+
+  .media-viewer audio {
+    width: 100%;
+    max-width: 500px;
+    border-radius: var(--radius);
+  }
+
+  .media-viewer video {
+    max-width: 100%;
+    max-height: calc(100vh - 280px);
+    border-radius: var(--radius);
+  }
+
+  .media-viewer iframe {
+    width: 100%;
+    height: calc(100vh - 280px);
+    min-height: 500px;
+    border: none;
+    border-radius: var(--radius);
+  }
+
+  /* Binary Info */
+  .binary-info {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: 48px 32px;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+
+  .binary-info .binary-icon { font-size: 3rem; opacity: 0.4; }
+  .binary-info p { max-width: 400px; }
+
+  /* Font Preview */
+  .font-preview {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: 32px;
+    background: var(--bg-primary);
+    text-align: center;
+  }
+
+  .font-preview-sample {
+    font-size: 3rem;
+    margin: 24px 0;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .font-preview-sizes {
+    text-align: left;
+    max-width: 700px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .font-size-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .font-size-label {
+    flex-shrink: 0;
+    width: 50px;
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  /* Directory View */
+  .dir-listing {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-secondary);
+  }
+
+  .dir-listing-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 16px;
+  }
+
+  .dir-listing-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+
+  .dir-listing-row:last-child { border-bottom: none; }
+  .dir-listing-row:hover { background: var(--bg-hover); }
+
+  .dir-listing-row .row-icon { width: 20px; text-align: center; flex-shrink: 0; }
+  .dir-listing-row .row-name { flex: 1; color: var(--accent); }
+  .dir-listing-row .row-name:hover { text-decoration: underline; }
+  .dir-listing-row .row-size { color: var(--text-secondary); font-size: 0.82rem; width: 80px; text-align: right; }
+  .dir-listing-row .row-type { color: var(--text-muted); font-size: 0.82rem; width: 60px; text-align: right; }
+
+  .dir-listing-row.is-dir .row-icon { color: var(--accent); }
+  .dir-listing-row.is-dir .row-name { font-weight: 500; }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--text-secondary);
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-msg {
+    padding: 32px;
+    text-align: center;
+    color: var(--red);
+  }
+
+  /* Resize Handle */
+  .resize-handle {
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    transition: background var(--transition);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .resize-handle:hover,
+  .resize-handle.active {
+    background: var(--accent-dim);
+  }
+
+  /* Line highlighting */
+  .code-table tr.highlighted {
+    background: rgba(31, 111, 235, 0.15);
+  }
+
+  .code-table .line-num.highlighted-num {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { width: 100%; max-width: none; position: absolute; z-index: 50; height: calc(100vh - 53px); top: 53px; left: 0; transform: translateX(-100%); transition: transform 0.3s ease; }
+    .sidebar.mobile-open { transform: translateX(0); }
+    .resize-handle { display: none; }
+    .topbar-stats { display: none; }
+    .viewer { padding: 16px; }
+    .mobile-menu-btn { display: flex !important; }
+  }
+
+  @media (min-width: 769px) {
+    .mobile-menu-btn { display: none !important; }
+  }
+
+  .mobile-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 4px;
+    display: none;
+    align-items: center;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Image zoom */
+  .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease; }
+  .img-zoomed { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; cursor: zoom-out; padding: 20px; }
+  .img-zoomed img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: var(--radius); }
+</style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo" id="logoHome">
-                <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M20 6h-8l-2-2H4c-1.1.0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1.0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
-                <span>File Viewer</span>
-            </div>
-            <nav class="breadcrumb" id="breadcrumb"></nav>
-            <div class="header-actions">
-                <div class="search-container">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentcolor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" />
-                </div>
-                <div class="settings-dropdown" id="settingsDropdown">
-                    <button class="settings-btn" id="settingsBtn" title="Settings">
-                        <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94.0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24.0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47.0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24.0.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47.0.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98.0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                    </button>
-                    <div class="settings-menu" id="settingsMenu">
-                        <div class="settings-section">
-                            <div class="settings-section-title">Theme</div>
-                            <div class="settings-row">
-                                <div class="theme-toggle" id="themeToggle">
-                                    <button class="theme-btn" data-theme="light" title="Light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 7c-2.76.0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55.0 1-.45 1-1s-.45-1-1-1H2c-.55.0-1 .45-1 1s.45 1 1 1zm18 0h2c.55.0 1-.45 1-1s-.45-1-1-1h-2c-.55.0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0s.39-1.03.0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0.39-.39.39-1.03.0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06z"/></svg>Light</button>
-                                    <button class="theme-btn" data-theme="dark" title="Dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3c-4.97.0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98.0-5.4-2.42-5.4-5.4.0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>Dark</button>
-                                    <button class="theme-btn" data-theme="auto" title="System theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28.0-.5.22-.5.5.0.12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5.0 0112 22zm0-18c-4.41.0-8 3.59-8 8s3.59 8 8 8c.28.0.5-.22.5-.5a.54.54.0 00-.14-.35c-.41-.46-.63-1.05-.63-1.65a2.5 2.5.0 012.5-2.5H16c2.21.0 4-1.79 4-4 0-3.86-3.59-7-8-7z"/><circle cx="6.5" cy="11.5" r="1.5"/><circle cx="9.5" cy="7.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/><circle cx="17.5" cy="11.5" r="1.5"/></svg>Auto</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                            <div class="settings-section-title">Font Size</div>
-                            <div class="settings-row">
-                                <span class="settings-label" id="fontSizeLabel">14px</span>
-                                <div class="settings-control">
-                                    <button id="fontDecrease" title="Decrease font size">A-</button>
-                                    <button id="fontIncrease" title="Increase font size">A+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="view-toggle">
-                    <button class="view-btn" data-view="grid" title="Grid"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
-                    <button class="view-btn" data-view="list" title="List"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg></button>
-                    <button class="view-btn active" data-view="tree" title="Tree"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/></svg></button>
-                </div>
-            </div>
-        </div>
-    </header>
-    <div class="app-container">
-        <aside class="tree-panel visible" id="treePanel">
-            <div class="tree-header">Folders</div>
-            <div class="tree-content" id="treeContent"></div>
-        </aside>
-        <main class="main" id="main">
-            <div class="loading">
-                <div class="spinner"></div>
-                <span>Loading...</span>
-            </div>
-        </main>
+<div class="app" id="app">
+  <div class="topbar">
+    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle sidebar">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M1 2.75A.75.75 0 011.75 2h12.5a.75.75 0 110 1.5H1.75A.75.75 0 011 2.75zm0 5A.75.75 0 011.75 7h12.5a.75.75 0 110 1.5H1.75A.75.75 0 011 7.75zM1.75 12a.75.75 0 100 1.5h12.5a.75.75 0 100-1.5H1.75z"/></svg>
+    </button>
+    <div class="topbar-logo">
+      <svg height="28" viewBox="0 0 16 16" width="28" fill="#e6edf3"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+      <span>File Viewer</span>
     </div>
-    <div class="modal-overlay" id="modal">
-        <div class="modal" id="modalContent">
-            <div class="modal-header">
-                <span class="modal-title" id="modalTitle">File Preview</span>
-                <div class="modal-actions">
-                    <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg>Play</button>
-                    <a class="modal-btn" id="downloadBtn" title="Download" download><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg></a>
-                    <a class="modal-btn" id="rawBtn" title="Open raw" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 19H5V5h7V3H5c-1.11.0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1.0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>
-                    <button class="modal-btn" id="closeBtn" title="Close"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-                </div>
-            </div>
-            <div class="playlist-bar" id="playlistBar">
-                <div class="playlist-controls">
-                    <button class="playlist-btn" id="playlistPrev" title="Previous track"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" /></svg>Prev</button>
-                    <button class="playlist-btn" id="playlistNext" title="Next track"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>Next</button>
-                </div>
-                <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span></div>
-                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist">Stop</button>
-            </div>
-            <div class="modal-body" id="modalBody"></div>
-        </div>
+    <div class="search-container">
+      <span class="search-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M11.5 7a4.499 4.499 0 11-8.998 0A4.499 4.499 0 0111.5 7zm-.82 4.74a6 6 0 111.06-1.06l3.04 3.04a.75.75 0 11-1.06 1.06l-3.04-3.04z"/></svg>
+      </span>
+      <input type="text" id="searchInput" placeholder="Search files..." autocomplete="off" />
     </div>
-    <script>
-        let fileIndex = null,
-            currentPath = [],
-            currentView = "tree",
-            searchQuery = "",
-            intersectionObserver = null,
-            expandedFolders = new Set([""]),
-            currentPlaylist = [],
-            currentPlaylistIndex = 0,
-            currentFilePath = "",
-            currentFileName = "",
-            isPlaylistFile = !1,
-            currentFontSize = 14,
-            currentHls = null,
-            streamTimeout = null,
-            allFiles = [],
-            currentVolume = 0.5, // Default volume set to 50%
-            audioCtx = null,
-            compressor = null; 
+    <div class="topbar-stats" id="topbarStats"></div>
+  </div>
 
-        const icons = {
-            folder: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
-            image: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`,
-            video: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>`,
-            audio: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`,
-            code: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
-            document: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
-            text: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
-            data: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`,
-            archive: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/></svg>`,
-            font: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>`,
-            markup: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
-            style: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.53 19.65l1.34.56v-9.03l-2.43 5.86c-.41 1.02.08 2.19 1.09 2.61zm19.5-3.7L17.07 3.98c-.31-.75-1.04-1.21-1.81-1.23-.26 0-.53.04-.79.15L7.1 5.95c-.75.31-1.21 1.03-1.23 1.8-.01.27.04.54.15.8l4.96 11.97c.31.76 1.05 1.22 1.83 1.23.26 0 .52-.05.77-.15l7.36-3.05c1.02-.42 1.51-1.59 1.09-2.6zm-9.2 3.8L7.87 7.79l7.35-3.04h.01l4.95 11.95-7.35 3.05z"/></svg>`,
-            playlist: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg>`,
-            other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
-            chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
-        };
-        function loadSettings() {
-            const e = localStorage.getItem("theme");
-            e && e !== "auto"
-                ? document.documentElement.setAttribute("data-theme", e)
-                : document.documentElement.removeAttribute("data-theme");
-            const t = localStorage.getItem("fontSize");
-            t &&
-                ((currentFontSize = parseInt(t)),
-                document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px")),
-                updateThemeButtons(),
-                updateFontSizeLabel();
-        }
-        function saveTheme(e) {
-            e === "auto"
-                ? (localStorage.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
-                : (localStorage.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
-                updateThemeButtons();
-        }
-        function updateThemeButtons() {
-            const e = localStorage.getItem("theme") || "auto";
-            document.querySelectorAll(".theme-btn").forEach((t) => {
-                t.classList.toggle("active", t.dataset.theme === e);
-            });
-        }
-        function updateFontSizeLabel() {
-            document.getElementById("fontSizeLabel").textContent = currentFontSize + "px";
-        }
-        function changeFontSize(e) {
-            (currentFontSize = Math.max(10, Math.min(20, currentFontSize + e))),
-                document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px"),
-                localStorage.setItem("fontSize", currentFontSize),
-                updateFontSizeLabel();
-        }
-        function isPlaylistExtension(e) {
-            const t = e.toLowerCase();
-            return t.endsWith(".m3u") || t.endsWith(".m3u8");
-        }
-        function preprocessFiles(nodes, pathPrefix = "") {
-            for (const node of nodes) {
-                const currentPathStr = pathPrefix ? `${pathPrefix}/${node.name}` : node.name;
-                const searchKey = currentPathStr.toLowerCase();
-                const navPath = pathPrefix ? [...pathPrefix.split('/'), node.name] : [node.name];
-                allFiles.push({
-                    ...node,
-                    fullPath: currentPathStr,
-                    navPath: navPath,
-                    searchKey: searchKey
-                });
-                if (node.type === "directory" && node.children) {
-                    preprocessFiles(node.children, currentPathStr);
-                }
-            }
-        }
-        
-        // Initialize Web Audio API for Normalization
-        function setupAudioNormalization(mediaElement) {
-            try {
-                // Ensure CORS is handled for Web Audio
-                mediaElement.crossOrigin = "anonymous";
-                
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    // Settings for a "broadcast style" leveling
-                    compressor = audioCtx.createDynamicsCompressor();
-                    compressor.threshold.value = -24; // Start compressing early to catch peaks
-                    compressor.knee.value = 30;       // Soft knee for smooth transition
-                    compressor.ratio.value = 12;      // High ratio to act as a leveler
-                    compressor.attack.value = 0.003;  // Fast attack
-                    compressor.release.value = 0.25;  // Standard release
-                    compressor.connect(audioCtx.destination);
-                }
-
-                // Browser policy requires user interaction to resume audio context
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-
-                // Connect source to compressor
-                // Note: creating a new source for a new element is standard
-                const source = audioCtx.createMediaElementSource(mediaElement);
-                source.connect(compressor);
-            } catch (e) {
-                // Fails quietly if CORS blocks it or AudioContext not supported
-                console.warn("Audio Normalization setup failed:", e);
-            }
-        }
-
-        async function init() {
-            loadSettings();
-            try {
-                const e = await fetch("./file_index.json");
-                if (!e.ok) throw new Error("Failed to load file index");
-                (fileIndex = await e.json()), 
-                preprocessFiles(fileIndex.root), 
-                setupEventListeners(), setupIntersectionObserver(), render();
-            } catch (e) {
-                console.error(e),
-                    (document.getElementById("main").innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-            </svg>
-            <h2>Could not load files</h2>
-            <p>Make sure file_index.json exists.</p>
-          </div>
-        `);
-            }
-        }
-        function setupEventListeners() {
-            const n = document.getElementById("search");
-            let e;
-            n.addEventListener("input", (t) => {
-                clearTimeout(e),
-                    (e = setTimeout(() => {
-                        (searchQuery = t.target.value.toLowerCase().trim()), render();
-                    }, 150));
-            }),
-                document.getElementById("logoHome").addEventListener("click", () => navigateTo([])),
-                document.querySelectorAll(".view-btn").forEach((e) => {
-                    e.addEventListener("click", () => setView(e.dataset.view));
-                }),
-                document.getElementById("closeBtn").addEventListener("click", closeModal),
-                document.getElementById("modal").addEventListener("click", (e) => {
-                    e.target === e.currentTarget && closeModal();
-                }),
-                document.getElementById("modalContent").addEventListener("click", (e) => e.stopPropagation()),
-                document.addEventListener("keydown", (e) => {
-                    e.key === "Escape" && closeModal(),
-                        e.key === "/" &&
-                            document.activeElement.tagName !== "INPUT" &&
-                            (e.preventDefault(), document.getElementById("search").focus());
-                }),
-                document.getElementById("main").addEventListener("click", handleCardClick),
-                document.getElementById("treeContent").addEventListener("click", handleTreeClick);
-            const s = document.getElementById("settingsBtn"),
-                t = document.getElementById("settingsMenu");
-            s.addEventListener("click", (e) => {
-                e.stopPropagation(), t.classList.toggle("active");
-            }),
-                document.addEventListener("click", (e) => {
-                    !e.target.closest(".settings-dropdown") && t.classList.remove("active");
-                }),
-                document.querySelectorAll(".theme-btn").forEach((e) => {
-                    e.addEventListener("click", () => saveTheme(e.dataset.theme));
-                }),
-                document.getElementById("fontDecrease").addEventListener("click", () => changeFontSize(-1)),
-                document.getElementById("fontIncrease").addEventListener("click", () => changeFontSize(1)),
-                document
-                    .getElementById("playlistPrev")
-                    .addEventListener("click", () => playPlaylistTrack(currentPlaylistIndex - 1)),
-                document
-                    .getElementById("playlistNext")
-                    .addEventListener("click", () => playPlaylistTrack(currentPlaylistIndex + 1)),
-                document.getElementById("playlistStop").addEventListener("click", stopPlaylist),
-                document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
-        }
-        function handleCardClick(e) {
-            const t = e.target.closest(".file-card");
-            if (!t) return;
-            if (t.dataset.directory) {
-                const e = JSON.parse(t.dataset.path);
-                navigateTo(e);
-            } else t.dataset.file && openFile(t.dataset.file, t.dataset.category, t.dataset.name);
-        }
-        function handleTreeClick(e) {
-            const t = e.target.closest(".tree-toggle"),
-                n = e.target.closest(".tree-item");
-            if (t && !t.classList.contains("empty")) {
-                e.stopPropagation();
-                const n = t.dataset.path;
-                expandedFolders.has(n) ? expandedFolders.delete(n) : expandedFolders.add(n), renderTree();
-                return;
-            }
-            if (n) {
-                const e = JSON.parse(n.dataset.path);
-                navigateTo(e);
-            }
-        }
-        function setupIntersectionObserver() {
-            intersectionObserver = new IntersectionObserver(
-                (e) => {
-                    e.forEach((e) => {
-                        if (e.isIntersecting) {
-                            const t = e.target;
-                            t.dataset.src &&
-                                ((t.src = t.dataset.src),
-                                (t.onload = () => t.classList.add("loaded")),
-                                (t.onerror = () => (t.style.display = "none")),
-                                delete t.dataset.src,
-                                intersectionObserver.unobserve(t));
-                        }
-                    });
-                },
-                { rootMargin: "50px" }
-            );
-        }
-        function getCurrentItems() {
-            let e = fileIndex.root;
-            for (const n of currentPath) {
-                const t = e.find((e) => e.name === n && e.type === "directory");
-                if (t) e = t.children;
-                else return [];
-            }
-            return e;
-        }
-
-        function setView(e) {
-            (currentView = e),
-                document.querySelectorAll(".view-btn").forEach((t) => {
-                    t.classList.toggle("active", t.dataset.view === e);
-                }),
-                document.getElementById("treePanel").classList.toggle("visible", e === "tree"),
-                render();
-        }
-        function navigateTo(e) {
-            (currentPath = e), (searchQuery = ""), (document.getElementById("search").value = "");
-            let t = "";
-            for (const n of e) (t += (t ? "/" : "") + n), expandedFolders.add(t);
-            render();
-        }
-        function renderBreadcrumb() {
-            const t = document.getElementById("breadcrumb");
-            let e = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
-            currentPath.forEach((t, n) => {
-                const s = n === currentPath.length - 1,
-                    o = JSON.stringify(currentPath.slice(0, n + 1));
-                (e += `<span class="breadcrumb-separator">/</span>`),
-                    (e += `<span class="breadcrumb-item${s ? " current" : ""}" data-path='${o}'>${escapeHtml(t)}</span>`);
-            }),
-                (t.innerHTML = e),
-                t.querySelectorAll(".breadcrumb-item:not(.current)").forEach((e) => {
-                    e.addEventListener("click", () => {
-                        navigateTo(JSON.parse(e.dataset.path));
-                    });
-                });
-        }
-        function renderTree() {
-            const e = document.getElementById("treeContent");
-            function t(e) {
-                let n = 0;
-                for (const s of e) s.type === "directory" && (n++, s.children && (n += t(s.children)));
-                return n;
-            }
-            function n(e, t = "", s = 0) {
-                let o = "";
-                const i = e.filter((e) => e.type === "directory");
-                for (const e of i) {
-                    const a = t ? `${t}/${e.name}` : e.name,
-                        r = a.split("/").filter(Boolean),
-                        c = expandedFolders.has(a),
-                        l = JSON.stringify(r) === JSON.stringify(currentPath),
-                        d = e.children?.some((e) => e.type === "directory");
-                    (o += `
-            <div class="tree-item${l ? " active" : ""}" data-path='${JSON.stringify(r)}' style="padding-left: ${s * 12 + 8}px">
-              <span class="tree-toggle${d ? (c ? " expanded" : "") : " empty"}" data-path="${a}">
-                ${icons.chevron}
-              </span>
-              ${icons.folder}
-              <span class="tree-item-name">${escapeHtml(e.name)}</span>
-            </div>
-          `),
-                        c && e.children && (o += `<div class="tree-children">${n(e.children, a, s + 1)}</div>`);
-                }
-                return o;
-            }
-            const o = currentPath.length === 0,
-                i = fileIndex.root.some((e) => e.type === "directory");
-            let s = `
-        <div class="tree-item${o ? " active" : ""}" data-path="[]" style="padding-left: 8px">
-          <span class="tree-toggle${i ? " expanded" : " empty"}" data-path="">
-            ${icons.chevron}
-          </span>
-          ${icons.folder}
-          <span class="tree-item-name">Root</span>
-        </div>
-      `;
-            (s += n(fileIndex.root)), (e.innerHTML = s);
-            const a = t(fileIndex.root) + 1,
-                r = e.parentElement.clientHeight - 32,
-                c = a * 28;
-            e.classList.toggle("needs-scroll", c > r);
-        }
-        function getFileIconType(e) {
-            return isPlaylistExtension(e) ? "playlist" : null;
-        }
-        function render() {
-            renderBreadcrumb(), currentView === "tree" && renderTree();
-            const n = document.getElementById("main");
-            
-            let e = [];
-            if (searchQuery) {
-                e = allFiles.filter(item => item.searchKey.includes(searchQuery)).slice(0, 100);
-            } else {
-                e = getCurrentItems();
-            }
-
-            if (e.length === 0) {
-                n.innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-            </svg>
-            <h2>${searchQuery ? "No results" : "Empty folder"}</h2>
-            <p>${searchQuery ? "Try different terms" : "No files here"}</p>
-          </div>
-        `;
-                return;
-            }
-            const s = currentView === "list" || currentView === "tree" ? "file-list" : "file-grid";
-            
-            let fileCount, folderCount;
-            if (searchQuery) {
-                 fileCount = e.filter(i => i.type === 'file').length;
-                 folderCount = e.filter(i => i.type === 'directory').length;
-            } else {
-                 fileCount = e.filter((e) => e.type === "file").length;
-                 folderCount = e.filter((e) => e.type === "directory").length;
-            }
-
-            let t = `
-        <div class="stats-bar">
-          <span class="stat">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
-            ${fileCount} files ${searchQuery && e.length >= 100 ? '(Showing top 100)' : ''}
-          </span>
-          <span class="stat">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
-            ${folderCount} folders
-          </span>
-        </div>
-        <div class="main-content">
-          <div class="${s}">
-      `;
-            for (const item of e) {
-                const s = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other",
-                    o = icons[s] || icons.other;
-                
-                let clickPath, fullDisplayPath, parentPathArr;
-                
-                if (searchQuery) {
-                    clickPath = item.fullPath;
-                    fullDisplayPath = item.fullPath;
-                    parentPathArr = item.navPath;
-                } else {
-                    fullDisplayPath = (currentPath.length ? currentPath.join("/") + "/" : "") + item.name;
-                    clickPath = fullDisplayPath;
-                    parentPathArr = [...currentPath, item.name];
-                }
-
-                if (item.type === "directory") {
-                    t += `
-            <div class="file-card directory" data-directory="true" data-path='${JSON.stringify(parentPathArr)}'>
-              <div class="file-icon folder">${icons.folder}</div>
-              <div class="file-info">
-                <span class="file-name">${escapeHtml(item.name)}</span>
-                <span class="file-meta">
-                    ${item.children?.length || 0} items
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ''}
-                </span>
-              </div>
-            </div>
-          `;
-                } else {
-                    let i = "";
-                    currentView === "grid" &&
-                        item.category === "image" &&
-                        (i = `<img class="file-thumbnail lazy" data-src="./${clickPath}" alt="" loading="lazy">`),
-                        (t += `
-            <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}">
-              ${i}
-              <div class="file-icon ${s}">${o}</div>
-              <div class="file-info">
-                <span class="file-name">${escapeHtml(item.name)}</span>
-                <span class="file-meta">
-                    ${item.sizeFormatted}
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ''}
-                </span>
-              </div>
-              ${currentView !== "grid" && !searchQuery ? `<span class="file-size">${item.sizeFormatted}</span>` : ""}
-            </div>
-          `);
-                }
-            }
-            (t += "</div></div>"),
-                (n.innerHTML = t),
-                document.querySelectorAll(".file-thumbnail.lazy").forEach((e) => {
-                    intersectionObserver.observe(e);
-                });
-        }
-        async function parsePlaylist(e, t) {
-            try {
-                const n = await fetch(t);
-                if (!n.ok) return [];
-                const s = await n.text(),
-                    o = e.substring(0, e.lastIndexOf("/") + 1),
-                    lines = s.split(/\r?\n/);
-                
-                const playlistItems = [];
-                let currentTitle = null;
-
-                for (let line of lines) {
-                    line = line.trim();
-                    if (!line) continue;
-                    
-                    if (line.startsWith("#EXTINF:")) {
-                        const commaIndex = line.indexOf(',');
-                        if (commaIndex !== -1) {
-                            currentTitle = line.substring(commaIndex + 1).trim();
-                        }
-                    } else if (!line.startsWith("#")) {
-                        const url = (line.startsWith("http://") || line.startsWith("https://")) ? line : o + line;
-                        const title = currentTitle || decodeURIComponent(url.split('/').pop());
-                        playlistItems.push({ url, title });
-                        currentTitle = null;
-                    }
-                }
-                return playlistItems;
-            } catch (e) {
-                return console.error("Error parsing playlist:", e), [];
-            }
-        }
-        function updatePlaylistUI() {
-            const e = document.getElementById("playlistBar"),
-                t = document.getElementById("playlistTrack"),
-                n = document.getElementById("playlistPrev"),
-                s = document.getElementById("playlistNext");
-            if (currentPlaylist.length > 0) {
-                e.classList.add("active");
-                const item = currentPlaylist[currentPlaylistIndex];
-                (t.textContent = `${currentPlaylistIndex + 1}/${currentPlaylist.length}: ${item.title}`),
-                    (n.disabled = currentPlaylistIndex <= 0),
-                    (s.disabled = currentPlaylistIndex >= currentPlaylist.length - 1);
-            } else e.classList.remove("active");
-        }
-        async function startPlaylistMode() {
-            if (!isPlaylistFile || !currentFilePath) return;
-            const e = `./${currentFilePath}`,
-                t = await parsePlaylist(e, e);
-            t.length > 0
-                ? ((currentPlaylist = t),
-                  (currentPlaylistIndex = 0),
-                  document.getElementById("playPlaylistBtn").classList.add("hidden"),
-                  updatePlaylistUI(),
-                  playPlaylistTrack(0))
-                : (document.getElementById("modalBody").innerHTML = `
-      <div class="preview-unavailable">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
-        </svg>
-        <h3>Empty or invalid playlist</h3>
-        <p>No playable items found in this playlist.</p>
+  <div class="main-layout">
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>Explorer</h2>
+        <button class="sidebar-toggle" onclick="collapseSidebar()" title="Collapse sidebar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z"/></svg>
+        </button>
       </div>
-    `);
-        }
-        function stopPlaylist() {
-            if (currentHls) {
-                currentHls.destroy();
-                currentHls = null;
-            }
-            if (streamTimeout) {
-                clearTimeout(streamTimeout);
-                streamTimeout = null;
-            }
-            (currentPlaylist = []),
-                (currentPlaylistIndex = 0),
-                document.getElementById("playlistBar").classList.remove("active"),
-                isPlaylistFile &&
-                    (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText());
-        }
-        async function showPlaylistAsText() {
-            const e = `./${currentFilePath}`;
-            try {
-                const t = await fetch(e);
-                if (t.ok) {
-                    const e = await t.text(),
-                        n = e
-                            .split("\n")
-                            .slice(0, 1e4),
-                        s = n.map((e) => `<span class="line">${escapeHtml(e)}</span>`).join("\n");
-                    document.getElementById("modalBody").innerHTML = `
-        <div class="preview-code line-numbers">
-          <pre>${s}</pre>
+      <div class="tree-container" id="treeContainer"></div>
+    </div>
+
+    <div class="resize-handle" id="resizeHandle"></div>
+
+    <div class="content-area">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div class="viewer" id="viewer">
+        <div class="welcome">
+          <svg width="64" height="64" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25Zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 00.25-.25V6h-2.75A1.75 1.75 0 019 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"/></svg>
+          <h2>Welcome to File Viewer</h2>
+          <p>Select a file from the sidebar to preview it, or use the search bar to find files.</p>
         </div>
-      `;
-                } else showUnavailable(document.getElementById("modalBody"), currentFileName, e);
-            } catch {
-                showUnavailable(document.getElementById("modalBody"), currentFileName, e);
-            }
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  let FILES = [];
+  let TREE = {};
+  let currentPath = null;
+  let expandedDirs = new Set();
+  let searchTimeout = null;
+
+  const BASE_URL = getBaseUrl();
+
+  function getBaseUrl() {
+    const path = window.location.pathname;
+    if (path.endsWith('/')) return path;
+    if (path.endsWith('.html')) return path.substring(0, path.lastIndexOf('/') + 1);
+    return path + '/';
+  }
+
+  async function init() {
+    try {
+      const res = await fetch(BASE_URL + 'file_index.json');
+      if (!res.ok) throw new Error('Could not load file index');
+      FILES = await res.json();
+      buildTree();
+      renderStats();
+      renderTree();
+      handleHashNavigation();
+      setupSearch();
+      setupResize();
+      window.addEventListener('hashchange', handleHashNavigation);
+    } catch (err) {
+      document.getElementById('viewer').innerHTML =
+        `<div class="error-msg"><p>Error loading file index: ${err.message}</p><p>Make sure the GitHub Actions workflow has run successfully.</p></div>`;
+    }
+  }
+
+  function buildTree() {
+    TREE = { __files: [], __dirs: {} };
+    for (const file of FILES) {
+      const parts = file.path.split('/');
+      let node = TREE;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!node.__dirs[parts[i]]) {
+          node.__dirs[parts[i]] = { __files: [], __dirs: {} };
         }
+        node = node.__dirs[parts[i]];
+      }
+      node.__files.push(file);
+    }
+  }
 
-        async function resolveStreamUrl(url) {
-            const lowerUrl = url.toLowerCase();
-            const isM3u = lowerUrl.endsWith('.m3u') || lowerUrl.endsWith('.m3u8');
-            if (!isM3u) return url;
+  function renderStats() {
+    const totalSize = FILES.reduce((s, f) => s + f.size, 0);
+    const types = {};
+    FILES.forEach(f => { types[f.type] = (types[f.type] || 0) + 1; });
+    document.getElementById('topbarStats').innerHTML = `
+      <span><span class="stat-num">${FILES.length}</span> files</span>
+      <span><span class="stat-num">${formatSize(totalSize)}</span> total</span>
+    `;
+  }
 
-            try {
-                const response = await fetch(url);
-                const contentType = response.headers.get("content-type");
-                
-                if (response.ok && (lowerUrl.endsWith('.m3u') || (contentType && (contentType.includes('mpegurl') || contentType.includes('text'))))) {
-                    const text = await response.text();
-                    if (text.includes("#EXTM3U")) {
-                        const lines = text.split('\n');
-                        for(let line of lines) {
-                            line = line.trim();
-                            if(line && !line.startsWith('#')) {
-                                const resolved = new URL(line, url).href;
-                                return resolveStreamUrl(resolved);
-                            }
-                        }
-                    }
-                }
-            } catch (e) {
-            }
-            return url;
+  function renderTree(filter = '') {
+    const container = document.getElementById('treeContainer');
+    const filterLower = filter.toLowerCase();
+    let html = '';
+
+    if (filter) {
+      const matches = FILES.filter(f =>
+        f.path.toLowerCase().includes(filterLower) || f.name.toLowerCase().includes(filterLower)
+      );
+      matches.sort((a, b) => {
+        const aIdx = a.name.toLowerCase().indexOf(filterLower);
+        const bIdx = b.name.toLowerCase().indexOf(filterLower);
+        if (aIdx !== bIdx) return aIdx - bIdx;
+        return a.path.localeCompare(b.path);
+      });
+      for (const file of matches.slice(0, 200)) {
+        html += renderFileItem(file, 0, true);
+      }
+      if (matches.length > 200) {
+        html += `<div style="padding: 8px 16px; color: var(--text-muted); font-size: 0.82rem;">...and ${matches.length - 200} more</div>`;
+      }
+      if (matches.length === 0) {
+        html += `<div style="padding: 16px; color: var(--text-muted); text-align: center;">No files found</div>`;
+      }
+    } else {
+      html = renderTreeNode(TREE, '', 0);
+    }
+
+    container.innerHTML = html;
+  }
+
+  function renderTreeNode(node, parentPath, depth) {
+    let html = '';
+    const dirNames = Object.keys(node.__dirs).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const files = [...node.__files].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+    for (const dirName of dirNames) {
+      const dirPath = parentPath ? parentPath + '/' + dirName : dirName;
+      const isOpen = expandedDirs.has(dirPath);
+      html += `<div class="tree-item tree-dir" onclick="toggleDir('${escapeAttr(dirPath)}')" style="padding-left: ${16 + depth * 16}px;">
+        <span class="dir-chevron ${isOpen ? 'open' : ''}">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/></svg>
+        </span>
+        <span class="icon">${isOpen ? '📂' : '📁'}</span>
+        <span class="name">${escapeHtml(dirName)}</span>
+      </div>`;
+      if (isOpen) {
+        html += renderTreeNode(node.__dirs[dirName], dirPath, depth + 1);
+      }
+    }
+
+    for (const file of files) {
+      html += renderFileItem(file, depth);
+    }
+
+    return html;
+  }
+
+  function renderFileItem(file, depth, showPath = false) {
+    const isActive = currentPath === file.path;
+    const label = showPath ? `<span class="name" title="${escapeAttr(file.path)}">${escapeHtml(file.name)}<span style="color:var(--text-muted);margin-left:6px;font-size:0.78rem;">${escapeHtml(file.dir)}</span></span>` : `<span class="name">${escapeHtml(file.name)}</span>`;
+    const paddingLeft = showPath ? 16 : 16 + depth * 16 + 18;
+    return `<div class="tree-item tree-file type-${file.type} ${isActive ? 'active' : ''}" onclick="openFile('${escapeAttr(file.path)}')" style="padding-left: ${paddingLeft}px;" title="${escapeAttr(file.path)}">
+      <span class="icon">${getFileIcon(file)}</span>
+      ${label}
+    </div>`;
+  }
+
+  function getFileIcon(file) {
+    const icons = {
+      image: '🖼️', audio: '🎵', video: '🎬', pdf: '📕',
+      font: '🔤', binary: '📦', text: '📄'
+    };
+    return icons[file.type] || '📄';
+  }
+
+  window.toggleDir = function(dirPath) {
+    if (expandedDirs.has(dirPath)) {
+      expandedDirs.delete(dirPath);
+    } else {
+      expandedDirs.add(dirPath);
+    }
+    renderTree(document.getElementById('searchInput').value);
+  };
+
+  window.openFile = function(filePath) {
+    currentPath = filePath;
+    location.hash = encodeURIComponent(filePath);
+  };
+
+  window.navigateDir = function(dirPath) {
+    if (dirPath) {
+      const parts = dirPath.split('/');
+      let accumulated = '';
+      for (const part of parts) {
+        accumulated = accumulated ? accumulated + '/' + part : part;
+        expandedDirs.add(accumulated);
+      }
+    }
+    currentPath = null;
+    showDirectory(dirPath);
+    renderTree(document.getElementById('searchInput').value);
+  };
+
+  function handleHashNavigation() {
+    const hash = decodeURIComponent(location.hash.slice(1));
+    if (!hash) {
+      showWelcome();
+      return;
+    }
+
+    const file = FILES.find(f => f.path === hash);
+    if (file) {
+      currentPath = file.path;
+      const parts = file.dir.split('/').filter(Boolean);
+      let accumulated = '';
+      for (const part of parts) {
+        accumulated = accumulated ? accumulated + '/' + part : part;
+        expandedDirs.add(accumulated);
+      }
+      renderTree(document.getElementById('searchInput').value);
+      showFile(file);
+      closeMobileSidebar();
+    } else {
+      showDirectory(hash);
+    }
+  }
+
+  function showWelcome() {
+    renderBreadcrumb('');
+    document.getElementById('viewer').innerHTML = `
+      <div class="welcome">
+        <svg width="64" height="64" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25Zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 00.25-.25V6h-2.75A1.75 1.75 0 019 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"/></svg>
+        <h2>Welcome to File Viewer</h2>
+        <p>Select a file from the sidebar to preview it, or use the search bar to find files.</p>
+      </div>`;
+  }
+
+  function showDirectory(dirPath) {
+    renderBreadcrumb(dirPath);
+    let node = TREE;
+    if (dirPath) {
+      const parts = dirPath.split('/');
+      for (const part of parts) {
+        if (node.__dirs[part]) {
+          node = node.__dirs[part];
+        } else {
+          document.getElementById('viewer').innerHTML =
+            `<div class="error-msg">Directory not found: ${escapeHtml(dirPath)}</div>`;
+          return;
         }
+      }
+    }
 
-        function skipToNext() {
-            console.log("Stream invalid or timeout. Skipping...");
-            if (streamTimeout) {
-                clearTimeout(streamTimeout);
-                streamTimeout = null;
-            }
-            if (currentPlaylistIndex < currentPlaylist.length - 1) {
-                playPlaylistTrack(currentPlaylistIndex + 1);
-            } else {
-                console.log("End of playlist reached.");
-                stopPlaylist();
-            }
+    const dirs = Object.keys(node.__dirs).sort();
+    const files = [...node.__files].sort((a, b) => a.name.localeCompare(b.name));
+
+    let html = '<div class="viewer-inner fade-in"><div class="dir-listing">';
+    html += `<div class="dir-listing-header"><span>${dirs.length} directories, ${files.length} files</span></div>`;
+
+    if (dirPath) {
+      const parentDir = dirPath.includes('/') ? dirPath.substring(0, dirPath.lastIndexOf('/')) : '';
+      html += `<div class="dir-listing-row is-dir" onclick="navigateDir('${escapeAttr(parentDir)}')">
+        <span class="row-icon">📁</span>
+        <span class="row-name">..</span>
+        <span class="row-size"></span>
+        <span class="row-type"></span>
+      </div>`;
+    }
+
+    for (const d of dirs) {
+      const fullDir = dirPath ? dirPath + '/' + d : d;
+      html += `<div class="dir-listing-row is-dir" onclick="navigateDir('${escapeAttr(fullDir)}')">
+        <span class="row-icon">📁</span>
+        <span class="row-name">${escapeHtml(d)}</span>
+        <span class="row-size"></span>
+        <span class="row-type">dir</span>
+      </div>`;
+    }
+
+    for (const f of files) {
+      html += `<div class="dir-listing-row" onclick="openFile('${escapeAttr(f.path)}')">
+        <span class="row-icon">${getFileIcon(f)}</span>
+        <span class="row-name">${escapeHtml(f.name)}</span>
+        <span class="row-size">${formatSize(f.size)}</span>
+        <span class="row-type">${escapeHtml(f.ext)}</span>
+      </div>`;
+    }
+
+    html += '</div></div>';
+    document.getElementById('viewer').innerHTML = html;
+  }
+
+  function showFile(file) {
+    renderBreadcrumb(file.path);
+
+    const fileUrl = BASE_URL + file.path;
+    const rawUrl = fileUrl;
+
+    let headerHtml = `<div class="file-header">
+      <div class="file-header-info">
+        <span class="file-icon">${getFileIcon(file)}</span>
+        <span class="file-name">${escapeHtml(file.name)}</span>
+        <span class="file-meta">${formatSize(file.size)}</span>
+      </div>
+      <div class="file-header-actions">
+        <a class="btn" href="${escapeAttr(rawUrl)}" target="_blank" download="${escapeAttr(file.name)}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 011 12.25v-2.5a.75.75 0 011.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-2.5a.75.75 0 011.5 0v2.5A1.75 1.75 0 0113.25 14zM7.25 7.689V2a.75.75 0 011.5 0v5.689l1.97-1.969a.749.749 0 111.06 1.06l-3.25 3.25a.749.749 0 01-1.06 0L4.22 6.78a.749.749 0 111.06-1.06l1.97 1.969z"/></svg>
+          Download
+        </a>
+        <a class="btn" href="${escapeAttr(rawUrl)}" target="_blank">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 010 1.5h-3.5a.25.25 0 00-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-3.5a.75.75 0 011.5 0v3.5A1.75 1.75 0 0112.25 14h-8.5A1.75 1.75 0 012 12.25v-8.5C2 2.784 2.784 2 3.75 2zm6.854-1h4.146a.25.25 0 01.25.25v4.146a.25.25 0 01-.427.177L13.03 4.03 9.28 7.78a.751.751 0 01-1.042-.018.751.751 0 01-.018-1.042l3.75-3.75-1.543-1.543A.25.25 0 0110.604 1z"/></svg>
+          Raw
+        </a>
+      </div>
+    </div>`;
+
+    const viewer = document.getElementById('viewer');
+
+    switch (file.type) {
+      case 'image':
+        viewer.innerHTML = `<div class="viewer-inner fade-in">${headerHtml}
+          <div class="media-viewer">
+            <img class="zoomable-img" src="${escapeAttr(rawUrl)}" alt="${escapeAttr(file.name)}" loading="lazy" onclick="zoomImage(this)" />
+          </div>
+        </div>`;
+        break;
+
+      case 'audio':
+        viewer.innerHTML = `<div class="viewer-inner fade-in">${headerHtml}
+          <div class="media-viewer">
+            <audio controls preload="metadata" style="width:100%;max-width:600px;">
+              <source src="${escapeAttr(rawUrl)}">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </div>`;
+        break;
+
+      case 'video':
+        viewer.innerHTML = `<div class="viewer-inner fade-in">${headerHtml}
+          <div class="media-viewer">
+            <video controls preload="metadata" style="max-width:100%;max-height:calc(100vh - 280px);">
+              <source src="${escapeAttr(rawUrl)}">
+              Your browser does not support the video element.
+            </video>
+          </div>
+        </div>`;
+        break;
+
+      case 'pdf':
+        viewer.innerHTML = `<div class="viewer-inner fade-in">${headerHtml}
+          <div class="media-viewer">
+            <iframe src="${escapeAttr(rawUrl)}" title="${escapeAttr(file.name)}"></iframe>
+          </div>
+        </div>`;
+        break;
+
+      case 'font':
+        showFontPreview(file, rawUrl, headerHtml);
+        break;
+
+      case 'binary':
+        viewer.innerHTML = `<div class="viewer-inner fade-in">${headerHtml}
+          <div class="binary-info">
+            <div class="binary-icon">📦</div>
+            <h3>Binary File</h3>
+            <p>This file cannot be previewed in the browser. Use the download button above to save it locally.</p>
+            <p style="font-size:0.82rem;color:var(--text-muted);">${escapeHtml(file.ext)} • ${formatSize(file.size)}</p>
+          </div>
+        </div>`;
+        break;
+
+      case 'text':
+      default:
+        showTextFile(file, rawUrl, headerHtml);
+        break;
+    }
+  }
+
+  async function showTextFile(file, rawUrl, headerHtml) {
+    const viewer = document.getElementById('viewer');
+    viewer.innerHTML = `<div class="viewer-inner fade-in">${headerHtml}
+      <div class="code-viewer"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+    </div>`;
+
+    try {
+      const res = await fetch(rawUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const lines = text.split('\n');
+
+      const MAX_INITIAL = 500;
+      const codeViewer = viewer.querySelector('.code-viewer');
+
+      let tableHtml = '<table class="code-table"><tbody>';
+      const renderCount = Math.min(lines.length, MAX_INITIAL);
+
+      for (let i = 0; i < renderCount; i++) {
+        tableHtml += `<tr id="L${i + 1}">
+          <td class="line-num" data-line="${i + 1}" onclick="highlightLine(${i + 1})">${i + 1}</td>
+          <td class="line-content">${escapeHtml(lines[i])}</td>
+        </tr>`;
+      }
+
+      tableHtml += '</tbody></table>';
+      codeViewer.innerHTML = tableHtml;
+
+      // Lazy load remaining lines
+      if (lines.length > MAX_INITIAL) {
+        const tbody = codeViewer.querySelector('tbody');
+        let loaded = MAX_INITIAL;
+        const CHUNK = 500;
+
+        const loadMore = () => {
+          const end = Math.min(loaded + CHUNK, lines.length);
+          let fragment = '';
+          for (let i = loaded; i < end; i++) {
+            fragment += `<tr id="L${i + 1}">
+              <td class="line-num" data-line="${i + 1}" onclick="highlightLine(${i + 1})">${i + 1}</td>
+              <td class="line-content">${escapeHtml(lines[i])}</td>
+            </tr>`;
+          }
+          tbody.insertAdjacentHTML('beforeend', fragment);
+          loaded = end;
+          if (loaded < lines.length) {
+            requestIdleCallback(loadMore);
+          }
+        };
+
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(loadMore);
+        } else {
+          setTimeout(loadMore, 100);
         }
+      }
+    } catch (err) {
+      viewer.querySelector('.code-viewer').innerHTML =
+        `<div class="error-msg">Error loading file: ${err.message}</div>`;
+    }
+  }
 
-        async function playPlaylistTrack(e) {
-            if (e < 0 || e >= currentPlaylist.length) return;
-            
-            if (currentHls) {
-                currentHls.destroy();
-                currentHls = null;
-            }
-            if (streamTimeout) {
-                clearTimeout(streamTimeout);
-            }
+  function showFontPreview(file, rawUrl, headerHtml) {
+    const viewer = document.getElementById('viewer');
+    const fontName = 'preview-font-' + Math.random().toString(36).slice(2);
+    const fontFace = new FontFace(fontName, `url(${rawUrl})`);
 
-            streamTimeout = setTimeout(() => {
-                skipToNext();
-            }, 5000);
+    viewer.innerHTML = `<div class="viewer-inner fade-in">${headerHtml}
+      <div class="font-preview">
+        <div class="loading"><div class="spinner"></div>Loading font...</div>
+      </div>
+    </div>`;
 
-            (currentPlaylistIndex = e), updatePlaylistUI();
-            
-            const item = currentPlaylist[currentPlaylistIndex];
-            const rawUrl = item.url;
-            const finalUrl = await resolveStreamUrl(rawUrl);
+    fontFace.load().then(loaded => {
+      document.fonts.add(loaded);
+      const pangram = 'The quick brown fox jumps over the lazy dog';
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+      const sizes = [12, 16, 20, 24, 32, 48];
 
-            const n = document.getElementById("modalBody");
-            const s = item.title;
-            const o = finalUrl.toLowerCase();
-            
-            const isSpecificVideo = o.match(/\.(mp4|webm|mkv|avi|mov|ts)$/) || o.includes("type=video");
-            
-            document.getElementById("modalTitle").textContent = s;
+      let html = `<div class="font-preview-sample" style="font-family: '${fontName}', sans-serif;">${pangram}</div>`;
+      html += `<div style="font-family:'${fontName}',sans-serif; font-size:1.5rem; color:var(--text-secondary); margin-bottom:24px; word-break:break-all;">${chars}</div>`;
+      html += '<div class="font-preview-sizes">';
+      for (const size of sizes) {
+        html += `<div class="font-size-row">
+          <span class="font-size-label">${size}px</span>
+          <span style="font-family: '${fontName}', sans-serif; font-size: ${size}px; line-height: 1.4;">${pangram}</span>
+        </div>`;
+      }
+      html += '</div>';
 
-            if (isSpecificVideo) {
-                n.innerHTML = `
-                  <div class="preview-media-container">
-                    <video id="videoPlayer" class="preview-video" controls autoplay playsinline muted crossOrigin="anonymous">
-                      Your browser does not support video playback.
-                    </video>
-                  </div>
-                `;
-                const video = document.getElementById("videoPlayer");
-                
-                // Volume persistence and Audio Normalization
-                video.volume = currentVolume;
-                video.onvolumechange = (e) => currentVolume = e.target.volume;
-                setupAudioNormalization(video);
+      viewer.querySelector('.font-preview').innerHTML = html;
+    }).catch(err => {
+      viewer.querySelector('.font-preview').innerHTML =
+        `<div class="error-msg">Could not load font: ${err.message}</div>`;
+    });
+  }
 
-                video.onloadeddata = () => {
-                    if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                };
-                video.onerror = () => skipToNext();
-                
-                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
-                    currentHls = new Hls();
-                    currentHls.loadSource(finalUrl);
-                    currentHls.attachMedia(video);
-                    currentHls.on(Hls.Events.FRAG_LOADED, function() {
-                        if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                    });
-                    currentHls.on(Hls.Events.ERROR, function(event, data) {
-                        if (data.fatal) skipToNext();
-                    });
-                } else {
-                    video.src = finalUrl;
-                }
-                
-                video.onended = () => {
-                    if (streamTimeout) clearTimeout(streamTimeout);
-                    if (currentPlaylistIndex < currentPlaylist.length - 1) playPlaylistTrack(currentPlaylistIndex + 1);
-                };
+  function renderBreadcrumb(filePath) {
+    const bc = document.getElementById('breadcrumb');
+    if (!filePath) {
+      bc.innerHTML = '<span class="breadcrumb-current">root</span>';
+      return;
+    }
 
-            } else {
-                n.innerHTML = `
-                  <div class="preview-audio-container">
-                    <div class="audio-icon">${icons.audio}</div>
-                    <div style="font-weight: 500; text-align: center;">${escapeHtml(s)}</div>
-                    <audio id="audioPlayer" class="preview-audio" controls autoplay crossOrigin="anonymous">
-                      Your browser does not support audio playback.
-                    </audio>
-                  </div>
-                `;
-                const audio = document.getElementById("audioPlayer");
-                
-                // Volume persistence and Audio Normalization
-                audio.volume = currentVolume;
-                audio.onvolumechange = (e) => currentVolume = e.target.volume;
-                setupAudioNormalization(audio);
+    const parts = filePath.split('/');
+    let html = `<span class="breadcrumb-item" onclick="navigateDir('')">root</span>`;
 
-                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
-                    currentHls = new Hls();
-                    currentHls.loadSource(finalUrl);
-                    currentHls.attachMedia(audio);
-                    currentHls.on(Hls.Events.FRAG_LOADED, function() {
-                        if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                    });
-                    currentHls.on(Hls.Events.ERROR, function(event, data) {
-                        if (data.fatal) skipToNext();
-                    });
-                } else {
-                    audio.src = finalUrl;
-                }
+    for (let i = 0; i < parts.length; i++) {
+      html += `<span class="breadcrumb-sep">/</span>`;
+      if (i === parts.length - 1) {
+        html += `<span class="breadcrumb-current">${escapeHtml(parts[i])}</span>`;
+      } else {
+        const dirPath = parts.slice(0, i + 1).join('/');
+        html += `<span class="breadcrumb-item" onclick="navigateDir('${escapeAttr(dirPath)}')">${escapeHtml(parts[i])}</span>`;
+      }
+    }
 
-                audio.onloadeddata = () => {
-                     if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                };
-                audio.onerror = () => skipToNext();
+    bc.innerHTML = html;
+  }
 
-                audio.onended = () => {
-                    if (streamTimeout) clearTimeout(streamTimeout);
-                    if (currentPlaylistIndex < currentPlaylist.length - 1) {
-                        playPlaylistTrack(currentPlaylistIndex + 1);
-                    }
-                };
-            }
-        }
+  window.highlightLine = function(num) {
+    document.querySelectorAll('.code-table tr.highlighted').forEach(el => el.classList.remove('highlighted'));
+    document.querySelectorAll('.code-table .line-num.highlighted-num').forEach(el => el.classList.remove('highlighted-num'));
+    const row = document.getElementById('L' + num);
+    if (row) {
+      row.classList.add('highlighted');
+      row.querySelector('.line-num').classList.add('highlighted-num');
+    }
+  };
 
-        async function openFile(e, t, n) {
-            const r = document.getElementById("modal"),
-                c = document.getElementById("modalTitle"),
-                s = document.getElementById("modalBody"),
-                i = document.getElementById("downloadBtn"),
-                l = document.getElementById("rawBtn"),
-                d = document.getElementById("playlistBar"),
-                a = document.getElementById("playPlaylistBtn");
-            (currentFilePath = e),
-                (currentFileName = n),
-                (isPlaylistFile = isPlaylistExtension(n)),
-                (c.textContent = n),
-                (i.href = `./${e}`),
-                (i.download = n),
-                (l.href = `./${e}`),
-                (s.innerHTML = '<div class="loading"><div class="spinner"></div></div>'),
-                (currentPlaylist = []),
-                (currentPlaylistIndex = 0),
-                d.classList.remove("active"),
-                isPlaylistFile ? a.classList.remove("hidden") : a.classList.add("hidden"),
-                r.classList.add("active");
-            const o = `./${e}`;
-            try {
-                switch (t) {
-                    case "image":
-                        s.innerHTML = `<img class="preview-image" src="${o}" alt="${escapeHtml(n)}">`;
-                        break;
-                    case "video":
-                        s.innerHTML = `
-              <div class="preview-media-container">
-                <video class="preview-video" controls autoplay controlsList="nodownload" crossOrigin="anonymous">
-                  <source src="${o}">
-                  Your browser does not support video playback.
-                </video>
-              </div>
-            `;
-                        // Apply volume and normalization to single files too
-                        const singleVideo = s.querySelector('video');
-                        if (singleVideo) {
-                            singleVideo.volume = currentVolume;
-                            singleVideo.onvolumechange = (e) => currentVolume = e.target.volume;
-                            setupAudioNormalization(singleVideo);
-                        }
-                        break;
-                    case "audio":
-                        s.innerHTML = `
-              <div class="preview-audio-container">
-                <div class="audio-icon">${icons.audio}</div>
-                <div style="font-weight: 500; text-align: center;">${escapeHtml(n)}</div>
-                <audio class="preview-audio" controls autoplay controlsList="nodownload" crossOrigin="anonymous">
-                  <source src="${o}">
-                  Your browser does not support audio playback.
-                </audio>
-              </div>
-            `;
-                        // Apply volume and normalization to single files too
-                        const singleAudio = s.querySelector('audio');
-                        if (singleAudio) {
-                            singleAudio.volume = currentVolume;
-                            singleAudio.onvolumechange = (e) => currentVolume = e.target.volume;
-                            setupAudioNormalization(singleAudio);
-                        }
-                        break;
-                    case "document":
-                        n.toLowerCase().endsWith(".pdf")
-                            ? (s.innerHTML = `<iframe class="preview-pdf" src="${o}"></iframe>`)
-                            : showUnavailable(s, n, o);
-                        break;
-                    case "code":
-                    case "markup":
-                    case "style":
-                    case "data":
-                    case "text":
-                    case "playlist":
-                        const e = await fetch(o);
-                        if (e.ok) {
-                            const t = await e.text(),
-                                n = t
-                                    .split("\n")
-                                    .slice(0, 1e4),
-                                o = n.map((e) => `<span class="line">${escapeHtml(e)}</span>`).join("\n");
-                            s.innerHTML = `
-                <div class="preview-code line-numbers">
-                  <pre>${o}</pre>
-                </div>
-              `;
-                        } else showUnavailable(s, n, o);
-                        break;
-                    case "font":
-                        const t = "PreviewFont" + Date.now(),
-                            i = new FontFace(t, `url(${o})`);
-                        await i.load(),
-                            document.fonts.add(i),
-                            (s.innerHTML = `
-              <div style="padding: 1.5rem; text-align: center; font-family: '${t}', sans-serif;">
-                <p style="font-size: 2rem; margin-bottom: 0.75rem;">The quick brown fox jumps over the lazy dog</p>
-                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
-                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">abcdefghijklmnopqrstuvwxyz</p>
-                <p style="font-size: 1.5rem;">0123456789!@#$%^&*()</p>
-              </div>
-            `);
-                        break;
-                    default:
-                        showUnavailable(s, n, o);
-                }
-            } catch (e) {
-                console.error(e), showUnavailable(s, n, o);
-            }
-        }
-        function showUnavailable(e, t, n) {
-            e.innerHTML = `
-        <div class="preview-unavailable">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
-          </svg>
-          <h3>Preview not available</h3>
-          <p>This file cannot be previewed.</p>
-          <a class="download-btn" href="${n}" download="${escapeHtml(t)}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-            </svg>
-            Download
-          </a>
-        </div>
-      `;
-        }
-        function closeModal() {
-            const e = document.getElementById("modal");
-            e.classList.remove("active");
-            
-            if (currentHls) {
-                currentHls.destroy();
-                currentHls = null;
-            }
-            if (streamTimeout) {
-                clearTimeout(streamTimeout);
-                streamTimeout = null;
-            }
+  window.zoomImage = function(img) {
+    const overlay = document.createElement('div');
+    overlay.className = 'img-zoomed';
+    overlay.onclick = () => overlay.remove();
+    const zoomed = document.createElement('img');
+    zoomed.src = img.src;
+    overlay.appendChild(zoomed);
+    document.body.appendChild(overlay);
+  };
 
-            const t = e.querySelector("video"),
-                n = e.querySelector("audio");
-            t && t.pause(),
-                n && n.pause(),
-                (currentPlaylist = []),
-                (currentPlaylistIndex = 0),
-                (currentFilePath = ""),
-                (currentFileName = ""),
-                (isPlaylistFile = !1),
-                document.getElementById("playlistBar").classList.remove("active"),
-                document.getElementById("playPlaylistBtn").classList.add("hidden");
-        }
-        function escapeHtml(e) {
-            const t = document.createElement("div");
-            return (t.textContent = e), t.innerHTML;
-        }
-        init();
-    </script>
+  function setupSearch() {
+    const input = document.getElementById('searchInput');
+    input.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        renderTree(input.value.trim());
+      }, 150);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        input.value = '';
+        renderTree('');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      }
+    });
+  }
+
+  function setupResize() {
+    const handle = document.getElementById('resizeHandle');
+    const sidebar = document.getElementById('sidebar');
+    let startX, startWidth;
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      startX = e.clientX;
+      startWidth = sidebar.offsetWidth;
+      handle.classList.add('active');
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+      const diff = e.clientX - startX;
+      const newWidth = Math.max(200, Math.min(600, startWidth + diff));
+      sidebar.style.width = newWidth + 'px';
+    }
+
+    function onMouseUp() {
+      handle.classList.remove('active');
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+  }
+
+  window.collapseSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.style.display = sidebar.style.display === 'none' ? '' : 'none';
+  };
+
+  window.toggleMobileSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('mobile-open');
+  };
+
+  function closeMobileSidebar() {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+  }
+
+  function formatSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  init();
+})();
+</script>
 </body>
 </html>

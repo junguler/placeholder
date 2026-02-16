@@ -1,8 +1,8 @@
-name: Deploy File Viewer
+name: Deploy File Viewer to Pages
 
 on:
   push:
-    branches: [main, master]
+    branches: ["main", "master"]
   workflow_dispatch:
 
 permissions:
@@ -15,21 +15,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+  deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
 
-      - name: Generate file index
+      - name: Generate File Index
         run: node generate_index.js
 
       - name: Setup Pages
@@ -38,7 +38,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment

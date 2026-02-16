@@ -3,455 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repository File Browser</title>
+    <title>RepoFlow | File Viewer</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <style>
         :root {
-            --bg: #0f172a; --bg-panel: #1e293b; --bg-card: #334155;
-            --text: #f8fafc; --text-muted: #94a3b8;
-            --accent: #3b82f6; --accent-hover: #2563eb; 
-            --border: #334155; --radius: 8px;
+            --bg: #0b0f1a; --sidebar-bg: #151b2b; --card-bg: #1e2538;
+            --text: #e2e8f0; --text-dim: #94a3b8; --accent: #3b82f6;
+            --border: #2d3748; --radius: 12px;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
         body { display: flex; height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; }
-        
+
         /* Sidebar & Search */
-        #sidebar { width: 320px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
-        #search-container { padding: 1rem; border-bottom: 1px solid var(--border); }
-        #search-input { width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
+        #sidebar { width: 320px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+        .search-box { padding: 1.5rem 1rem; border-bottom: 1px solid var(--border); }
+        #search-input { width: 100%; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: #fff; outline: none; }
         #search-input:focus { border-color: var(--accent); }
-        #tree-container { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+        #tree-root { flex-grow: 1; overflow-y: auto; padding: 1rem; font-size: 0.9rem; }
         
-        /* Tree Elements */
-        .tree-item { margin-top: 0.25rem; }
-        .folder-title { font-weight: 600; cursor: pointer; padding: 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 8px; user-select: none; }
-        .folder-title:hover { background: var(--bg-card); }
-        .folder-title::before { content: '📁'; font-size: 1.1em; }
-        .file-name { padding: 0.5rem 0.5rem 0.5rem 2rem; cursor: pointer; border-radius: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
-        .file-name:hover { background: var(--bg-card); color: var(--accent); }
-        .children { margin-left: 0.75rem; border-left: 1px solid var(--border); padding-left: 0.5rem; }
-        .collapsed { display: none; }
-        .hidden-by-search { display: none !important; }
+        /* Main Panel */
+        #main-panel { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #top-nav { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); }
+        #breadcrumbs { display: flex; gap: 0.5rem; align-items: center; font-weight: 500; }
+        .breadcrumb-part { cursor: pointer; color: var(--text-dim); transition: 0.2s; }
+        .breadcrumb-part:hover { color: var(--accent); }
 
-        /* Main Area */
-        #main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Header & Breadcrumbs */
-        #header { padding: 1rem 2rem; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-        #breadcrumbs { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; font-size: 1.1rem; font-weight: 500; }
-        .breadcrumb-item { cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
-        .breadcrumb-item:hover { color: var(--text); }
-        .breadcrumb-separator { color: var(--border); }
-        .breadcrumb-active { color: var(--text); pointer-events: none; }
-        
-        /* Toolbar (Buttons) */
-        .toolbar { display: flex; gap: 0.5rem; }
-        .btn { padding: 0.5rem 1rem; border-radius: var(--radius); border: none; background: var(--accent); color: white; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s; text-decoration: none; }
-        .btn:hover { background: var(--accent-hover); }
-        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: var(--hover); }
+        /* Content Areas */
+        #view-content { flex-grow: 1; overflow-y: auto; padding: 2rem; }
+        .grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1.5rem; }
+        .grid-item { background: var(--card-bg); border: 1px solid var(--border); padding: 1.5rem; border-radius: var(--radius); text-align: center; cursor: pointer; transition: 0.2s; }
+        .grid-item:hover { transform: translateY(-4px); border-color: var(--accent); background: #252d42; }
+        .grid-item .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .grid-item .name { font-size: 0.85rem; word-break: break-all; font-weight: 500; }
 
-        /* Content Area */
-        #content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
-        #preview-container { width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        /* Preview Components */
+        .preview-header { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; }
+        .btn { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-secondary { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); }
         
-        /* Folder Grid View */
-        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
-        .grid-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, border-color 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
-        .grid-card:hover { transform: translateY(-3px); border-color: var(--accent); background: var(--bg-card); }
-        .grid-card .icon { font-size: 2.5rem; }
-        .grid-card .name { font-weight: 500; word-break: break-all; font-size: 0.9rem; }
+        pre, .markdown-body { background: var(--card-bg); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); line-height: 1.6; }
+        video, img { max-width: 100%; border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* Playlist View */
+        .playlist-container { display: grid; grid-template-columns: 1fr 300px; gap: 1rem; }
+        .track-list { background: var(--card-bg); border-radius: var(--radius); overflow: hidden; }
+        .track-item { padding: 0.8rem; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 0.85rem; }
+        .track-item:hover { background: var(--accent); color: white; }
+        .track-item.active { background: var(--accent); font-weight: bold; }
 
-        /* Media & Text Previews */
-        img, video { max-width: 100%; border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.2); background: #000; }
-        audio { width: 100%; outline: none; }
-        pre { background: var(--bg-panel); padding: 1.5rem; border-radius: var(--radius); overflow-x: auto; white-space: pre-wrap; font-family: ui-monospace, monospace; border: 1px solid var(--border); font-size: 0.9rem; line-height: 1.5; color: #e2e8f0; }
-        
-        /* Playlist UI */
-        #playlist-ui { background: var(--bg-panel); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; display: none; margin-top: 1rem; }
-        .playlist-track { padding: 0.75rem 1rem; cursor: pointer; border-radius: 4px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
-        .playlist-track:last-child { border-bottom: none; }
-        .playlist-track:hover { background: var(--bg-card); }
-        .playlist-track.active { background: var(--bg-card); color: var(--accent); font-weight: bold; border-left: 4px solid var(--accent); }
+        /* Tree UI Classes */
+        .tree-folder { cursor: pointer; padding: 4px 8px; border-radius: 4px; display: block; }
+        .tree-folder:hover { background: var(--card-bg); }
+        .tree-file { cursor: pointer; padding: 4px 8px 4px 24px; color: var(--text-dim); border-radius: 4px; display: block; }
+        .tree-file:hover { color: var(--accent); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <div id="search-container">
-            <input type="text" id="search-input" placeholder="Search files...">
-        </div>
-        <div id="tree-container"></div>
+<div id="sidebar">
+    <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search repository...">
     </div>
-    
-    <div id="main">
-        <div id="header">
-            <div id="breadcrumbs"></div>
-            <div id="toolbar-container" class="toolbar"></div>
-        </div>
-        <div id="content-area">
-            <div id="preview-container"></div>
-            <div id="playlist-ui">
-                <h3 style="margin-bottom: 1rem;">Playlist Tracks</h3>
-                <div id="playlist-tracks"></div>
-            </div>
-        </div>
+    <div id="tree-root"></div>
+</div>
+
+<div id="main-panel">
+    <div id="top-nav">
+        <div id="breadcrumbs"></div>
+        <div id="nav-actions"></div>
     </div>
+    <div id="view-content"></div>
+</div>
 
-    <script>
-        const treeContainer = document.getElementById('tree-container');
-        const searchInput = document.getElementById('search-input');
-        const breadcrumbs = document.getElementById('breadcrumbs');
-        const toolbarContainer = document.getElementById('toolbar-container');
-        const previewContainer = document.getElementById('preview-container');
-        const playlistUI = document.getElementById('playlist-ui');
-        const playlistTracks = document.getElementById('playlist-tracks');
-        
-        let audioCtx, compressor;
-        let currentHls = null;
-        let rootData = { name: 'Repository Root', type: 'folder', children: [], path: '' };
+<script>
+    let repositoryTree = [];
+    let currentPath = [];
+    let audioCtx, compressor;
+    let currentHls = null;
 
-        // --- 1. Init & Load Tree ---
-        fetch('./tree.json')
-            .then(res => res.json())
-            .then(data => {
-                rootData.children = data;
-                treeContainer.appendChild(buildTree(rootData.children));
-                openFolder(rootData, [{ name: 'Repository Root', node: rootData }]);
-            })
-            .catch(err => {
-                treeContainer.innerHTML = '<p style="color:#ef4444; padding:1rem;">Error loading tree.json. Make sure the GitHub Action completed.</p>';
-            });
+    // --- initialization ---
+    fetch('tree.json').then(r => r.json()).then(data => {
+        repositoryTree = data;
+        renderTree(data, document.getElementById('tree-root'));
+        showFolderContents(data, 'Root');
+    });
 
-        // --- 2. Sidebar Tree & Search ---
-        function buildTree(nodes) {
-            const container = document.createElement('div');
-            nodes.forEach(node => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'tree-item';
-                wrapper.dataset.name = node.name.toLowerCase();
+    // --- Search Logic ---
+    document.getElementById('search-input').oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        document.querySelectorAll('.tree-node').forEach(node => {
+            const match = node.dataset.name.toLowerCase().includes(val);
+            node.classList.toggle('hidden', !match && val !== '');
+        });
+    };
 
-                if (node.type === 'folder') {
-                    const title = document.createElement('div');
-                    title.className = 'folder-title';
-                    title.innerText = node.name;
-                    
-                    const childrenWrap = document.createElement('div');
-                    childrenWrap.className = 'children collapsed';
-                    childrenWrap.appendChild(buildTree(node.children));
-                    
-                    title.onclick = () => {
-                        childrenWrap.classList.toggle('collapsed');
-                        openFolder(node);
-                    };
-                    
-                    wrapper.appendChild(title);
-                    wrapper.appendChild(childrenWrap);
-                } else {
-                    const file = document.createElement('div');
-                    file.className = 'file-name';
-                    file.innerText = '📄 ' + node.name;
-                    file.onclick = () => previewFile(node);
-                    wrapper.appendChild(file);
-                }
-                container.appendChild(wrapper);
-            });
-            return container;
-        }
-
-        searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const items = document.querySelectorAll('.tree-item');
+    // --- Navigation & UI Generators ---
+    function renderTree(nodes, container, level = 0) {
+        nodes.forEach(node => {
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            div.dataset.name = node.name;
             
-            if (!term) {
-                items.forEach(item => item.classList.remove('hidden-by-search'));
-                return;
-            }
-
-            items.forEach(item => {
-                const name = item.dataset.name;
-                const isMatch = name.includes(term);
+            if (node.type === 'folder') {
+                const title = document.createElement('span');
+                title.className = 'tree-folder';
+                title.innerHTML = `📁 ${node.name}`;
+                title.onclick = () => showFolderContents(node.children, node.name);
+                div.appendChild(title);
                 
-                if (isMatch) {
-                    item.classList.remove('hidden-by-search');
-                    // Expand parent folders to reveal the match
-                    let parent = item.parentElement.closest('.tree-item');
-                    while (parent) {
-                        parent.classList.remove('hidden-by-search');
-                        const childrenContainer = parent.querySelector('.children');
-                        if (childrenContainer) childrenContainer.classList.remove('collapsed');
-                        parent = parent.parentElement.closest('.tree-item');
-                    }
-                } else {
-                    item.classList.add('hidden-by-search');
-                }
-            });
+                const childContainer = document.createElement('div');
+                childContainer.style.marginLeft = '12px';
+                renderTree(node.children, childContainer, level + 1);
+                div.appendChild(childContainer);
+            } else {
+                const file = document.createElement('span');
+                file.className = 'tree-file';
+                file.innerHTML = `📄 ${node.name}`;
+                file.onclick = () => previewFile(node);
+                div.appendChild(file);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function showFolderContents(files, folderName) {
+        updateBreadcrumbs(folderName);
+        const container = document.getElementById('view-content');
+        container.innerHTML = '<div class="grid-view"></div>';
+        const grid = container.querySelector('.grid-view');
+
+        files.forEach(file => {
+            const card = document.createElement('div');
+            card.className = 'grid-item';
+            card.innerHTML = `
+                <div class="icon">${file.type === 'folder' ? '📂' : getFileEmoji(file.ext)}</div>
+                <div class="name">${file.name}</div>
+            `;
+            card.onclick = () => file.type === 'folder' ? showFolderContents(file.children, file.name) : previewFile(file);
+            grid.appendChild(card);
+        });
+    }
+
+    function updateBreadcrumbs(currentName) {
+        const bc = document.getElementById('breadcrumbs');
+        bc.innerHTML = `<span class="breadcrumb-part" onclick="location.reload()">Root</span> / ${currentName}`;
+    }
+
+    function getFileEmoji(ext) {
+        if (['.mp3', '.wav', '.flac'].includes(ext)) return '🎵';
+        if (['.mp4', '.mkv', '.webm'].includes(ext)) return '🎬';
+        if (['.m3u', '.m3u8'].includes(ext)) return '📻';
+        if (['.jpg', '.png', '.gif', '.svg'].includes(ext)) return '🖼️';
+        if (ext === '.md') return '📝';
+        return '📄';
+    }
+
+    // --- Preview Logic ---
+    async function previewFile(node) {
+        const container = document.getElementById('view-content');
+        const actions = document.getElementById('nav-actions');
+        container.innerHTML = '<p>Loading...</p>';
+        actions.innerHTML = `<a href="${node.path}" download class="btn btn-secondary">Download</a>`;
+
+        if (currentHls) currentHls.destroy();
+
+        const ext = node.ext;
+        const url = node.path;
+
+        if (['.jpg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
+            container.innerHTML = `<img src="${url}">`;
+        } 
+        else if (['.mp4', '.webm', '.ogg'].includes(ext)) {
+            renderPlayer(url, 'video');
+        }
+        else if (['.mp3', '.wav', '.flac'].includes(ext)) {
+            renderPlayer(url, 'audio');
+        }
+        else if (ext === '.m3u' || ext === '.m3u8') {
+            handlePlaylist(node);
+        }
+        else if (ext === '.md') {
+            const txt = await (await fetch(url)).text();
+            container.innerHTML = `<div class="markdown-body">${marked.parse(txt)}</div>`;
+        }
+        else {
+            const txt = await (await fetch(url)).text();
+            container.innerHTML = `<pre><code class="language-${ext.slice(1)}">${escapeHTML(txt)}</code></pre>`;
+            Prism.highlightAll();
+        }
+    }
+
+    // --- Media & HLS Engine ---
+    function renderPlayer(url, type) {
+        const container = document.getElementById('view-content');
+        container.innerHTML = '';
+        const el = document.createElement(type);
+        el.src = url;
+        el.controls = true;
+        el.volume = 0.5;
+        el.style.width = '100%';
+        container.appendChild(el);
+        setupAudioNormalization(el);
+    }
+
+    async function handlePlaylist(node) {
+        const container = document.getElementById('view-content');
+        const actions = document.getElementById('nav-actions');
+        
+        // Default View: Text
+        const content = await (await fetch(node.path)).text();
+        container.innerHTML = `
+            <div class="preview-header">
+                <h3>Playlist: ${node.name}</h3>
+                <button class="btn btn-primary" id="play-stream-btn">▶️ Play Stream</button>
+            </div>
+            <pre><code>${escapeHTML(content)}</code></pre>
+        `;
+
+        document.getElementById('play-stream-btn').onclick = () => {
+            if (node.ext === '.m3u8') startHls(node.path);
+            else parseM3U(content);
+        };
+    }
+
+    function startHls(url) {
+        const container = document.getElementById('view-content');
+        container.innerHTML = '<video id="video-player" controls style="width:100%"></video>';
+        const video = document.getElementById('video-player');
+        video.volume = 0.5;
+        
+        if (Hls.isSupported()) {
+            currentHls = new Hls();
+            currentHls.loadSource(url);
+            currentHls.attachMedia(video);
+            currentHls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+        } else {
+            video.src = url;
+        }
+        setupAudioNormalization(video);
+    }
+
+    function parseM3U(text) {
+        const lines = text.split('\n');
+        const tracks = [];
+        let currentTitle = "Unknown";
+        lines.forEach(line => {
+            if (line.startsWith('#EXTINF')) currentTitle = line.split(',')[1] || "Unknown";
+            else if (line.trim() && !line.startsWith('#')) tracks.push({ title: currentTitle, url: line.trim() });
         });
 
-        // --- 3. Navigation & Breadcrumbs ---
-        function updateBreadcrumbs(pathArray) {
-            breadcrumbs.innerHTML = '';
-            pathArray.forEach((crumb, index) => {
-                const el = document.createElement('span');
-                el.innerText = crumb.name;
-                
-                if (index === pathArray.length - 1) {
-                    el.className = 'breadcrumb-active';
-                } else {
-                    el.className = 'breadcrumb-item';
-                    el.onclick = () => crumb.node.type === 'folder' ? openFolder(crumb.node) : previewFile(crumb.node);
-                }
-                
-                breadcrumbs.appendChild(el);
-                
-                if (index < pathArray.length - 1) {
-                    const sep = document.createElement('span');
-                    sep.className = 'breadcrumb-separator';
-                    sep.innerText = '/';
-                    breadcrumbs.appendChild(sep);
-                }
-            });
-        }
+        const container = document.getElementById('view-content');
+        container.innerHTML = `
+            <div class="playlist-container">
+                <div id="media-host"></div>
+                <div class="track-list" id="tracks"></div>
+            </div>
+        `;
+        
+        const host = document.getElementById('media-host');
+        const player = document.createElement('audio');
+        player.controls = true; player.volume = 0.5; player.style.width = '100%';
+        host.appendChild(player);
 
-        function resolvePath(targetNode) {
-            // Helper to build the breadcrumb path by finding the node in rootData
-            let path = [];
-            function findNode(current, target, currentPath) {
-                if (current === target) { path = currentPath; return true; }
-                if (current.children) {
-                    for (let child of current.children) {
-                        if (findNode(child, target, [...currentPath, { name: child.name, node: child }])) return true;
-                    }
-                }
-                return false;
-            }
-            findNode(rootData, targetNode, [{ name: 'Repository Root', node: rootData }]);
-            return path;
-        }
-
-        // --- 4. Main Views: Folder Grid & File Preview ---
-        function clearMain() {
-            previewContainer.innerHTML = '';
-            toolbarContainer.innerHTML = '';
-            playlistUI.style.display = 'none';
-            if (currentHls) { currentHls.destroy(); currentHls = null; }
-        }
-
-        function openFolder(node) {
-            clearMain();
-            updateBreadcrumbs(resolvePath(node));
-
-            const grid = document.createElement('div');
-            grid.className = 'folder-grid';
-
-            node.children.forEach(child => {
-                const card = document.createElement('div');
-                card.className = 'grid-card';
-                const icon = child.type === 'folder' ? '📁' : '📄';
-                card.innerHTML = `<div class="icon">${icon}</div><div class="name">${child.name}</div>`;
-                card.onclick = () => child.type === 'folder' ? openFolder(child) : previewFile(child);
-                grid.appendChild(card);
-            });
-
-            previewContainer.appendChild(grid);
-        }
-
-        function previewFile(node) {
-            clearMain();
-            updateBreadcrumbs(resolvePath(node));
-            
-            const ext = node.ext;
-            const url = `./${node.path}`;
-            
-            // Setup Toolbar
-            const downloadBtn = document.createElement('a');
-            downloadBtn.href = url;
-            downloadBtn.download = node.name;
-            downloadBtn.className = 'btn btn-secondary';
-            downloadBtn.innerText = '⬇️ Download File';
-            toolbarContainer.appendChild(downloadBtn);
-
-            const images = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'];
-            const videos = ['.mp4', '.webm', '.ogg'];
-            const audios = ['.mp3', '.wav', '.flac', '.aac', '.m4a'];
-            const playlists = ['.m3u', '.m3u8'];
-
-            if (images.includes(ext)) {
-                previewContainer.innerHTML = `<img src="${url}" alt="${node.name}">`;
-            } 
-            else if (videos.includes(ext)) {
-                renderMedia(url, 'video');
-            } 
-            else if (audios.includes(ext)) {
-                renderMedia(url, 'audio');
-            } 
-            else if (playlists.includes(ext)) {
-                renderPlaylistAsText(url, ext);
-            }
-            else {
-                renderText(url);
-            }
-        }
-
-        // --- 5. Media & Text Rendering ---
-        function renderText(url) {
-            const pre = document.createElement('pre');
-            pre.innerHTML = `<span style="color:var(--text-muted)">Loading text content...</span>`;
-            previewContainer.appendChild(pre);
-
-            fetch(url)
-                .then(res => res.text())
-                .then(text => { pre.innerHTML = `<code>${escapeHTML(text)}</code>`; })
-                .catch(() => { pre.innerHTML = '<span style="color:#ef4444">Unable to preview this file type or file is too large.</span>'; });
-        }
-
-        function renderMedia(url, tag) {
-            const media = document.createElement(tag);
-            media.src = url;
-            media.controls = true;
-            media.volume = 0.5;
-            media.addEventListener('play', () => setupAudioNormalization(media), { once: true });
-            previewContainer.appendChild(media);
-        }
-
-        function renderPlaylistAsText(url, ext) {
-            // Add a Play Button to the toolbar
-            const playBtn = document.createElement('button');
-            playBtn.className = 'btn';
-            playBtn.innerText = `▶️ Play ${ext.toUpperCase()}`;
-            playBtn.onclick = () => {
-                previewContainer.innerHTML = ''; // Clear text
-                playBtn.style.display = 'none'; // Hide play button once started
-                if (ext === '.m3u8') renderHLS(url);
-                else parseAndRenderM3U(url);
+        const list = document.getElementById('tracks');
+        tracks.forEach((t, i) => {
+            const div = document.createElement('div');
+            div.className = 'track-item';
+            div.innerText = `${i+1}. ${t.title}`;
+            div.onclick = () => {
+                player.src = t.url;
+                player.play();
+                document.querySelectorAll('.track-item').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
             };
-            toolbarContainer.prepend(playBtn);
-            
-            // Render text by default
-            renderText(url);
-        }
+            list.appendChild(div);
+        });
+        setupAudioNormalization(player);
+    }
 
-        function renderHLS(url) {
-            const video = document.createElement('video');
-            video.controls = true;
-            video.volume = 0.5;
-            previewContainer.appendChild(video);
-
-            if (Hls.isSupported()) {
-                currentHls = new Hls();
-                currentHls.loadSource(url);
-                currentHls.attachMedia(video);
-                currentHls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = url;
-                video.play();
+    function setupAudioNormalization(mediaElement) {
+        mediaElement.onplay = () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                compressor = audioCtx.createDynamicsCompressor();
+                compressor.threshold.setValueAtTime(-24, audioCtx.currentTime);
+                compressor.knee.setValueAtTime(30, audioCtx.currentTime);
+                compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+                compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+                compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+                compressor.connect(audioCtx.destination);
             }
-            video.addEventListener('play', () => setupAudioNormalization(video), { once: true });
-        }
-
-        // --- 6. Web Audio API Normalization ---
-        function setupAudioNormalization(mediaElement) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             try {
-                if (!audioCtx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioCtx = new AudioContext();
-                    compressor = audioCtx.createDynamicsCompressor();
-                    compressor.threshold.setValueAtTime(-24, audioCtx.currentTime);
-                    compressor.knee.setValueAtTime(30, audioCtx.currentTime);
-                    compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
-                    compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
-                    compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
-                    compressor.connect(audioCtx.destination);
-                }
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                
-                if (!mediaElement._isNormalized) {
-                    const source = audioCtx.createMediaElementSource(mediaElement);
-                    source.connect(compressor);
-                    mediaElement._isNormalized = true;
-                }
-            } catch (e) {
-                console.warn("Audio normalization skipped (likely due to CORS restrictions).", e);
-            }
-        }
+                const source = audioCtx.createMediaElementSource(mediaElement);
+                source.connect(compressor);
+            } catch(e) {} // Avoid re-connecting error
+        };
+    }
 
-        // --- 7. M3U Parsing ---
-        async function parseAndRenderM3U(url) {
-            try {
-                const res = await fetch(url);
-                const text = await res.text();
-                const lines = text.split('\n');
-                
-                let tracks = [];
-                let currentTitle = "Unknown Track";
-
-                lines.forEach(line => {
-                    line = line.trim();
-                    if (!line) return;
-                    
-                    if (line.startsWith('#EXTINF')) {
-                        const parts = line.split(',');
-                        currentTitle = parts[1] ? parts[1].trim() : "Unknown Track";
-                    } else if (!line.startsWith('#')) {
-                        tracks.push({ title: currentTitle, url: line });
-                        currentTitle = "Unknown Track";
-                    }
-                });
-
-                if (tracks.length > 0) buildPlaylistUI(tracks);
-                else previewContainer.innerHTML = '<p>Playlist is empty or invalid.</p>';
-            } catch (e) {
-                previewContainer.innerHTML = '<p>Failed to load playlist stream.</p>';
-            }
-        }
-
-        function buildPlaylistUI(tracks) {
-            playlistUI.style.display = 'block';
-            playlistTracks.innerHTML = '';
-            
-            const audio = document.createElement('audio');
-            audio.controls = true;
-            audio.volume = 0.5;
-            audio.addEventListener('play', () => setupAudioNormalization(audio), { once: true });
-            previewContainer.appendChild(audio);
-
-            let currentIndex = 0;
-
-            const playTrack = (index) => {
-                document.querySelectorAll('.playlist-track').forEach(el => el.classList.remove('active'));
-                playlistTracks.children[index].classList.add('active');
-                
-                if (tracks[index].url.includes('.m3u8')) {
-                   renderHLS(tracks[index].url);
-                } else {
-                   audio.src = tracks[index].url;
-                   audio.play();
-                }
-            };
-
-            tracks.forEach((track, index) => {
-                const el = document.createElement('div');
-                el.className = 'playlist-track';
-                el.innerHTML = `<span>🎵</span> <span>${track.title}</span>`;
-                el.onclick = () => { currentIndex = index; playTrack(currentIndex); };
-                playlistTracks.appendChild(el);
-            });
-
-            audio.addEventListener('ended', () => {
-                if (currentIndex < tracks.length - 1) {
-                    currentIndex++;
-                    playTrack(currentIndex);
-                }
-            });
-
-            playTrack(0);
-        }
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
-    </script>
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t]));
+    }
+</script>
 </body>
 </html>

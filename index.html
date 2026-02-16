@@ -3,121 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repository Viewer</title>
+    <title>Repository File Browser</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
     <style>
         :root {
-            --bg: #0f172a; --bg-panel: #1e293b; --text: #f8fafc;
-            --accent: #3b82f6; --hover: #334155; --border: #334155;
+            --bg: #0f172a; --bg-panel: #1e293b; --bg-card: #334155;
+            --text: #f8fafc; --text-muted: #94a3b8;
+            --accent: #3b82f6; --accent-hover: #2563eb; 
+            --border: #334155; --radius: 8px;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { display: flex; height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; }
         
-        /* Sidebar (File Tree) */
-        #sidebar { width: 300px; background: var(--bg-panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 1rem; flex-shrink: 0; }
-        .folder-name { font-weight: bold; margin-top: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .folder-name::before { content: '📁'; }
-        .file-name { margin-left: 1.5rem; padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .file-name:hover { background: var(--hover); color: var(--accent); }
-        .children { margin-left: 0.5rem; border-left: 1px solid var(--border); padding-left: 0.5rem; }
+        /* Sidebar & Search */
+        #sidebar { width: 320px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+        #search-container { padding: 1rem; border-bottom: 1px solid var(--border); }
+        #search-input { width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
+        #search-input:focus { border-color: var(--accent); }
+        #tree-container { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+        
+        /* Tree Elements */
+        .tree-item { margin-top: 0.25rem; }
+        .folder-title { font-weight: 600; cursor: pointer; padding: 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 8px; user-select: none; }
+        .folder-title:hover { background: var(--bg-card); }
+        .folder-title::before { content: '📁'; font-size: 1.1em; }
+        .file-name { padding: 0.5rem 0.5rem 0.5rem 2rem; cursor: pointer; border-radius: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
+        .file-name:hover { background: var(--bg-card); color: var(--accent); }
+        .children { margin-left: 0.75rem; border-left: 1px solid var(--border); padding-left: 0.5rem; }
         .collapsed { display: none; }
+        .hidden-by-search { display: none !important; }
+
+        /* Main Area */
+        #main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Main Preview Area */
-        #main { flex-grow: 1; display: flex; flex-direction: column; padding: 2rem; overflow-y: auto; position: relative; }
-        #preview-container { width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+        /* Header & Breadcrumbs */
+        #header { padding: 1rem 2rem; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        #breadcrumbs { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; font-size: 1.1rem; font-weight: 500; }
+        .breadcrumb-item { cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
+        .breadcrumb-item:hover { color: var(--text); }
+        .breadcrumb-separator { color: var(--border); }
+        .breadcrumb-active { color: var(--text); pointer-events: none; }
         
-        /* Media Elements */
-        img, video { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); background: #000; }
-        audio { width: 100%; margin-top: 1rem; }
-        pre { background: var(--bg-panel); padding: 1rem; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border); }
+        /* Toolbar (Buttons) */
+        .toolbar { display: flex; gap: 0.5rem; }
+        .btn { padding: 0.5rem 1rem; border-radius: var(--radius); border: none; background: var(--accent); color: white; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s; text-decoration: none; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--hover); }
+
+        /* Content Area */
+        #content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        #preview-container { width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        /* Folder Grid View */
+        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+        .grid-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, border-color 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+        .grid-card:hover { transform: translateY(-3px); border-color: var(--accent); background: var(--bg-card); }
+        .grid-card .icon { font-size: 2.5rem; }
+        .grid-card .name { font-weight: 500; word-break: break-all; font-size: 0.9rem; }
+
+        /* Media & Text Previews */
+        img, video { max-width: 100%; border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.2); background: #000; }
+        audio { width: 100%; outline: none; }
+        pre { background: var(--bg-panel); padding: 1.5rem; border-radius: var(--radius); overflow-x: auto; white-space: pre-wrap; font-family: ui-monospace, monospace; border: 1px solid var(--border); font-size: 0.9rem; line-height: 1.5; color: #e2e8f0; }
         
         /* Playlist UI */
-        #playlist-ui { background: var(--bg-panel); border-radius: 8px; border: 1px solid var(--border); padding: 1rem; display: none; margin-top: 1rem; }
-        .playlist-track { padding: 0.5rem; cursor: pointer; border-radius: 4px; border-bottom: 1px solid var(--border); }
-        .playlist-track:hover { background: var(--hover); }
-        .playlist-track.active { color: var(--accent); font-weight: bold; }
-        
-        .loading { color: var(--accent); font-style: italic; }
+        #playlist-ui { background: var(--bg-panel); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; display: none; margin-top: 1rem; }
+        .playlist-track { padding: 0.75rem 1rem; cursor: pointer; border-radius: 4px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
+        .playlist-track:last-child { border-bottom: none; }
+        .playlist-track:hover { background: var(--bg-card); }
+        .playlist-track.active { background: var(--bg-card); color: var(--accent); font-weight: bold; border-left: 4px solid var(--accent); }
     </style>
 </head>
 <body>
 
-    <div id="sidebar"></div>
+    <div id="sidebar">
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="Search files...">
+        </div>
+        <div id="tree-container"></div>
+    </div>
+    
     <div id="main">
-        <h2 id="file-title" style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Select a file to preview</h2>
-        <div id="preview-container"></div>
-        
-        <div id="playlist-ui">
-            <h3>Playlist</h3>
-            <div id="playlist-tracks"></div>
+        <div id="header">
+            <div id="breadcrumbs"></div>
+            <div id="toolbar-container" class="toolbar"></div>
+        </div>
+        <div id="content-area">
+            <div id="preview-container"></div>
+            <div id="playlist-ui">
+                <h3 style="margin-bottom: 1rem;">Playlist Tracks</h3>
+                <div id="playlist-tracks"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        const sidebar = document.getElementById('sidebar');
+        const treeContainer = document.getElementById('tree-container');
+        const searchInput = document.getElementById('search-input');
+        const breadcrumbs = document.getElementById('breadcrumbs');
+        const toolbarContainer = document.getElementById('toolbar-container');
         const previewContainer = document.getElementById('preview-container');
-        const fileTitle = document.getElementById('file-title');
         const playlistUI = document.getElementById('playlist-ui');
         const playlistTracks = document.getElementById('playlist-tracks');
         
         let audioCtx, compressor;
         let currentHls = null;
+        let rootData = { name: 'Repository Root', type: 'folder', children: [], path: '' };
 
-        // --- 1. Load Tree ---
+        // --- 1. Init & Load Tree ---
         fetch('./tree.json')
             .then(res => res.json())
             .then(data => {
-                sidebar.appendChild(buildTree(data));
+                rootData.children = data;
+                treeContainer.appendChild(buildTree(rootData.children));
+                openFolder(rootData, [{ name: 'Repository Root', node: rootData }]);
             })
             .catch(err => {
-                sidebar.innerHTML = '<p style="color:red">Failed to load tree.json. Did the GitHub Action run?</p>';
+                treeContainer.innerHTML = '<p style="color:#ef4444; padding:1rem;">Error loading tree.json. Make sure the GitHub Action completed.</p>';
             });
 
+        // --- 2. Sidebar Tree & Search ---
         function buildTree(nodes) {
             const container = document.createElement('div');
             nodes.forEach(node => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'tree-item';
+                wrapper.dataset.name = node.name.toLowerCase();
+
                 if (node.type === 'folder') {
-                    const wrapper = document.createElement('div');
                     const title = document.createElement('div');
-                    title.className = 'folder-name';
+                    title.className = 'folder-title';
                     title.innerText = node.name;
                     
                     const childrenWrap = document.createElement('div');
                     childrenWrap.className = 'children collapsed';
                     childrenWrap.appendChild(buildTree(node.children));
                     
-                    title.onclick = () => childrenWrap.classList.toggle('collapsed');
+                    title.onclick = () => {
+                        childrenWrap.classList.toggle('collapsed');
+                        openFolder(node);
+                    };
                     
                     wrapper.appendChild(title);
                     wrapper.appendChild(childrenWrap);
-                    container.appendChild(wrapper);
                 } else {
                     const file = document.createElement('div');
                     file.className = 'file-name';
                     file.innerText = '📄 ' + node.name;
                     file.onclick = () => previewFile(node);
-                    container.appendChild(file);
+                    wrapper.appendChild(file);
                 }
+                container.appendChild(wrapper);
             });
             return container;
         }
 
-        // --- 2. Preview Logic ---
-        function previewFile(node) {
-            fileTitle.innerText = node.path;
-            previewContainer.innerHTML = '';
-            playlistUI.style.display = 'none';
-            if (currentHls) currentHls.destroy();
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('.tree-item');
+            
+            if (!term) {
+                items.forEach(item => item.classList.remove('hidden-by-search'));
+                return;
+            }
 
+            items.forEach(item => {
+                const name = item.dataset.name;
+                const isMatch = name.includes(term);
+                
+                if (isMatch) {
+                    item.classList.remove('hidden-by-search');
+                    // Expand parent folders to reveal the match
+                    let parent = item.parentElement.closest('.tree-item');
+                    while (parent) {
+                        parent.classList.remove('hidden-by-search');
+                        const childrenContainer = parent.querySelector('.children');
+                        if (childrenContainer) childrenContainer.classList.remove('collapsed');
+                        parent = parent.parentElement.closest('.tree-item');
+                    }
+                } else {
+                    item.classList.add('hidden-by-search');
+                }
+            });
+        });
+
+        // --- 3. Navigation & Breadcrumbs ---
+        function updateBreadcrumbs(pathArray) {
+            breadcrumbs.innerHTML = '';
+            pathArray.forEach((crumb, index) => {
+                const el = document.createElement('span');
+                el.innerText = crumb.name;
+                
+                if (index === pathArray.length - 1) {
+                    el.className = 'breadcrumb-active';
+                } else {
+                    el.className = 'breadcrumb-item';
+                    el.onclick = () => crumb.node.type === 'folder' ? openFolder(crumb.node) : previewFile(crumb.node);
+                }
+                
+                breadcrumbs.appendChild(el);
+                
+                if (index < pathArray.length - 1) {
+                    const sep = document.createElement('span');
+                    sep.className = 'breadcrumb-separator';
+                    sep.innerText = '/';
+                    breadcrumbs.appendChild(sep);
+                }
+            });
+        }
+
+        function resolvePath(targetNode) {
+            // Helper to build the breadcrumb path by finding the node in rootData
+            let path = [];
+            function findNode(current, target, currentPath) {
+                if (current === target) { path = currentPath; return true; }
+                if (current.children) {
+                    for (let child of current.children) {
+                        if (findNode(child, target, [...currentPath, { name: child.name, node: child }])) return true;
+                    }
+                }
+                return false;
+            }
+            findNode(rootData, targetNode, [{ name: 'Repository Root', node: rootData }]);
+            return path;
+        }
+
+        // --- 4. Main Views: Folder Grid & File Preview ---
+        function clearMain() {
+            previewContainer.innerHTML = '';
+            toolbarContainer.innerHTML = '';
+            playlistUI.style.display = 'none';
+            if (currentHls) { currentHls.destroy(); currentHls = null; }
+        }
+
+        function openFolder(node) {
+            clearMain();
+            updateBreadcrumbs(resolvePath(node));
+
+            const grid = document.createElement('div');
+            grid.className = 'folder-grid';
+
+            node.children.forEach(child => {
+                const card = document.createElement('div');
+                card.className = 'grid-card';
+                const icon = child.type === 'folder' ? '📁' : '📄';
+                card.innerHTML = `<div class="icon">${icon}</div><div class="name">${child.name}</div>`;
+                card.onclick = () => child.type === 'folder' ? openFolder(child) : previewFile(child);
+                grid.appendChild(card);
+            });
+
+            previewContainer.appendChild(grid);
+        }
+
+        function previewFile(node) {
+            clearMain();
+            updateBreadcrumbs(resolvePath(node));
+            
             const ext = node.ext;
             const url = `./${node.path}`;
+            
+            // Setup Toolbar
+            const downloadBtn = document.createElement('a');
+            downloadBtn.href = url;
+            downloadBtn.download = node.name;
+            downloadBtn.className = 'btn btn-secondary';
+            downloadBtn.innerText = '⬇️ Download File';
+            toolbarContainer.appendChild(downloadBtn);
 
-            const images = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];
+            const images = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'];
             const videos = ['.mp4', '.webm', '.ogg'];
-            const audios = ['.mp3', '.wav', '.flac'];
+            const audios = ['.mp3', '.wav', '.flac', '.aac', '.m4a'];
+            const playlists = ['.m3u', '.m3u8'];
 
             if (images.includes(ext)) {
-                previewContainer.innerHTML = `<img src="${url}" loading="lazy" alt="${node.name}">`;
+                previewContainer.innerHTML = `<img src="${url}" alt="${node.name}">`;
             } 
             else if (videos.includes(ext)) {
                 renderMedia(url, 'video');
@@ -125,57 +285,71 @@
             else if (audios.includes(ext)) {
                 renderMedia(url, 'audio');
             } 
-            else if (ext === '.m3u8') {
-                renderHLS(url);
-            }
-            else if (ext === '.m3u') {
-                parseAndRenderM3U(url);
+            else if (playlists.includes(ext)) {
+                renderPlaylistAsText(url, ext);
             }
             else {
-                // Fallback to text for anything else (source code, logs, etc.)
-                previewContainer.innerHTML = '<div class="loading">Loading text content...</div>';
-                fetch(url)
-                    .then(res => res.text())
-                    .then(text => {
-                        previewContainer.innerHTML = `<pre><code>${escapeHTML(text)}</code></pre>`;
-                    })
-                    .catch(() => {
-                        previewContainer.innerHTML = '<p>Unable to preview this file type.</p>';
-                    });
+                renderText(url);
             }
         }
 
-        // --- 3. Media Rendering & Audio Normalization ---
+        // --- 5. Media & Text Rendering ---
+        function renderText(url) {
+            const pre = document.createElement('pre');
+            pre.innerHTML = `<span style="color:var(--text-muted)">Loading text content...</span>`;
+            previewContainer.appendChild(pre);
+
+            fetch(url)
+                .then(res => res.text())
+                .then(text => { pre.innerHTML = `<code>${escapeHTML(text)}</code>`; })
+                .catch(() => { pre.innerHTML = '<span style="color:#ef4444">Unable to preview this file type or file is too large.</span>'; });
+        }
+
         function renderMedia(url, tag) {
             const media = document.createElement(tag);
             media.src = url;
             media.controls = true;
-            media.volume = 0.5; // Starts at 50%
-            media.style.width = '100%';
-            
+            media.volume = 0.5;
             media.addEventListener('play', () => setupAudioNormalization(media), { once: true });
             previewContainer.appendChild(media);
+        }
+
+        function renderPlaylistAsText(url, ext) {
+            // Add a Play Button to the toolbar
+            const playBtn = document.createElement('button');
+            playBtn.className = 'btn';
+            playBtn.innerText = `▶️ Play ${ext.toUpperCase()}`;
+            playBtn.onclick = () => {
+                previewContainer.innerHTML = ''; // Clear text
+                playBtn.style.display = 'none'; // Hide play button once started
+                if (ext === '.m3u8') renderHLS(url);
+                else parseAndRenderM3U(url);
+            };
+            toolbarContainer.prepend(playBtn);
+            
+            // Render text by default
+            renderText(url);
         }
 
         function renderHLS(url) {
             const video = document.createElement('video');
             video.controls = true;
             video.volume = 0.5;
-            video.style.width = '100%';
             previewContainer.appendChild(video);
 
             if (Hls.isSupported()) {
                 currentHls = new Hls();
                 currentHls.loadSource(url);
                 currentHls.attachMedia(video);
+                currentHls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Fallback for Safari
                 video.src = url;
+                video.play();
             }
             video.addEventListener('play', () => setupAudioNormalization(video), { once: true });
         }
 
-        // Applies DynamicsCompressor to normalize volume differences
+        // --- 6. Web Audio API Normalization ---
         function setupAudioNormalization(mediaElement) {
             try {
                 if (!audioCtx) {
@@ -191,18 +365,17 @@
                 }
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 
-                // Avoid reconnecting the same element twice
                 if (!mediaElement._isNormalized) {
                     const source = audioCtx.createMediaElementSource(mediaElement);
                     source.connect(compressor);
                     mediaElement._isNormalized = true;
                 }
             } catch (e) {
-                console.warn("Audio normalization skipped (often due to CORS on external streams).", e);
+                console.warn("Audio normalization skipped (likely due to CORS restrictions).", e);
             }
         }
 
-        // --- 4. M3U Playlist Parsing ---
+        // --- 7. M3U Parsing ---
         async function parseAndRenderM3U(url) {
             try {
                 const res = await fetch(url);
@@ -220,20 +393,15 @@
                         const parts = line.split(',');
                         currentTitle = parts[1] ? parts[1].trim() : "Unknown Track";
                     } else if (!line.startsWith('#')) {
-                        // It's a URL
                         tracks.push({ title: currentTitle, url: line });
-                        currentTitle = "Unknown Track"; // reset
+                        currentTitle = "Unknown Track";
                     }
                 });
 
-                if (tracks.length > 0) {
-                    buildPlaylistUI(tracks);
-                } else {
-                    previewContainer.innerHTML = '<p>Playlist is empty or invalid.</p>';
-                }
-
+                if (tracks.length > 0) buildPlaylistUI(tracks);
+                else previewContainer.innerHTML = '<p>Playlist is empty or invalid.</p>';
             } catch (e) {
-                previewContainer.innerHTML = '<p>Failed to load playlist.</p>';
+                previewContainer.innerHTML = '<p>Failed to load playlist stream.</p>';
             }
         }
 
@@ -241,8 +409,6 @@
             playlistUI.style.display = 'block';
             playlistTracks.innerHTML = '';
             
-            // Create a main audio element for the playlist
-            previewContainer.innerHTML = '';
             const audio = document.createElement('audio');
             audio.controls = true;
             audio.volume = 0.5;
@@ -255,9 +421,8 @@
                 document.querySelectorAll('.playlist-track').forEach(el => el.classList.remove('active'));
                 playlistTracks.children[index].classList.add('active');
                 
-                // Check if track is a stream (m3u8) inside the playlist
-                if (tracks[index].url.endsWith('.m3u8')) {
-                   renderHLS(tracks[index].url); // Note: this replaces the audio tag with video tag
+                if (tracks[index].url.includes('.m3u8')) {
+                   renderHLS(tracks[index].url);
                 } else {
                    audio.src = tracks[index].url;
                    audio.play();
@@ -267,12 +432,11 @@
             tracks.forEach((track, index) => {
                 const el = document.createElement('div');
                 el.className = 'playlist-track';
-                el.innerText = `${index + 1}. ${track.title}`;
+                el.innerHTML = `<span>🎵</span> <span>${track.title}</span>`;
                 el.onclick = () => { currentIndex = index; playTrack(currentIndex); };
                 playlistTracks.appendChild(el);
             });
 
-            // Auto-play next track
             audio.addEventListener('ended', () => {
                 if (currentIndex < tracks.length - 1) {
                     currentIndex++;

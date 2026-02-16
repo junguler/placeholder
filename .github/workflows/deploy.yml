@@ -1,8 +1,8 @@
-name: Deploy File Viewer to GitHub Pages
+name: Deploy File Viewer
 
 on:
   push:
-    branches: ["main"]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -22,26 +22,24 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@main
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@main
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Generate file index
         run: node generate_index.js
 
       - name: Setup Pages
-        uses: actions/configure-pages@main
+        uses: actions/configure-pages@v4
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@main
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: '_site'
+          path: "."
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@main
+        uses: actions/deploy-pages@v4

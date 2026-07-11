@@ -324,7 +324,11 @@
             currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
             normalizedElements = new WeakSet(),
-            compressor = null; 
+            compressor = null;
+        // How long to wait for a track to start loading before we assume it's
+        // dead/unreachable and skip to the next one. Raise this if you're on a
+        // slow connection and tracks are getting skipped before they finish buffering.
+        const STREAM_TIMEOUT_MS = 15000;
 
         const icons = {
             folder: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
@@ -893,7 +897,7 @@
             }
             streamTimeout = setTimeout(() => {
                 skipToNext();
-            }, 5000);
+            }, STREAM_TIMEOUT_MS);
 
             (currentPlaylistIndex = e), updatePlaylistUI();
 

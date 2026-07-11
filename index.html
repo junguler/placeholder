@@ -508,7 +508,10 @@
             n.addEventListener("input", (t) => {
                 clearTimeout(e),
                     (e = setTimeout(() => {
-                        (searchQuery = t.target.value.toLowerCase().trim()), (searchResultLimit = 100), render();
+                        (searchQuery = t.target.value.toLowerCase().trim()),
+                            (searchResultLimit = 100),
+                            render(),
+                            (document.getElementById("main").scrollTop = 0);
                     }, 150));
             }),
                 document.getElementById("logoHome").addEventListener("click", () => navigateTo([])),
@@ -532,9 +535,14 @@
                     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
                         const modalOpen = document.getElementById("modal").classList.contains("active");
                         const activeEl = document.activeElement;
+                        const isFormField = ["INPUT", "SELECT", "TEXTAREA"].includes(activeEl.tagName);
+                        if (modalOpen && !isFormField) {
+                            e.preventDefault();
+                            handleModalKeydown(e.key);
+                            return;
+                        }
                         const insideMain = activeEl.closest && activeEl.closest("#main");
                         const insideTree = activeEl.closest && activeEl.closest("#treeContent");
-                        const isFormField = ["INPUT", "SELECT", "TEXTAREA"].includes(activeEl.tagName);
                         if (!modalOpen && !insideMain && !insideTree && !isFormField) {
                             e.preventDefault();
                             const panel = document.getElementById("treePanel");
@@ -796,6 +804,7 @@
             let t = "";
             for (const n of e) (t += (t ? "/" : "") + n), expandedFolders.add(t);
             render();
+            document.getElementById("main").scrollTop = 0;
         }
         function renderBreadcrumb() {
             const t = document.getElementById("breadcrumb");
@@ -1417,6 +1426,31 @@
           </a>
         </div>
       `;
+        }
+        function handleModalKeydown(key) {
+            const modalBody = document.getElementById("modalBody");
+            switch (key) {
+                case "ArrowUp":
+                    modalBody.scrollBy({ top: -120, behavior: "smooth" });
+                    break;
+                case "ArrowDown":
+                    modalBody.scrollBy({ top: 120, behavior: "smooth" });
+                    break;
+                case "ArrowLeft":
+                    // If a playlist is actively playing, stop it and drop back
+                    // into the (now-static) preview rather than closing outright.
+                    currentPlaylist.length > 0 ? stopPlaylist() : closeModal();
+                    break;
+                case "ArrowRight": {
+                    if (isPlaylistFile && currentPlaylist.length === 0) {
+                        startPlaylistMode();
+                    } else {
+                        const media = modalBody.querySelector("audio, video");
+                        media && media.play().catch(() => {});
+                    }
+                    break;
+                }
+            }
         }
         function closeModal() {
             const e = document.getElementById("modal");

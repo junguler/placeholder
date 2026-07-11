@@ -221,23 +221,34 @@
         ::-webkit-scrollbar-track { background: 0 0; }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .search-input:focus-visible { outline-offset: 0; }
+        .file-card:focus-visible { outline-offset: -2px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .breadcrumb { overflow-x: auto; scrollbar-width: thin; flex-wrap: nowrap; }
+        .breadcrumb::-webkit-scrollbar { height: 4px; }
+        .sort-select { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); font-size: 0.75rem; padding: 0.25rem 0.375rem; }
+        .load-more-btn { display: block; margin: 0.75rem auto 0; padding: 0.375rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; font-size: 0.8rem; }
+        .load-more-btn:hover { border-color: var(--accent); }
+        .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
+        .modal-btn.copied { color: var(--success); border-color: var(--success); }
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-content">
-            <div class="logo" id="logoHome">
+            <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="Go to home folder">
                 <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M20 6h-8l-2-2H4c-1.1.0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1.0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
                 <span>File Viewer</span>
             </div>
-            <nav class="breadcrumb" id="breadcrumb"></nav>
+            <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb"></nav>
             <div class="header-actions">
                 <div class="search-container">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="currentcolor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" />
+                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" aria-label="Search files" />
                 </div>
                 <div class="settings-dropdown" id="settingsDropdown">
-                    <button class="settings-btn" id="settingsBtn" title="Settings">
+                    <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
                         <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94.0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24.0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47.0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24.0.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47.0.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98.0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
                     </button>
                     <div class="settings-menu" id="settingsMenu">
@@ -256,17 +267,29 @@
                             <div class="settings-row">
                                 <span class="settings-label" id="fontSizeLabel">14px</span>
                                 <div class="settings-control">
-                                    <button id="fontDecrease" title="Decrease font size">A-</button>
-                                    <button id="fontIncrease" title="Increase font size">A+</button>
+                                    <button id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
+                                    <button id="fontIncrease" title="Increase font size" aria-label="Increase font size">A+</button>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                            <div class="settings-section-title">Sort By</div>
+                            <div class="settings-row">
+                                <select class="sort-select" id="sortSelect" aria-label="Sort files by">
+                                    <option value="name-asc">Name (A-Z)</option>
+                                    <option value="name-desc">Name (Z-A)</option>
+                                    <option value="size-desc">Size (Largest)</option>
+                                    <option value="size-asc">Size (Smallest)</option>
+                                    <option value="type">Type</option>
+                                </select>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="view-toggle">
-                    <button class="view-btn" data-view="grid" title="Grid"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
-                    <button class="view-btn" data-view="list" title="List"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg></button>
-                    <button class="view-btn active" data-view="tree" title="Tree"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/></svg></button>
+                <div class="view-toggle" role="group" aria-label="View mode">
+                    <button class="view-btn" data-view="grid" title="Grid" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
+                    <button class="view-btn" data-view="list" title="List" aria-label="List view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg></button>
+                    <button class="view-btn active" data-view="tree" title="Tree" aria-label="Tree view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/></svg></button>
                 </div>
             </div>
         </div>
@@ -283,24 +306,25 @@
             </div>
         </main>
     </div>
-    <div class="modal-overlay" id="modal">
+    <div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal" id="modalContent">
             <div class="modal-header">
                 <span class="modal-title" id="modalTitle">File Preview</span>
                 <div class="modal-actions">
-                    <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg>Play</button>
-                    <a class="modal-btn" id="downloadBtn" title="Download" download><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg></a>
-                    <a class="modal-btn" id="rawBtn" title="Open raw" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 19H5V5h7V3H5c-1.11.0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1.0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>
-                    <button class="modal-btn" id="closeBtn" title="Close"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+                    <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist" aria-label="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg>Play</button>
+                    <button class="modal-btn" id="copyLinkBtn" title="Copy link" aria-label="Copy raw file link"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>
+                    <a class="modal-btn" id="downloadBtn" title="Download" aria-label="Download file" download><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg></a>
+                    <a class="modal-btn" id="rawBtn" title="Open raw" aria-label="Open raw file in new tab" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 19H5V5h7V3H5c-1.11.0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1.0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>
+                    <button class="modal-btn" id="closeBtn" title="Close" aria-label="Close preview"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                 </div>
             </div>
             <div class="playlist-bar" id="playlistBar">
                 <div class="playlist-controls">
-                    <button class="playlist-btn" id="playlistPrev" title="Previous track"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" /></svg>Prev</button>
-                    <button class="playlist-btn" id="playlistNext" title="Next track"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>Next</button>
+                    <button class="playlist-btn" id="playlistPrev" title="Previous track" aria-label="Previous track"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" /></svg>Prev</button>
+                    <button class="playlist-btn" id="playlistNext" title="Next track" aria-label="Next track"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>Next</button>
                 </div>
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span></div>
-                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist">Stop</button>
+                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist">Stop</button>
             </div>
             <div class="modal-body" id="modalBody"></div>
         </div>
@@ -321,6 +345,10 @@
             currentHls = null,
             streamTimeout = null,
             allFiles = [],
+            sortBy = "name-asc",
+            searchResultLimit = 100,
+            lastFocusedElement = null,
+            fetchCache = new Map(),
             currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
             normalizedElements = new WeakSet(),
@@ -358,6 +386,20 @@
                 document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px")),
                 updateThemeButtons(),
                 updateFontSizeLabel();
+            const v = localStorage.getItem("viewMode");
+            if (v === "grid" || v === "list" || v === "tree") {
+                currentView = v;
+                document.querySelectorAll(".view-btn").forEach((btn) => {
+                    btn.classList.toggle("active", btn.dataset.view === v);
+                });
+                document.getElementById("treePanel").classList.toggle("visible", v === "tree");
+            }
+            const so = localStorage.getItem("sortBy");
+            if (so) {
+                sortBy = so;
+                const sel = document.getElementById("sortSelect");
+                if (sel) sel.value = so;
+            }
         }
         function saveTheme(e) {
             e === "auto"
@@ -466,10 +508,13 @@
             n.addEventListener("input", (t) => {
                 clearTimeout(e),
                     (e = setTimeout(() => {
-                        (searchQuery = t.target.value.toLowerCase().trim()), render();
+                        (searchQuery = t.target.value.toLowerCase().trim()), (searchResultLimit = 100), render();
                     }, 150));
             }),
                 document.getElementById("logoHome").addEventListener("click", () => navigateTo([])),
+                document.getElementById("logoHome").addEventListener("keydown", (e) => {
+                    (e.key === "Enter" || e.key === " ") && (e.preventDefault(), navigateTo([]));
+                }),
                 document.querySelectorAll(".view-btn").forEach((e) => {
                     e.addEventListener("click", () => setView(e.dataset.view));
                 }),
@@ -478,6 +523,7 @@
                     e.target === e.currentTarget && closeModal();
                 }),
                 document.getElementById("modalContent").addEventListener("click", (e) => e.stopPropagation()),
+                document.getElementById("modal").addEventListener("keydown", trapModalFocus),
                 document.addEventListener("keydown", (e) => {
                     e.key === "Escape" && closeModal(),
                         e.key === "/" &&
@@ -485,20 +531,27 @@
                             (e.preventDefault(), document.getElementById("search").focus());
                 }),
                 document.getElementById("main").addEventListener("click", handleCardClick),
-                document.getElementById("treeContent").addEventListener("click", handleTreeClick);
+                document.getElementById("main").addEventListener("keydown", handleGridKeydown),
+                document.getElementById("treeContent").addEventListener("click", handleTreeClick),
+                document.getElementById("treeContent").addEventListener("keydown", handleTreeKeydown);
             const s = document.getElementById("settingsBtn"),
                 t = document.getElementById("settingsMenu");
             s.addEventListener("click", (e) => {
-                e.stopPropagation(), t.classList.toggle("active");
+                e.stopPropagation();
+                const isActive = t.classList.toggle("active");
+                s.setAttribute("aria-expanded", isActive ? "true" : "false");
             }),
                 document.addEventListener("click", (e) => {
-                    !e.target.closest(".settings-dropdown") && t.classList.remove("active");
+                    !e.target.closest(".settings-dropdown") &&
+                        (t.classList.remove("active"), s.setAttribute("aria-expanded", "false"));
                 }),
                 document.querySelectorAll(".theme-btn").forEach((e) => {
                     e.addEventListener("click", () => saveTheme(e.dataset.theme));
                 }),
                 document.getElementById("fontDecrease").addEventListener("click", () => changeFontSize(-1)),
                 document.getElementById("fontIncrease").addEventListener("click", () => changeFontSize(1)),
+                document.getElementById("sortSelect").addEventListener("change", (e) => setSortBy(e.target.value)),
+                document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink),
                 document
                     .getElementById("playlistPrev")
                     .addEventListener("click", () => playPlaylistTrack(currentPlaylistIndex - 1)),
@@ -508,12 +561,100 @@
                 document.getElementById("playlistStop").addEventListener("click", stopPlaylist),
                 document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
         }
+        function copyRawLink() {
+            const btn = document.getElementById("copyLinkBtn");
+            const url = new URL(`./${currentFilePath}`, window.location.href).href;
+            const done = () => {
+                btn.classList.add("copied");
+                setTimeout(() => btn.classList.remove("copied"), 1200);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
+            } else {
+                fallbackCopy(url, done);
+            }
+        }
+        function fallbackCopy(text, onDone) {
+            const ta = document.createElement("textarea");
+            (ta.value = text), (ta.style.position = "fixed"), (ta.style.opacity = "0"), document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand("copy");
+                onDone();
+            } catch (e) {
+                console.warn("Copy failed:", e);
+            }
+            document.body.removeChild(ta);
+        }
+        function handleGridKeydown(e) {
+            const card = e.target.closest(".file-card");
+            if (!card) return;
+            const cards = Array.from(document.querySelectorAll("#main .file-card"));
+            const idx = cards.indexOf(card);
+            const cols = getGridColumnCount();
+            let nextIdx = null;
+            switch (e.key) {
+                case "Enter":
+                case " ":
+                    e.preventDefault();
+                    card.click();
+                    return;
+                case "ArrowRight":
+                    nextIdx = idx + 1;
+                    break;
+                case "ArrowLeft":
+                    nextIdx = idx - 1;
+                    break;
+                case "ArrowDown":
+                    nextIdx = idx + cols;
+                    break;
+                case "ArrowUp":
+                    nextIdx = idx - cols;
+                    break;
+                case "Home":
+                    nextIdx = 0;
+                    break;
+                case "End":
+                    nextIdx = cards.length - 1;
+                    break;
+                default:
+                    return;
+            }
+            if (nextIdx !== null && nextIdx >= 0 && nextIdx < cards.length) {
+                e.preventDefault();
+                cards[nextIdx].focus();
+            }
+        }
+        function getGridColumnCount() {
+            if (currentView !== "grid") return 1;
+            const grid = document.querySelector("#main .file-grid");
+            if (!grid) return 1;
+            const style = getComputedStyle(grid);
+            const cols = style.gridTemplateColumns.split(" ").length;
+            return cols || 1;
+        }
+        function handleTreeKeydown(e) {
+            const item = e.target.closest(".tree-item, .tree-toggle");
+            if (!item) return;
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                item.click();
+            }
+        }
+        function safeJsonParse(str, fallback) {
+            try {
+                return JSON.parse(str);
+            } catch (e) {
+                console.warn("Failed to parse path data:", str, e);
+                return fallback;
+            }
+        }
         function handleCardClick(e) {
             const t = e.target.closest(".file-card");
             if (!t) return;
             if (t.dataset.directory) {
-                const e = JSON.parse(t.dataset.path);
-                navigateTo(e);
+                const path = safeJsonParse(t.dataset.path, null);
+                if (path) navigateTo(path);
             } else t.dataset.file && openFile(t.dataset.file, t.dataset.category, t.dataset.name);
         }
         function handleTreeClick(e) {
@@ -526,8 +667,8 @@
                 return;
             }
             if (n) {
-                const e = JSON.parse(n.dataset.path);
-                navigateTo(e);
+                const path = safeJsonParse(n.dataset.path, null);
+                if (path) navigateTo(path);
             }
         }
         function setupIntersectionObserver() {
@@ -560,11 +701,45 @@
 
         function setView(e) {
             (currentView = e),
+                localStorage.setItem("viewMode", e),
                 document.querySelectorAll(".view-btn").forEach((t) => {
                     t.classList.toggle("active", t.dataset.view === e);
                 }),
                 document.getElementById("treePanel").classList.toggle("visible", e === "tree"),
                 render();
+        }
+        function setSortBy(e) {
+            (sortBy = e), localStorage.setItem("sortBy", e), render();
+        }
+        function getItemSize(item) {
+            if (typeof item.size === "number") return item.size;
+            if (!item.sizeFormatted) return 0;
+            const m = /^([\d.]+)\s*(B|KB|MB|GB|TB)?/i.exec(item.sizeFormatted.trim());
+            if (!m) return 0;
+            const units = { B: 1, KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3, TB: 1024 ** 4 };
+            return parseFloat(m[1]) * (units[(m[2] || "B").toUpperCase()] || 1);
+        }
+        function sortItems(items) {
+            const sorted = [...items];
+            const dirs = { directory: 0, file: 1 };
+            sorted.sort((a, b) => {
+                // Folders always come before files, regardless of sort mode.
+                if (a.type !== b.type) return dirs[a.type] - dirs[b.type];
+                switch (sortBy) {
+                    case "name-desc":
+                        return b.name.localeCompare(a.name);
+                    case "size-desc":
+                        return getItemSize(b) - getItemSize(a);
+                    case "size-asc":
+                        return getItemSize(a) - getItemSize(b);
+                    case "type":
+                        return (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name);
+                    case "name-asc":
+                    default:
+                        return a.name.localeCompare(b.name);
+                }
+            });
+            return sorted;
         }
         function navigateTo(e) {
             (currentPath = e), (searchQuery = ""), (document.getElementById("search").value = "");
@@ -584,7 +759,8 @@
                 (t.innerHTML = e),
                 t.querySelectorAll(".breadcrumb-item:not(.current)").forEach((e) => {
                     e.addEventListener("click", () => {
-                        navigateTo(JSON.parse(e.dataset.path));
+                        const path = safeJsonParse(e.dataset.path, null);
+                        if (path) navigateTo(path);
                     });
                 });
         }
@@ -605,7 +781,7 @@
                         l = JSON.stringify(r) === JSON.stringify(currentPath),
                         d = e.children?.some((e) => e.type === "directory");
                     (o += `
-            <div class="tree-item${l ? " active" : ""}" data-path='${JSON.stringify(r)}' style="padding-left: ${s * 12 + 8}px">
+            <div class="tree-item${l ? " active" : ""}" data-path='${JSON.stringify(r)}' style="padding-left: ${s * 12 + 8}px" tabindex="0" role="treeitem" aria-label="Folder ${escapeHtml(e.name)}">
               <span class="tree-toggle${d ? (c ? " expanded" : "") : " empty"}" data-path="${a}">
                 ${icons.chevron}
               </span>
@@ -620,7 +796,7 @@
             const o = currentPath.length === 0,
                 i = fileIndex.root.some((e) => e.type === "directory");
             let s = `
-        <div class="tree-item${o ? " active" : ""}" data-path="[]" style="padding-left: 8px">
+        <div class="tree-item${o ? " active" : ""}" data-path="[]" style="padding-left: 8px" tabindex="0" role="treeitem" aria-label="Root folder">
           <span class="tree-toggle${i ? " expanded" : " empty"}" data-path="">
             ${icons.chevron}
           </span>
@@ -640,13 +816,15 @@
         function render() {
             renderBreadcrumb(), currentView === "tree" && renderTree();
             const n = document.getElementById("main");
-            
-            let e = [];
+
+            let all = [];
             if (searchQuery) {
-                e = allFiles.filter(item => item.searchKey.includes(searchQuery)).slice(0, 100);
+                all = allFiles.filter((item) => item.searchKey.includes(searchQuery));
             } else {
-                e = getCurrentItems();
+                all = getCurrentItems();
             }
+            all = sortItems(all);
+            const e = searchQuery ? all.slice(0, searchResultLimit) : all;
 
             if (e.length === 0) {
                 n.innerHTML = `
@@ -661,21 +839,15 @@
                 return;
             }
             const s = currentView === "list" || currentView === "tree" ? "file-list" : "file-grid";
-            
-            let fileCount, folderCount;
-            if (searchQuery) {
-                 fileCount = e.filter(i => i.type === 'file').length;
-                 folderCount = e.filter(i => i.type === 'directory').length;
-            } else {
-                 fileCount = e.filter((e) => e.type === "file").length;
-                 folderCount = e.filter((e) => e.type === "directory").length;
-            }
+
+            const fileCount = all.filter((i) => i.type === "file").length;
+            const folderCount = all.filter((i) => i.type === "directory").length;
 
             let t = `
         <div class="stats-bar">
           <span class="stat">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
-            ${fileCount} files ${searchQuery && e.length >= 100 ? '(Showing top 100)' : ''}
+            ${fileCount} files ${searchQuery && all.length > e.length ? `(showing ${e.length} of ${all.length})` : ""}
           </span>
           <span class="stat">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
@@ -683,14 +855,14 @@
           </span>
         </div>
         <div class="main-content">
-          <div class="${s}">
+          <div class="${s}" id="fileItems" role="grid">
       `;
             for (const item of e) {
                 const s = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other",
                     o = icons[s] || icons.other;
-                
+
                 let clickPath, fullDisplayPath, parentPathArr;
-                
+
                 if (searchQuery) {
                     clickPath = item.fullPath;
                     fullDisplayPath = item.fullPath;
@@ -703,13 +875,13 @@
 
                 if (item.type === "directory") {
                     t += `
-            <div class="file-card directory" data-directory="true" data-path='${JSON.stringify(parentPathArr)}'>
+            <div class="file-card directory" data-directory="true" data-path='${JSON.stringify(parentPathArr)}' tabindex="0" role="button" aria-label="Open folder ${escapeHtml(item.name)}">
               <div class="file-icon folder">${icons.folder}</div>
               <div class="file-info">
                 <span class="file-name">${escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${item.children?.length || 0} items
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ''}
+                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
                 </span>
               </div>
             </div>
@@ -720,14 +892,14 @@
                         item.category === "image" &&
                         (i = `<img class="file-thumbnail lazy" data-src="./${clickPath}" alt="" loading="lazy">`),
                         (t += `
-            <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}">
+            <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">
               ${i}
               <div class="file-icon ${s}">${o}</div>
               <div class="file-info">
                 <span class="file-name">${escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${item.sizeFormatted}
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ''}
+                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
                 </span>
               </div>
               ${currentView !== "grid" && !searchQuery ? `<span class="file-size">${item.sizeFormatted}</span>` : ""}
@@ -735,17 +907,23 @@
           `);
                 }
             }
-            (t += "</div></div>"),
+            (t += "</div>"),
+                searchQuery && all.length > e.length &&
+                    (t += `<button class="load-more-btn" id="loadMoreBtn">Show more (${all.length - e.length} remaining)</button>`),
+                (t += "</div>"),
                 (n.innerHTML = t),
                 document.querySelectorAll(".file-thumbnail.lazy").forEach((e) => {
                     intersectionObserver.observe(e);
                 });
+            const loadMoreBtn = document.getElementById("loadMoreBtn");
+            loadMoreBtn &&
+                loadMoreBtn.addEventListener("click", () => {
+                    (searchResultLimit += 100), render();
+                });
         }
         async function parsePlaylist(e, t) {
             try {
-                const n = await fetch(t);
-                if (!n.ok) return [];
-                const s = await n.text(),
+                const s = await fetchTextCached(t),
                     o = e.substring(0, e.lastIndexOf("/") + 1),
                     lines = s.split(/\r?\n/);
                 
@@ -827,28 +1005,47 @@
                 isPlaylistFile &&
                     (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText());
         }
+        async function fetchTextCached(url) {
+            if (fetchCache.has(url)) return fetchCache.get(url);
+            const response = await fetch(url);
+            if (!response.ok) {
+                const err = new Error(`HTTP ${response.status}`);
+                err.status = response.status;
+                throw err;
+            }
+            const text = await response.text();
+            fetchCache.set(url, text);
+            return text;
+        }
+        function renderTextPreview(container, text) {
+            const MAX_LINES = 1e4;
+            const allLines = text.split("\n");
+            const lines = allLines.slice(0, MAX_LINES);
+            const truncated = allLines.length > MAX_LINES;
+            const rendered = lines.map((e) => `<span class="line">${escapeHtml(e)}</span>`).join("\n");
+            container.innerHTML = `
+        ${truncated ? `<div class="truncation-notice">Showing first ${MAX_LINES.toLocaleString()} of ${allLines.length.toLocaleString()} lines — download the file to see the rest.</div>` : ""}
+        <div class="preview-code line-numbers">
+          <pre>${rendered}</pre>
+        </div>
+      `;
+        }
         async function showPlaylistAsText() {
             const e = `./${currentFilePath}`;
             try {
-                const t = await fetch(e);
-                if (t.ok) {
-                    const e = await t.text(),
-                        n = e
-                            .split("\n")
-                            .slice(0, 1e4),
-                        s = n.map((e) => `<span class="line">${escapeHtml(e)}</span>`).join("\n");
-                    document.getElementById("modalBody").innerHTML = `
-        <div class="preview-code line-numbers">
-          <pre>${s}</pre>
-        </div>
-      `;
-                } else showUnavailable(document.getElementById("modalBody"), currentFileName, e);
-            } catch {
-                showUnavailable(document.getElementById("modalBody"), currentFileName, e);
+                const text = await fetchTextCached(e);
+                renderTextPreview(document.getElementById("modalBody"), text);
+            } catch (err) {
+                showUnavailable(document.getElementById("modalBody"), currentFileName, e, err);
             }
         }
 
-        async function resolveStreamUrl(url) {
+        async function resolveStreamUrl(url, depth = 0) {
+            const MAX_REDIRECT_DEPTH = 5;
+            if (depth >= MAX_REDIRECT_DEPTH) {
+                console.warn("Playlist redirect chain too deep, using URL as-is:", url);
+                return url;
+            }
             const lowerUrl = url.toLowerCase();
             const isM3u = lowerUrl.endsWith('.m3u') || lowerUrl.endsWith('.m3u8');
             if (!isM3u) return url;
@@ -856,16 +1053,39 @@
             try {
                 const response = await fetch(url);
                 const contentType = response.headers.get("content-type");
-                
+
                 if (response.ok && (lowerUrl.endsWith('.m3u') || (contentType && (contentType.includes('mpegurl') || contentType.includes('text'))))) {
                     const text = await response.text();
                     if (text.includes("#EXTM3U")) {
-                        const lines = text.split('\n');
-                        for(let line of lines) {
-                            line = line.trim();
-                            if(line && !line.startsWith('#')) {
+                        const lines = text.split('\n').map((l) => l.trim());
+
+                        // HLS master playlists list multiple quality variants via
+                        // #EXT-X-STREAM-INF; pick the highest-bandwidth one instead
+                        // of whichever line happens to appear first.
+                        let bestUrl = null,
+                            bestBandwidth = -1;
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i];
+                            if (line.startsWith('#EXT-X-STREAM-INF')) {
+                                const bwMatch = /BANDWIDTH=(\d+)/i.exec(line);
+                                const bandwidth = bwMatch ? parseInt(bwMatch[1], 10) : 0;
+                                const variantLine = lines[i + 1];
+                                if (variantLine && !variantLine.startsWith('#') && bandwidth > bestBandwidth) {
+                                    (bestBandwidth = bandwidth), (bestUrl = variantLine);
+                                }
+                            }
+                        }
+                        if (bestUrl) {
+                            const resolved = new URL(bestUrl, url).href;
+                            return resolveStreamUrl(resolved, depth + 1);
+                        }
+
+                        // Otherwise this is a simple redirector list: take the
+                        // first playable entry.
+                        for (const line of lines) {
+                            if (line && !line.startsWith('#')) {
                                 const resolved = new URL(line, url).href;
-                                return resolveStreamUrl(resolved);
+                                return resolveStreamUrl(resolved, depth + 1);
                             }
                         }
                     }
@@ -1020,6 +1240,7 @@
         }
 
         async function openFile(e, t, n) {
+            lastFocusedElement = document.activeElement;
             const r = document.getElementById("modal"),
                 c = document.getElementById("modalTitle"),
                 s = document.getElementById("modalBody"),
@@ -1040,6 +1261,7 @@
                 d.classList.remove("active"),
                 isPlaylistFile ? a.classList.remove("hidden") : a.classList.add("hidden"),
                 r.classList.add("active");
+            requestAnimationFrame(() => document.getElementById("closeBtn").focus());
             const o = `./${e}`;
             try {
                 switch (t) {
@@ -1097,19 +1319,12 @@
                     case "style":
                     case "data":
                     case "text":
-                        const e = await fetch(o);
-                        if (e.ok) {
-                            const t = await e.text(),
-                                n = t
-                                    .split("\n")
-                                    .slice(0, 1e4),
-                                o = n.map((e) => `<span class="line">${escapeHtml(e)}</span>`).join("\n");
-                            s.innerHTML = `
-                <div class="preview-code line-numbers">
-                  <pre>${o}</pre>
-                </div>
-              `;
-                        } else showUnavailable(s, n, o);
+                        try {
+                            const text = await fetchTextCached(o);
+                            renderTextPreview(s, text);
+                        } catch (err) {
+                            showUnavailable(s, n, o, err);
+                        }
                         break;
                     case "font":
                         const t = "PreviewFont" + Date.now(),
@@ -1132,14 +1347,18 @@
                 console.error(e), showUnavailable(s, n, o);
             }
         }
-        function showUnavailable(e, t, n) {
+        function showUnavailable(e, t, n, err) {
+            let reason = "This file cannot be previewed.";
+            if (err && err.status === 404) reason = "This file could not be found (404).";
+            else if (err && err.status) reason = `The server returned an error (HTTP ${err.status}).`;
+            else if (err) reason = "This file couldn't be loaded — it may be blocked by CORS or a network issue.";
             e.innerHTML = `
         <div class="preview-unavailable">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
           </svg>
           <h3>Preview not available</h3>
-          <p>This file cannot be previewed.</p>
+          <p>${reason}</p>
           <a class="download-btn" href="${n}" download="${escapeHtml(t)}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
@@ -1173,6 +1392,27 @@
                 (isPlaylistFile = !1),
                 document.getElementById("playlistBar").classList.remove("active"),
                 document.getElementById("playPlaylistBtn").classList.add("hidden");
+            if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+                lastFocusedElement.focus();
+            }
+            lastFocusedElement = null;
+        }
+        function trapModalFocus(e) {
+            if (e.key !== "Tab") return;
+            const modal = document.getElementById("modalContent");
+            const focusable = modal.querySelectorAll(
+                'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+            );
+            if (focusable.length === 0) return;
+            const first = focusable[0],
+                last = focusable[focusable.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
         }
         function escapeHtml(e) {
             const t = document.createElement("div");

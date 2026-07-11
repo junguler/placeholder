@@ -529,6 +529,20 @@
                         e.key === "/" &&
                             document.activeElement.tagName !== "INPUT" &&
                             (e.preventDefault(), document.getElementById("search").focus());
+                    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+                        const modalOpen = document.getElementById("modal").classList.contains("active");
+                        const activeEl = document.activeElement;
+                        const insideMain = activeEl.closest && activeEl.closest("#main");
+                        const insideTree = activeEl.closest && activeEl.closest("#treeContent");
+                        const isFormField = ["INPUT", "SELECT", "TEXTAREA"].includes(activeEl.tagName);
+                        if (!modalOpen && !insideMain && !insideTree && !isFormField) {
+                            e.preventDefault();
+                            const panel = document.getElementById("treePanel");
+                            e.key === "ArrowLeft" && panel && panel.classList.contains("visible")
+                                ? focusTreePanel()
+                                : focusMainPanel();
+                        }
+                    }
                 }),
                 document.getElementById("main").addEventListener("click", handleCardClick),
                 document.getElementById("main").addEventListener("keydown", handleGridKeydown),
@@ -592,38 +606,56 @@
             const cards = Array.from(document.querySelectorAll("#main .file-card"));
             const idx = cards.indexOf(card);
             const cols = getGridColumnCount();
-            let nextIdx = null;
             switch (e.key) {
                 case "Enter":
                 case " ":
+                case "ArrowRight":
+                    // Right (or Enter) drills in: opens a file's preview, or steps
+                    // into a folder — same as clicking the card.
                     e.preventDefault();
                     card.click();
                     return;
-                case "ArrowRight":
-                    nextIdx = idx + 1;
-                    break;
                 case "ArrowLeft":
-                    nextIdx = idx - 1;
-                    break;
-                case "ArrowDown":
-                    nextIdx = idx + cols;
-                    break;
-                case "ArrowUp":
-                    nextIdx = idx - cols;
-                    break;
+                    e.preventDefault();
+                    focusTreePanel();
+                    return;
+                case "ArrowDown": {
+                    const nextIdx = idx + cols;
+                    if (nextIdx < cards.length) {
+                        e.preventDefault();
+                        cards[nextIdx].focus();
+                    }
+                    return;
+                }
+                case "ArrowUp": {
+                    const prevIdx = idx - cols;
+                    if (prevIdx >= 0) {
+                        e.preventDefault();
+                        cards[prevIdx].focus();
+                    }
+                    return;
+                }
                 case "Home":
-                    nextIdx = 0;
-                    break;
+                    e.preventDefault();
+                    cards[0]?.focus();
+                    return;
                 case "End":
-                    nextIdx = cards.length - 1;
-                    break;
-                default:
+                    e.preventDefault();
+                    cards[cards.length - 1]?.focus();
                     return;
             }
-            if (nextIdx !== null && nextIdx >= 0 && nextIdx < cards.length) {
-                e.preventDefault();
-                cards[nextIdx].focus();
-            }
+        }
+        function focusTreePanel() {
+            const panel = document.getElementById("treePanel");
+            if (!panel || !panel.classList.contains("visible")) return;
+            const active =
+                document.querySelector("#treeContent .tree-item.active") ||
+                document.querySelector("#treeContent .tree-item");
+            active && active.focus();
+        }
+        function focusMainPanel() {
+            const cards = document.querySelectorAll("#main .file-card");
+            cards.length > 0 && cards[0].focus();
         }
         function getGridColumnCount() {
             if (currentView !== "grid") return 1;
@@ -634,11 +666,29 @@
             return cols || 1;
         }
         function handleTreeKeydown(e) {
-            const item = e.target.closest(".tree-item, .tree-toggle");
-            if (!item) return;
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                item.click();
+            const treeItem = e.target.closest(".tree-item");
+            if (!treeItem) return;
+            switch (e.key) {
+                case "Enter":
+                case " ":
+                    e.preventDefault();
+                    treeItem.click();
+                    return;
+                case "ArrowRight":
+                    e.preventDefault();
+                    focusMainPanel();
+                    return;
+                case "ArrowDown":
+                case "ArrowUp": {
+                    const items = Array.from(document.querySelectorAll("#treeContent .tree-item"));
+                    const idx = items.indexOf(treeItem);
+                    const nextIdx = e.key === "ArrowDown" ? idx + 1 : idx - 1;
+                    if (nextIdx >= 0 && nextIdx < items.length) {
+                        e.preventDefault();
+                        items[nextIdx].focus();
+                    }
+                    return;
+                }
             }
         }
         function safeJsonParse(str, fallback) {

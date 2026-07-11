@@ -212,6 +212,9 @@
         .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
         .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+        .playlist-track.buffering::after { content: " \00b7 Buffering\2026"; color: var(--text-muted); font-weight: 400; animation: pulse 1s ease-in-out infinite; }
+        .preview-audio.buffering, .preview-video.buffering { opacity: 0.6; transition: opacity 0.15s ease; }
         @media (max-width: 768px) { .search-container { width: 150px; } .tree-panel { width: 180px; } .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); } }
         @media (max-width: 480px) { .tree-panel { display: none !important; } .search-container { width: 120px; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -320,6 +323,7 @@
             allFiles = [],
             currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
+            normalizedElements = new WeakSet(),
             compressor = null; 
 
         const icons = {
@@ -395,6 +399,10 @@
         
         // Initialize Web Audio API for Normalization
         function setupAudioNormalization(mediaElement) {
+            // A media element can only ever be connected to one MediaElementSourceNode.
+            // Since we now reuse the same <audio>/<video> element across playlist
+            // track changes, skip re-connecting if it's already wired up.
+            if (normalizedElements.has(mediaElement)) return;
             try {
                 // Ensure CORS is handled for Web Audio
                 mediaElement.crossOrigin = "anonymous";
@@ -420,6 +428,7 @@
                 // Note: creating a new source for a new element is standard
                 const source = audioCtx.createMediaElementSource(mediaElement);
                 source.connect(compressor);
+                normalizedElements.add(mediaElement);
             } catch (e) {
                 // Fails quietly if CORS blocks it or AudioContext not supported
                 console.warn("Audio Normalization setup failed:", e);
@@ -760,6 +769,12 @@
                 return console.error("Error parsing playlist:", e), [];
             }
         }
+        function setPlaylistBuffering(isBuffering) {
+            const t = document.getElementById("playlistTrack");
+            if (t) t.classList.toggle("buffering", isBuffering);
+            const p = document.querySelector(".preview-audio, .preview-video");
+            if (p) p.classList.toggle("buffering", isBuffering);
+        }
         function updatePlaylistUI() {
             const e = document.getElementById("playlistBar"),
                 t = document.getElementById("playlistTrack"),
@@ -872,114 +887,131 @@
 
         async function playPlaylistTrack(e) {
             if (e < 0 || e >= currentPlaylist.length) return;
-            
-            if (currentHls) {
-                currentHls.destroy();
-                currentHls = null;
-            }
+
             if (streamTimeout) {
                 clearTimeout(streamTimeout);
             }
-
             streamTimeout = setTimeout(() => {
                 skipToNext();
             }, 5000);
 
             (currentPlaylistIndex = e), updatePlaylistUI();
-            
-            const item = currentPlaylist[currentPlaylistIndex];
-            const rawUrl = item.url;
-            const finalUrl = await resolveStreamUrl(rawUrl);
 
-            const n = document.getElementById("modalBody");
+            const item = currentPlaylist[currentPlaylistIndex];
             const s = item.title;
-            const o = finalUrl.toLowerCase();
-            
-            const isSpecificVideo = o.match(/\.(mp4|webm|mkv|avi|mov|ts)$/) || o.includes("type=video");
-            
             document.getElementById("modalTitle").textContent = s;
 
+            const n = document.getElementById("modalBody");
+            // Show a buffering hint right away instead of a silent wait while the
+            // stream URL resolves — the still-visible player makes the track
+            // change feel instant rather than sluggish.
+            setPlaylistBuffering(true);
+
+            const rawUrl = item.url;
+            const finalUrl = await resolveStreamUrl(rawUrl);
+            const o = finalUrl.toLowerCase();
+
+            const isSpecificVideo = o.match(/\.(mp4|webm|mkv|avi|mov|ts)$/) || o.includes("type=video");
+
             if (isSpecificVideo) {
-                n.innerHTML = `
-                  <div class="preview-media-container">
-                    <video id="videoPlayer" class="preview-video" controls autoplay playsinline muted crossOrigin="anonymous">
-                      Your browser does not support video playback.
-                    </video>
-                  </div>
-                `;
-                const video = document.getElementById("videoPlayer");
-                
-                // Volume persistence and Audio Normalization
-                video.volume = currentVolume;
-                video.onvolumechange = (e) => currentVolume = e.target.volume;
-                setupAudioNormalization(video);
+                let video = n.querySelector("#videoPlayer");
+                if (!video) {
+                    if (currentHls) { currentHls.destroy(); currentHls = null; }
+                    n.innerHTML = `
+                      <div class="preview-media-container">
+                        <video id="videoPlayer" class="preview-video" controls autoplay playsinline muted crossOrigin="anonymous">
+                          Your browser does not support video playback.
+                        </video>
+                      </div>
+                    `;
+                    video = document.getElementById("videoPlayer");
+                    video.volume = currentVolume;
+                    video.onvolumechange = (e) => currentVolume = e.target.volume;
+                    setupAudioNormalization(video);
+                } else if (currentHls) {
+                    // Same element, but the previous track had its own HLS instance attached.
+                    currentHls.destroy();
+                    currentHls = null;
+                }
 
                 video.onloadeddata = () => {
-                    if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                    if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                    setPlaylistBuffering(false);
                 };
                 video.onerror = () => skipToNext();
-                
+                video.onended = () => {
+                    if (streamTimeout) clearTimeout(streamTimeout);
+                    if (currentPlaylistIndex < currentPlaylist.length - 1) playPlaylistTrack(currentPlaylistIndex + 1);
+                };
+
                 if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
                     currentHls = new Hls();
                     currentHls.loadSource(finalUrl);
                     currentHls.attachMedia(video);
                     currentHls.on(Hls.Events.FRAG_LOADED, function() {
-                        if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                        if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                        setPlaylistBuffering(false);
                     });
                     currentHls.on(Hls.Events.ERROR, function(event, data) {
                         if (data.fatal) skipToNext();
                     });
                 } else {
                     video.src = finalUrl;
+                    video.load();
+                    video.play().catch(() => {});
                 }
-                
-                video.onended = () => {
-                    if (streamTimeout) clearTimeout(streamTimeout);
-                    if (currentPlaylistIndex < currentPlaylist.length - 1) playPlaylistTrack(currentPlaylistIndex + 1);
-                };
 
             } else {
-                n.innerHTML = `
-                  <div class="preview-audio-container">
-                    <div class="audio-icon">${icons.audio}</div>
-                    <div style="font-weight: 500; text-align: center;">${escapeHtml(s)}</div>
-                    <audio id="audioPlayer" class="preview-audio" controls autoplay crossOrigin="anonymous">
-                      Your browser does not support audio playback.
-                    </audio>
-                  </div>
-                `;
-                const audio = document.getElementById("audioPlayer");
-                
-                // Volume persistence and Audio Normalization
-                audio.volume = currentVolume;
-                audio.onvolumechange = (e) => currentVolume = e.target.volume;
-                setupAudioNormalization(audio);
-
-                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
-                    currentHls = new Hls();
-                    currentHls.loadSource(finalUrl);
-                    currentHls.attachMedia(audio);
-                    currentHls.on(Hls.Events.FRAG_LOADED, function() {
-                        if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                    });
-                    currentHls.on(Hls.Events.ERROR, function(event, data) {
-                        if (data.fatal) skipToNext();
-                    });
+                let audio = n.querySelector("#audioPlayer");
+                if (!audio) {
+                    if (currentHls) { currentHls.destroy(); currentHls = null; }
+                    n.innerHTML = `
+                      <div class="preview-audio-container">
+                        <div class="audio-icon">${icons.audio}</div>
+                        <div class="playlist-now-playing" style="font-weight: 500; text-align: center;">${escapeHtml(s)}</div>
+                        <audio id="audioPlayer" class="preview-audio" controls autoplay crossOrigin="anonymous">
+                          Your browser does not support audio playback.
+                        </audio>
+                      </div>
+                    `;
+                    audio = document.getElementById("audioPlayer");
+                    audio.volume = currentVolume;
+                    audio.onvolumechange = (e) => currentVolume = e.target.volume;
+                    setupAudioNormalization(audio);
                 } else {
-                    audio.src = finalUrl;
+                    if (currentHls) { currentHls.destroy(); currentHls = null; }
+                    const titleEl = n.querySelector(".playlist-now-playing");
+                    if (titleEl) titleEl.textContent = s;
                 }
 
                 audio.onloadeddata = () => {
-                     if(streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                    if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                    setPlaylistBuffering(false);
                 };
                 audio.onerror = () => skipToNext();
-
                 audio.onended = () => {
                     if (streamTimeout) clearTimeout(streamTimeout);
                     if (currentPlaylistIndex < currentPlaylist.length - 1) {
                         playPlaylistTrack(currentPlaylistIndex + 1);
                     }
                 };
+
+                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
+                    currentHls = new Hls();
+                    currentHls.loadSource(finalUrl);
+                    currentHls.attachMedia(audio);
+                    currentHls.on(Hls.Events.FRAG_LOADED, function() {
+                        if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                        setPlaylistBuffering(false);
+                    });
+                    currentHls.on(Hls.Events.ERROR, function(event, data) {
+                        if (data.fatal) skipToNext();
+                    });
+                } else {
+                    audio.src = finalUrl;
+                    audio.load();
+                    audio.play().catch(() => {});
+                }
             }
         }
 
@@ -1002,7 +1034,7 @@
                 (currentPlaylist = []),
                 (currentPlaylistIndex = 0),
                 d.classList.remove("active"),
-                isPlaylistFile ? a.classList.remove("hidden") : a.classList.add("hidden"),
+                a.classList.add("hidden"),
                 r.classList.add("active");
             const o = `./${e}`;
             try {
@@ -1051,12 +1083,16 @@
                             ? (s.innerHTML = `<iframe class="preview-pdf" src="${o}"></iframe>`)
                             : showUnavailable(s, n, o);
                         break;
+                    case "playlist":
+                        // Start playing right away instead of waiting for a manual
+                        // "Play" click — opening the file is the trigger.
+                        await startPlaylistMode();
+                        break;
                     case "code":
                     case "markup":
                     case "style":
                     case "data":
                     case "text":
-                    case "playlist":
                         const e = await fetch(o);
                         if (e.ok) {
                             const t = await e.text(),

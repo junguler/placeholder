@@ -93,6 +93,13 @@
         .settings-section { padding: 0.5rem; }
         .settings-section-title { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.375rem; }
         .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.25rem 0; }
+        .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 999px; transition: 0.2s; }
+        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: 50%; transition: 0.2s; }
+        .switch input:checked + .switch-slider { background: var(--accent); border-color: var(--accent); }
+        .switch input:checked + .switch-slider::before { transform: translateX(16px); background: #fff; }
+        .switch input:focus-visible + .switch-slider { outline: 2px solid var(--accent); outline-offset: 2px; }
         .settings-label { font-size: 0.85rem; color: var(--text-secondary); }
         .settings-control { display: flex; gap: 0.25rem; }
         .settings-control button { padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); cursor: pointer; font-size: 0.75rem; }
@@ -213,8 +220,13 @@
         .audio-icon svg { width: 40px; height: 40px; }
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; height: 4.2em; line-height: 1.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
         .preview-audio { width: 100%; height: 40px; display: none; }
-        .player-bar { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; max-width: 480px; margin: 0.75rem auto 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.6rem 0.75rem; flex-wrap: nowrap; overflow-x: auto; }
-        .player-bar .playlist-btn { padding: 0.5rem; flex-shrink: 0; }
+        .preview-audio[controls] { display: block; }
+        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; width: 100%; max-width: 480px; margin: 0.75rem auto 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.6rem 0.75rem; }
+        .player-seek-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+        .player-seek { flex: 1; accent-color: var(--accent); cursor: pointer; height: 4px; }
+        .player-seek:disabled { opacity: 0.4; cursor: not-allowed; }
+        .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; flex-wrap: nowrap; overflow-x: auto; }
+        .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; }
         .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
         .player-play-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; border-radius: 50% !important; width: 2.35rem; height: 2.35rem; padding: 0 !important; }
         .player-play-btn:hover { background: var(--accent-hover) !important; border-color: var(--accent-hover) !important; }
@@ -330,6 +342,16 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                            <div class="settings-section-title">Media Player</div>
+                            <div class="settings-row">
+                                <span class="settings-label">Use native player</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="nativePlayerToggle" aria-label="Use native browser player controls instead of the custom player" />
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="view-toggle" role="group" aria-label="View mode">
@@ -406,7 +428,8 @@
             currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
             normalizedElements = new WeakSet(),
-            compressor = null;
+            compressor = null,
+            useNativePlayer = false;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
         // slow connection and tracks are getting skipped before they finish buffering.
@@ -461,6 +484,9 @@
                 const sel = document.getElementById("sortSelect");
                 if (sel) sel.value = so;
             }
+            useNativePlayer = localStorage.getItem("useNativePlayer") === "1";
+            const nativeToggle = document.getElementById("nativePlayerToggle");
+            if (nativeToggle) nativeToggle.checked = useNativePlayer;
         }
         function saveTheme(e) {
             e === "auto"
@@ -678,21 +704,38 @@
                 sec = Math.floor(seconds % 60);
             return `${m}:${sec.toString().padStart(2, "0")}`;
         }
+        // When "Use native player" is on, hand the element back to the browser's
+        // own controls instead of building/wiring our custom bar.
+        function mediaTagAttrs() {
+            return useNativePlayer ? "controls" : "";
+        }
+        function mediaControlsMarkup() {
+            return useNativePlayer ? "" : playerControlsHTML();
+        }
+        function maybeWireMediaControls(el) {
+            if (!useNativePlayer) wireMediaControls(el);
+        }
         // Builds the markup for our custom play/pause, prev/next, shuffle and
         // volume controls. Used for both single audio/video files and playlist
         // tracks so the native browser controls never need to be shown.
         function playerControlsHTML() {
             return `
         <div class="player-bar">
-          <span class="player-time" id="playerCurTime">0:00</span>
-          <button class="playlist-btn" id="playlistPrev" title="Previous track" aria-label="Previous track" disabled>${icons.prevCtl}</button>
-          <button class="playlist-btn player-play-btn" id="playPauseBtn" title="Play" aria-label="Play">${icons.playCtl}</button>
-          <button class="playlist-btn" id="playlistNext" title="Next track" aria-label="Next track" disabled>${icons.nextCtl}</button>
-          <button class="playlist-btn" id="playlistShuffle" title="Shuffle" aria-label="Toggle shuffle" aria-pressed="false" disabled>${icons.shuffleCtl}</button>
-          <span class="player-divider"></span>
-          <button class="playlist-btn" id="volDownBtn" title="Volume down" aria-label="Decrease volume">${icons.volDownCtl}</button>
-          <span class="player-vol" id="playerVolLabel">50%</span>
-          <button class="playlist-btn" id="volUpBtn" title="Volume up" aria-label="Increase volume">${icons.volUpCtl}</button>
+          <div class="player-seek-row">
+            <span class="player-time" id="playerCurTime">0:00</span>
+            <input type="range" class="player-seek" id="playerSeek" min="0" max="1000" value="0" step="1" aria-label="Seek" disabled />
+            <span class="player-time" id="playerDurTime">--:--</span>
+          </div>
+          <div class="player-controls-row">
+            <button class="playlist-btn" id="playlistPrev" title="Previous track" aria-label="Previous track" disabled>${icons.prevCtl}</button>
+            <button class="playlist-btn player-play-btn" id="playPauseBtn" title="Play" aria-label="Play">${icons.playCtl}</button>
+            <button class="playlist-btn" id="playlistNext" title="Next track" aria-label="Next track" disabled>${icons.nextCtl}</button>
+            <button class="playlist-btn" id="playlistShuffle" title="Shuffle" aria-label="Toggle shuffle" aria-pressed="false" disabled>${icons.shuffleCtl}</button>
+            <span class="player-divider"></span>
+            <button class="playlist-btn" id="volDownBtn" title="Volume down" aria-label="Decrease volume">${icons.volDownCtl}</button>
+            <span class="player-vol" id="playerVolLabel">50%</span>
+            <button class="playlist-btn" id="volUpBtn" title="Volume up" aria-label="Increase volume">${icons.volUpCtl}</button>
+          </div>
         </div>
       `;
         }
@@ -705,6 +748,8 @@
                 nextBtn = document.getElementById("playlistNext"),
                 shuffleBtn = document.getElementById("playlistShuffle"),
                 curTimeEl = document.getElementById("playerCurTime"),
+                durTimeEl = document.getElementById("playerDurTime"),
+                seek = document.getElementById("playerSeek"),
                 volDownBtn = document.getElementById("volDownBtn"),
                 volUpBtn = document.getElementById("volUpBtn"),
                 volLabel = document.getElementById("playerVolLabel");
@@ -727,8 +772,39 @@
             nextBtn.addEventListener("click", goToNextTrack);
             shuffleBtn.addEventListener("click", toggleShuffle);
 
+            let seeking = false;
+            function syncSeekMeta() {
+                const dur = mediaEl.duration;
+                if (isFinite(dur) && dur > 0) {
+                    seek.disabled = false;
+                    durTimeEl.textContent = formatTime(dur);
+                } else {
+                    seek.disabled = true;
+                    seek.value = 0;
+                    durTimeEl.textContent = "LIVE";
+                }
+            }
+            mediaEl.addEventListener("loadedmetadata", syncSeekMeta);
+            mediaEl.addEventListener("durationchange", syncSeekMeta);
+            syncSeekMeta();
+
             mediaEl.addEventListener("timeupdate", () => {
                 curTimeEl.textContent = formatTime(mediaEl.currentTime);
+                if (!seeking && isFinite(mediaEl.duration) && mediaEl.duration > 0) {
+                    seek.value = Math.round((mediaEl.currentTime / mediaEl.duration) * 1000);
+                }
+            });
+            seek.addEventListener("input", () => {
+                seeking = true;
+                if (isFinite(mediaEl.duration) && mediaEl.duration > 0) {
+                    curTimeEl.textContent = formatTime((seek.value / 1000) * mediaEl.duration);
+                }
+            });
+            seek.addEventListener("change", () => {
+                if (isFinite(mediaEl.duration) && mediaEl.duration > 0) {
+                    mediaEl.currentTime = (seek.value / 1000) * mediaEl.duration;
+                }
+                seeking = false;
             });
 
             const updateVolLabel = () => (volLabel.textContent = Math.round(mediaEl.volume * 100) + "%");
@@ -838,6 +914,9 @@
                 document.getElementById("fontDecrease").addEventListener("click", () => changeFontSize(-1)),
                 document.getElementById("fontIncrease").addEventListener("click", () => changeFontSize(1)),
                 document.getElementById("sortSelect").addEventListener("change", (e) => setSortBy(e.target.value)),
+                document.getElementById("nativePlayerToggle").addEventListener("change", (e) => {
+                    (useNativePlayer = e.target.checked), localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0");
+                }),
                 document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink),
                 document.getElementById("playlistStop").addEventListener("click", stopPlaylist),
                 document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
@@ -1613,17 +1692,17 @@
                     if (currentHls) { currentHls.destroy(); currentHls = null; }
                     n.innerHTML = `
                       <div class="preview-media-container">
-                        <video id="videoPlayer" class="preview-video" autoplay playsinline muted crossOrigin="anonymous">
+                        <video id="videoPlayer" class="preview-video" autoplay playsinline muted crossOrigin="anonymous" ${mediaTagAttrs()}>
                           Your browser does not support video playback.
                         </video>
-                        ${playerControlsHTML()}
+                        ${mediaControlsMarkup()}
                       </div>
                     `;
                     video = document.getElementById("videoPlayer");
                     video.volume = currentVolume;
                     video.onvolumechange = (e) => currentVolume = e.target.volume;
                     setupAudioNormalization(video);
-                    wireMediaControls(video);
+                    maybeWireMediaControls(video);
                 } else if (currentHls) {
                     // Same element, but the previous track had its own HLS instance attached.
                     currentHls.destroy();
@@ -1665,17 +1744,17 @@
                       <div class="preview-audio-container">
                         <div class="audio-icon">${icons.audio}</div>
                         <div class="playlist-now-playing">${escapeHtml(s)}</div>
-                        <audio id="audioPlayer" class="preview-audio" autoplay crossOrigin="anonymous">
+                        <audio id="audioPlayer" class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
                           Your browser does not support audio playback.
                         </audio>
-                        ${playerControlsHTML()}
+                        ${mediaControlsMarkup()}
                       </div>
                     `;
                     audio = document.getElementById("audioPlayer");
                     audio.volume = currentVolume;
                     audio.onvolumechange = (e) => currentVolume = e.target.volume;
                     setupAudioNormalization(audio);
-                    wireMediaControls(audio);
+                    maybeWireMediaControls(audio);
                 } else {
                     if (currentHls) { currentHls.destroy(); currentHls = null; }
                     const titleEl = n.querySelector(".playlist-now-playing");
@@ -1746,11 +1825,11 @@
                     case "video":
                         s.innerHTML = `
               <div class="preview-media-container">
-                <video class="preview-video" autoplay playsinline crossOrigin="anonymous">
+                <video class="preview-video" autoplay playsinline crossOrigin="anonymous" ${mediaTagAttrs()}>
                   <source src="${o}">
                   Your browser does not support video playback.
                 </video>
-                ${playerControlsHTML()}
+                ${mediaControlsMarkup()}
               </div>
             `;
                         // Apply volume and normalization to single files too
@@ -1759,7 +1838,7 @@
                             singleVideo.volume = currentVolume;
                             singleVideo.onvolumechange = (e) => currentVolume = e.target.volume;
                             setupAudioNormalization(singleVideo);
-                            wireMediaControls(singleVideo);
+                            maybeWireMediaControls(singleVideo);
                         }
                         break;
                     case "audio":
@@ -1767,11 +1846,11 @@
               <div class="preview-audio-container">
                 <div class="audio-icon">${icons.audio}</div>
                 <div class="playlist-now-playing">${escapeHtml(n)}</div>
-                <audio class="preview-audio" autoplay crossOrigin="anonymous">
+                <audio class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
                   <source src="${o}">
                   Your browser does not support audio playback.
                 </audio>
-                ${playerControlsHTML()}
+                ${mediaControlsMarkup()}
               </div>
             `;
                         // Apply volume and normalization to single files too
@@ -1780,7 +1859,7 @@
                             singleAudio.volume = currentVolume;
                             singleAudio.onvolumechange = (e) => currentVolume = e.target.volume;
                             setupAudioNormalization(singleAudio);
-                            wireMediaControls(singleAudio);
+                            maybeWireMediaControls(singleAudio);
                         }
                         break;
                     case "document":

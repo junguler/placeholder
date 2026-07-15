@@ -192,17 +192,18 @@
         .playlist-track { color: var(--text-primary); font-weight: 500; }
         .playlist-stop-btn { padding: 0.375rem 0.5rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
         .playlist-stop-btn:hover { opacity: 0.9; }
-        .goto-popover { display: none; position: absolute; top: 100%; left: 0.75rem; right: 0.75rem; margin-top: 0.35rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow); z-index: 30; flex-direction: column; max-height: 320px; overflow: hidden; }
-        .goto-popover.active { display: flex; }
-        .goto-search { margin: 0.5rem; padding: 0.45rem 0.6rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.8rem; }
-        .goto-search:focus { outline: none; border-color: var(--accent); }
-        .goto-list { overflow-y: auto; padding: 0 0.35rem 0.5rem; }
-        .goto-item { padding: 0.45rem 0.6rem; border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; display: flex; gap: 0.5rem; align-items: baseline; color: var(--text-primary); }
-        .goto-item:hover, .goto-item.highlighted { background: var(--bg-hover); }
-        .goto-item.current { color: var(--accent); font-weight: 500; }
-        .goto-index { color: var(--text-muted); flex-shrink: 0; min-width: 2ch; text-align: right; }
-        .goto-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .goto-empty { padding: 0.75rem; text-align: center; color: var(--text-secondary); font-size: 0.8rem; }
+        .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
+        .goto-input { width: 3.4rem; text-align: center; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
+        .goto-input::-webkit-outer-spin-button, .goto-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .goto-input:focus { outline: none; border-color: var(--accent); }
+        .goto-input:disabled { opacity: 0.4; cursor: not-allowed; }
+        .goto-stepper { display: flex; flex-direction: column; }
+        .goto-step-btn { width: 1.5rem; height: 1rem; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 0; line-height: 0; }
+        .goto-step-btn svg { width: 10px; height: 10px; }
+        .goto-step-btn:first-child { border-radius: var(--radius) var(--radius) 0 0; border-bottom: none; }
+        .goto-step-btn:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+        .goto-step-btn:hover:not(:disabled) { background: var(--bg-hover); }
+        .goto-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .modal-body { flex: 1; overflow: auto; background: var(--bg-primary); }
         .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; display: block; margin: auto; }
         .preview-media-container { width: 100%; max-width: 900px; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
@@ -364,14 +365,16 @@
             </div>
             <div class="playlist-bar" id="playlistBar">
                 <div class="playlist-controls">
-                    <button class="playlist-btn" id="playlistGoTo" title="Go to track" aria-label="Go to track" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zm15.01-3.13L21.9 16.7l-1.41 1.41-3.89-3.83 1.41-1.41zM17 8l4 4-4 4-1.41-1.41L18.17 12l-2.58-2.59L17 8z" /></svg><span>Go to</span></button>
+                    <div class="goto-quick" id="gotoQuick" title="Go to track">
+                        <input type="number" class="goto-input" id="gotoInput" min="1" step="1" inputmode="numeric" aria-label="Go to track number" />
+                        <div class="goto-stepper">
+                            <button type="button" class="goto-step-btn" id="gotoUpBtn" aria-label="Next track number" title="Hold to skip faster"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14l5-5 5 5z" /></svg></button>
+                            <button type="button" class="goto-step-btn" id="gotoDownBtn" aria-label="Previous track number" title="Hold to skip faster"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 10l5 5 5-5z" /></svg></button>
+                        </div>
+                    </div>
                 </div>
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span></div>
                 <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist">Stop</button>
-                <div class="goto-popover" id="gotoPopover">
-                    <input type="text" class="goto-search" id="gotoSearch" placeholder="Search tracks or enter a number..." autocomplete="off" />
-                    <div class="goto-list" id="gotoList"></div>
-                </div>
             </div>
             <div class="modal-body" id="modalBody"></div>
         </div>
@@ -685,7 +688,6 @@
           <button class="playlist-btn player-play-btn" id="playPauseBtn" title="Play" aria-label="Play">${icons.playCtl}</button>
           <button class="playlist-btn" id="playlistNext" title="Next track" aria-label="Next track" disabled>${icons.nextCtl}</button>
           <button class="playlist-btn" id="playlistShuffle" title="Shuffle" aria-label="Toggle shuffle" aria-pressed="false" disabled>${icons.shuffleCtl}</button>
-          <span class="player-time" id="playerDurTime">--:--</span>
           <span class="player-divider"></span>
           <button class="playlist-btn" id="volDownBtn" title="Volume down" aria-label="Decrease volume">${icons.volDownCtl}</button>
           <span class="player-vol" id="playerVolLabel">50%</span>
@@ -702,7 +704,6 @@
                 nextBtn = document.getElementById("playlistNext"),
                 shuffleBtn = document.getElementById("playlistShuffle"),
                 curTimeEl = document.getElementById("playerCurTime"),
-                durTimeEl = document.getElementById("playerDurTime"),
                 volDownBtn = document.getElementById("volDownBtn"),
                 volUpBtn = document.getElementById("volUpBtn"),
                 volLabel = document.getElementById("playerVolLabel");
@@ -728,9 +729,6 @@
             mediaEl.addEventListener("timeupdate", () => {
                 curTimeEl.textContent = formatTime(mediaEl.currentTime);
             });
-            const syncDuration = () => (durTimeEl.textContent = formatTime(mediaEl.duration));
-            mediaEl.addEventListener("loadedmetadata", syncDuration);
-            mediaEl.addEventListener("durationchange", syncDuration);
 
             const updateVolLabel = () => (volLabel.textContent = Math.round(mediaEl.volume * 100) + "%");
             volDownBtn.addEventListener("click", () => {
@@ -841,41 +839,8 @@
                 document.getElementById("sortSelect").addEventListener("change", (e) => setSortBy(e.target.value)),
                 document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink),
                 document.getElementById("playlistStop").addEventListener("click", stopPlaylist),
-                document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode),
-                document.getElementById("playlistGoTo").addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    toggleGotoPopover();
-                }),
-                document.getElementById("gotoSearch").addEventListener("input", () => renderGotoList()),
-                document.getElementById("gotoSearch").addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") {
-                        const first = document.querySelector("#gotoList .goto-item");
-                        if (first) first.click();
-                    } else if (e.key === "Escape") {
-                        closeGotoPopover();
-                    }
-                }),
-                document.getElementById("gotoList").addEventListener("click", (e) => {
-                    const item = e.target.closest(".goto-item");
-                    if (!item) return;
-                    const idx = parseInt(item.dataset.index, 10);
-                    if (!Number.isNaN(idx)) {
-                        if (isShuffle) recordShuffleJump(idx);
-                        playPlaylistTrack(idx);
-                    }
-                    closeGotoPopover();
-                }),
-                document.addEventListener("click", (e) => {
-                    const popover = document.getElementById("gotoPopover");
-                    if (
-                        popover &&
-                        popover.classList.contains("active") &&
-                        !e.target.closest(".goto-popover") &&
-                        !e.target.closest("#playlistGoTo")
-                    ) {
-                        closeGotoPopover();
-                    }
-                });
+                document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
+            setupGotoStepper();
         }
         function copyRawLink() {
             const btn = document.getElementById("copyLinkBtn");
@@ -1317,7 +1282,9 @@
                 n = document.getElementById("playlistPrev"),
                 s = document.getElementById("playlistNext"),
                 shuffleBtn = document.getElementById("playlistShuffle"),
-                gotoBtn = document.getElementById("playlistGoTo");
+                gotoInput = document.getElementById("gotoInput"),
+                gotoUpBtn = document.getElementById("gotoUpBtn"),
+                gotoDownBtn = document.getElementById("gotoDownBtn");
             if (currentPlaylist.length > 0) {
                 e.classList.add("active");
                 const item = currentPlaylist[currentPlaylistIndex];
@@ -1329,16 +1296,21 @@
                         (n.disabled = currentPlaylistIndex <= 0), (s.disabled = currentPlaylistIndex >= currentPlaylist.length - 1);
                     }
                 }
-                gotoBtn.disabled = currentPlaylist.length <= 1;
+                if (gotoInput) {
+                    gotoInput.max = currentPlaylist.length;
+                    gotoInput.disabled = currentPlaylist.length <= 1;
+                    if (document.activeElement !== gotoInput) gotoInput.value = currentPlaylistIndex + 1;
+                }
+                if (gotoUpBtn) gotoUpBtn.disabled = currentPlaylist.length <= 1;
+                if (gotoDownBtn) gotoDownBtn.disabled = currentPlaylist.length <= 1;
             } else {
                 e.classList.remove("active");
-                closeGotoPopover();
             }
             if (shuffleBtn) {
+                shuffleBtn.disabled = currentPlaylist.length <= 1;
                 shuffleBtn.classList.toggle("active", isShuffle);
                 shuffleBtn.setAttribute("aria-pressed", isShuffle ? "true" : "false");
             }
-            if (document.getElementById("gotoPopover").classList.contains("active")) renderGotoList();
         }
         function refillShuffleBag() {
             shuffleBag = currentPlaylist.map((_, i) => i).filter((i) => i !== currentPlaylistIndex);
@@ -1386,53 +1358,73 @@
                 playPlaylistTrack(currentPlaylistIndex - 1);
             }
         }
-        function toggleGotoPopover() {
-            document.getElementById("gotoPopover").classList.contains("active") ? closeGotoPopover() : openGotoPopover();
-        }
-        function openGotoPopover() {
-            if (currentPlaylist.length === 0) return;
-            const popover = document.getElementById("gotoPopover"),
-                btn = document.getElementById("playlistGoTo"),
-                search = document.getElementById("gotoSearch");
-            popover.classList.add("active"), btn.classList.add("active"), btn.setAttribute("aria-expanded", "true");
-            search.value = "";
-            renderGotoList();
-            search.focus();
-        }
         function closeGotoPopover() {
-            const popover = document.getElementById("gotoPopover"),
-                btn = document.getElementById("playlistGoTo");
-            popover.classList.remove("active"), btn.classList.remove("active"), btn.setAttribute("aria-expanded", "false");
+            // No-op: the goto popover was replaced by an inline stepper, but
+            // this is kept as a harmless stub since it's still referenced
+            // from a few reset paths below.
         }
-        function renderGotoList() {
-            const listEl = document.getElementById("gotoList"),
-                query = document.getElementById("gotoSearch").value.trim().toLowerCase(),
-                asNumber = /^\d+$/.test(query) ? parseInt(query, 10) : null;
-            let items = currentPlaylist.map((item, i) => ({ item, i }));
-            if (query) {
-                items = items.filter(
-                    ({ item, i }) => (asNumber !== null && i + 1 === asNumber) || (item.title || "").toLowerCase().includes(query),
+        function setupGotoStepper() {
+            const input = document.getElementById("gotoInput"),
+                upBtn = document.getElementById("gotoUpBtn"),
+                downBtn = document.getElementById("gotoDownBtn");
+            if (!input || !upBtn || !downBtn) return;
+
+            const clamp = (v) => Math.max(1, Math.min(currentPlaylist.length || 1, v || 1));
+
+            function jumpTo(n) {
+                if (currentPlaylist.length === 0) return;
+                const idx = clamp(n) - 1;
+                input.value = idx + 1;
+                if (idx !== currentPlaylistIndex) {
+                    if (isShuffle) recordShuffleJump(idx);
+                    playPlaylistTrack(idx);
+                }
+            }
+            function step(delta) {
+                jumpTo((parseInt(input.value, 10) || currentPlaylistIndex + 1) + delta);
+            }
+
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    jumpTo(parseInt(input.value, 10));
+                    input.blur();
+                }
+            });
+            input.addEventListener("blur", () => jumpTo(parseInt(input.value, 10)));
+
+            let holdTimeout = null;
+            function startHold(delta) {
+                step(delta);
+                let delay = 400;
+                const repeat = () => {
+                    step(delta);
+                    delay = Math.max(60, delay - 40);
+                    holdTimeout = setTimeout(repeat, delay);
+                };
+                holdTimeout = setTimeout(repeat, 400);
+            }
+            function stopHold() {
+                clearTimeout(holdTimeout);
+                holdTimeout = null;
+            }
+            [
+                [upBtn, 1],
+                [downBtn, -1],
+            ].forEach(([btn, delta]) => {
+                btn.addEventListener("mousedown", (e) => {
+                    e.preventDefault();
+                    startHold(delta);
+                });
+                btn.addEventListener(
+                    "touchstart",
+                    (e) => {
+                        e.preventDefault();
+                        startHold(delta);
+                    },
+                    { passive: false },
                 );
-            }
-            if (items.length === 0) {
-                listEl.innerHTML = `<div class="goto-empty">No matching tracks</div>`;
-                return;
-            }
-            const MAX_RESULTS = 200,
-                truncated = items.length > MAX_RESULTS;
-            listEl.innerHTML =
-                items
-                    .slice(0, MAX_RESULTS)
-                    .map(
-                        ({ item, i }) => `
-        <div class="goto-item${i === currentPlaylistIndex ? " current" : ""}" data-index="${i}">
-          <span class="goto-index">${i + 1}</span>
-          <span class="goto-title">${escapeHtml(item.title || item.url)}</span>
-        </div>
-      `,
-                    )
-                    .join("") +
-                (truncated ? `<div class="goto-empty">Showing first ${MAX_RESULTS} of ${items.length} matches — refine your search</div>` : "");
+                ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach((ev) => btn.addEventListener(ev, stopHold));
+            });
         }
         async function startPlaylistMode() {
             if (!isPlaylistFile || !currentFilePath) return;

@@ -211,6 +211,7 @@
         .preview-audio-container { width: 100%; max-width: 500px; padding: 2rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
         .audio-icon { width: 80px; height: 80px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); }
         .audio-icon svg { width: 40px; height: 40px; }
+        .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; height: 4.2em; line-height: 1.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
         .preview-audio { width: 100%; height: 40px; display: none; }
         .player-bar { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; max-width: 480px; margin: 0.75rem auto 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.6rem 0.75rem; flex-wrap: nowrap; overflow-x: auto; }
         .player-bar .playlist-btn { padding: 0.5rem; flex-shrink: 0; }
@@ -1663,7 +1664,7 @@
                     n.innerHTML = `
                       <div class="preview-audio-container">
                         <div class="audio-icon">${icons.audio}</div>
-                        <div class="playlist-now-playing" style="font-weight: 500; text-align: center;">${escapeHtml(s)}</div>
+                        <div class="playlist-now-playing">${escapeHtml(s)}</div>
                         <audio id="audioPlayer" class="preview-audio" autoplay crossOrigin="anonymous">
                           Your browser does not support audio playback.
                         </audio>
@@ -1765,7 +1766,7 @@
                         s.innerHTML = `
               <div class="preview-audio-container">
                 <div class="audio-icon">${icons.audio}</div>
-                <div style="font-weight: 500; text-align: center;">${escapeHtml(n)}</div>
+                <div class="playlist-now-playing">${escapeHtml(n)}</div>
                 <audio class="preview-audio" autoplay crossOrigin="anonymous">
                   <source src="${o}">
                   Your browser does not support audio playback.

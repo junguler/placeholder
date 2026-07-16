@@ -169,7 +169,7 @@
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
         .list-columns { --list-cols: 24px 1fr 70px 90px 90px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
         .file-list-header .col-icon-spacer { width: 24px; }
         .file-list-header .col { display: flex; align-items: center; gap: 0.25rem; cursor: pointer; user-select: none; }
         .file-list-header .col:hover { color: var(--text-primary); }
@@ -190,7 +190,6 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.2s; padding: 0.5rem; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: 1px solid var(--border-color); }
-        .modal.video-modal { height: 95vh; height: 95dvh; }
         .modal-overlay.active .modal { transform: scale(1); }
         .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
         .modal-title { font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
@@ -229,10 +228,10 @@
         .goto-step-btn:last-child { border-radius: 0 0 var(--radius) var(--radius); }
         .goto-step-btn:hover:not(:disabled) { background: var(--bg-hover); }
         .goto-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .modal-body { flex: 1; overflow: auto; background: var(--bg-primary); display: flex; flex-direction: column; min-height: 0; }
+        .modal-body { flex: 1; overflow: auto; background: var(--bg-primary); }
         .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; display: block; margin: auto; }
-        .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; }
-        .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
+        .preview-media-container { width: 100%; max-width: 900px; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+        .preview-video { width: 100%; max-height: 80vh; background: #000; border-radius: var(--radius); }
         .preview-audio-container { width: 100%; max-width: 500px; padding: 2rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
         .audio-icon { width: 80px; height: 80px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); }
         .audio-icon svg { width: 40px; height: 40px; }
@@ -281,6 +280,7 @@
             .modal-btn.play-playlist-btn .btn-label { display: none; }
             .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
             .playlist-btn span { display: none; }
+            .preview-video { max-height: 60vh; max-height: 60dvh; }
             .preview-image { max-height: 80vh; max-height: 80dvh; }
             .preview-pdf { height: 80vh; height: 80dvh; }
             .preview-media-container { padding: 0.5rem; }
@@ -1851,7 +1851,6 @@
                 let video = n.querySelector("#videoPlayer");
                 if (!video) {
                     if (currentHls) { currentHls.destroy(); currentHls = null; }
-                    document.getElementById("modalContent").classList.add("video-modal");
                     n.innerHTML = `
                       <div class="preview-media-container">
                         <video id="videoPlayer" class="preview-video" autoplay playsinline muted crossOrigin="anonymous" ${mediaTagAttrs()}>
@@ -1902,7 +1901,6 @@
                 let audio = n.querySelector("#audioPlayer");
                 if (!audio) {
                     if (currentHls) { currentHls.destroy(); currentHls = null; }
-                    document.getElementById("modalContent").classList.remove("video-modal");
                     n.innerHTML = `
                       <div class="preview-audio-container">
                         <div class="audio-icon">${icons.audio}</div>
@@ -1977,7 +1975,6 @@
                 closeGotoPopover(),
                 d.classList.remove("active"),
                 isPlaylistFile ? a.classList.remove("hidden") : a.classList.add("hidden"),
-                document.getElementById("modalContent").classList.remove("video-modal"),
                 r.classList.add("active");
             requestAnimationFrame(() => document.getElementById("closeBtn").focus());
             const o = `./${e}`;
@@ -1987,7 +1984,6 @@
                         s.innerHTML = `<img class="preview-image" src="${o}" alt="${escapeHtml(n)}">`;
                         break;
                     case "video":
-                        document.getElementById("modalContent").classList.add("video-modal");
                         s.innerHTML = `
               <div class="preview-media-container">
                 <video class="preview-video" autoplay playsinline crossOrigin="anonymous" ${mediaTagAttrs()}>

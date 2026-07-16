@@ -25,7 +25,7 @@
             --radius-lg: 8px;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             --transition: 0.15s ease;
-            --font-size-base: 14px;
+            --font-size-base: 16px;
         }
         [data-theme="light"] {
             --bg-primary: #ffffff;
@@ -168,6 +168,21 @@
         .file-list .file-meta { font-size: 0.7rem; }
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
+        .list-columns { --list-cols: 24px 1fr 70px 90px 90px 80px; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
+        .file-list-header .col-icon-spacer { width: 24px; }
+        .file-list-header .col { display: flex; align-items: center; gap: 0.25rem; cursor: pointer; user-select: none; }
+        .file-list-header .col:hover { color: var(--text-primary); }
+        .file-list-header .col.active { color: var(--accent); }
+        .file-list-header .sort-arrow { font-size: 0.6rem; width: 0.7em; display: inline-block; }
+        .file-list-header .col-ext, .file-list-header .col-size, .file-list-header .col-date, .file-list-header .col-time { justify-content: flex-end; }
+        .file-list.list-columns .file-card { display: grid; grid-template-columns: var(--list-cols); align-items: center; }
+        .file-list.list-columns .col-ext, .file-list.list-columns .col-size, .file-list.list-columns .col-date, .file-list.list-columns .col-time { text-align: right; font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        @media (max-width: 640px) {
+            .list-columns { --list-cols: 24px 1fr 60px; }
+            .file-list-header .col-ext, .file-list-header .col-date, .file-list-header .col-time { display: none; }
+            .file-list.list-columns .col-ext, .file-list.list-columns .col-date, .file-list.list-columns .col-time { display: none; }
+        }
         .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .empty-state svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .empty-state h2 { font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary); }
@@ -338,8 +353,12 @@
                                 <select class="sort-select" id="sortSelect" aria-label="Sort files by">
                                     <option value="name-asc">Name (A-Z)</option>
                                     <option value="name-desc">Name (Z-A)</option>
-                                    <option value="size-desc">Size (Largest)</option>
+                                    <option value="ext-asc">Extension (A-Z)</option>
+                                    <option value="ext-desc">Extension (Z-A)</option>
                                     <option value="size-asc">Size (Smallest)</option>
+                                    <option value="size-desc">Size (Largest)</option>
+                                    <option value="date-asc">Date (Oldest)</option>
+                                    <option value="date-desc">Date (Newest)</option>
                                     <option value="type">Type</option>
                                 </select>
                             </div>
@@ -422,7 +441,7 @@
             currentFilePath = "",
             currentFileName = "",
             isPlaylistFile = !1,
-            currentFontSize = 14,
+            currentFontSize = 16,
             currentHls = null,
             streamTimeout = null,
             allFiles = [],
@@ -484,11 +503,9 @@
                 document.getElementById("treePanel").classList.toggle("visible", v === "tree");
             }
             const so = localStorage.getItem("sortBy");
-            if (so) {
-                sortBy = so;
-                const sel = document.getElementById("sortSelect");
-                if (sel) sel.value = so;
-            }
+            if (so) sortBy = so;
+            const sortSel = document.getElementById("sortSelect");
+            if (sortSel) sortSel.value = sortBy;
             useNativePlayer = localStorage.getItem("useNativePlayer") === "1";
             const nativeToggle = document.getElementById("nativePlayerToggle");
             if (nativeToggle) nativeToggle.checked = useNativePlayer;
@@ -935,6 +952,7 @@
                     }
                 }),
                 document.getElementById("main").addEventListener("click", handleCardClick),
+                document.getElementById("main").addEventListener("click", handleSortHeaderClick),
                 document.getElementById("main").addEventListener("keydown", handleGridKeydown),
                 document.getElementById("treeContent").addEventListener("click", handleTreeClick),
                 document.getElementById("treeContent").addEventListener("keydown", handleTreeKeydown);
@@ -1152,7 +1170,7 @@
                 render();
         }
         function setSortBy(e) {
-            (sortBy = e), localStorage.setItem("sortBy", e), render();
+            (sortBy = e), localStorage.setItem("sortBy", e), syncSortUI(), render();
         }
         function getItemSize(item) {
             if (typeof item.size === "number") return item.size;
@@ -1161,6 +1179,34 @@
             if (!m) return 0;
             const units = { B: 1, KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3, TB: 1024 ** 4 };
             return parseFloat(m[1]) * (units[(m[2] || "B").toUpperCase()] || 1);
+        }
+        // Extension without the dot (e.g. "index.html" -> "html"). A leading dot
+        // with no other dot (e.g. ".gitignore") counts as no extension.
+        function getFileExtension(name) {
+            const idx = name.lastIndexOf(".");
+            return idx <= 0 ? "" : name.slice(idx + 1);
+        }
+        function getBaseName(name) {
+            const idx = name.lastIndexOf(".");
+            return idx <= 0 ? name : name.slice(0, idx);
+        }
+        // Looks for a modified-time field under a few common names, since this
+        // depends on whatever the file_index.json generator provides. Accepts
+        // a unix timestamp (seconds or ms) or a date string. Returns null if no
+        // usable date is found so callers can degrade gracefully.
+        function getItemDate(item) {
+            const raw = item.mtime ?? item.modified ?? item.date ?? item.lastModified ?? item.updated_at ?? item.time;
+            if (raw === undefined || raw === null || raw === "") return null;
+            const d = typeof raw === "number" ? new Date(raw < 1e12 ? raw * 1000 : raw) : new Date(raw);
+            return isNaN(d.getTime()) ? null : d;
+        }
+        function formatItemDate(item) {
+            const d = getItemDate(item);
+            return d ? d.toLocaleDateString() : "—";
+        }
+        function formatItemTime(item) {
+            const d = getItemDate(item);
+            return d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
         }
         function sortItems(items) {
             const sorted = [...items];
@@ -1171,10 +1217,18 @@
                 switch (sortBy) {
                     case "name-desc":
                         return b.name.localeCompare(a.name);
+                    case "ext-asc":
+                        return getFileExtension(a.name).localeCompare(getFileExtension(b.name)) || a.name.localeCompare(b.name);
+                    case "ext-desc":
+                        return getFileExtension(b.name).localeCompare(getFileExtension(a.name)) || a.name.localeCompare(b.name);
                     case "size-desc":
                         return getItemSize(b) - getItemSize(a);
                     case "size-asc":
                         return getItemSize(a) - getItemSize(b);
+                    case "date-asc":
+                        return (getItemDate(a)?.getTime() ?? 0) - (getItemDate(b)?.getTime() ?? 0);
+                    case "date-desc":
+                        return (getItemDate(b)?.getTime() ?? 0) - (getItemDate(a)?.getTime() ?? 0);
                     case "type":
                         return (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name);
                     case "name-asc":
@@ -1183,6 +1237,27 @@
                 }
             });
             return sorted;
+        }
+        // Keeps the column headers (list view) and the settings dropdown (all
+        // views) showing the same active sort column/direction.
+        function syncSortUI() {
+            const sel = document.getElementById("sortSelect");
+            if (sel && sel.value !== sortBy) sel.value = sortBy;
+            const [activeKey, activeDir] = sortBy.includes("-") ? sortBy.split("-") : [sortBy, "asc"];
+            document.querySelectorAll(".file-list-header .col[data-sort]").forEach((col) => {
+                const isActive = col.dataset.sort === activeKey;
+                col.classList.toggle("active", isActive);
+                const arrow = col.querySelector(".sort-arrow");
+                if (arrow) arrow.textContent = isActive ? (activeDir === "desc" ? "▼" : "▲") : "";
+            });
+        }
+        function handleSortHeaderClick(e) {
+            const col = e.target.closest(".col[data-sort]");
+            if (!col) return;
+            const key = col.dataset.sort;
+            const [activeKey, activeDir] = sortBy.includes("-") ? sortBy.split("-") : [sortBy, "asc"];
+            const dir = activeKey === key && activeDir === "asc" ? "desc" : "asc";
+            setSortBy(`${key}-${dir}`);
         }
         function navigateTo(e) {
             (currentPath = e), (searchQuery = ""), (document.getElementById("search").value = "");
@@ -1283,7 +1358,7 @@
         `;
                 return;
             }
-            const s = currentView === "list" || currentView === "tree" ? "file-list" : "file-grid";
+            const s = currentView === "list" ? "file-list list-columns" : currentView === "tree" ? "file-list" : "file-grid";
 
             const fileCount = all.filter((i) => i.type === "file").length;
             const folderCount = all.filter((i) => i.type === "directory").length;
@@ -1301,6 +1376,20 @@
         </div>
         <div class="main-content">
           <div class="${s}" id="fileItems" role="grid">
+          ${
+              currentView === "list" && !searchQuery
+                  ? `
+            <div class="file-list-header" role="row">
+              <span class="col-icon-spacer" aria-hidden="true"></span>
+              <span class="col col-name" data-sort="name">Name<span class="sort-arrow"></span></span>
+              <span class="col col-ext" data-sort="ext">Ext<span class="sort-arrow"></span></span>
+              <span class="col col-size" data-sort="size">Size<span class="sort-arrow"></span></span>
+              <span class="col col-date" data-sort="date">Date<span class="sort-arrow"></span></span>
+              <span class="col col-time" data-sort="date">Time<span class="sort-arrow"></span></span>
+            </div>
+          `
+                  : ""
+          }
       `;
             for (const item of e) {
                 const s = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other",
@@ -1325,10 +1414,20 @@
               <div class="file-info">
                 <span class="file-name">${escapeHtml(item.name)}</span>
                 <span class="file-meta">
-                    ${item.children?.length || 0} items
+                    ${currentView === "list" && !searchQuery ? "" : `${item.children?.length || 0} items`}
                     ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
                 </span>
               </div>
+              ${
+                  currentView === "list" && !searchQuery
+                      ? `
+                <span class="col-ext"></span>
+                <span class="col-size">DIR</span>
+                <span class="col-date">${escapeHtml(formatItemDate(item))}</span>
+                <span class="col-time">${escapeHtml(formatItemTime(item))}</span>
+              `
+                      : ""
+              }
             </div>
           `;
                 } else {
@@ -1343,11 +1442,22 @@
               <div class="file-info">
                 <span class="file-name">${escapeHtml(item.name)}</span>
                 <span class="file-meta">
-                    ${item.sizeFormatted}
+                    ${currentView === "list" && !searchQuery ? "" : item.sizeFormatted}
                     ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
                 </span>
               </div>
-              ${currentView !== "grid" && !searchQuery ? `<span class="file-size">${item.sizeFormatted}</span>` : ""}
+              ${
+                  currentView === "list" && !searchQuery
+                      ? `
+                <span class="col-ext">${escapeHtml(getFileExtension(item.name))}</span>
+                <span class="col-size">${item.sizeFormatted}</span>
+                <span class="col-date">${escapeHtml(formatItemDate(item))}</span>
+                <span class="col-time">${escapeHtml(formatItemTime(item))}</span>
+              `
+                      : currentView !== "grid" && !searchQuery
+                        ? `<span class="file-size">${item.sizeFormatted}</span>`
+                        : ""
+              }
             </div>
           `);
                 }
@@ -1365,6 +1475,7 @@
                 loadMoreBtn.addEventListener("click", () => {
                     (searchResultLimit += 100), render();
                 });
+            syncSortUI();
         }
         async function parsePlaylist(e, t) {
             try {

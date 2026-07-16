@@ -1358,7 +1358,8 @@
         `;
                 return;
             }
-            const s = currentView === "list" ? "file-list list-columns" : currentView === "tree" ? "file-list" : "file-grid";
+            const isColumnView = currentView === "list" || currentView === "tree";
+            const s = isColumnView ? "file-list list-columns" : "file-grid";
 
             const fileCount = all.filter((i) => i.type === "file").length;
             const folderCount = all.filter((i) => i.type === "directory").length;
@@ -1377,7 +1378,7 @@
         <div class="main-content">
           <div class="${s}" id="fileItems" role="grid">
           ${
-              currentView === "list" && !searchQuery
+              isColumnView && !searchQuery
                   ? `
             <div class="file-list-header" role="row">
               <span class="col-icon-spacer" aria-hidden="true"></span>
@@ -1414,12 +1415,12 @@
               <div class="file-info">
                 <span class="file-name">${escapeHtml(item.name)}</span>
                 <span class="file-meta">
-                    ${currentView === "list" && !searchQuery ? "" : `${item.children?.length || 0} items`}
+                    ${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} items`}
                     ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
                 </span>
               </div>
               ${
-                  currentView === "list" && !searchQuery
+                  isColumnView && !searchQuery
                       ? `
                 <span class="col-ext"></span>
                 <span class="col-size">DIR</span>
@@ -1442,12 +1443,12 @@
               <div class="file-info">
                 <span class="file-name">${escapeHtml(item.name)}</span>
                 <span class="file-meta">
-                    ${currentView === "list" && !searchQuery ? "" : item.sizeFormatted}
+                    ${isColumnView && !searchQuery ? "" : item.sizeFormatted}
                     ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
                 </span>
               </div>
               ${
-                  currentView === "list" && !searchQuery
+                  isColumnView && !searchQuery
                       ? `
                 <span class="col-ext">${escapeHtml(getFileExtension(item.name))}</span>
                 <span class="col-size">${item.sizeFormatted}</span>

@@ -112,11 +112,17 @@ function formatSize(bytes) {
 // commit touched, so the first time we see a given path is its most recent
 // commit. That gives us the whole repo's per-file last-modified dates in a
 // single git invocation instead of one process per file.
+//
+// core.quotepath=false matters: by default git quotes/escapes any path with
+// non-ASCII characters (e.g. accented station names) as octal-escaped bytes
+// like "Radio Ca\303\261\303\263n.m3u" instead of the real UTF-8 filename,
+// which then never matches itemRelativePath and silently falls back to the
+// checkout-time mtime for every such file.
 function buildFileDateMap() {
   const map = new Map();
   try {
     const output = execSync(
-      'git log --name-only --no-renames --format="%x01%cI"',
+      'git -c core.quotepath=false log --name-only --no-renames --format="%x01%cI"',
       { encoding: "utf8", maxBuffer: 1024 * 1024 * 256, stdio: ["ignore", "pipe", "ignore"] }
     );
     let currentDate = null;

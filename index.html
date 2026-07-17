@@ -28,7 +28,7 @@
             --transition: 0.15s ease;
             --font-size-base: 16px;
         }
-        [data-theme="light"] {
+        html[data-theme="light"] {
             --bg-primary: #ffffff;
             --bg-secondary: #f6f8fa;
             --bg-tertiary: #eaeef2;
@@ -43,7 +43,7 @@
         }
         /* High contrast dark: based on the classic Windows high-contrast black scheme
            (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
-        [data-theme="hc-dark"] {
+        html[data-theme="hc-dark"] {
             --bg-primary: #000000;
             --bg-secondary: #000000;
             --bg-tertiary: #000000;
@@ -60,7 +60,7 @@
             --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
         }
         /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
-        [data-theme="hc-light"] {
+        html[data-theme="hc-light"] {
             --bg-primary: #ffffff;
             --bg-secondary: #ffffff;
             --bg-tertiary: #ffffff;

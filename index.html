@@ -157,6 +157,14 @@
         .theme-btn[data-theme="auto"] svg { color: #14b8a6; }
         .theme-btn[data-theme="hc-dark"] svg { color: #22d3ee; }
         .theme-btn[data-theme="hc-light"] svg { color: #c026d3; }
+        .theme-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; width: 100%; }
+        .theme-swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+        .theme-swatch:hover { transform: scale(1.1); }
+        .theme-swatch.active { border-color: var(--text-primary); }
+        .theme-custom-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+        .theme-custom-row input[type="color"] { width: 32px; height: 28px; border: 1px solid var(--border-color); border-radius: 4px; background: 0 0; padding: 0; cursor: pointer; }
+        .theme-reset-btn { flex: 1; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); border-radius: var(--radius); padding: 0.3rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
+        .theme-reset-btn:hover { color: var(--text-primary); border-color: var(--accent); }
         .view-toggle { display: flex; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; }
         .view-btn { padding: 0.25rem 0.375rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
         .view-btn:hover { color: var(--text-primary); }
@@ -381,25 +389,6 @@
                     </button>
                     <div class="settings-menu" id="settingsMenu">
                         <div class="settings-section">
-                            <div class="settings-section-title">Theme</div>
-                            <div class="settings-row">
-                                <div class="theme-toggle" id="themeToggle">
-                                    <button class="theme-btn" data-theme="light" title="Light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 7c-2.76.0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55.0 1-.45 1-1s-.45-1-1-1H2c-.55.0-1 .45-1 1s.45 1 1 1zm18 0h2c.55.0 1-.45 1-1s-.45-1-1-1h-2c-.55.0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0s.39-1.03.0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0.39-.39.39-1.03.0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06z"/></svg><span class="theme-btn-label">Light</span></button>
-                                    <button class="theme-btn" data-theme="dark" title="Dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3c-4.97.0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98.0-5.4-2.42-5.4-5.4.0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg><span class="theme-btn-label">Dark</span></button>
-                                    <button class="theme-btn" data-theme="auto" title="System theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28.0-.5.22-.5.5.0.12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5.0 0112 22zm0-18c-4.41.0-8 3.59-8 8s3.59 8 8 8c.28.0.5-.22.5-.5a.54.54.0 00-.14-.35c-.41-.46-.63-1.05-.63-1.65a2.5 2.5.0 012.5-2.5H16c2.21.0 4-1.79 4-4 0-3.86-3.59-7-8-7z"/><circle cx="6.5" cy="11.5" r="1.5"/><circle cx="9.5" cy="7.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/><circle cx="17.5" cy="11.5" r="1.5"/></svg><span class="theme-btn-label">Auto</span></button>
-                                    <button class="theme-btn" data-theme="hc-dark" title="High contrast dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 2v16a8 8 0 010-16z"/></svg><span class="theme-btn-label">HC Dark</span></button>
-                                    <button class="theme-btn" data-theme="hc-light" title="High contrast light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 18V4a8 8 0 010 16z"/></svg><span class="theme-btn-label">HC Light</span></button>
-                                </div>
-                            </div>
-                            <div class="settings-row" style="margin-top: 0.375rem">
-                                <span class="settings-label">Flat design</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="flatDesignToggle" aria-label="Use flat design (remove gradients)" />
-                                    <span class="switch-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="settings-section" style="border-top: 1px solid var(--border-color)">
                             <div class="settings-section-title">Font Size</div>
                             <div class="settings-row">
                                 <span class="settings-label" id="fontSizeLabel">14px</span>
@@ -433,6 +422,42 @@
                                     <input type="checkbox" id="nativePlayerToggle" aria-label="Use native browser player controls instead of the custom player" />
                                     <span class="switch-slider"></span>
                                 </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-dropdown" id="themeColorDropdown">
+                    <button class="settings-btn" id="themeColorBtn" title="Theme &amp; color" aria-label="Theme and color settings" aria-haspopup="true" aria-expanded="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h1.5A4.5 4.5 0 0 0 21 10c0-4-4-7-9-7z"/><circle cx="7.5" cy="10.5" r="1.4" fill="currentcolor" stroke="none"/><circle cx="10.5" cy="7" r="1.4" fill="currentcolor" stroke="none"/><circle cx="14.5" cy="7" r="1.4" fill="currentcolor" stroke="none"/><circle cx="17" cy="10.5" r="1.4" fill="currentcolor" stroke="none"/></svg>
+                    </button>
+                    <div class="settings-menu" id="themeColorMenu">
+                        <div class="settings-section">
+                            <div class="settings-section-title">Theme</div>
+                            <div class="settings-row">
+                                <div class="theme-toggle" id="themeToggle">
+                                    <button class="theme-btn" data-theme="light" title="Light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 7c-2.76.0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55.0 1-.45 1-1s-.45-1-1-1H2c-.55.0-1 .45-1 1s.45 1 1 1zm18 0h2c.55.0 1-.45 1-1s-.45-1-1-1h-2c-.55.0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0s.39-1.03.0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0.39-.39.39-1.03.0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06z"/></svg><span class="theme-btn-label">Light</span></button>
+                                    <button class="theme-btn" data-theme="dark" title="Dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3c-4.97.0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98.0-5.4-2.42-5.4-5.4.0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg><span class="theme-btn-label">Dark</span></button>
+                                    <button class="theme-btn" data-theme="auto" title="System theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28.0-.5.22-.5.5.0.12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5.0 0112 22zm0-18c-4.41.0-8 3.59-8 8s3.59 8 8 8c.28.0.5-.22.5-.5a.54.54.0 00-.14-.35c-.41-.46-.63-1.05-.63-1.65a2.5 2.5.0 012.5-2.5H16c2.21.0 4-1.79 4-4 0-3.86-3.59-7-8-7z"/><circle cx="6.5" cy="11.5" r="1.5"/><circle cx="9.5" cy="7.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/><circle cx="17.5" cy="11.5" r="1.5"/></svg><span class="theme-btn-label">Auto</span></button>
+                                    <button class="theme-btn" data-theme="hc-dark" title="High contrast dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 2v16a8 8 0 010-16z"/></svg><span class="theme-btn-label">HC Dark</span></button>
+                                    <button class="theme-btn" data-theme="hc-light" title="High contrast light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 18V4a8 8 0 010 16z"/></svg><span class="theme-btn-label">HC Light</span></button>
+                                </div>
+                            </div>
+                            <div class="settings-row" style="margin-top: 0.375rem">
+                                <span class="settings-label">Flat design</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="flatDesignToggle" aria-label="Use flat design (remove gradients)" />
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                            <div class="settings-section-title">Base Color</div>
+                            <div class="settings-row">
+                                <div class="theme-swatches" id="themeSwatches"></div>
+                            </div>
+                            <div class="theme-custom-row">
+                                <input type="color" id="themeColorInput" value="#58a6ff" title="Pick a custom color" />
+                                <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
                             </div>
                         </div>
                     </div>
@@ -504,6 +529,7 @@
             currentFileName = "",
             isPlaylistFile = !1,
             currentFontSize = 16,
+            themeHue = null,
             currentHls = null,
             streamTimeout = null,
             allFiles = [],
@@ -577,6 +603,7 @@
             const flatToggle = document.getElementById("flatDesignToggle");
             if (flatToggle) flatToggle.checked = flatOn;
             document.documentElement.classList.toggle("flat", flatOn);
+            initThemeColor();
         }
         function setFlatDesign(on) {
             document.documentElement.classList.toggle("flat", on);
@@ -587,6 +614,189 @@
                 ? (localStorage.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
                 : (localStorage.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
                 updateThemeButtons();
+            if (themeHue != null) applyThemeHue(themeHue);
+        }
+        function setupDropdown(btnId, menuId, dropdownId) {
+            const btn = document.getElementById(btnId),
+                menu = document.getElementById(menuId);
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                document.querySelectorAll(".settings-menu.active").forEach((m) => {
+                    if (m !== menu) {
+                        m.classList.remove("active");
+                        const otherBtn = m.previousElementSibling;
+                        if (otherBtn) otherBtn.setAttribute("aria-expanded", "false");
+                    }
+                });
+                const isActive = menu.classList.toggle("active");
+                btn.setAttribute("aria-expanded", isActive ? "true" : "false");
+            });
+            document.addEventListener("click", (e) => {
+                if (!e.target.closest("#" + dropdownId)) {
+                    menu.classList.remove("active");
+                    btn.setAttribute("aria-expanded", "false");
+                }
+            });
+        }
+
+        /* ---------------------------------------------------------------
+           Base Color engine
+           Lets the user pick a new "base driving color" that re-tints every
+           theme preset (Light, Dark, Auto, HC Dark, HC Light). Each themed
+           variable keeps its own original saturation & lightness so the
+           preset's brightness/contrast balance stays exactly as designed —
+           only the hue shifts to match whatever color the user picks.
+           --------------------------------------------------------------- */
+        const THEME_HUE_KEY = "themeHue";
+        const THEME_BASE = {
+            dark: {
+                "--bg-primary": "#0d1117", "--bg-secondary": "#161b22", "--bg-tertiary": "#21262d",
+                "--bg-hover": "#30363d", "--border-color": "#30363d", "--text-primary": "#e6edf3",
+                "--text-secondary": "#8b949e", "--text-muted": "#6e7681", "--accent": "#58a6ff",
+                "--accent-hover": "#79b8ff", "--success": "#3fb950", "--warning": "#d29922", "--danger": "#f85149"
+            },
+            light: {
+                "--bg-primary": "#ffffff", "--bg-secondary": "#f6f8fa", "--bg-tertiary": "#eaeef2",
+                "--bg-hover": "#d0d7de", "--border-color": "#d0d7de", "--text-primary": "#1f2328",
+                "--text-secondary": "#656d76", "--text-muted": "#8c959f", "--accent": "#0969da",
+                "--accent-hover": "#0550ae"
+            },
+            "hc-dark": {
+                "--bg-primary": "#000000", "--bg-secondary": "#000000", "--bg-tertiary": "#000000",
+                "--bg-hover": "#262626", "--border-color": "#9370ff", "--text-primary": "#ffffff",
+                "--text-secondary": "#ffffff", "--text-muted": "#a3a3a3", "--accent": "#00ffff",
+                "--accent-hover": "#33ffff", "--success": "#00ffff", "--warning": "#ff37cb", "--danger": "#ff4444"
+            },
+            "hc-light": {
+                "--bg-primary": "#ffffff", "--bg-secondary": "#ffffff", "--bg-tertiary": "#ffffff",
+                "--bg-hover": "#d9d9d9", "--border-color": "#6c8f00", "--text-primary": "#000000",
+                "--text-secondary": "#000000", "--text-muted": "#5c5c5c", "--accent": "#ff0000",
+                "--accent-hover": "#cc0000", "--success": "#ff0000", "--warning": "#00c834", "--danger": "#00bbbb"
+            }
+        };
+        const THEME_PRESETS = [
+            { name: "Blue", hue: 209.2 }, { name: "Indigo", hue: 243 }, { name: "Purple", hue: 262 },
+            { name: "Pink", hue: 330 }, { name: "Red", hue: 4 }, { name: "Orange", hue: 28 },
+            { name: "Yellow", hue: 48 }, { name: "Green", hue: 142 }, { name: "Teal", hue: 174 },
+            { name: "Cyan", hue: 191 }, { name: "Sky", hue: 199 }, { name: "Rose", hue: 350 }
+        ];
+        function hexToHsl(hex) {
+            hex = hex.replace("#", "");
+            if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+            const r = parseInt(hex.substr(0, 2), 16) / 255,
+                g = parseInt(hex.substr(2, 2), 16) / 255,
+                b = parseInt(hex.substr(4, 2), 16) / 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h = 0, s = 0;
+            const l = (max + min) / 2, d = max - min;
+            if (d !== 0) {
+                s = d / (1 - Math.abs(2 * l - 1));
+                switch (max) {
+                    case r: h = 60 * (((g - b) / d) % 6); break;
+                    case g: h = 60 * ((b - r) / d + 2); break;
+                    case b: h = 60 * ((r - g) / d + 4); break;
+                }
+            }
+            if (h < 0) h += 360;
+            return { h, s: s * 100, l: l * 100 };
+        }
+        function hslToHex(h, s, l) {
+            s /= 100; l /= 100;
+            const c = (1 - Math.abs(2 * l - 1)) * s,
+                x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+                m = l - c / 2;
+            let r = 0, g = 0, b = 0;
+            if (h < 60) { r = c; g = x; b = 0; }
+            else if (h < 120) { r = x; g = c; b = 0; }
+            else if (h < 180) { r = 0; g = c; b = x; }
+            else if (h < 240) { r = 0; g = x; b = c; }
+            else if (h < 300) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+            const toHex = (v) => {
+                const n = Math.max(0, Math.min(255, Math.round((v + m) * 255)));
+                return n.toString(16).padStart(2, "0");
+            };
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        }
+        function getActivePaletteKey() {
+            const attr = document.documentElement.getAttribute("data-theme");
+            if (attr === "light" || attr === "hc-dark" || attr === "hc-light") return attr;
+            if (attr === "dark") return "dark";
+            const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            return dark ? "dark" : "light";
+        }
+        function applyThemeHue(hue) {
+            const root = document.documentElement.style;
+            const base = THEME_BASE[getActivePaletteKey()];
+            for (const [varName, baseHex] of Object.entries(base)) {
+                const { s, l } = hexToHsl(baseHex);
+                root.setProperty(varName, hslToHex(hue, s, l));
+            }
+            markActiveSwatch(hue);
+        }
+        function clearThemeHueVars() {
+            const root = document.documentElement.style;
+            for (const key of ["dark", "light", "hc-dark", "hc-light"]) {
+                for (const varName of Object.keys(THEME_BASE[key])) root.removeProperty(varName);
+            }
+        }
+        function setThemeHue(hue) {
+            themeHue = hue;
+            localStorage.setItem(THEME_HUE_KEY, String(hue));
+            applyThemeHue(hue);
+        }
+        function resetThemeHue() {
+            themeHue = null;
+            localStorage.removeItem(THEME_HUE_KEY);
+            clearThemeHueVars();
+            markActiveSwatch(null);
+        }
+        function markActiveSwatch(hue) {
+            const wrap = document.getElementById("themeSwatches");
+            if (!wrap) return;
+            wrap.querySelectorAll(".theme-swatch").forEach((sw) => {
+                const swHue = parseFloat(sw.dataset.hue);
+                sw.classList.toggle("active", hue != null && Math.abs(swHue - hue) < 0.5);
+            });
+        }
+        function renderThemeSwatches() {
+            const wrap = document.getElementById("themeSwatches");
+            if (!wrap) return;
+            wrap.innerHTML = THEME_PRESETS.map((p) => {
+                const swatchColor = hslToHex(p.hue, 80, 60);
+                return `<button type="button" class="theme-swatch" data-hue="${p.hue}" title="${p.name}" style="background:${swatchColor}"></button>`;
+            }).join("");
+        }
+        function wireThemeColorPicker() {
+            const input = document.getElementById("themeColorInput"),
+                resetBtn = document.getElementById("themeResetBtn"),
+                swatches = document.getElementById("themeSwatches");
+            if (input) input.addEventListener("input", (e) => setThemeHue(hexToHsl(e.target.value).h));
+            if (resetBtn) resetBtn.addEventListener("click", () => resetThemeHue());
+            if (swatches) swatches.addEventListener("click", (e) => {
+                const sw = e.target.closest(".theme-swatch");
+                if (sw) setThemeHue(parseFloat(sw.dataset.hue));
+            });
+            if (window.matchMedia) {
+                window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+                    if (themeHue != null) applyThemeHue(themeHue);
+                });
+            }
+        }
+        function initThemeColor() {
+            renderThemeSwatches();
+            const stored = localStorage.getItem(THEME_HUE_KEY);
+            if (stored !== null && stored !== "") {
+                const hue = parseFloat(stored);
+                if (!Number.isNaN(hue)) {
+                    themeHue = hue;
+                    applyThemeHue(hue);
+                    const input = document.getElementById("themeColorInput");
+                    if (input) input.value = hslToHex(hue, 100, 60);
+                    return;
+                }
+            }
+            markActiveSwatch(null);
         }
         function updateThemeButtons() {
             const e = localStorage.getItem("theme") || "auto";
@@ -1027,18 +1237,9 @@
                 document.getElementById("main").addEventListener("keydown", handleGridKeydown),
                 document.getElementById("treeContent").addEventListener("click", handleTreeClick),
                 document.getElementById("treeContent").addEventListener("keydown", handleTreeKeydown);
-            const s = document.getElementById("settingsBtn"),
-                t = document.getElementById("settingsMenu");
-            s.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const isActive = t.classList.toggle("active");
-                s.setAttribute("aria-expanded", isActive ? "true" : "false");
-            }),
-                document.addEventListener("click", (e) => {
-                    !e.target.closest(".settings-dropdown") &&
-                        (t.classList.remove("active"), s.setAttribute("aria-expanded", "false"));
-                }),
-                document.querySelectorAll(".theme-btn").forEach((e) => {
+            setupDropdown("settingsBtn", "settingsMenu", "settingsDropdown");
+            setupDropdown("themeColorBtn", "themeColorMenu", "themeColorDropdown");
+            document.querySelectorAll(".theme-btn").forEach((e) => {
                     e.addEventListener("click", () => saveTheme(e.dataset.theme));
                 }),
                 document.getElementById("fontDecrease").addEventListener("click", () => changeFontSize(-1)),
@@ -1050,6 +1251,7 @@
                         document.body.classList.toggle("native-player-mode", useNativePlayer);
                 }),
                 document.getElementById("flatDesignToggle").addEventListener("change", (e) => setFlatDesign(e.target.checked)),
+                wireThemeColorPicker(),
                 document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack),
                 document.getElementById("topNextBtn").addEventListener("click", goToNextTrack),
                 document.getElementById("topShuffleBtn").addEventListener("click", toggleShuffle),

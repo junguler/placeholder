@@ -141,6 +141,7 @@
         .file-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
         .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
         .file-card.directory { background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); }
+        .file-card.parent-dir .file-name { color: var(--text-secondary); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
         .file-icon.folder { color: #8b949e; background: rgba(139, 148, 158, 0.1); }
@@ -168,7 +169,7 @@
         .file-list .file-meta { font-size: 0.7rem; }
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
-        .list-columns { --list-cols: 24px 1fr 70px 90px 90px 80px; }
+        .list-columns { --list-cols: 24px 1fr 70px 90px 100px 80px; }
         .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
         .file-list-header .col-icon-spacer { width: 24px; }
         .file-list-header .col { display: flex; align-items: center; gap: 0.25rem; cursor: pointer; user-select: none; }
@@ -1200,9 +1201,12 @@
             const d = typeof raw === "number" ? new Date(raw < 1e12 ? raw * 1000 : raw) : new Date(raw);
             return isNaN(d.getTime()) ? null : d;
         }
+        const MONTH_ABBR = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
         function formatItemDate(item) {
             const d = getItemDate(item);
-            return d ? d.toLocaleDateString() : "—";
+            if (!d) return "—";
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${d.getFullYear()}/${MONTH_ABBR[d.getMonth()]}/${day}`;
         }
         function formatItemTime(item) {
             const d = getItemDate(item);
@@ -1392,6 +1396,27 @@
                   : ""
           }
       `;
+            if (currentPath.length > 0 && !searchQuery) {
+                t += `
+            <div class="file-card directory parent-dir" data-directory="true" data-path='${JSON.stringify(currentPath.slice(0, -1))}' tabindex="0" role="button" aria-label="Go to parent folder">
+              <div class="file-icon folder">${icons.folder}</div>
+              <div class="file-info">
+                <span class="file-name">..</span>
+                <span class="file-meta"></span>
+              </div>
+              ${
+                  isColumnView
+                      ? `
+                <span class="col-ext"></span>
+                <span class="col-size"></span>
+                <span class="col-date"></span>
+                <span class="col-time"></span>
+              `
+                      : ""
+              }
+            </div>
+          `;
+            }
             for (const item of e) {
                 const s = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other",
                     o = icons[s] || icons.other;

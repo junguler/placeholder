@@ -556,7 +556,14 @@
             audioCtx = null,
             normalizedElements = new WeakSet(),
             compressor = null,
-            useNativePlayer = false;
+            useNativePlayer = false,
+            // Live in-stream metadata (ICY "Now Playing" title, station name,
+            // genre, bitrate) read from the current track's own connection —
+            // separate from the static #EXTINF header data parsed from the
+            // playlist file itself.
+            liveIcyRows = [],
+            icyMetadataToken = 0,
+            icyMetadataController = null;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
         // slow connection and tracks are getting skipped before they finish buffering.
@@ -1345,15 +1352,22 @@
         }
         function renderStreamMetadata(item) {
             if (!item) return "";
-            const rows = parseStreamMetadataRows(item.header);
-            // Most plain M3U entries carry no #EXTINF attributes at all, which
-            // would otherwise leave this panel empty. Always surface where
-            // the stream is actually coming from as a guaranteed fallback row.
+            // Live ICY rows (Now Playing / Station / Genre / Bitrate) take
+            // priority, then whatever the playlist file itself declared via
+            // #EXTINF/#EXTGRP/etc., then the source host as a last resort.
+            const rows = [...liveIcyRows, ...parseStreamMetadataRows(item.header)];
             try {
                 const host = new URL(item.url, window.location.href).hostname;
-                if (host) rows.unshift(["Source", host]);
+                if (host) rows.push(["Source", host]);
             } catch (e) {}
-            return rows
+            const seenLabels = new Set();
+            const deduped = rows.filter(([label]) => {
+                const key = label.toLowerCase();
+                if (seenLabels.has(key)) return false;
+                seenLabels.add(key);
+                return true;
+            });
+            return deduped
                 .map(
                     ([label, value]) => `
               <div class="stream-metadata-row">
@@ -1368,6 +1382,102 @@
         function updateStreamMetadata(item) {
             const el = document.getElementById("streamMetadata");
             if (el) el.innerHTML = renderStreamMetadata(item);
+        }
+        // Inserts/updates a single row in the live ICY row list, keeping
+        // "Now Playing" pinned to the top since it's the most relevant and
+        // most frequently-changing field.
+        function setLiveIcyRow(label, value) {
+            if (!value) return;
+            const idx = liveIcyRows.findIndex(([l]) => l === label);
+            if (idx !== -1) liveIcyRows[idx][1] = value;
+            else if (label === "Now Playing") liveIcyRows.unshift([label, value]);
+            else liveIcyRows.push([label, value]);
+        }
+        function stopIcyMetadataListener() {
+            icyMetadataToken++;
+            if (icyMetadataController) {
+                try { icyMetadataController.abort(); } catch (e) {}
+                icyMetadataController = null;
+            }
+        }
+        // Reads ICY (Shoutcast/Icecast) in-stream metadata directly off the
+        // stream's own byte connection — this is the only way to get a
+        // live-updating "Now Playing" song title, since the <audio> element
+        // itself never exposes it. This opens a second connection to the
+        // same URL purely to read bytes (the <audio> element keeps its own
+        // separate connection for actual playback), so it only runs for
+        // plain audio streams and is fully torn down on every track change.
+        // Depends on the server sending CORS headers that expose icy-*
+        // headers; if it doesn't, this fails silently and the panel just
+        // falls back to whatever static metadata is already available.
+        async function startIcyMetadataListener(url, item) {
+            const token = icyMetadataToken;
+            const controller = new AbortController();
+            icyMetadataController = controller;
+            try {
+                const response = await fetch(url, {
+                    headers: { "Icy-MetaData": "1" },
+                    signal: controller.signal,
+                });
+                if (token !== icyMetadataToken) return;
+                const name = response.headers.get("icy-name");
+                const genre = response.headers.get("icy-genre");
+                const description = response.headers.get("icy-description");
+                const br = response.headers.get("icy-br");
+                if (name) setLiveIcyRow("Station", name);
+                if (description && description !== name) setLiveIcyRow("Description", description);
+                if (genre) setLiveIcyRow("Genre", genre);
+                if (br) setLiveIcyRow("Bitrate", `${br} kbps`);
+                if (name || genre || description || br) updateStreamMetadata(item);
+
+                const metaint = parseInt(response.headers.get("icy-metaint") || "0", 10);
+                if (!metaint || !response.body || !response.body.getReader) return;
+
+                const reader = response.body.getReader();
+                let bytesUntilMeta = metaint;
+                let metaBytesRemaining = 0;
+                let metaChunks = [];
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done || token !== icyMetadataToken) break;
+                    let i = 0;
+                    while (i < value.length) {
+                        if (metaBytesRemaining > 0) {
+                            const take = Math.min(metaBytesRemaining, value.length - i);
+                            metaChunks.push(value.subarray(i, i + take));
+                            metaBytesRemaining -= take;
+                            i += take;
+                            if (metaBytesRemaining === 0) {
+                                const total = metaChunks.reduce((n, c) => n + c.length, 0);
+                                const merged = new Uint8Array(total);
+                                let off = 0;
+                                for (const c of metaChunks) { merged.set(c, off); off += c.length; }
+                                metaChunks = [];
+                                const text = new TextDecoder("utf-8").decode(merged);
+                                const m = /StreamTitle=(['"])(.*?)\1;/.exec(text);
+                                if (m && m[2] && token === icyMetadataToken) {
+                                    setLiveIcyRow("Now Playing", m[2]);
+                                    updateStreamMetadata(item);
+                                }
+                                bytesUntilMeta = metaint;
+                            }
+                        } else if (bytesUntilMeta > 0) {
+                            const skip = Math.min(bytesUntilMeta, value.length - i);
+                            bytesUntilMeta -= skip;
+                            i += skip;
+                        } else {
+                            const metaLen = value[i] * 16;
+                            i += 1;
+                            if (metaLen === 0) bytesUntilMeta = metaint;
+                            else metaBytesRemaining = metaLen;
+                        }
+                    }
+                }
+            } catch (e) {
+                // Network error, CORS block, or intentional abort on track
+                // change — nothing to do, the panel keeps its existing rows.
+            }
         }
         function copyStreamInfo() {
             const btn = document.getElementById("streamInfoBtn");
@@ -2115,6 +2225,8 @@
     `);
         }
         function stopPlaylist() {
+            stopIcyMetadataListener();
+            liveIcyRows = [];
             if (currentHls) {
                 currentHls.destroy();
                 currentHls = null;
@@ -2260,6 +2372,10 @@
             const item = currentPlaylist[currentPlaylistIndex];
             const s = item.title;
             document.getElementById("modalTitle").textContent = s;
+            // New track: drop any in-flight metadata listener and clear
+            // last track's live rows so nothing stale lingers in the panel.
+            stopIcyMetadataListener();
+            liveIcyRows = [];
 
             const n = document.getElementById("modalBody");
             // Show a buffering hint right away instead of a silent wait while the
@@ -2383,6 +2499,7 @@
                     audio.src = finalUrl;
                     audio.load();
                     audio.play().catch(() => {});
+                    startIcyMetadataListener(finalUrl, item);
                 }
             }
         }
@@ -2557,7 +2674,9 @@
         function closeModal() {
             const e = document.getElementById("modal");
             e.classList.remove("active");
-            
+            stopIcyMetadataListener();
+            liveIcyRows = [];
+
             if (currentHls) {
                 currentHls.destroy();
                 currentHls = null;

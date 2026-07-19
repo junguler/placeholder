@@ -307,6 +307,12 @@
         .player-play-btn:hover { background: var(--accent-hover) !important; border-color: var(--accent-hover) !important; }
         .player-play-btn svg { width: 18px; height: 18px; }
         .player-time, .player-vol { font-size: 0.75rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; }
+        .player-meta { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; min-width: 0; padding-top: 0.35rem; margin-top: 0.1rem; border-top: 1px solid var(--border-color); }
+        .player-meta-row { display: flex; align-items: baseline; gap: 0.35rem; width: 100%; min-width: 0; flex-wrap: nowrap; }
+        .player-meta-row.hidden { display: none; }
+        .player-meta-label { flex-shrink: 0; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.62rem; font-weight: 600; white-space: nowrap; }
+        .player-meta-value { flex: 1 1 auto; min-width: 0; max-width: 100%; font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .player-meta-row.tags .player-meta-value { color: var(--text-primary); }
         .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         .player-info-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
@@ -541,7 +547,9 @@
             audioCtx = null,
             normalizedElements = new WeakSet(),
             compressor = null,
-            useNativePlayer = false;
+            useNativePlayer = false,
+            icyAbortController = null,
+            metaLoadToken = 0;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
         // slow connection and tracks are getting skipped before they finish buffering.
@@ -1019,6 +1027,24 @@
         function maybeWireMediaControls(el) {
             if (!useNativePlayer) wireMediaControls(el);
         }
+        // Markup for the file-stats / stream-metadata rows shown under the
+        // player. Included regardless of native/custom control mode so the
+        // info is available either way; rows start hidden and are filled in
+        // (and shown) by setStatsLine()/setTagsLine() once data is known.
+        function playerMetaHTML() {
+            return `
+        <div class="player-meta" id="playerMeta">
+          <div class="player-meta-row stats hidden" id="playerStatsRow">
+            <span class="player-meta-label">Stats</span>
+            <span class="player-meta-value" id="playerStatsValue"></span>
+          </div>
+          <div class="player-meta-row tags hidden" id="playerTagsRow">
+            <span class="player-meta-label">Now</span>
+            <span class="player-meta-value" id="playerTagsValue"></span>
+          </div>
+        </div>
+      `;
+        }
         // Builds the markup for our custom play/pause, prev/next, shuffle and
         // volume controls. Used for both single audio/video files and playlist
         // tracks so the native browser controls never need to be shown.
@@ -1042,6 +1068,157 @@
           </div>
         </div>
       `;
+        }
+        function parseM3uTag(header, tag) {
+            if (!header) return "";
+            const m = new RegExp(tag + '="([^"]*)"', "i").exec(header);
+            return m ? m[1] : "";
+        }
+        function setStatsLine(text) {
+            const row = document.getElementById("playerStatsRow"),
+                val = document.getElementById("playerStatsValue");
+            if (!row || !val) return;
+            val.textContent = text || "";
+            row.classList.toggle("hidden", !text);
+        }
+        function setTagsLine(text) {
+            const row = document.getElementById("playerTagsRow"),
+                val = document.getElementById("playerTagsValue");
+            if (!row || !val) return;
+            val.textContent = text || "";
+            row.classList.toggle("hidden", !text);
+        }
+        // Called whenever a new file/track starts loading so leftover info
+        // from the previous one never lingers on screen, and any in-flight
+        // ICY metadata reader for the previous stream is cancelled.
+        function resetPlayerMeta() {
+            stopIcyMetadata();
+            setStatsLine("");
+            setTagsLine("");
+        }
+        function stopIcyMetadata() {
+            if (icyAbortController) {
+                icyAbortController.abort();
+                icyAbortController = null;
+            }
+        }
+        // Builds the "Stats" line for a locally-hosted audio/video file:
+        // extension, file size, resolution (video), duration and an
+        // estimated average bitrate once those become known.
+        function buildLocalFileStats(name, mediaEl, sizeBytes) {
+            const parts = [];
+            const ext = getFileExtension(name).toUpperCase();
+            if (ext) parts.push(ext);
+            if (sizeBytes > 0) parts.push(formatFileSize(sizeBytes));
+            if (mediaEl && mediaEl.videoWidth) parts.push(`${mediaEl.videoWidth}\u00d7${mediaEl.videoHeight}`);
+            const dur = mediaEl ? mediaEl.duration : NaN;
+            if (isFinite(dur) && dur > 0) {
+                parts.push(formatTime(dur));
+                if (sizeBytes > 0) {
+                    const kbps = Math.round((sizeBytes * 8) / dur / 1000);
+                    if (kbps > 0) parts.push(`~${kbps} kbps`);
+                }
+            }
+            return parts.join(" \u00b7 ");
+        }
+        function formatFileSize(bytes) {
+            if (!(bytes > 0)) return "";
+            const units = ["B", "KB", "MB", "GB", "TB"];
+            let i = 0, n = bytes;
+            while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+            return `${n < 10 && i > 0 ? n.toFixed(1) : Math.round(n)} ${units[i]}`;
+        }
+        // Wires the Stats line for a single local media file to update itself
+        // as soon as the browser exposes duration/resolution, since none of
+        // that is known synchronously.
+        function wireLocalFileStats(name, mediaEl) {
+            const item = allFiles.find((f) => f.fullPath === currentFilePath);
+            const sizeBytes = item ? getItemSize(item) : 0;
+            const refresh = () => setStatsLine(buildLocalFileStats(name, mediaEl, sizeBytes));
+            refresh();
+            mediaEl.addEventListener("loadedmetadata", refresh);
+            mediaEl.addEventListener("resize", refresh);
+        }
+        // Best-effort ICY (Shoutcast/Icecast) metadata reader for radio
+        // streams. The <audio>/<video> element itself never exposes this, so
+        // this opens its own short-lived fetch of the same stream purely to
+        // read response headers (icy-br, icy-name, icy-genre) and the
+        // in-band "StreamTitle" metadata blocks the server interleaves with
+        // the audio when sent "Icy-MetaData: 1". Many hosts don't expose
+        // these cross-origin, in which case this just quietly does nothing.
+        async function startIcyMetadata(url, token) {
+            stopIcyMetadata();
+            if (!/^https?:\/\//i.test(url)) return;
+            const controller = new AbortController();
+            icyAbortController = controller;
+            try {
+                const response = await fetch(url, { headers: { "Icy-MetaData": "1" }, signal: controller.signal });
+                if (token !== metaLoadToken) return;
+                const br = response.headers.get("icy-br");
+                const genre = response.headers.get("icy-genre");
+                const name = response.headers.get("icy-name");
+                const staticParts = [];
+                if (br) staticParts.push(`${br} kbps`);
+                setStatsLine(staticParts.join(" \u00b7 "));
+                const tagParts = [];
+                if (genre) tagParts.push(genre);
+                else if (name) tagParts.push(name);
+                if (tagParts.length) setTagsLine(tagParts.join(" \u00b7 "));
+
+                const metaint = parseInt(response.headers.get("icy-metaint") || "0", 10);
+                if (!metaint || !response.body) return;
+                const reader = response.body.getReader();
+                let mode = "audio", audioBytesLeft = metaint, metaLen = 0, metaChunks = [], metaLeft = 0;
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done || controller.signal.aborted || token !== metaLoadToken) break;
+                    let i = 0;
+                    while (i < value.length) {
+                        if (mode === "audio") {
+                            const take = Math.min(audioBytesLeft, value.length - i);
+                            i += take;
+                            audioBytesLeft -= take;
+                            if (audioBytesLeft === 0) mode = "metalen";
+                        } else if (mode === "metalen") {
+                            metaLen = value[i] * 16;
+                            i += 1;
+                            if (metaLen === 0) {
+                                mode = "audio";
+                                audioBytesLeft = metaint;
+                            } else {
+                                metaChunks = [];
+                                metaLeft = metaLen;
+                                mode = "meta";
+                            }
+                        } else {
+                            const take = Math.min(metaLeft, value.length - i);
+                            metaChunks.push(value.subarray(i, i + take));
+                            i += take;
+                            metaLeft -= take;
+                            if (metaLeft === 0) {
+                                let total = 0;
+                                for (const c of metaChunks) total += c.length;
+                                const bytes = new Uint8Array(total);
+                                let off = 0;
+                                for (const c of metaChunks) { bytes.set(c, off); off += c.length; }
+                                const text = new TextDecoder("utf-8").decode(bytes);
+                                const match = /StreamTitle=['"]([^'"]*)['"]/.exec(text);
+                                if (match && match[1] && token === metaLoadToken) {
+                                    const parts = [];
+                                    if (genre) parts.push(genre);
+                                    parts.push(match[1].trim());
+                                    setTagsLine(parts.join(" \u00b7 "));
+                                }
+                                mode = "audio";
+                                audioBytesLeft = metaint;
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                // CORS-blocked, custom headers rejected, or the connection was
+                // cancelled because the track changed — nothing to show.
+            }
         }
         // Wires up a freshly-created set of custom controls to the given
         // <audio>/<video> element. Only call this once per element (when it's
@@ -2027,6 +2204,8 @@
                 clearTimeout(streamTimeout);
                 streamTimeout = null;
             }
+            metaLoadToken++;
+            resetPlayerMeta();
             (currentPlaylist = []),
                 (currentPlaylistIndex = 0),
                 (shuffleBag = []),
@@ -2177,6 +2356,16 @@
 
             const isSpecificVideo = o.match(/\.(mp4|webm|mkv|avi|mov|ts)$/) || o.includes("type=video");
 
+            metaLoadToken++;
+            const trackToken = metaLoadToken;
+            resetPlayerMeta();
+            const urlExt = getFileExtension(finalUrl.split("?")[0]).toUpperCase();
+            if (urlExt) setStatsLine(urlExt);
+            const fallbackGenre = parseM3uTag(item.header, "group-title") || parseM3uTag(item.header, "tvg-genre");
+            if (fallbackGenre) setTagsLine(fallbackGenre);
+            const isHlsUrl = o.includes(".m3u8") || o.includes("application/x-mpegurl");
+            if (!isHlsUrl) startIcyMetadata(finalUrl, trackToken);
+
             if (isSpecificVideo) {
                 let video = n.querySelector("#videoPlayer");
                 if (!video) {
@@ -2189,6 +2378,7 @@
                           Your browser does not support video playback.
                         </video>
                         ${mediaControlsMarkup()}
+                        ${playerMetaHTML()}
                       </div>
                     `;
                     video = document.getElementById("videoPlayer");
@@ -2244,6 +2434,7 @@
                           Your browser does not support audio playback.
                         </audio>
                         ${mediaControlsMarkup()}
+                        ${playerMetaHTML()}
                       </div>
                     `;
                     audio = document.getElementById("audioPlayer");
@@ -2314,6 +2505,8 @@
                 document.getElementById("modalContent").classList.remove("video-modal"),
                 r.classList.add("active");
             requestAnimationFrame(() => document.getElementById("closeBtn").focus());
+            metaLoadToken++;
+            resetPlayerMeta();
             const o = `./${e}`;
             try {
                 switch (t) {
@@ -2330,6 +2523,7 @@
                   Your browser does not support video playback.
                 </video>
                 ${mediaControlsMarkup()}
+                ${playerMetaHTML()}
               </div>
             `;
                         // Apply volume and normalization to single files too
@@ -2339,6 +2533,7 @@
                             singleVideo.onvolumechange = (e) => currentVolume = e.target.volume;
                             setupAudioNormalization(singleVideo);
                             maybeWireMediaControls(singleVideo);
+                            wireLocalFileStats(n, singleVideo);
                         }
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
@@ -2353,6 +2548,7 @@
                   Your browser does not support audio playback.
                 </audio>
                 ${mediaControlsMarkup()}
+                ${playerMetaHTML()}
               </div>
             `;
                         // Apply volume and normalization to single files too
@@ -2362,6 +2558,7 @@
                             singleAudio.onvolumechange = (e) => currentVolume = e.target.volume;
                             setupAudioNormalization(singleAudio);
                             maybeWireMediaControls(singleAudio);
+                            wireLocalFileStats(n, singleAudio);
                         }
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
@@ -2466,6 +2663,8 @@
                 clearTimeout(streamTimeout);
                 streamTimeout = null;
             }
+            metaLoadToken++;
+            resetPlayerMeta();
 
             const t = e.querySelector("video"),
                 n = e.querySelector("audio");

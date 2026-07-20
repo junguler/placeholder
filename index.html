@@ -311,18 +311,6 @@
         .player-info-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: #fff; }
-        /* Stream/track metadata panel shown under the player controls. Every
-           row is a flex line with a fixed-width label and a value that's
-           forced to ellipsize instead of wrapping or pushing the panel wider
-           than its container — this holds at any zoom level because the
-           value column always has min-width: 0 (overriding the flex default
-           of min-width: auto, which is what normally lets text force an
-           overflow) plus its own overflow/text-overflow rules. */
-        .stream-metadata { width: 100%; max-width: 480px; box-sizing: border-box; margin: 0 auto; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
-        .stream-metadata:empty { display: none; padding: 0; border: none; margin: 0; }
-        .stream-metadata-row { display: flex; align-items: baseline; gap: 0.5rem; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
-        .stream-metadata-label { flex: 0 0 auto; max-width: 40%; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .stream-metadata-value { flex: 1 1 auto; min-width: 0; font-size: 0.78rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         .preview-code pre { margin: 0; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 0.9; white-space: pre-wrap; word-break: break-word; }
         .preview-code.line-numbers pre { counter-reset: line; }
@@ -364,9 +352,6 @@
             .player-play-btn svg { width: 15px !important; height: 15px !important; }
             .player-time { min-width: 1.6rem; font-size: 0.65rem; }
             .player-vol { min-width: 1.9rem; font-size: 0.65rem; }
-            .stream-metadata { max-width: 100%; padding: 0.4rem 0.55rem; }
-            .stream-metadata-label { font-size: 0.65rem; }
-            .stream-metadata-value { font-size: 0.72rem; }
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: 0 0; }
@@ -375,7 +360,6 @@
         :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         .search-input:focus-visible { outline-offset: 0; }
         .file-card:focus-visible { outline-offset: -2px; }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         .breadcrumb { overflow-x: auto; scrollbar-width: thin; flex-wrap: nowrap; }
         .breadcrumb::-webkit-scrollbar { height: 4px; }
         .sort-select { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); font-size: 0.75rem; padding: 0.25rem 0.375rem; }
@@ -556,18 +540,7 @@
             audioCtx = null,
             normalizedElements = new WeakSet(),
             compressor = null,
-            useNativePlayer = false,
-            // Live in-stream/server metadata (ICY "Now Playing" title,
-            // station name, genre, bitrate, quality, listener count) — kept
-            // separate from the static #EXTINF header data parsed from the
-            // playlist file itself. `metaGeneration` is bumped on every
-            // track change so any in-flight fetches from a previous track
-            // can recognize themselves as stale and discard their results.
-            liveMeta = { title: "", titlePriority: 0, stationName: "", genre: "", codec: "", bitrate: null, sampleRate: null, channels: null, listeners: null },
-            metaGeneration = 0,
-            icyMetadataController = null,
-            statusPollController = null,
-            statusPollTimer = null;
+            useNativePlayer = false;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
         // slow connection and tracks are getting skipped before they finish buffering.
@@ -1299,374 +1272,6 @@
                 fallbackCopy(url, done);
             }
         }
-        // Friendly labels for the M3U/EXTM3U attribute keys we know how to
-        // interpret. Anything else falls back to the raw key.
-        const EXTINF_ATTR_LABELS = {
-            "tvg-id": "ID",
-            "tvg-name": "Name",
-            "tvg-logo": "Logo",
-            "group-title": "Group",
-            "tvg-language": "Language",
-            "tvg-country": "Country",
-            "tvg-shift": "Shift",
-            "tvg-url": "EPG URL",
-            "radio": "Radio",
-        };
-        // Turns the raw #EXTINF/#EXTGRP/etc. header block captured for a
-        // playlist entry into a flat list of [label, value] rows for display.
-        // Never throws: worst case it returns an empty array and the panel
-        // just stays hidden (see .stream-metadata:empty in the CSS).
-        function parseStreamMetadataRows(header) {
-            if (!header) return [];
-            const rows = [];
-            const seenLabels = new Set();
-            const addRow = (label, value) => {
-                value = (value || "").trim();
-                if (!value) return;
-                const key = label.toLowerCase();
-                if (seenLabels.has(key)) return;
-                seenLabels.add(key);
-                rows.push([label, value]);
-            };
-            for (let line of header.split("\n")) {
-                line = line.trim();
-                if (line.startsWith("#EXTINF:")) {
-                    const commaIndex = line.indexOf(",");
-                    const attrPart = commaIndex !== -1 ? line.slice(8, commaIndex) : line.slice(8);
-                    const durMatch = /^\s*(-?\d+(?:\.\d+)?)/.exec(attrPart);
-                    if (durMatch) {
-                        const dur = parseFloat(durMatch[1]);
-                        if (dur > 0) addRow("Duration", formatTime(dur));
-                    }
-                    const attrRe = /([\w-]+)="([^"]*)"/g;
-                    let m;
-                    while ((m = attrRe.exec(attrPart))) {
-                        addRow(EXTINF_ATTR_LABELS[m[1].toLowerCase()] || m[1], m[2]);
-                    }
-                } else if (line.startsWith("#EXTGRP:")) {
-                    addRow("Group", line.slice(8));
-                } else if (line.startsWith("#EXTVLCOPT:")) {
-                    addRow("Option", line.slice(11));
-                } else if (line.startsWith("#")) {
-                    const val = line.replace(/^#+/, "");
-                    if (val.trim()) addRow("Info", val);
-                }
-            }
-            return rows;
-        }
-        function renderStreamMetadata(item) {
-            if (!item) return "";
-            // Live rows (Now Playing / Station / Genre / Bitrate / Quality /
-            // Listeners) take priority, then whatever the playlist file
-            // itself declared via #EXTINF/#EXTGRP/etc. Deliberately never
-            // includes the stream URL/host — that's what the info button is
-            // for, not the metadata panel.
-            const rows = [...buildLiveMetaRows(), ...parseStreamMetadataRows(item.header)];
-            const seenLabels = new Set();
-            const deduped = rows.filter(([label]) => {
-                const key = label.toLowerCase();
-                if (seenLabels.has(key)) return false;
-                seenLabels.add(key);
-                return true;
-            });
-            return deduped
-                .map(
-                    ([label, value]) => `
-              <div class="stream-metadata-row">
-                <span class="stream-metadata-label">${escapeHtml(label)}</span>
-                <span class="stream-metadata-value" title="${escapeHtml(value)}">${escapeHtml(value)}</span>
-              </div>`
-                )
-                .join("");
-        }
-        // Re-populates the metadata panel for whichever track is now
-        // playing. Safe to call even if the panel isn't in the DOM yet.
-        function updateStreamMetadata(item) {
-            const el = document.getElementById("streamMetadata");
-            if (el) el.innerHTML = renderStreamMetadata(item);
-        }
-
-        // ===========================
-        // Live stream metadata pipeline
-        // ===========================
-        // Three independent sources race to fill in `liveMeta`, highest
-        // priority wins for the song title:
-        //   3: ICY in-stream "StreamTitle" (continuous, most accurate)
-        //   2: Server status endpoint (status-json.xsl / stats?json=1), polled
-        //   Technical fields (station/genre/bitrate/quality/listeners) are
-        //   merged in from whichever source reports them, no priority needed.
-        // If nothing turns up anything, the panel simply falls back to the
-        // playlist's own #EXTINF data, or stays empty — never a placeholder.
-        function formatSampleRate(sr) {
-            if (typeof sr !== "number" || isNaN(sr) || sr <= 0) return "";
-            return sr >= 2000 ? `${Math.round(sr / 100) / 10} kHz` : `${sr} Hz`;
-        }
-        function buildLiveMetaRows() {
-            const m = liveMeta;
-            const rows = [];
-            if (m.title) rows.push(["Now Playing", m.title]);
-            if (m.stationName) rows.push(["Station", m.stationName]);
-            if (m.genre) rows.push(["Genre", m.genre]);
-            const br = typeof m.bitrate === "number" && !isNaN(m.bitrate) ? `${m.bitrate} kbps` : "";
-            if (m.codec && br) rows.push(["Bitrate", `${m.codec} ${br}`]);
-            else if (br) rows.push(["Bitrate", br]);
-            else if (m.codec) rows.push(["Codec", m.codec]);
-            const sr = formatSampleRate(m.sampleRate);
-            const chText = m.channels === 1 ? "Mono" : m.channels === 2 ? "Stereo" : m.channels ? `${m.channels}ch` : "";
-            if (sr && chText) rows.push(["Quality", `${sr} • ${chText}`]);
-            else if (sr) rows.push(["Quality", sr]);
-            else if (chText) rows.push(["Quality", chText]);
-            if (typeof m.listeners === "number" && !isNaN(m.listeners)) rows.push(["Listeners", String(m.listeners)]);
-            return rows;
-        }
-        // Filters out placeholder junk ("Unknown", "no metadata", the
-        // station's own name repeated as the "song", trailing separators)
-        // so we never show a title that isn't actually a title.
-        function normalizeStreamTitle(raw, stationName) {
-            if (!raw) return "";
-            let t = String(raw).replace(/\s+/g, " ").trim();
-            if (/^(offline|unknown|n\/a|no metadata|stream|radio|live|loading)$|^\s*-+\s*$/i.test(t)) return "";
-            t = t.replace(/\s*[-–—|•]+\s*$/g, "").trim();
-            if (stationName && t.toLowerCase() === stationName.toLowerCase()) return "";
-            return t;
-        }
-        // Only updates the title if this source is at least as authoritative
-        // as whatever's currently shown, so a slow low-priority poll can't
-        // stomp on a fresher high-priority result.
-        function setLiveTitle(rawTitle, priority) {
-            const title = normalizeStreamTitle(rawTitle, liveMeta.stationName);
-            if (!title) return;
-            if (priority >= liveMeta.titlePriority) {
-                liveMeta.title = title;
-                liveMeta.titlePriority = priority;
-            }
-        }
-        function mergeLiveMeta(patch) {
-            if (!patch) return;
-            for (const key of ["stationName", "genre", "codec", "bitrate", "sampleRate", "channels", "listeners"]) {
-                const v = patch[key];
-                if (v !== undefined && v !== null && v !== "" && !(typeof v === "number" && isNaN(v))) {
-                    liveMeta[key] = v;
-                }
-            }
-        }
-        function resetLiveMeta() {
-            liveMeta = { title: "", titlePriority: 0, stationName: "", genre: "", codec: "", bitrate: null, sampleRate: null, channels: null, listeners: null };
-        }
-        function stopMetadataWatchers() {
-            metaGeneration++;
-            if (icyMetadataController) {
-                try { icyMetadataController.abort(); } catch (e) {}
-                icyMetadataController = null;
-            }
-            if (statusPollController) {
-                try { statusPollController.abort(); } catch (e) {}
-                statusPollController = null;
-            }
-            if (statusPollTimer) {
-                clearInterval(statusPollTimer);
-                statusPollTimer = null;
-            }
-        }
-        function mapContentTypeToCodec(ct) {
-            ct = (ct || "").toLowerCase();
-            if (ct.includes("mpeg")) return "MP3";
-            if (ct.includes("aac")) return "AAC";
-            if (ct.includes("opus")) return "Opus";
-            if (ct.includes("ogg")) return "OGG";
-            if (ct.includes("flac")) return "FLAC";
-            return "";
-        }
-        function parseIceAudioInfo(s) {
-            const out = {};
-            for (const part of s.split(";")) {
-                const [k, v] = part.split("=");
-                if (k && v !== undefined) out[k.trim().toLowerCase()] = v.trim();
-            }
-            return out;
-        }
-        // Reads ICY (Shoutcast/Icecast) in-stream metadata directly off the
-        // stream's own byte connection — this is the only way to get a
-        // live-updating "Now Playing" song title, since the <audio> element
-        // itself never exposes it. This opens a second connection to the
-        // same URL purely to read bytes (the <audio> element keeps its own
-        // separate connection for actual playback), so it only runs for
-        // plain audio streams and is fully torn down on every track change.
-        // Depends on the server sending CORS headers that expose icy-*
-        // headers and the body itself; if it doesn't, this fails silently.
-        async function startIcyMetadataListener(url, item) {
-            const gen = metaGeneration;
-            const controller = new AbortController();
-            icyMetadataController = controller;
-            try {
-                const response = await fetch(url, {
-                    method: "GET",
-                    mode: "cors",
-                    cache: "no-store",
-                    headers: { "Icy-MetaData": "1" },
-                    signal: controller.signal,
-                });
-                if (gen !== metaGeneration || !response) return;
-
-                const ct = response.headers.get("content-type") || "";
-                const codec = mapContentTypeToCodec(ct);
-                const iceInfo = response.headers.get("ice-audio-info") || "";
-                const parsedIce = iceInfo ? parseIceAudioInfo(iceInfo) : {};
-                mergeLiveMeta({
-                    stationName: response.headers.get("icy-name") || "",
-                    genre: response.headers.get("icy-genre") || "",
-                    codec,
-                    bitrate: parseInt(response.headers.get("icy-br") || parsedIce.bitrate || "", 10),
-                    sampleRate: parseInt(parsedIce.samplerate || "", 10),
-                    channels: parseInt(parsedIce.channels || "", 10),
-                });
-                updateStreamMetadata(item);
-
-                const metaint = parseInt(response.headers.get("icy-metaint") || "0", 10);
-                if (!metaint || !response.body || !response.body.getReader) return;
-
-                const reader = response.body.getReader();
-                let leftover = new Uint8Array(0);
-                const readExactly = async (len) => {
-                    const out = new Uint8Array(len);
-                    let off = 0;
-                    if (leftover.length) {
-                        const n = Math.min(len, leftover.length);
-                        out.set(leftover.subarray(0, n), 0);
-                        off += n;
-                        leftover = leftover.subarray(n);
-                    }
-                    while (off < len) {
-                        const { value, done } = await reader.read();
-                        if (done) return null;
-                        if (!value || !value.length) continue;
-                        const n = Math.min(len - off, value.length);
-                        out.set(value.subarray(0, n), off);
-                        off += n;
-                        if (n < value.length) leftover = value.subarray(n);
-                    }
-                    return out;
-                };
-                const skip = async (len) => {
-                    if (leftover.length) {
-                        if (leftover.length >= len) { leftover = leftover.subarray(len); return; }
-                        len -= leftover.length;
-                        leftover = new Uint8Array(0);
-                    }
-                    while (len > 0) {
-                        const { value, done } = await reader.read();
-                        if (done) return;
-                        if (!value || !value.length) continue;
-                        if (value.length <= len) len -= value.length;
-                        else { leftover = value.subarray(len); len = 0; }
-                    }
-                };
-
-                while (gen === metaGeneration) {
-                    await skip(metaint);
-                    if (gen !== metaGeneration) break;
-                    const lenByte = await readExactly(1);
-                    if (!lenByte) break;
-                    const metaLen = lenByte[0] * 16;
-                    if (metaLen === 0) continue;
-                    const metaBuf = await readExactly(metaLen);
-                    if (!metaBuf || gen !== metaGeneration) break;
-                    // ICY metadata encoding is unspecified in practice; most
-                    // servers send Latin-1/Windows-1252, so decode with that
-                    // first and only fall back to UTF-8.
-                    let text = "";
-                    try { text = new TextDecoder("iso-8859-1").decode(metaBuf); }
-                    catch (e) { try { text = new TextDecoder("utf-8").decode(metaBuf); } catch (e2) {} }
-                    const m = /StreamTitle=(['"])(.*?)\1;/.exec(text);
-                    if (m && m[2]) {
-                        setLiveTitle(m[2], 3);
-                        updateStreamMetadata(item);
-                    }
-                }
-            } catch (e) {
-                // Network error, CORS block, or intentional abort on track
-                // change — nothing to do, the panel keeps its existing rows.
-            }
-        }
-        // Polls the common Icecast/Shoutcast public status endpoints as a
-        // fallback/supplement — useful when a station exposes stats JSON
-        // with permissive CORS even though it doesn't expose icy-* headers.
-        async function fetchJsonQuiet(url, signal, ms) {
-            const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), ms);
-            const onAbort = () => ctrl.abort();
-            signal.addEventListener("abort", onAbort);
-            try {
-                const resp = await fetch(url, { signal: ctrl.signal, cache: "no-store", headers: { Accept: "application/json" } });
-                if (!resp.ok) return null;
-                return await resp.json();
-            } catch (e) {
-                return null;
-            } finally {
-                clearTimeout(timer);
-                signal.removeEventListener("abort", onAbort);
-            }
-        }
-        function parseServerStatus(json, targetUrl) {
-            if (!json) return null;
-            let src = json;
-            if (json.icestats) {
-                src = json.icestats.source;
-                if (Array.isArray(src)) {
-                    let match = null;
-                    try {
-                        const path = new URL(targetUrl).pathname;
-                        match = src.find((s) => (s.listenurl || "").includes(path));
-                    } catch (e) {}
-                    src = match || src[0];
-                }
-            }
-            if (!src || typeof src !== "object") return null;
-            let bitrate = src.bitrate ?? src.audio_bitrate;
-            if (typeof bitrate === "string") bitrate = parseInt(bitrate, 10);
-            let listeners = src.listeners ?? src.currentlisteners;
-            if (typeof listeners === "string") listeners = parseInt(listeners, 10);
-            return {
-                title: src.title || src.yp_currently_playing || src.songtitle || src.streamtitle || src.song || "",
-                genre: src.genre || src.servergenre || "",
-                stationName: src.server_name || src.servertitle || src.name || "",
-                bitrate: typeof bitrate === "number" && !isNaN(bitrate) ? bitrate : null,
-                listeners: typeof listeners === "number" && !isNaN(listeners) ? listeners : null,
-            };
-        }
-        async function pollServerStatus(url, item, gen, signal) {
-            let u;
-            try { u = new URL(url); } catch (e) { return; }
-            const candidates = [
-                `${u.origin}/status-json.xsl?mount=${encodeURIComponent(u.pathname)}`,
-                `${u.origin}/status-json.xsl`,
-                `${u.origin}/stats?json=1`,
-                `${u.origin}/stats?sid=1&json=1`,
-            ];
-            for (const c of candidates) {
-                if (signal.aborted || gen !== metaGeneration) return;
-                const json = await fetchJsonQuiet(c, signal, 4000);
-                if (signal.aborted || gen !== metaGeneration) return;
-                const parsed = json && parseServerStatus(json, url);
-                if (parsed) {
-                    if (parsed.title) setLiveTitle(parsed.title, 2);
-                    mergeLiveMeta(parsed);
-                    updateStreamMetadata(item);
-                    return;
-                }
-            }
-        }
-        function startStatusPolling(url, item) {
-            const gen = metaGeneration;
-            const controller = new AbortController();
-            statusPollController = controller;
-            const run = () => {
-                if (gen !== metaGeneration) { controller.abort(); return; }
-                pollServerStatus(url, item, gen, controller.signal);
-            };
-            run();
-            statusPollTimer = setInterval(run, 20000);
-        }
         function copyStreamInfo() {
             const btn = document.getElementById("streamInfoBtn");
             let text;
@@ -1877,10 +1482,6 @@
         function getFileExtension(name) {
             const idx = name.lastIndexOf(".");
             return idx <= 0 ? "" : name.slice(idx + 1);
-        }
-        function getBaseName(name) {
-            const idx = name.lastIndexOf(".");
-            return idx <= 0 ? name : name.slice(0, idx);
         }
         // Looks for a modified-time field under a few common names, since this
         // depends on whatever the file_index.json generator provides. Accepts
@@ -2413,8 +2014,6 @@
     `);
         }
         function stopPlaylist() {
-            stopMetadataWatchers();
-            resetLiveMeta();
             if (currentHls) {
                 currentHls.destroy();
                 currentHls = null;
@@ -2562,8 +2161,6 @@
             document.getElementById("modalTitle").textContent = s;
             // New track: drop any in-flight metadata listener and clear
             // last track's live rows so nothing stale lingers in the panel.
-            stopMetadataWatchers();
-            resetLiveMeta();
 
             const n = document.getElementById("modalBody");
             // Show a buffering hint right away instead of a silent wait while the
@@ -2589,7 +2186,6 @@
                           Your browser does not support video playback.
                         </video>
                         ${mediaControlsMarkup()}
-                        <div class="stream-metadata" id="streamMetadata"></div>
                       </div>
                     `;
                     video = document.getElementById("videoPlayer");
@@ -2603,7 +2199,6 @@
                     currentHls.destroy();
                     currentHls = null;
                 }
-                updateStreamMetadata(item);
 
                 video.onloadeddata = () => {
                     if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
@@ -2646,7 +2241,6 @@
                           Your browser does not support audio playback.
                         </audio>
                         ${mediaControlsMarkup()}
-                        <div class="stream-metadata" id="streamMetadata"></div>
                       </div>
                     `;
                     audio = document.getElementById("audioPlayer");
@@ -2660,7 +2254,6 @@
                     const titleEl = n.querySelector(".playlist-now-playing");
                     if (titleEl) titleEl.textContent = s;
                 }
-                updateStreamMetadata(item);
 
                 audio.onloadeddata = () => {
                     if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
@@ -2687,8 +2280,6 @@
                     audio.src = finalUrl;
                     audio.load();
                     audio.play().catch(() => {});
-                    startIcyMetadataListener(finalUrl, item);
-                    startStatusPolling(finalUrl, item);
                 }
             }
         }
@@ -2863,8 +2454,6 @@
         function closeModal() {
             const e = document.getElementById("modal");
             e.classList.remove("active");
-            stopMetadataWatchers();
-            resetLiveMeta();
 
             if (currentHls) {
                 currentHls.destroy();

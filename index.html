@@ -571,6 +571,28 @@
             chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
             info: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>`,
         };
+
+        // A handful of music-note glyphs for the big icon shown above the
+        // audio player. One is picked at random whenever the player first
+        // appears, and swapped for a different random one each time the
+        // station/track changes.
+        const playerNoteIcons = [
+            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="19" r="3"/><circle cx="16" cy="17" r="3"/><rect x="8.3" y="6" width="1.8" height="13"/><rect x="18.3" y="4" width="1.8" height="13"/><polygon points="8.3,6 20.1,4 20.1,7.2 8.3,9.2"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" transform="scale(-1,1) translate(-24,0)"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="8" cy="17.5" rx="4" ry="3.2" transform="rotate(-12 8 17.5)"/><rect x="11.3" y="4" width="2" height="13.7"/></svg>`,
+        ];
+        let currentPlayerNoteIndex = -1;
+        function pickPlayerNoteIcon() {
+            if (playerNoteIcons.length <= 1) return playerNoteIcons[0] || "";
+            let idx;
+            do {
+                idx = Math.floor(Math.random() * playerNoteIcons.length);
+            } while (idx === currentPlayerNoteIndex);
+            currentPlayerNoteIndex = idx;
+            return playerNoteIcons[idx];
+        }
         function loadSettings() {
             const e = localStorage.getItem("theme");
             e && e !== "auto"
@@ -2235,7 +2257,7 @@
                     n.innerHTML = `
                       <div class="preview-audio-container">
                         <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link &amp; header" aria-label="Copy stream link and header">${icons.info}</button>
-                        <div class="audio-icon">${icons.audio}</div>
+                        <div class="audio-icon">${pickPlayerNoteIcon()}</div>
                         <div class="playlist-now-playing">${escapeHtml(s)}</div>
                         <audio id="audioPlayer" class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
                           Your browser does not support audio playback.
@@ -2253,6 +2275,8 @@
                     if (currentHls) { currentHls.destroy(); currentHls = null; }
                     const titleEl = n.querySelector(".playlist-now-playing");
                     if (titleEl) titleEl.textContent = s;
+                    const iconEl = n.querySelector(".audio-icon");
+                    if (iconEl) iconEl.innerHTML = pickPlayerNoteIcon();
                 }
 
                 audio.onloadeddata = () => {
@@ -2343,7 +2367,7 @@
                         s.innerHTML = `
               <div class="preview-audio-container">
                 <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link" aria-label="Copy stream link">${icons.info}</button>
-                <div class="audio-icon">${icons.audio}</div>
+                <div class="audio-icon">${pickPlayerNoteIcon()}</div>
                 <div class="playlist-now-playing">${escapeHtml(n)}</div>
                 <audio class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
                   <source src="${o}">

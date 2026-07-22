@@ -5,7 +5,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>File Viewer</title>
+    <meta name="description" content="Browse and preview files from this repository directly in your browser — code, images, audio, video, and playlists." />
+    <meta property="og:title" content="File Viewer" />
+    <meta property="og:description" content="Browse and preview files from this repository directly in your browser." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2358a6ff' d='M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z'/%3E%3C/svg%3E" />
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" id="hljsTheme" href="" />
     <style>
         /* Styles remain consistent */
         :root {
@@ -116,10 +123,14 @@
         .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
         .header-actions { display: flex; gap: 0.375rem; align-items: center; }
         .search-container { position: relative; width: 200px; }
-        .search-input { width: 100%; padding: 0.375rem 0.5rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
+        .search-input { width: 100%; padding: 0.375rem 1.75rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
         .search-input:focus { outline: none; border-color: var(--accent); }
         .search-input::placeholder { color: var(--text-muted); }
         .search-icon { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; height: 14px; }
+        .search-clear { position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; align-items: center; justify-content: center; padding: 0.25rem; border-radius: var(--radius); }
+        .search-clear.visible { display: flex; }
+        .search-clear:hover { color: var(--text-primary); background: var(--bg-hover); }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
         .settings-dropdown { position: relative; }
         .settings-btn { padding: 0.375rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .settings-btn:hover { color: var(--text-primary); border-color: var(--accent); }
@@ -316,6 +327,7 @@
         .preview-code.line-numbers pre { counter-reset: line; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
         .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.75rem; }
+        .preview-code pre code.hljs { background: transparent !important; padding: 0 !important; }
         .preview-pdf { width: 100%; height: 90vh; border: none; }
         .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
@@ -367,6 +379,13 @@
         .load-more-btn:hover { border-color: var(--accent); }
         .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
         .modal-btn.copied { color: var(--success); border-color: var(--success); }
+        .shortcuts-modal { max-width: 440px; }
+        .shortcuts-body { padding: 0.75rem 1rem 1rem; }
+        .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
+        .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .shortcut-row dt { display: flex; gap: 0.25rem; flex-shrink: 0; flex-wrap: wrap; }
+        .shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; }
+        kbd { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.1rem 0.45rem; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; color: var(--text-primary); }
     </style>
 </head>
 <body>
@@ -381,7 +400,13 @@
                 <div class="search-container">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="currentcolor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                     <input class="search-input" id="search" placeholder="Search..." autocomplete="off" aria-label="Search files" />
+                    <button class="search-clear" id="searchClearBtn" type="button" title="Clear search" aria-label="Clear search">
+                        <svg viewBox="0 0 24 24" fill="currentcolor" width="12" height="12"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
                 </div>
+                <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
+                    <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+                </button>
                 <div class="settings-dropdown" id="settingsDropdown">
                     <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
                         <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94.0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24.0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47.0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24.0.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47.0.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98.0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -512,6 +537,30 @@
             <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
+    <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+        <div class="modal shortcuts-modal" id="shortcutsModalContent">
+            <div class="modal-header">
+                <span class="modal-title" id="shortcutsTitle">Keyboard Shortcuts</span>
+                <div class="modal-actions">
+                    <button class="modal-btn" id="shortcutsCloseBtn" title="Close" aria-label="Close keyboard shortcuts">
+                        <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body shortcuts-body">
+                <dl class="shortcuts-list">
+                    <div class="shortcut-row"><dt><kbd>/</kbd></dt><dd>Focus search</dd></div>
+                    <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd>Show this help</dd></div>
+                    <div class="shortcut-row"><dt><kbd>Esc</kbd></dt><dd>Close dialog</dd></div>
+                    <div class="shortcut-row"><dt><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd>Navigate files &amp; folders</dd></div>
+                    <div class="shortcut-row"><dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt><dd>Open selected file or folder</dd></div>
+                    <div class="shortcut-row"><dt><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> (in preview)</dt><dd>Stop / play playlist track</dd></div>
+                    <div class="shortcut-row"><dt><kbd>&uarr;</kbd> / <kbd>&darr;</kbd> (in preview)</dt><dd>Scroll preview</dd></div>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
     <script>
         let fileIndex = null,
             currentPath = [],
@@ -535,6 +584,7 @@
             sortBy = "name-asc",
             searchResultLimit = 100,
             lastFocusedElement = null,
+            lastFocusedElementShortcuts = null,
             fetchCache = new Map(),
             currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
@@ -740,6 +790,37 @@
             if (flatToggle) flatToggle.checked = flatOn;
             document.documentElement.classList.toggle("flat", flatOn);
             initThemeColor();
+            syncHljsTheme();
+        }
+        // Picks a highlight.js theme (github-dark or github light) based on
+        // the effective theme so code previews don't clash with the app's
+        // own light/dark mode. Only the token colors come from hljs — the
+        // background is overridden by CSS to stay consistent with the app.
+        function isLightTheme() {
+            const t = document.documentElement.getAttribute("data-theme");
+            if (t === "light" || t === "hc-light") return true;
+            if (t === "dark" || t === "hc-dark") return false;
+            return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches);
+        }
+        function syncHljsTheme() {
+            const link = document.getElementById("hljsTheme");
+            if (!link) return;
+            const href = isLightTheme()
+                ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+                : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css";
+            if (link.href !== href) link.href = href;
+        }
+        // Announces a short message to screen readers via the hidden
+        // aria-live region, without visually changing anything. Clearing
+        // first forces re-announcement even if the same text is set twice
+        // in a row (e.g. repeated "Buffering..." on rapid track skips).
+        function announce(text) {
+            const el = document.getElementById("srAnnouncer");
+            if (!el) return;
+            el.textContent = "";
+            requestAnimationFrame(() => {
+                el.textContent = text;
+            });
         }
         function setFlatDesign(on) {
             document.documentElement.classList.toggle("flat", on);
@@ -751,6 +832,7 @@
                 : (localStorage.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
                 updateThemeButtons();
             if (themeHue != null) applyThemeHue(themeHue);
+            syncHljsTheme();
         }
         function setupDropdown(btnId, menuId, dropdownId) {
             const btn = document.getElementById(btnId),
@@ -1300,7 +1382,7 @@
         async function init() {
             loadSettings();
             try {
-                const e = await fetch("./file_index.json");
+                const e = await fetch("./file_index.json", { cache: "no-store" });
                 if (!e.ok) throw new Error("Failed to load file index");
                 (fileIndex = await e.json()), 
                 preprocessFiles(fileIndex.root), 
@@ -1318,10 +1400,26 @@
         `);
             }
         }
+        function updateSearchClearVisibility() {
+            const input = document.getElementById("search");
+            const btn = document.getElementById("searchClearBtn");
+            if (input && btn) btn.classList.toggle("visible", input.value.length > 0);
+        }
+        function clearSearch() {
+            const input = document.getElementById("search");
+            input.value = "";
+            input.focus();
+            searchQuery = "";
+            searchResultLimit = 100;
+            updateSearchClearVisibility();
+            render();
+            document.getElementById("main").scrollTop = 0;
+        }
         function setupEventListeners() {
             const n = document.getElementById("search");
             let e;
             n.addEventListener("input", (t) => {
+                updateSearchClearVisibility();
                 clearTimeout(e),
                     (e = setTimeout(() => {
                         (searchQuery = t.target.value.toLowerCase().trim()),
@@ -1330,6 +1428,7 @@
                             (document.getElementById("main").scrollTop = 0);
                     }, 150));
             }),
+                document.getElementById("searchClearBtn").addEventListener("click", clearSearch),
                 document.getElementById("logoHome").addEventListener("click", () => navigateTo([])),
                 document.getElementById("logoHome").addEventListener("keydown", (e) => {
                     (e.key === "Enter" || e.key === " ") && (e.preventDefault(), navigateTo([]));
@@ -1343,9 +1442,24 @@
                 }),
                 document.getElementById("modalContent").addEventListener("click", (e) => e.stopPropagation()),
                 document.getElementById("modal").addEventListener("keydown", trapModalFocus),
+                document.getElementById("shortcutsBtn").addEventListener("click", openShortcutsModal),
+                document.getElementById("shortcutsCloseBtn").addEventListener("click", closeShortcutsModal),
+                document.getElementById("shortcutsModal").addEventListener("click", (e) => {
+                    e.target === e.currentTarget && closeShortcutsModal();
+                }),
+                document.getElementById("shortcutsModal").addEventListener("keydown", (e) => trapModalFocus(e, "shortcutsModalContent")),
                 document.addEventListener("keydown", (e) => {
-                    e.key === "Escape" && closeModal(),
-                        e.key === "/" &&
+                    const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
+                    if (e.key === "Escape") {
+                        shortcutsOpen ? closeShortcutsModal() : closeModal();
+                        return;
+                    }
+                    if (e.key === "?" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !shortcutsOpen) {
+                        e.preventDefault();
+                        openShortcutsModal();
+                        return;
+                    }
+                    e.key === "/" &&
                             document.activeElement.tagName !== "INPUT" &&
                             (e.preventDefault(), document.getElementById("search").focus());
                     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
@@ -1694,6 +1808,7 @@
         }
         function navigateTo(e) {
             (currentPath = e), (searchQuery = ""), (document.getElementById("search").value = "");
+            updateSearchClearVisibility();
             let t = "";
             for (const n of e) (t += (t ? "/" : "") + n), expandedFolders.add(t);
             render();
@@ -1778,6 +1893,10 @@
                 all = sortItems(getCurrentItems());
             }
             const e = searchQuery ? all.slice(0, searchResultLimit) : all;
+
+            if (searchQuery) {
+                announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);
+            }
 
             if (e.length === 0) {
                 n.innerHTML = `
@@ -2180,16 +2299,81 @@
             fetchCache.set(url, text);
             return text;
         }
-        function renderTextPreview(container, text) {
+        // Maps common file extensions to highlight.js language aliases.
+        // Falls back to hljs's own auto-detection if the extension isn't
+        // recognized, and to plain escaped text if hljs isn't available at all.
+        const EXT_TO_HLJS_LANG = {
+            js: "javascript", mjs: "javascript", cjs: "javascript", jsx: "javascript",
+            ts: "typescript", tsx: "typescript",
+            py: "python", rb: "ruby", php: "php", go: "go", rs: "rust",
+            java: "java", kt: "kotlin", swift: "swift", c: "c", h: "c",
+            cpp: "cpp", cc: "cpp", hpp: "cpp", cs: "csharp",
+            sh: "bash", bash: "bash", zsh: "bash", ps1: "powershell",
+            html: "xml", htm: "xml", xml: "xml", svg: "xml",
+            css: "css", scss: "scss", less: "less",
+            json: "json", jsonc: "json", yml: "yaml", yaml: "yaml",
+            toml: "ini", ini: "ini", md: "markdown", markdown: "markdown",
+            sql: "sql", dockerfile: "dockerfile", makefile: "makefile",
+            lua: "lua", r: "r", pl: "perl", diff: "diff", patch: "diff",
+        };
+        function guessHljsLanguage(fileName) {
+            if (!window.hljs || !fileName) return null;
+            const base = fileName.toLowerCase();
+            const ext = base.includes(".") ? base.split(".").pop() : base;
+            const lang = EXT_TO_HLJS_LANG[ext];
+            return lang && hljs.getLanguage(lang) ? lang : null;
+        }
+        // highlight.js returns one HTML string for the whole file, with <span>
+        // tags that can freely span multiple lines (e.g. a multi-line block
+        // comment). Splitting that naively on "\n" would leave unclosed tags
+        // dangling on every line but the first. This walks the markup and
+        // reopens/closes span tags at each line boundary so every line is
+        // independently valid HTML, which lets us keep wrapping each line in
+        // its own <span class="line"> for the CSS-counter line numbers.
+        function splitHighlightedHtml(html) {
+            const rawLines = html.split("\n");
+            const tagRegex = /<span class="([^"]*)">|<\/span>/g;
+            let openTags = [];
+            const result = [];
+            for (const line of rawLines) {
+                const prefix = openTags.map((cls) => `<span class="${cls}">`).join("");
+                const stack = [...openTags];
+                tagRegex.lastIndex = 0;
+                let match;
+                while ((match = tagRegex.exec(line))) {
+                    if (match[0] === "</span>") stack.pop();
+                    else stack.push(match[1]);
+                }
+                result.push(prefix + line + "</span>".repeat(stack.length));
+                openTags = stack;
+            }
+            return result;
+        }
+        function renderTextPreview(container, text, fileName) {
             const MAX_LINES = 1e4;
             const allLines = text.split("\n");
             const lines = allLines.slice(0, MAX_LINES);
             const truncated = allLines.length > MAX_LINES;
-            const rendered = lines.map((e) => `<span class="line">${escapeHtml(e)}</span>`).join("\n");
+            const lang = guessHljsLanguage(fileName);
+
+            let highlightedLines;
+            if (lang) {
+                try {
+                    const highlighted = hljs.highlight(lines.join("\n"), { language: lang, ignoreIllegals: true }).value;
+                    highlightedLines = splitHighlightedHtml(highlighted);
+                } catch (e) {
+                    console.warn("Syntax highlighting failed, falling back to plain text:", e);
+                    highlightedLines = lines.map(escapeHtml);
+                }
+            } else {
+                highlightedLines = lines.map(escapeHtml);
+            }
+
+            const rendered = highlightedLines.map((l) => `<span class="line">${l}</span>`).join("\n");
             container.innerHTML = `
         ${truncated ? `<div class="truncation-notice">Showing first ${MAX_LINES.toLocaleString()} of ${allLines.length.toLocaleString()} lines — download the file to see the rest.</div>` : ""}
-        <div class="preview-code line-numbers">
-          <pre>${rendered}</pre>
+        <div class="preview-code line-numbers${lang ? " hljs" : ""}">
+          <pre><code class="hljs">${rendered}</code></pre>
         </div>
       `;
         }
@@ -2197,7 +2381,7 @@
             const e = `./${currentFilePath}`;
             try {
                 const text = await fetchTextCached(e);
-                renderTextPreview(document.getElementById("modalBody"), text);
+                renderTextPreview(document.getElementById("modalBody"), text, currentFileName);
             } catch (err) {
                 showUnavailable(document.getElementById("modalBody"), currentFileName, e, err);
             }
@@ -2266,9 +2450,11 @@
             }
             if (currentPlaylist.length <= 1) {
                 console.log("End of playlist reached.");
+                announce("Stream unavailable. End of playlist.");
                 stopPlaylist();
                 return;
             }
+            announce("Stream unavailable, skipping to next track.");
             if (isShuffle) {
                 const nextIdx = getNextShuffleIndex();
                 shuffleHistory.push(nextIdx);
@@ -2281,6 +2467,40 @@
             }
         }
 
+        // Shared by both the video and audio branches of playPlaylistTrack:
+        // wires the "loaded/error/ended" handlers and picks HLS vs a plain
+        // src, since that logic is identical regardless of which kind of
+        // element is playing. Keeping it in one place means future playlist
+        // features (a new fallback, a new HLS event, etc.) only need to be
+        // written once.
+        function attachPlaylistStream(mediaEl, finalUrl, urlLower) {
+            mediaEl.onloadeddata = () => {
+                if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                setPlaylistBuffering(false);
+            };
+            mediaEl.onerror = () => skipToNext();
+            mediaEl.onended = () => {
+                if (streamTimeout) clearTimeout(streamTimeout);
+                goToNextTrack();
+            };
+
+            if (Hls.isSupported() && (urlLower.includes(".m3u8") || urlLower.includes("application/x-mpegurl"))) {
+                currentHls = new Hls();
+                currentHls.loadSource(finalUrl);
+                currentHls.attachMedia(mediaEl);
+                currentHls.on(Hls.Events.FRAG_LOADED, function () {
+                    if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
+                    setPlaylistBuffering(false);
+                });
+                currentHls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) skipToNext();
+                });
+            } else {
+                mediaEl.src = finalUrl;
+                mediaEl.load();
+                mediaEl.play().catch(() => {});
+            }
+        }
         async function playPlaylistTrack(e) {
             if (e < 0 || e >= currentPlaylist.length) return;
 
@@ -2296,6 +2516,7 @@
             const item = currentPlaylist[currentPlaylistIndex];
             const s = item.title;
             document.getElementById("modalTitle").textContent = s;
+            announce(`Loading: ${s}`);
             // New track: drop any in-flight metadata listener and clear
             // last track's live rows so nothing stale lingers in the panel.
 
@@ -2336,34 +2557,7 @@
                     currentHls.destroy();
                     currentHls = null;
                 }
-
-                video.onloadeddata = () => {
-                    if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                    setPlaylistBuffering(false);
-                };
-                video.onerror = () => skipToNext();
-                video.onended = () => {
-                    if (streamTimeout) clearTimeout(streamTimeout);
-                    goToNextTrack();
-                };
-
-                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
-                    currentHls = new Hls();
-                    currentHls.loadSource(finalUrl);
-                    currentHls.attachMedia(video);
-                    currentHls.on(Hls.Events.FRAG_LOADED, function() {
-                        if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                        setPlaylistBuffering(false);
-                    });
-                    currentHls.on(Hls.Events.ERROR, function(event, data) {
-                        if (data.fatal) skipToNext();
-                    });
-                } else {
-                    video.src = finalUrl;
-                    video.load();
-                    video.play().catch(() => {});
-                }
-
+                attachPlaylistStream(video, finalUrl, o);
             } else {
                 let audio = n.querySelector("#audioPlayer");
                 if (!audio) {
@@ -2393,33 +2587,7 @@
                     const iconEl = n.querySelector(".audio-icon");
                     if (iconEl) iconEl.innerHTML = pickPlayerNoteIcon();
                 }
-
-                audio.onloadeddata = () => {
-                    if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                    setPlaylistBuffering(false);
-                };
-                audio.onerror = () => skipToNext();
-                audio.onended = () => {
-                    if (streamTimeout) clearTimeout(streamTimeout);
-                    goToNextTrack();
-                };
-
-                if (Hls.isSupported() && (o.includes('.m3u8') || o.includes('application/x-mpegurl'))) {
-                    currentHls = new Hls();
-                    currentHls.loadSource(finalUrl);
-                    currentHls.attachMedia(audio);
-                    currentHls.on(Hls.Events.FRAG_LOADED, function() {
-                        if (streamTimeout) { clearTimeout(streamTimeout); streamTimeout = null; }
-                        setPlaylistBuffering(false);
-                    });
-                    currentHls.on(Hls.Events.ERROR, function(event, data) {
-                        if (data.fatal) skipToNext();
-                    });
-                } else {
-                    audio.src = finalUrl;
-                    audio.load();
-                    audio.play().catch(() => {});
-                }
+                attachPlaylistStream(audio, finalUrl, o);
             }
         }
 
@@ -2518,7 +2686,7 @@
                     case "text":
                         try {
                             const text = await fetchTextCached(o);
-                            renderTextPreview(s, text);
+                            renderTextPreview(s, text, n);
                         } catch (err) {
                             showUnavailable(s, n, o, err);
                         }
@@ -2622,9 +2790,9 @@
             }
             lastFocusedElement = null;
         }
-        function trapModalFocus(e) {
+        function trapModalFocus(e, containerId = "modalContent") {
             if (e.key !== "Tab") return;
-            const modal = document.getElementById("modalContent");
+            const modal = document.getElementById(containerId);
             const focusable = modal.querySelectorAll(
                 'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
             );
@@ -2638,6 +2806,18 @@
                 e.preventDefault();
                 first.focus();
             }
+        }
+        function openShortcutsModal() {
+            lastFocusedElementShortcuts = document.activeElement;
+            document.getElementById("shortcutsModal").classList.add("active");
+            document.getElementById("shortcutsCloseBtn").focus();
+        }
+        function closeShortcutsModal() {
+            document.getElementById("shortcutsModal").classList.remove("active");
+            if (lastFocusedElementShortcuts && typeof lastFocusedElementShortcuts.focus === "function") {
+                lastFocusedElementShortcuts.focus();
+            }
+            lastFocusedElementShortcuts = null;
         }
         function escapeHtml(e) {
             const t = document.createElement("div");

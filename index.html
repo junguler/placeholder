@@ -9,47 +9,46 @@
     <meta property="og:title" content="File Viewer" />
     <meta property="og:description" content="Browse and preview files from this repository directly in your browser." />
     <meta property="og:type" content="website" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e0902f' d='M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z'/%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2358a6ff' d='M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z'/%3E%3C/svg%3E" />
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <link rel="stylesheet" id="hljsTheme" href="" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
         /* Styles remain consistent */
         :root {
-            --bg-primary: #15100c;
-            --bg-secondary: #1d1712;
-            --bg-tertiary: #271f17;
-            --bg-hover: #35291d;
-            --border-color: #40331f;
-            --text-primary: #f2e8d6;
-            --text-secondary: #b7a488;
-            --text-muted: #7d6c54;
-            --accent: #e0902f;
-            --accent-hover: #f5aa53;
-            --success: #8caa5a;
-            --warning: #e0b34a;
-            --danger: #c1503a;
-            --radius: 3px;
-            --radius-lg: 6px;
-            --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-hover: #30363d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent: #5858ff;
+            --accent-hover: #7979ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --danger: #f85149;
+            --radius: 6px;
+            --radius-lg: 8px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --accent-glow: rgba(88, 88, 255, 0.3);
             --transition: 0.15s ease;
             --font-size-base: 16px;
         }
         html[data-theme="light"] {
-            --bg-primary: #f7f1e4;
-            --bg-secondary: #efe3cd;
-            --bg-tertiary: #e4d5b5;
-            --bg-hover: #d7c39a;
-            --border-color: #c8b088;
-            --text-primary: #2b2116;
-            --text-secondary: #5d4d37;
-            --text-muted: #8a7a5c;
-            --accent: #a85a1f;
-            --accent-hover: #8a4a18;
-            --shadow: 0 4px 12px rgba(90, 66, 30, 0.18);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --bg-tertiary: #eaeef2;
+            --bg-hover: #d0d7de;
+            --border-color: #d0d7de;
+            --text-primary: #1f2328;
+            --text-secondary: #656d76;
+            --text-muted: #8c959f;
+            --accent: #0909da;
+            --accent-hover: #0505ae;
+            --shadow: 0 4px 12px rgba(140, 149, 159, 0.2);
+            --accent-glow: rgba(9, 9, 218, 0.25);
         }
         /* High contrast dark: based on the classic Windows high-contrast black scheme
            (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
@@ -68,6 +67,7 @@
             --warning: #ff37cb;
             --danger: #ff4444;
             --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+            --accent-glow: rgba(0, 255, 255, 0.35);
         }
         /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
         html[data-theme="hc-light"] {
@@ -85,28 +85,29 @@
             --warning: #00c834;
             --danger: #00bbbb;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --accent-glow: rgba(255, 0, 0, 0.25);
         }
         @media (prefers-color-scheme: light) {
             :root:not([data-theme]) {
-                --bg-primary: #f7f1e4;
-                --bg-secondary: #efe3cd;
-                --bg-tertiary: #e4d5b5;
-                --bg-hover: #d7c39a;
-                --border-color: #c8b088;
-                --text-primary: #2b2116;
-                --text-secondary: #5d4d37;
-                --text-muted: #8a7a5c;
-                --accent: #a85a1f;
-                --accent-hover: #8a4a18;
-                --shadow: 0 4px 12px rgba(90, 66, 30, 0.18);
+                --bg-primary: #ffffff;
+                --bg-secondary: #f6f8fa;
+                --bg-tertiary: #eaeef2;
+                --bg-hover: #d0d7de;
+                --border-color: #d0d7de;
+                --text-primary: #1f2328;
+                --text-secondary: #656d76;
+                --text-muted: #8c959f;
+                --accent: #0909da;
+                --accent-hover: #0505ae;
+                --shadow: 0 4px 12px rgba(140, 149, 159, 0.2);
+                --accent-glow: rgba(9, 9, 218, 0.25);
             }
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { font-size: var(--font-size-base); }
         body {
-            font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, segoe ui, noto sans, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-primary);
-            background-image: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0px, rgba(0, 0, 0, 0.05) 1px, transparent 1px, transparent 3px);
+            font-family: -apple-system, BlinkMacSystemFont, segoe ui, noto sans, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.4;
             height: 100vh;
@@ -115,11 +116,11 @@
             flex-direction: column;
             overflow: hidden;
         }
-        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), inset 0 -3px 0 -2px var(--accent); padding: 0.5rem 1rem; flex-shrink: 0; }
+        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 0.5rem 1rem; flex-shrink: 0; }
         .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-        .logo { display: flex; align-items: center; gap: 0.5rem; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.95rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); cursor: pointer; flex-shrink: 0; }
-        .logo svg { width: 20px; height: 20px; color: var(--text-primary); }
-        .breadcrumb { display: flex; align-items: center; gap: 0.125rem; flex-wrap: wrap; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.8rem; flex: 1; min-width: 0; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; color: var(--text-primary); cursor: pointer; flex-shrink: 0; }
+        .logo svg { width: 20px; height: 20px; }
+        .breadcrumb { display: flex; align-items: center; gap: 0.125rem; flex-wrap: wrap; font-size: 0.85rem; flex: 1; min-width: 0; }
         .breadcrumb-item { color: var(--accent); padding: 0.125rem 0.375rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
         .breadcrumb-item:hover { background: var(--bg-hover); }
         .breadcrumb-item.current { color: var(--text-primary); cursor: default; }
@@ -208,25 +209,23 @@
         .stat svg { width: 12px; height: 12px; }
         .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
         .file-list { display: flex; flex-direction: column; gap: 1px; }
-        .file-card { position: relative; overflow: hidden; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
-        .file-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.18s ease; }
+        .file-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
         .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
-        .file-card:hover::before { transform: scaleX(1); }
         .file-card.directory { background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); }
         html.flat .file-card.directory { background: var(--bg-secondary); }
         .file-card.parent-dir .file-name { color: var(--text-secondary); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
-        .file-icon.folder { color: #ab9a7c; background: rgba(171, 154, 124, 0.12); }
-        .file-icon.image { color: #b784c4; background: rgba(183, 132, 196, 0.12); }
-        .file-icon.video { color: #c1503a; background: rgba(193, 80, 58, 0.12); }
-        .file-icon.audio { color: #8caa5a; background: rgba(140, 170, 90, 0.12); }
-        .file-icon.code { color: #e0902f; background: rgba(224, 144, 47, 0.12); }
-        .file-icon.document { color: #d9863d; background: rgba(217, 134, 61, 0.12); }
-        .file-icon.text { color: #9c8a6e; background: rgba(156, 138, 110, 0.12); }
-        .file-icon.data { color: #e0b34a; background: rgba(224, 179, 74, 0.12); }
-        .file-icon.archive { color: #c9a876; background: rgba(201, 168, 118, 0.12); }
-        .file-icon.playlist { color: #d97a92; background: rgba(217, 122, 146, 0.12); }
+        .file-icon.folder { color: #8b949e; background: rgba(139, 148, 158, 0.1); }
+        .file-icon.image { color: #a371f7; background: rgba(163, 113, 247, 0.1); }
+        .file-icon.video { color: #f85149; background: rgba(248, 81, 73, 0.1); }
+        .file-icon.audio { color: #3fb950; background: rgba(63, 185, 80, 0.1); }
+        .file-icon.code { color: #58a6ff; background: rgba(88, 166, 255, 0.1); }
+        .file-icon.document { color: #f0883e; background: rgba(240, 136, 62, 0.1); }
+        .file-icon.text { color: #8b949e; background: rgba(139, 148, 158, 0.1); }
+        .file-icon.data { color: #d29922; background: rgba(210, 153, 34, 0.1); }
+        .file-icon.archive { color: #a5d6ff; background: rgba(165, 214, 255, 0.1); }
+        .file-icon.playlist { color: #f778ba; background: rgba(247, 120, 186, 0.1); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-size: 0.7rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
@@ -258,7 +257,7 @@
             .file-list.list-columns .col-ext, .file-list.list-columns .col-date, .file-list.list-columns .col-time { display: none; }
         }
         .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
-        .empty-state svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
+        .empty-state svg:not(.empty-state-illustration) { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .empty-state h2 { font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary); }
         .empty-state p { font-size: 0.85rem; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.2s; padding: 0.5rem; }
@@ -329,7 +328,7 @@
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: #fff; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
-        .preview-code pre { margin: 0; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 0.9; white-space: pre-wrap; word-break: break-word; }
+        .preview-code pre { margin: 0; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
         .preview-code.line-numbers pre { counter-reset: line; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
         .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.75rem; }
@@ -374,7 +373,7 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: 0 0; }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
         :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         .search-input:focus-visible { outline-offset: 0; }
         .file-card:focus-visible { outline-offset: -2px; }
@@ -391,7 +390,48 @@
         .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
         .shortcut-row dt { display: flex; gap: 0.25rem; flex-shrink: 0; flex-wrap: wrap; }
         .shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; }
-        kbd { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.1rem 0.45rem; font-size: 0.75rem; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; color: var(--text-primary); }
+        kbd { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.1rem 0.45rem; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; color: var(--text-primary); }
+
+        /* --- Visual pass: thin scrollbars everywhere (Firefox) --- */
+        html { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
+
+        /* --- Search match highlighting --- */
+        mark.search-highlight { background: rgba(255, 208, 0, 0.35); color: inherit; font-weight: 700; border-radius: 2px; padding: 0 1px; }
+
+        /* --- List/tree view thumbnails for images (previously grid-only) --- */
+        .file-list .file-thumbnail:not(.file-thumbnail-inline) { display: none; }
+        .file-thumbnail-inline { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+        .file-list .file-card:has(.file-thumbnail-inline) .file-icon { display: none; }
+
+        /* --- File card micro-interactions --- */
+        .file-card { transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background-color var(--transition); }
+        .file-card:hover { transform: translateY(-1px) scale(1.012); }
+        .file-list .file-card:hover { transform: translateX(1px); background: var(--bg-secondary); }
+        .file-card:active { transform: translateY(0) scale(0.995); }
+
+        /* --- Softer, theme-aware focus glow layered on top of the accessible outline --- */
+        .file-card:focus-visible, .playlist-btn:focus-visible, .modal-btn:focus-visible, .view-btn:focus-visible, .settings-btn:focus-visible {
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* --- Modal backdrop blur --- */
+        .modal-overlay { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+
+        /* --- Sticky header gains depth only once content is scrolled beneath it --- */
+        .header { box-shadow: 0 1px 0 rgba(0, 0, 0, 0); transition: box-shadow var(--transition); position: relative; z-index: 10; }
+        .header.scrolled { box-shadow: var(--shadow); }
+
+        /* --- Skeleton loading state (replaces spinner+text on initial load) --- */
+        .skeleton-list { display: flex; flex-direction: column; gap: 1px; padding-top: 0.25rem; }
+        .skeleton-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+        .skeleton-block { border-radius: 4px; background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 37%, var(--bg-tertiary) 63%); background-size: 400% 100%; animation: skeleton-shimmer 1.4s ease infinite; }
+        .skeleton-icon { width: 24px; height: 24px; flex-shrink: 0; }
+        .skeleton-name { height: 12px; width: 45%; }
+        .skeleton-meta { height: 10px; width: 15%; margin-left: auto; }
+        @keyframes skeleton-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+        /* --- Empty state illustration --- */
+        .empty-state-illustration { width: 96px; height: 96px; margin: 0 auto 0.75rem; }
     </style>
 </head>
 <body>
@@ -486,7 +526,7 @@
                                 <div class="theme-swatches" id="themeSwatches"></div>
                             </div>
                             <div class="theme-custom-row">
-                                <input type="color" id="themeColorInput" value="#e0902f" title="Pick a custom color" />
+                                <input type="color" id="themeColorInput" value="#8080ff" title="Pick a custom color" />
                                 <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
                             </div>
                         </div>
@@ -506,9 +546,13 @@
             <div class="tree-content" id="treeContent"></div>
         </aside>
         <main class="main" id="main">
-            <div class="loading">
-                <div class="spinner"></div>
-                <span>Loading...</span>
+            <div class="skeleton-list" aria-hidden="true">
+                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name"></div><div class="skeleton-block skeleton-meta"></div></div>
+                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:60%"></div><div class="skeleton-block skeleton-meta"></div></div>
+                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:35%"></div><div class="skeleton-block skeleton-meta"></div></div>
+                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:50%"></div><div class="skeleton-block skeleton-meta"></div></div>
+                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:40%"></div><div class="skeleton-block skeleton-meta"></div></div>
+                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:55%"></div><div class="skeleton-block skeleton-meta"></div></div>
             </div>
         </main>
     </div>
@@ -627,6 +671,31 @@
             other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
             chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
             info: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>`,
+        };
+
+        // Small two-tone illustrations for empty/no-results/error states, using
+        // currentColor for the outline and var(--accent) for the highlight so
+        // they follow the active theme automatically.
+        const emptyStateIllustrations = {
+            folder: `<svg class="empty-state-illustration" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 30c0-2.2 1.8-4 4-4h16l6 7h32c2.2 0 4 1.8 4 4v34c0 2.2-1.8 4-4 4H18c-2.2 0-4-1.8-4-4V30z" fill="currentColor" opacity="0.12"/>
+                <path d="M14 30c0-2.2 1.8-4 4-4h16l6 7h32c2.2 0 4 1.8 4 4v34c0 2.2-1.8 4-4 4H18c-2.2 0-4-1.8-4-4V30z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                <circle cx="48" cy="56" r="10" fill="var(--accent)" opacity="0.15"/>
+                <path d="M43 56h10M48 51v10" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>`,
+            search: `<svg class="empty-state-illustration" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 26c0-2.2 1.8-4 4-4h14l5 6h27c2.2 0 4 1.8 4 4v30c0 2.2-1.8 4-4 4H22c-2.2 0-4-1.8-4-4V26z" fill="currentColor" opacity="0.1"/>
+                <path d="M18 26c0-2.2 1.8-4 4-4h14l5 6h27c2.2 0 4 1.8 4 4v30c0 2.2-1.8 4-4 4H22c-2.2 0-4-1.8-4-4V26z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                <circle cx="56" cy="58" r="13" fill="var(--bg-primary)" stroke="var(--accent)" stroke-width="3"/>
+                <path d="M65.5 67.5 L76 78" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>
+            </svg>`,
+            error: `<svg class="empty-state-illustration" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 30c0-2.2 1.8-4 4-4h16l6 7h32c2.2 0 4 1.8 4 4v34c0 2.2-1.8 4-4 4H18c-2.2 0-4-1.8-4-4V30z" fill="currentColor" opacity="0.1"/>
+                <path d="M14 30c0-2.2 1.8-4 4-4h16l6 7h32c2.2 0 4 1.8 4 4v34c0 2.2-1.8 4-4 4H18c-2.2 0-4-1.8-4-4V30z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M48 44 L60 65 L36 65 Z" fill="var(--danger)" opacity="0.15" stroke="var(--danger)" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M48 53v5" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="48" cy="61.5" r="1.4" fill="var(--danger)"/>
+            </svg>`,
         };
 
         // A handful of music-note glyphs for the big icon shown above the
@@ -877,16 +946,16 @@
         const THEME_HUE_KEY = "themeHue";
         const THEME_BASE = {
             dark: {
-                "--bg-primary": "#15100c", "--bg-secondary": "#1d1712", "--bg-tertiary": "#271f17",
-                "--bg-hover": "#35291d", "--border-color": "#40331f", "--text-primary": "#f2e8d6",
-                "--text-secondary": "#b7a488", "--text-muted": "#7d6c54", "--accent": "#e0902f",
-                "--accent-hover": "#f5aa53", "--success": "#8caa5a", "--warning": "#e0b34a", "--danger": "#c1503a"
+                "--bg-primary": "#0d1117", "--bg-secondary": "#161b22", "--bg-tertiary": "#21262d",
+                "--bg-hover": "#30363d", "--border-color": "#30363d", "--text-primary": "#e6edf3",
+                "--text-secondary": "#8b949e", "--text-muted": "#6e7681", "--accent": "#5858ff",
+                "--accent-hover": "#7979ff", "--success": "#3fb950", "--warning": "#d29922", "--danger": "#f85149"
             },
             light: {
-                "--bg-primary": "#f7f1e4", "--bg-secondary": "#efe3cd", "--bg-tertiary": "#e4d5b5",
-                "--bg-hover": "#d7c39a", "--border-color": "#c8b088", "--text-primary": "#2b2116",
-                "--text-secondary": "#5d4d37", "--text-muted": "#8a7a5c", "--accent": "#a85a1f",
-                "--accent-hover": "#8a4a18"
+                "--bg-primary": "#ffffff", "--bg-secondary": "#f6f8fa", "--bg-tertiary": "#eaeef2",
+                "--bg-hover": "#d0d7de", "--border-color": "#d0d7de", "--text-primary": "#1f2328",
+                "--text-secondary": "#656d76", "--text-muted": "#8c959f", "--accent": "#0909da",
+                "--accent-hover": "#0505ae"
             },
             "hc-dark": {
                 "--bg-primary": "#000000", "--bg-secondary": "#000000", "--bg-tertiary": "#000000",
@@ -1434,9 +1503,7 @@
                 console.error(e),
                     (document.getElementById("main").innerHTML = `
           <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-            </svg>
+            ${emptyStateIllustrations.error}
             <h2>Could not load files</h2>
             <p>Make sure file_index.json exists.</p>
           </div>
@@ -1459,6 +1526,12 @@
             document.getElementById("main").scrollTop = 0;
         }
         function setupEventListeners() {
+            const mainEl = document.getElementById("main");
+            const headerEl = document.querySelector(".header");
+            mainEl.addEventListener("scroll", () => {
+                headerEl.classList.toggle("scrolled", mainEl.scrollTop > 2);
+            }, { passive: true });
+
             const n = document.getElementById("search");
             let e;
             n.addEventListener("input", (t) => {
@@ -1957,9 +2030,7 @@
             if (e.length === 0) {
                 n.innerHTML = `
           <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-            </svg>
+            ${searchQuery ? emptyStateIllustrations.search : emptyStateIllustrations.folder}
             <h2>${searchQuery ? "No results" : "Empty folder"}</h2>
             <p>${searchQuery ? "Try different terms" : "No files here"}</p>
           </div>
@@ -2042,7 +2113,7 @@
             <div class="file-card directory" data-directory="true" data-path='${JSON.stringify(parentPathArr)}' tabindex="0" role="button" aria-label="Open folder ${escapeHtml(item.name)}">
               <div class="file-icon folder">${icons.folder}</div>
               <div class="file-info">
-                <span class="file-name">${escapeHtml(item.name)}</span>
+                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} items`}
                     ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
@@ -2062,15 +2133,17 @@
           `;
                 } else {
                     let i = "";
-                    currentView === "grid" &&
-                        item.category === "image" &&
-                        (i = `<img class="file-thumbnail lazy" data-src="./${clickPath}" alt="" loading="lazy">`),
-                        (t += `
+                    if (item.category === "image") {
+                        i = currentView === "grid"
+                            ? `<img class="file-thumbnail lazy" data-src="./${clickPath}" alt="" loading="lazy">`
+                            : `<img class="file-thumbnail file-thumbnail-inline lazy" data-src="./${clickPath}" alt="" loading="lazy">`;
+                    }
+                    t += `
             <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">
               ${i}
               <div class="file-icon ${s}">${o}</div>
               <div class="file-info">
-                <span class="file-name">${escapeHtml(item.name)}</span>
+                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${isColumnView && !searchQuery ? "" : item.sizeFormatted}
                     ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
@@ -2089,7 +2162,7 @@
                         : ""
               }
             </div>
-          `);
+          `;
                 }
             }
             (t += "</div>"),
@@ -2895,6 +2968,68 @@
         function escapeHtml(e) {
             const t = document.createElement("div");
             return (t.textContent = e), t.innerHTML;
+        }
+
+        // Wraps the parts of `name` that matched `rawQuery` in <mark> tags for
+        // display in search results. Mirrors scoreSearchItem's own match tiers
+        // (exact substring -> per-token substrings -> fuzzy subsequence) purely
+        // for highlighting purposes; it doesn't affect ranking.
+        function highlightMatch(name, rawQuery) {
+            if (!rawQuery) return escapeHtml(name);
+            const query = rawQuery.toLowerCase();
+            const lowerName = name.toLowerCase();
+
+            const buildFromMask = (mask) => {
+                let out = "", i = 0;
+                while (i < name.length) {
+                    let j = i;
+                    if (mask[i]) {
+                        while (j < name.length && mask[j]) j++;
+                        out += `<mark class="search-highlight">${escapeHtml(name.slice(i, j))}</mark>`;
+                    } else {
+                        while (j < name.length && !mask[j]) j++;
+                        out += escapeHtml(name.slice(i, j));
+                    }
+                    i = j;
+                }
+                return out;
+            };
+
+            const exactIdx = lowerName.indexOf(query);
+            if (exactIdx !== -1) {
+                const mask = new Array(name.length).fill(false);
+                for (let k = exactIdx; k < exactIdx + query.length; k++) mask[k] = true;
+                return buildFromMask(mask);
+            }
+
+            const tokens = query.split(/[\s/]+/).filter(Boolean);
+            if (tokens.length > 1) {
+                const mask = new Array(name.length).fill(false);
+                let any = false;
+                for (const tok of tokens) {
+                    const idx = lowerName.indexOf(tok);
+                    if (idx !== -1) {
+                        any = true;
+                        for (let k = idx; k < idx + tok.length; k++) mask[k] = true;
+                    }
+                }
+                if (any) return buildFromMask(mask);
+            }
+
+            const compact = query.replace(/[^a-z0-9]/g, "");
+            if (compact) {
+                const mask = new Array(name.length).fill(false);
+                let qi = 0;
+                for (let i = 0; i < name.length && qi < compact.length; i++) {
+                    if (lowerName[i] === compact[qi]) {
+                        mask[i] = true;
+                        qi++;
+                    }
+                }
+                if (qi === compact.length) return buildFromMask(mask);
+            }
+
+            return escapeHtml(name);
         }
         init();
     </script>

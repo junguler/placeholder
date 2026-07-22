@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<script>(function(){try{var t=localStorage.getItem("theme");if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);if(localStorage.getItem("flatDesign")==="1")document.documentElement.classList.add("flat");}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -211,8 +211,7 @@
         .file-list { display: flex; flex-direction: column; gap: 1px; }
         .file-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
         .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
-        .file-card.directory { background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); }
-        html.flat .file-card.directory { background: var(--bg-secondary); }
+        .file-card.directory { background: var(--bg-secondary); }
         .file-card.parent-dir .file-name { color: var(--text-secondary); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
@@ -511,13 +510,6 @@
                                     <button class="theme-btn" data-theme="hc-dark" title="High contrast dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 2v16a8 8 0 010-16z"/></svg><span class="theme-btn-label">HC Dark</span></button>
                                     <button class="theme-btn" data-theme="hc-light" title="High contrast light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 18V4a8 8 0 010 16z"/></svg><span class="theme-btn-label">HC Light</span></button>
                                 </div>
-                            </div>
-                            <div class="settings-row" style="margin-top: 0.375rem">
-                                <span class="settings-label">Flat design</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="flatDesignToggle" aria-label="Use flat design (remove gradients)" />
-                                    <span class="switch-slider"></span>
-                                </label>
                             </div>
                         </div>
                         <div class="settings-section" style="border-top: 1px solid var(--border-color)">
@@ -863,10 +855,6 @@
             const nativeToggle = document.getElementById("nativePlayerToggle");
             if (nativeToggle) nativeToggle.checked = useNativePlayer;
             document.body.classList.toggle("native-player-mode", useNativePlayer);
-            const flatOn = localStorage.getItem("flatDesign") === "1";
-            const flatToggle = document.getElementById("flatDesignToggle");
-            if (flatToggle) flatToggle.checked = flatOn;
-            document.documentElement.classList.toggle("flat", flatOn);
             initThemeColor();
             syncHljsTheme();
         }
@@ -899,10 +887,6 @@
             requestAnimationFrame(() => {
                 el.textContent = text;
             });
-        }
-        function setFlatDesign(on) {
-            document.documentElement.classList.toggle("flat", on);
-            localStorage.setItem("flatDesign", on ? "1" : "0");
         }
         function saveTheme(e) {
             e === "auto"
@@ -1629,7 +1613,6 @@
                         localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0"),
                         document.body.classList.toggle("native-player-mode", useNativePlayer);
                 }),
-                document.getElementById("flatDesignToggle").addEventListener("change", (e) => setFlatDesign(e.target.checked)),
                 wireThemeColorPicker(),
                 document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack),
                 document.getElementById("topNextBtn").addEventListener("click", goToNextTrack),

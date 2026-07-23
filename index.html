@@ -225,6 +225,7 @@
         .file-icon.data { color: #d29922; background: rgba(210, 153, 34, 0.1); }
         .file-icon.archive { color: #a5d6ff; background: rgba(165, 214, 255, 0.1); }
         .file-icon.playlist { color: #f778ba; background: rgba(247, 120, 186, 0.1); }
+        .file-icon.other { color: #8b949e; background: rgba(139, 148, 158, 0.1); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-size: 0.7rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
@@ -327,7 +328,7 @@
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: #fff; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
-        .preview-code pre { margin: 0; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1; white-space: pre-wrap; word-break: break-word; }
+        .preview-code pre { margin: 0; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
         .preview-code.line-numbers pre { counter-reset: line; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
         .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.75rem; }
@@ -400,7 +401,7 @@
         /* --- List/tree view thumbnails for images (previously grid-only) --- */
         .file-list .file-thumbnail:not(.file-thumbnail-inline) { display: none; }
         .file-thumbnail-inline { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
-        .file-list .file-card:has(.file-thumbnail-inline) .file-icon { display: none; }
+        .file-list .file-card:has(.file-thumbnail-inline.loaded) .file-icon { display: none; }
 
         /* --- File card micro-interactions --- */
         .file-card { transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background-color var(--transition); }
@@ -815,6 +816,17 @@
             `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="scale(1,-1) translate(0,-24)"><circle cx="6.5" cy="18" r="3.2"/><rect x="8.9" y="4" width="1.8" height="14"/><g transform="translate(12.5,10) scale(0.55)"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></g></g></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="scale(-1,1) translate(-24,0)"><circle cx="6.5" cy="18" r="3.2"/><rect x="8.9" y="4" width="1.8" height="14"/><g transform="translate(12.5,10) scale(0.55)"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></g></g></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="scale(-1,-1) translate(-24,-24)"><circle cx="6.5" cy="18" r="3.2"/><rect x="8.9" y="4" width="1.8" height="14"/><g transform="translate(12.5,10) scale(0.55)"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></g></g></svg>`,
+            // Dotted half note (stem up / stem down)
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="18" r="3.3"/><line x1="10.6" y1="17" x2="10.6" y2="4"/><circle cx="12.6" cy="18" r="1.1" fill="currentColor" stroke="none"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><g transform="scale(1,-1) translate(0,-24)"><circle cx="7.5" cy="18" r="3.3"/><line x1="10.6" y1="17" x2="10.6" y2="4"/><circle cx="12.6" cy="18" r="1.1" fill="currentColor" stroke="none"/></g></svg>`,
+            // Dotted whole note (symmetric, single orientation)
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><ellipse cx="10.5" cy="13" rx="5.2" ry="3.6"/><circle cx="18.5" cy="13" r="1.2" fill="currentColor" stroke="none"/></svg>`,
+            // Double-dotted quarter note (stem up / stem down)
+            `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="18" r="3.2"/><rect x="9.4" y="4" width="1.8" height="14"/><circle cx="12" cy="18" r="1.1"/><circle cx="15" cy="18" r="1.1"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="scale(1,-1) translate(0,-24)"><circle cx="7" cy="18" r="3.2"/><rect x="9.4" y="4" width="1.8" height="14"/><circle cx="12" cy="18" r="1.1"/><circle cx="15" cy="18" r="1.1"/></g></svg>`,
+            // Grace note / acciaccatura (stem up / stem down)
+            `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="18" r="3.2"/><rect x="9.4" y="3" width="1.8" height="15"/><path d="M11.2,3.0 Q17.15,3.85 16.3,8.1 Q12.9,6.4 11.2,7.67 Z"/><line x1="7" y1="10" x2="14" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="scale(1,-1) translate(0,-24)"><circle cx="7" cy="18" r="3.2"/><rect x="9.4" y="3" width="1.8" height="15"/><path d="M11.2,3.0 Q17.15,3.85 16.3,8.1 Q12.9,6.4 11.2,7.67 Z"/><line x1="7" y1="10" x2="14" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></g></svg>`,
         ];
         let currentPlayerNoteIndex = -1;
         function pickPlayerNoteIcon() {
@@ -1801,7 +1813,7 @@
                             t.dataset.src &&
                                 ((t.src = t.dataset.src),
                                 (t.onload = () => t.classList.add("loaded")),
-                                (t.onerror = () => (t.style.display = "none")),
+                                (t.onerror = () => t.remove()),
                                 delete t.dataset.src,
                                 intersectionObserver.unobserve(t));
                         }

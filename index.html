@@ -11,7 +11,8 @@
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2358a6ff' d='M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z'/%3E%3C/svg%3E" />
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" id="hljsTheme" href="" />
     <style>
         /* Styles remain consistent */
         :root {
@@ -120,7 +121,7 @@
             font-family: -apple-system, BlinkMacSystemFont, segoe ui, noto sans, Helvetica, Arial, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            line-height: 1;
+            line-height: 0.9;
             height: 100vh;
             height: 100dvh;
             display: flex;
@@ -341,9 +342,9 @@
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: #fff; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
-        .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; word-break: break-all; }
-        .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
-        .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.75rem; }
+        .preview-code pre { margin: 0; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 0.9; white-space: pre-wrap; word-break: break-word; }
+        .preview-code.line-numbers pre .line { display: block; }
+        .preview-code.line-numbers pre .line .ln { display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.75rem; }
         .preview-code pre code.hljs { background: transparent !important; padding: 0 !important; }
         .preview-pdf { width: 100%; height: 90vh; border: none; }
         .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
@@ -2491,15 +2492,24 @@
         }
         function renderTextPreview(container, text, fileName) {
             const MAX_LINES = 1e4;
+            // Syntax highlighting multiplies the DOM node count several times
+            // over (one <span> per token, plus reopened wrapper spans on every
+            // line for anything still "open" like a block comment). On large
+            // files that turns into tens of thousands of extra elements, which
+            // is what was making the preview scroll feel laggy/unresponsive.
+            // Past this many lines we skip highlighting and fall back to the
+            // lighter plain-text rendering instead.
+            const HIGHLIGHT_LINE_LIMIT = 2000;
             const allLines = text.split("\n");
             const lines = allLines.slice(0, MAX_LINES);
             const truncated = allLines.length > MAX_LINES;
-            const lang = guessHljsLanguage(fileName);
+            const lang = allLines.length <= HIGHLIGHT_LINE_LIMIT ? guessHljsLanguage(fileName) : null;
 
             let highlightedLines;
             if (lang) {
                 try {
-                    highlightedLines = lines.map(escapeHtml);
+                    const highlighted = hljs.highlight(lines.join("\n"), { language: lang, ignoreIllegals: true }).value;
+                    highlightedLines = splitHighlightedHtml(highlighted);
                 } catch (e) {
                     console.warn("Syntax highlighting failed, falling back to plain text:", e);
                     highlightedLines = lines.map(escapeHtml);
@@ -2508,7 +2518,7 @@
                 highlightedLines = lines.map(escapeHtml);
             }
 
-            const rendered = highlightedLines.map((l) => `<span class="line">${l}</span>`).join("\n");
+            const rendered = highlightedLines.map((l, i) => `<span class="line"><span class="ln">${i + 1}</span>${l}</span>`).join("\n");
             container.innerHTML = `
         ${truncated ? `<div class="truncation-notice">Showing first ${MAX_LINES.toLocaleString()} of ${allLines.length.toLocaleString()} lines — download the file to see the rest.</div>` : ""}
         <div class="preview-code line-numbers${lang ? " hljs" : ""}">
@@ -2976,8 +2986,7 @@
             lastFocusedElementShortcuts = null;
         }
         function escapeHtml(e) {
-            const t = document.createElement("div");
-            return (t.textContent = e), t.innerHTML;
+            return e.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
         }
 
         // Wraps the parts of `name` that matched `rawQuery` in <mark> tags for

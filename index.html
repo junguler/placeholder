@@ -445,43 +445,6 @@
 
         /* --- Empty state illustration --- */
         .empty-state-illustration { width: 96px; height: 96px; margin: 0 auto 0.75rem; }
-
-        /* Container & Mobile Overflow Guards */
-.preview-modal,
-.player-container {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow-x: hidden;
-}
-
-/* Modal Viewport & Dynamic Height Bounds */
-.preview-modal {
-  max-height: 100dvh;
-  max-width: 100vw;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Media Scaling Constraints */
-.preview-modal img,
-.preview-modal video,
-.player-container img,
-.player-container video,
-.player-container audio {
-  max-width: 100%;
-  height: auto;
-  object-fit: contain;
-}
-
-/* Scrollable Inner Containers */
-.modal-body,
-.code-viewport {
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
     </style>
 </head>
 <body>

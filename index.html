@@ -318,7 +318,8 @@
             .goto-step-btn { width: 2.5rem; height: 2.5rem; }
             .goto-step-btn svg { width: 24px; height: 24px; }
         }
-        .modal-body { flex: 1; overflow: auto; background: var(--bg-primary); display: flex; flex-direction: column; min-height: 0; }
+        .modal-body { flex: 1; overflow: hidden; background: var(--bg-primary); display: flex; flex-direction: column; min-height: 0; }
+        .modal-body.scrollable { overflow: auto; }
         .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; display: block; margin: auto; }
         .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
         .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
@@ -2770,6 +2771,7 @@
                 (i.download = n),
                 (l.href = `./${e}`),
                 (s.innerHTML = '<div class="loading"><div class="spinner"></div></div>'),
+                s.classList.remove("scrollable"),
                 (currentPlaylist = []),
                 (currentPlaylistIndex = 0),
                 (shuffleBag = []),
@@ -2851,6 +2853,7 @@
                         try {
                             const text = await fetchTextCached(o);
                             renderTextPreview(s, text, n);
+                            s.classList.add("scrollable");
                         } catch (err) {
                             showUnavailable(s, n, o, err);
                         }

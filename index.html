@@ -556,13 +556,6 @@
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
                                     <div class="settings-section-title">Base Color</div>
                                     <div class="settings-row">
-                                        <span class="settings-label">Genuine Vivid</span>
-                                        <label class="switch">
-                                            <input type="checkbox" id="genuineVividToggle" aria-label="Genuine Vivid: use your exact picked color everywhere with no adjustments, except inverting text if it becomes unreadable" />
-                                            <span class="switch-slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="settings-row">
                                         <div class="theme-swatches" id="themeSwatches"></div>
                                     </div>
                                     <div class="theme-custom-row">
@@ -671,7 +664,6 @@
             isPlaylistFile = !1,
             currentFontSize = 16,
             vividColor = null,
-            genuineVivid = false,
             currentHls = null,
             streamTimeout = null,
             allFiles = [],
@@ -1008,25 +1000,20 @@
         /* ---------------------------------------------------------------
            Base Color engine
            Lets the user pick a color that re-colors the whole active theme
-           preset (backgrounds, borders, accent). By default every surface
-           gets pushed to a bold, fully-saturated version of the picked hue
-           — panels and hover states keep their own role lightness so the
-           UI's layering still reads correctly, but the color itself is
-           never muted down.
+           preset (backgrounds, borders, accent). Total control: your picked
+           color is used exactly as chosen — its own real hue AND
+           saturation, no reshaping toward a "safer" range — on every
+           surface, including the accent itself. Only each role's original
+           lightness is kept, purely so panels/hover states stay
+           distinguishable from one another.
 
-           Genuine Vivid (toggle) hands over total control: your picked
-           color is used exactly as chosen — its own real saturation, no
-           reshaping toward a "safe" range — everywhere, including the
-           accent itself.
-
-           In both modes the only accessibility intervention is reactive,
-           not preventative: a theme's own text color is left alone unless
-           it would actually fail contrast against the new background, in
+           The only accessibility intervention is reactive, not
+           preventative: a theme's own text color is left alone unless it
+           would actually fail contrast against the new background, in
            which case it's simply inverted (light <-> dark) rather than
            recomputed into something else.
            --------------------------------------------------------------- */
         const CUSTOM_COLOR_KEY = "themeCustomColor";
-        const GENUINE_VIVID_KEY = "themeGenuineVivid";
         const THEME_BASE = {
             dark: {
                 "--bg-primary": "#0d1117", "--bg-secondary": "#161b22", "--bg-tertiary": "#21262d",
@@ -1146,36 +1133,20 @@
             const base = THEME_BASE[getActivePaletteKey()];
             const { h, s: userS } = hexToHsl(vividColor);
             const bgKeys = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color"];
-            const accentKeys = ["--accent", "--accent-hover"];
             const newVals = {};
-            if (genuineVivid) {
-                // Total control: your exact color, full stop. Every surface
-                // uses your pick's real hue AND saturation — nothing gets
-                // reshaped toward a "safer" range. Only each role's original
-                // lightness is kept, purely so panels/hover states remain
-                // distinguishable from one another.
-                for (const key of bgKeys) {
-                    if (!base[key]) continue;
-                    const { l } = hexToHsl(base[key]);
-                    newVals[key] = hslToHex(h, userS, l);
-                }
-                newVals["--accent"] = vividColor;
-                const { l: accentL } = hexToHsl(base["--accent"]);
-                newVals["--accent-hover"] = hslToHex(h, userS, clampNum(accentL + (accentL > 55 ? -10 : 10), 4, 96));
-            } else {
-                // Default: bold and fully saturated everywhere, regardless of
-                // exactly how saturated the picked swatch/color was.
-                for (const key of bgKeys) {
-                    if (!base[key]) continue;
-                    const { l } = hexToHsl(base[key]);
-                    newVals[key] = hslToHex(h, 90, l);
-                }
-                for (const key of accentKeys) {
-                    if (!base[key]) continue;
-                    const { l } = hexToHsl(base[key]);
-                    newVals[key] = hslToHex(h, 100, l);
-                }
+            // Total control: your exact color, full stop. Every surface uses
+            // your pick's real hue AND saturation — nothing gets reshaped
+            // toward a "safer" range. Only each role's original lightness is
+            // kept, purely so panels/hover states remain distinguishable
+            // from one another.
+            for (const key of bgKeys) {
+                if (!base[key]) continue;
+                const { l } = hexToHsl(base[key]);
+                newVals[key] = hslToHex(h, userS, l);
             }
+            newVals["--accent"] = vividColor;
+            const { l: accentL } = hexToHsl(base["--accent"]);
+            newVals["--accent-hover"] = hslToHex(h, userS, clampNum(accentL + (accentL > 55 ? -10 : 10), 4, 96));
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
@@ -1211,11 +1182,6 @@
             clearCustomVars();
             markActiveSwatch(null);
         }
-        function setGenuineVivid(on) {
-            genuineVivid = on;
-            localStorage.setItem(GENUINE_VIVID_KEY, on ? "1" : "0");
-            if (vividColor) applyCustomColor();
-        }
         function markActiveSwatch(hue) {
             const wrap = document.getElementById("themeSwatches");
             if (!wrap) return;
@@ -1235,8 +1201,7 @@
         function wireThemeColorPicker() {
             const input = document.getElementById("themeColorInput"),
                 resetBtn = document.getElementById("themeResetBtn"),
-                swatches = document.getElementById("themeSwatches"),
-                genuineToggle = document.getElementById("genuineVividToggle");
+                swatches = document.getElementById("themeSwatches");
             if (input) input.addEventListener("input", (e) => setCustomColor(e.target.value));
             if (resetBtn) resetBtn.addEventListener("click", () => resetCustomColor());
             if (swatches) swatches.addEventListener("click", (e) => {
@@ -1247,7 +1212,6 @@
                 setCustomColor(hex);
                 if (input) input.value = hex;
             });
-            if (genuineToggle) genuineToggle.addEventListener("change", (e) => setGenuineVivid(e.target.checked));
             if (window.matchMedia) {
                 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
                     if (vividColor) applyCustomColor();
@@ -1257,9 +1221,6 @@
         function initThemeColor() {
             renderThemeSwatches();
             const input = document.getElementById("themeColorInput");
-            const genuineToggle = document.getElementById("genuineVividToggle");
-            genuineVivid = localStorage.getItem(GENUINE_VIVID_KEY) === "1";
-            if (genuineToggle) genuineToggle.checked = genuineVivid;
             const storedColor = localStorage.getItem(CUSTOM_COLOR_KEY);
             if (storedColor) {
                 vividColor = storedColor;

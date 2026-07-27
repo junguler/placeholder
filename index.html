@@ -25,6 +25,7 @@
             --text-muted: #6e7681;
             --accent: #5858ff;
             --accent-hover: #7979ff;
+            --on-accent: #ffffff;
             --success: #3fb950;
             --warning: #d29922;
             --danger: #f85149;
@@ -175,7 +176,7 @@
         .settings-control { display: flex; gap: 0.25rem; }
         .settings-control button { padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; font-size: 0.75rem; }
         .settings-control button:hover { color: var(--text-primary); border-color: var(--accent); }
-        .settings-control button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .settings-control button.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
         .theme-toggle { display: flex; flex-wrap: wrap; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
         .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; }
         .theme-btn:hover { background: var(--bg-hover); }
@@ -200,6 +201,9 @@
         .theme-custom-row input[type="color"] { width: 32px; height: 28px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: 0 0; padding: 0; cursor: pointer; }
         .theme-reset-btn { flex: 1; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); border-radius: var(--radius); padding: 0.3rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
         .theme-reset-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+        .theme-vivid-note { display: flex; align-items: flex-start; gap: 0.3rem; margin-top: 0.5rem; font-size: 0.7rem; line-height: 1.35; color: var(--text-muted); }
+        .theme-vivid-note svg { width: 12px; height: 12px; flex-shrink: 0; margin-top: 0.1rem; color: var(--text-muted); }
+        .theme-vivid-note.hidden { display: none; }
         .view-toggle { display: flex; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; }
         .view-btn { padding: 0.25rem 0.375rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
         .view-btn:hover { color: var(--text-primary); }
@@ -304,7 +308,7 @@
         .playlist-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
         .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .playlist-btn svg { width: 14px; height: 14px; }
-        .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
         .playlist-info { flex: 1; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .playlist-track { color: var(--text-primary); font-weight: 500; }
         .playlist-stop-btn { padding: 0.375rem 0.5rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
@@ -344,7 +348,7 @@
         .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); transition: transform var(--transition), background-color var(--transition), border-color var(--transition); }
         .player-controls-row .playlist-btn:hover:not(:disabled) { transform: translateY(-1px); }
         .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-        .player-play-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; border-radius: 50% !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 2px 10px var(--accent-glow); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
+        .player-play-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--on-accent) !important; border-radius: 50% !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 2px 10px var(--accent-glow); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
         .player-play-btn:hover { background: var(--accent-hover) !important; border-color: var(--accent-hover) !important; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
         .player-play-btn:active { transform: translateY(0); }
         .player-play-btn svg { width: 20px; height: 20px; }
@@ -352,7 +356,7 @@
         .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         .player-info-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
-        .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; word-break: break-all; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
@@ -362,7 +366,7 @@
         .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1.05rem; font-weight: 700; }
-        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: #fff; text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
+        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
         .download-btn:hover { background: var(--accent-hover); }
         .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
         .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
@@ -555,12 +559,23 @@
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
                                     <div class="settings-section-title">Base Color</div>
                                     <div class="settings-row">
+                                        <span class="settings-label">Vivid mode</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="vividToggle" aria-label="Vivid mode: pick any color at full saturation, with contrast automatically corrected for readability" />
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-row">
                                         <div class="theme-swatches" id="themeSwatches"></div>
                                     </div>
                                     <div class="theme-custom-row">
                                         <input type="color" id="themeColorInput" value="#8080ff" title="Pick a custom color" />
                                         <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
                                     </div>
+                                    <p class="theme-vivid-note hidden" id="themeVividNote">
+                                        <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                        <span>Any color you pick stays vivid — its lightness is nudged just enough to keep text and icons readable.</span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -663,6 +678,8 @@
             isPlaylistFile = !1,
             currentFontSize = 16,
             themeHue = null,
+            vividMode = false,
+            vividColor = null,
             currentHls = null,
             streamTimeout = null,
             allFiles = [],
@@ -965,7 +982,8 @@
                 ? (localStorage.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
                 : (localStorage.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
                 updateThemeButtons();
-            if (themeHue != null) applyThemeHue(themeHue);
+            if (vividColor) applyVividColor();
+            else if (themeHue != null) applyThemeHue(themeHue);
             syncHljsTheme();
         }
         function setupDropdown(btnId, menuId, dropdownId) {
@@ -1096,6 +1114,7 @@
             for (const key of ["dark", "light", "hc-dark", "hc-light"]) {
                 for (const varName of Object.keys(THEME_BASE[key])) root.removeProperty(varName);
             }
+            root.removeProperty("--on-accent");
         }
         function setThemeHue(hue) {
             themeHue = hue;
@@ -1107,6 +1126,187 @@
             localStorage.removeItem(THEME_HUE_KEY);
             clearThemeHueVars();
             markActiveSwatch(null);
+        }
+
+        /* ---------------------------------------------------------------
+           Vivid mode
+           An alternative to the hue-preserving Base Color engine above.
+           Instead of remapping a preset's own saturation/lightness onto a
+           new hue, Vivid mode takes the user's picked color exactly as
+           chosen — full saturation, full vividness. The only thing this
+           engine will ever adjust is *lightness* (never hue or
+           saturation), and only by as much as needed so the color still
+           passes WCAG AA contrast (4.5:1) against the page background
+           and remains readable used as text/icon color. It also picks
+           whichever of black or white reads best on top of the color, for
+           use as button/label text sitting on an accent-colored surface.
+           --------------------------------------------------------------- */
+        const VIVID_MODE_KEY = "themeVividMode";
+        const VIVID_COLOR_KEY = "themeVividColor";
+        function clampNum(v, min, max) {
+            return Math.max(min, Math.min(max, v));
+        }
+        function hexToRgb(hex) {
+            hex = hex.replace("#", "");
+            if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+            return {
+                r: parseInt(hex.substr(0, 2), 16),
+                g: parseInt(hex.substr(2, 2), 16),
+                b: parseInt(hex.substr(4, 2), 16),
+            };
+        }
+        // WCAG 2.x relative luminance: https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+        function relLuminance(hex) {
+            const { r, g, b } = hexToRgb(hex);
+            const chan = (c) => {
+                c /= 255;
+                return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+            };
+            return 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b);
+        }
+        function contrastRatio(hexA, hexB) {
+            const l1 = relLuminance(hexA), l2 = relLuminance(hexB);
+            const lighter = Math.max(l1, l2), darker = Math.min(l1, l2);
+            return (lighter + 0.05) / (darker + 0.05);
+        }
+        // Whichever of pure black or pure white has higher contrast against bgHex.
+        function bestOnColor(bgHex) {
+            return contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex) ? "#ffffff" : "#000000";
+        }
+        // Nudges hex's lightness (hue & saturation untouched) toward whichever
+        // direction improves contrast against every color in bgHexes, stopping
+        // as soon as minRatio is met against all of them. Falls back to the
+        // best lightness found if the target can't be fully reached.
+        function ensureContrast(hex, bgHexes, minRatio) {
+            minRatio = minRatio || 4.5;
+            const bgs = Array.isArray(bgHexes) ? bgHexes : [bgHexes];
+            const worstRatio = (c) => Math.min(...bgs.map((bg) => contrastRatio(c, bg)));
+            if (worstRatio(hex) >= minRatio) return hex;
+            const { h, s, l } = hexToHsl(hex);
+            const avgBgLum = bgs.reduce((sum, bg) => sum + relLuminance(bg), 0) / bgs.length;
+            const dir = avgBgLum < 0.5 ? 1 : -1; // dark background -> lighten; light background -> darken
+            let best = hex, bestScore = worstRatio(hex);
+            for (let step = 1; step <= 50; step++) {
+                const nl = clampNum(l + dir * step * 2, 0, 100);
+                const candidate = hslToHex(h, s, nl);
+                const score = worstRatio(candidate);
+                if (score > bestScore) { bestScore = score; best = candidate; }
+                if (score >= minRatio) return candidate;
+                if (nl <= 0 || nl >= 100) break;
+            }
+            return best;
+        }
+        function blendOver(fgHex, bgHex, alpha) {
+            const fg = hexToRgb(fgHex), bg = hexToRgb(bgHex);
+            const mix = (a, b) => Math.round(a * alpha + b * (1 - alpha));
+            const toHex = (n) => clampNum(n, 0, 255).toString(16).padStart(2, "0");
+            return `#${toHex(mix(fg.r, bg.r))}${toHex(mix(fg.g, bg.g))}${toHex(mix(fg.b, bg.b))}`;
+        }
+        // A semi-transparent neutral (pure black or pure white, whichever reads
+        // better) over bgHex, raising the alpha until the *composited* result
+        // still clears minRatio. Used for secondary/muted text so it dims
+        // relative to the primary text color without ever losing legibility.
+        function neutralTextColor(bgHex, alpha, minRatio) {
+            const onBg = bestOnColor(bgHex);
+            let a = alpha;
+            while (contrastRatio(blendOver(onBg, bgHex, a), bgHex) < minRatio && a < 1) {
+                a = clampNum(a + 0.05, 0, 1);
+            }
+            const rgb = hexToRgb(onBg);
+            return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${a.toFixed(2)})`;
+        }
+        function applyVividColor() {
+            if (!vividColor) return;
+            const root = document.documentElement.style;
+            const base = THEME_BASE[getActivePaletteKey()];
+            const { h } = hexToHsl(vividColor);
+            const bgKeys = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color"];
+            const accentKeys = ["--accent", "--accent-hover"];
+            const newVals = {};
+            // Backgrounds & borders: keep each variable's own lightness (so the
+            // app's light/dark layering stays intact) but push saturation up
+            // hard so the surfaces themselves read as colorful, not just grey
+            // with a faint tint.
+            for (const key of bgKeys) {
+                if (!base[key]) continue;
+                const { s, l } = hexToHsl(base[key]);
+                const vividS = clampNum(Math.max(s, 15) * 2.6, 35, 82);
+                newVals[key] = hslToHex(h, vividS, l);
+            }
+            // Accent gets near-maximum saturation for a punchy, fully-colored look.
+            for (const key of accentKeys) {
+                if (!base[key]) continue;
+                const { l } = hexToHsl(base[key]);
+                newVals[key] = hslToHex(h, 92, l);
+            }
+            // Everything else this palette customizes (success/warning/danger on
+            // some themes) is left at its original, un-tinted value.
+            for (const key of Object.keys(base)) {
+                if (!(key in newVals)) newVals[key] = base[key];
+            }
+            // Contrast-correct the accent against the *new* vivid backgrounds.
+            const accent = ensureContrast(newVals["--accent"], [newVals["--bg-primary"], newVals["--bg-secondary"]], 4.5);
+            newVals["--accent"] = accent;
+            const { h: ah, s: as, l: al } = hexToHsl(accent);
+            const hoverL = clampNum(al + (al > 55 ? -10 : 10), 6, 94);
+            newVals["--accent-hover"] = hslToHex(ah, as, hoverL);
+            // Text stays a plain black/white neutral picked for max contrast
+            // against the new (colorful) --bg-primary, so legibility never
+            // depends on which hue was picked.
+            newVals["--text-primary"] = bestOnColor(newVals["--bg-primary"]);
+            newVals["--text-secondary"] = neutralTextColor(newVals["--bg-primary"], 0.78, 4.5);
+            newVals["--text-muted"] = neutralTextColor(newVals["--bg-primary"], 0.58, 3);
+            for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
+            root.setProperty("--on-accent", bestOnColor(accent));
+            const rgb = hexToRgb(accent);
+            root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
+            markActiveSwatch(h);
+        }
+        function setVividColor(hex) {
+            vividColor = hex;
+            localStorage.setItem(VIVID_COLOR_KEY, hex);
+            applyVividColor();
+        }
+        function clearVividVars() {
+            const root = document.documentElement.style;
+            const keys = [
+                "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
+                "--text-primary", "--text-secondary", "--text-muted",
+                "--accent", "--accent-hover", "--on-accent", "--accent-glow",
+                "--success", "--warning", "--danger",
+            ];
+            for (const key of keys) root.removeProperty(key);
+        }
+        function resetVividColor() {
+            vividColor = null;
+            localStorage.removeItem(VIVID_COLOR_KEY);
+            clearVividVars();
+            markActiveSwatch(null);
+        }
+        function setVividMode(on) {
+            vividMode = on;
+            localStorage.setItem(VIVID_MODE_KEY, on ? "1" : "0");
+            const note = document.getElementById("themeVividNote");
+            if (note) note.classList.toggle("hidden", !on);
+            const input = document.getElementById("themeColorInput");
+            if (on) {
+                // Switching into vivid mode: clear the harmony-preserving hue
+                // remap (if any) and carry the current picked color over as
+                // the new full-vividness custom color.
+                themeHue = null;
+                localStorage.removeItem(THEME_HUE_KEY);
+                clearThemeHueVars();
+                setVividColor((input && input.value) || "#8080ff");
+            } else {
+                // Switching back to harmony mode: clear vivid vars and fall
+                // back to a plain hue remap using the same color's hue.
+                const hue = vividColor ? hexToHsl(vividColor).h : null;
+                vividColor = null;
+                localStorage.removeItem(VIVID_COLOR_KEY);
+                clearVividVars();
+                if (hue != null) setThemeHue(hue);
+                else markActiveSwatch(null);
+            }
         }
         function markActiveSwatch(hue) {
             const wrap = document.getElementById("themeSwatches");
@@ -1127,30 +1327,62 @@
         function wireThemeColorPicker() {
             const input = document.getElementById("themeColorInput"),
                 resetBtn = document.getElementById("themeResetBtn"),
-                swatches = document.getElementById("themeSwatches");
-            if (input) input.addEventListener("input", (e) => setThemeHue(hexToHsl(e.target.value).h));
-            if (resetBtn) resetBtn.addEventListener("click", () => resetThemeHue());
+                swatches = document.getElementById("themeSwatches"),
+                vividToggle = document.getElementById("vividToggle");
+            if (input) input.addEventListener("input", (e) => {
+                if (vividMode) setVividColor(e.target.value);
+                else setThemeHue(hexToHsl(e.target.value).h);
+            });
+            if (resetBtn) resetBtn.addEventListener("click", () => {
+                if (vividMode) resetVividColor();
+                else resetThemeHue();
+            });
             if (swatches) swatches.addEventListener("click", (e) => {
                 const sw = e.target.closest(".theme-swatch");
-                if (sw) setThemeHue(parseFloat(sw.dataset.hue));
+                if (!sw) return;
+                const hue = parseFloat(sw.dataset.hue);
+                if (vividMode) {
+                    const hex = hslToHex(hue, 90, 55);
+                    setVividColor(hex);
+                    if (input) input.value = hex;
+                } else {
+                    setThemeHue(hue);
+                }
             });
+            if (vividToggle) vividToggle.addEventListener("change", (e) => setVividMode(e.target.checked));
             if (window.matchMedia) {
                 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-                    if (themeHue != null) applyThemeHue(themeHue);
+                    if (vividColor) applyVividColor();
+                    else if (themeHue != null) applyThemeHue(themeHue);
                 });
             }
         }
         function initThemeColor() {
             renderThemeSwatches();
-            const stored = localStorage.getItem(THEME_HUE_KEY);
-            if (stored !== null && stored !== "") {
-                const hue = parseFloat(stored);
-                if (!Number.isNaN(hue)) {
-                    themeHue = hue;
-                    applyThemeHue(hue);
-                    const input = document.getElementById("themeColorInput");
-                    if (input) input.value = hslToHex(hue, 100, 60);
+            const input = document.getElementById("themeColorInput");
+            const vividToggle = document.getElementById("vividToggle");
+            const note = document.getElementById("themeVividNote");
+            vividMode = localStorage.getItem(VIVID_MODE_KEY) === "1";
+            if (vividToggle) vividToggle.checked = vividMode;
+            if (note) note.classList.toggle("hidden", !vividMode);
+            if (vividMode) {
+                const storedColor = localStorage.getItem(VIVID_COLOR_KEY);
+                if (storedColor) {
+                    vividColor = storedColor;
+                    applyVividColor();
+                    if (input) input.value = storedColor;
                     return;
+                }
+            } else {
+                const stored = localStorage.getItem(THEME_HUE_KEY);
+                if (stored !== null && stored !== "") {
+                    const hue = parseFloat(stored);
+                    if (!Number.isNaN(hue)) {
+                        themeHue = hue;
+                        applyThemeHue(hue);
+                        if (input) input.value = hslToHex(hue, 100, 60);
+                        return;
+                    }
                 }
             }
             markActiveSwatch(null);

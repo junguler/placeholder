@@ -26,6 +26,9 @@
             --accent: #5858ff;
             --accent-hover: #7979ff;
             --on-accent: #ffffff;
+            --control-surface: var(--bg-tertiary);
+            --control-surface-hover: var(--bg-hover);
+            --on-control: var(--text-primary);
             --success: #3fb950;
             --warning: #d29922;
             --danger: #f85149;
@@ -176,7 +179,9 @@
         .settings-control { display: flex; gap: 0.25rem; }
         .settings-control button { padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; font-size: 0.75rem; }
         .settings-control button:hover { color: var(--text-primary); border-color: var(--accent); }
-        .settings-control button.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+        .settings-control button.active { background: var(--control-surface); color: var(--on-control); border-color: var(--control-surface); }
+        .intensity-control { width: 100%; }
+        .intensity-control button { flex: 1; padding: 0.32rem 0.15rem; font-size: 0.68rem; }
         .theme-toggle { display: flex; flex-wrap: wrap; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
         .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; }
         .theme-btn:hover { background: var(--bg-hover); }
@@ -288,8 +293,8 @@
         .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
         .modal-title { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
         .modal-actions { display: flex; gap: 0.25rem; }
-        .modal-btn { padding: 0.375rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
-        .modal-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+        .modal-btn { padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
+        .modal-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .modal-btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
         .modal-btn svg { width: 16px; height: 16px; }
@@ -301,8 +306,8 @@
         .playlist-controls { display: flex; gap: 0.25rem; align-items: center; }
         .playlist-btn.top-native-btn { display: none; }
         body.native-player-mode .playlist-btn.top-native-btn { display: inline-flex; }
-        .playlist-btn { padding: 0.375rem 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.75rem; }
-        .playlist-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+        .playlist-btn { padding: 0.375rem 0.5rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.75rem; }
+        .playlist-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .playlist-btn svg { width: 14px; height: 14px; }
         .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
@@ -345,13 +350,13 @@
         .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); transition: transform var(--transition), background-color var(--transition), border-color var(--transition); }
         .player-controls-row .playlist-btn:hover:not(:disabled) { transform: translateY(-1px); }
         .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-        .player-play-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--on-accent) !important; border-radius: 50% !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 2px 10px var(--accent-glow); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
-        .player-play-btn:hover { background: var(--accent-hover) !important; border-color: var(--accent-hover) !important; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
+        .player-play-btn { background: var(--control-surface) !important; border-color: var(--control-surface) !important; color: var(--on-control) !important; border-radius: 50% !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 2px 10px var(--accent-glow); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
+        .player-play-btn:hover { background: var(--control-surface-hover) !important; border-color: var(--control-surface-hover) !important; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
         .player-play-btn:active { transform: translateY(0); }
         .player-play-btn svg { width: 20px; height: 20px; }
         .player-time, .player-vol { font-size: 0.75rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; }
-        .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
-        .player-info-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+        .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
+        .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
@@ -556,11 +561,16 @@
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
                                     <div class="settings-section-title">Base Color</div>
                                     <div class="settings-row">
-                                        <span class="settings-label">Muted colors</span>
-                                        <label class="switch">
-                                            <input type="checkbox" id="mutedColorsToggle" aria-label="Muted colors: calm down your picked color for people sensitive to bright, saturated colors" />
-                                            <span class="switch-slider"></span>
-                                        </label>
+                                        <span class="settings-label">Color intensity</span>
+                                    </div>
+                                    <div class="settings-row">
+                                        <div class="settings-control intensity-control" id="colorIntensityControl" role="group" aria-label="Color intensity: how vivid or muted your picked color appears">
+                                            <button type="button" data-intensity="100" title="100% — full, vivid color">100%</button>
+                                            <button type="button" data-intensity="80" title="80%">80%</button>
+                                            <button type="button" data-intensity="60" title="60% — default">60%</button>
+                                            <button type="button" data-intensity="40" title="40%">40%</button>
+                                            <button type="button" data-intensity="20" title="20% — muted, tint only">20%</button>
+                                        </div>
                                     </div>
                                     <div class="settings-row">
                                         <div class="theme-swatches" id="themeSwatches"></div>
@@ -671,7 +681,7 @@
             isPlaylistFile = !1,
             currentFontSize = 16,
             vividColor = null,
-            mutedColors = false,
+            colorIntensity = 60,
             currentHls = null,
             streamTimeout = null,
             allFiles = [],
@@ -1019,15 +1029,17 @@
            inverted; if inverting still isn't enough, it falls back to
            plain black/white so text is never actually unreadable.
 
-           "Muted colors" is a separate, opt-in toggle for people who find
-           fully-saturated colors hard to look at. It's the only case where
-           your picked color is deliberately altered (desaturated + settled
-           toward a calmer lightness) before going through the exact same
-           per-surface engine above. Off by default — your color is used
-           exactly as picked unless you turn this on.
+           "Color intensity" is a 5-step bar (100/80/60/40/20%) for people
+           who find fully-saturated colors hard to look at. 100% is your
+           picked color exactly, byte-for-byte. Each step down blends more
+           of a calmer, desaturated, lightness-settled version of the same
+           hue in, until 20% is almost entirely that calmer version — just
+           a tint of your original color remains. Defaults to 60%.
            --------------------------------------------------------------- */
         const CUSTOM_COLOR_KEY = "themeCustomColor";
         const MUTED_COLORS_KEY = "themeMutedColors";
+        const COLOR_INTENSITY_KEY = "themeColorIntensity";
+        const DEFAULT_COLOR_INTENSITY = 60;
         const THEME_BASE = {
             dark: {
                 "--bg-primary": "#0d1117", "--bg-secondary": "#161b22", "--bg-tertiary": "#21262d",
@@ -1159,14 +1171,19 @@
             }
             return best;
         }
-        // Desaturates + settles the lightness toward a calmer middle. Only
-        // ever called when the "Muted colors" toggle is explicitly on —
-        // it's the one deliberate exception to "your color, unchanged."
-        function muteColor(hex) {
+        // Blends the picked color toward a calm, desaturated, settled-
+        // lightness target as intensity is lowered. hue never moves.
+        // intensityPct is one of 100/80/60/40/20 — at 100 this returns hex
+        // completely unchanged (blend 0); at 20 it's mostly the muted
+        // target (blend 1), leaving just a tint of the original color.
+        function muteColorAtIntensity(hex, intensityPct) {
             const { h, s, l } = hexToHsl(hex);
-            const mutedS = clampNum(s * 0.32, 6, 32);
-            const mutedL = clampNum(l + (l < 50 ? 14 : -14), 18, 82);
-            return hslToHex(h, mutedS, mutedL);
+            const mutedS = clampNum(s * 0.12, 3, 15);
+            const mutedL = clampNum(l + (l < 50 ? 22 : -22), 12, 88);
+            const blend = clampNum((100 - intensityPct) / 80, 0, 1);
+            const newS = s + (mutedS - s) * blend;
+            const newL = l + (mutedL - l) * blend;
+            return hslToHex(h, newS, newL);
         }
         function getActivePaletteKey() {
             const attr = document.documentElement.getAttribute("data-theme");
@@ -1180,11 +1197,11 @@
             const root = document.documentElement.style;
             const base = THEME_BASE[getActivePaletteKey()];
             const newVals = {};
-            // Off (default): your color exactly as picked, no changes.
-            // On ("Muted colors"): the one deliberate exception — your color
-            // is desaturated + settled first, then applied the exact same
-            // way below.
-            const activeColor = mutedColors ? muteColor(vividColor) : vividColor;
+            // At 100% intensity: your color exactly as picked, no changes.
+            // Below that: the one deliberate exception — your color is
+            // blended toward a calmer, desaturated version of itself first,
+            // then applied the exact same way below.
+            const activeColor = muteColorAtIntensity(vividColor, colorIntensity);
             // Every surface is your color, byte-for-byte — no hue shift, no
             // saturation change, no lightness substitution. Backgrounds,
             // hover fill, and the accent are all the literal same hex.
@@ -1197,8 +1214,22 @@
             // if they were literally identical to the fill behind them,
             // they'd be invisible. Each gets the smallest possible lightness
             // nudge (hue & saturation still untouched) needed to be seeable.
-            newVals["--border-color"] = visibleVariant(activeColor, activeColor, 1.6, 40);
-            newVals["--accent-hover"] = visibleVariant(activeColor, activeColor, 1.3, 25);
+            newVals["--border-color"] = visibleVariant(activeColor, activeColor, 2.2, 50);
+            newVals["--accent-hover"] = visibleVariant(activeColor, activeColor, 1.6, 30);
+            // Guaranteed-visible surface for icon-only interactive controls
+            // (play button, player controls, info/copy buttons). Flattening
+            // every panel to the exact picked color (by design, above)
+            // means a button whose fill is also that exact color can vanish
+            // into the panel behind it. This shifts far enough in lightness
+            // (hue & saturation untouched) to always read as a distinct,
+            // clickable surface, then guarantees a genuinely legible icon
+            // color on top of it.
+            const { h: ctrlH, s: ctrlS, l: ctrlL } = hexToHsl(activeColor);
+            const shiftedL = clampNum(ctrlL + (ctrlL < 55 ? 22 : -22), 6, 94);
+            const controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+            newVals["--control-surface"] = controlSurface;
+            newVals["--control-surface-hover"] = visibleVariant(controlSurface, controlSurface, 1.3, 25);
+            newVals["--on-control"] = contrastRatio("#ffffff", controlSurface) >= contrastRatio("#000000", controlSurface) ? "#ffffff" : "#000000";
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
@@ -1224,6 +1255,7 @@
                 "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
                 "--text-primary", "--text-secondary", "--text-muted",
                 "--accent", "--accent-hover", "--on-accent", "--accent-glow",
+                "--control-surface", "--control-surface-hover", "--on-control",
             ];
             for (const key of keys) root.removeProperty(key);
         }
@@ -1233,10 +1265,18 @@
             clearCustomVars();
             markActiveSwatch(null);
         }
-        function setMutedColors(on) {
-            mutedColors = on;
-            localStorage.setItem(MUTED_COLORS_KEY, on ? "1" : "0");
+        function setColorIntensity(pct) {
+            colorIntensity = pct;
+            localStorage.setItem(COLOR_INTENSITY_KEY, String(pct));
+            updateColorIntensityUI();
             if (vividColor) applyCustomColor();
+        }
+        function updateColorIntensityUI() {
+            const wrap = document.getElementById("colorIntensityControl");
+            if (!wrap) return;
+            wrap.querySelectorAll("button[data-intensity]").forEach((btn) => {
+                btn.classList.toggle("active", parseInt(btn.dataset.intensity, 10) === colorIntensity);
+            });
         }
         function markActiveSwatch(hue) {
             const wrap = document.getElementById("themeSwatches");
@@ -1258,7 +1298,7 @@
             const input = document.getElementById("themeColorInput"),
                 resetBtn = document.getElementById("themeResetBtn"),
                 swatches = document.getElementById("themeSwatches"),
-                mutedToggle = document.getElementById("mutedColorsToggle");
+                intensityControl = document.getElementById("colorIntensityControl");
             if (input) input.addEventListener("input", (e) => setCustomColor(e.target.value));
             if (resetBtn) resetBtn.addEventListener("click", () => resetCustomColor());
             if (swatches) swatches.addEventListener("click", (e) => {
@@ -1269,7 +1309,11 @@
                 setCustomColor(hex);
                 if (input) input.value = hex;
             });
-            if (mutedToggle) mutedToggle.addEventListener("change", (e) => setMutedColors(e.target.checked));
+            if (intensityControl) intensityControl.addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-intensity]");
+                if (!btn) return;
+                setColorIntensity(parseInt(btn.dataset.intensity, 10));
+            });
             if (window.matchMedia) {
                 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
                     if (vividColor) applyCustomColor();
@@ -1279,9 +1323,15 @@
         function initThemeColor() {
             renderThemeSwatches();
             const input = document.getElementById("themeColorInput");
-            const mutedToggle = document.getElementById("mutedColorsToggle");
-            mutedColors = localStorage.getItem(MUTED_COLORS_KEY) === "1";
-            if (mutedToggle) mutedToggle.checked = mutedColors;
+            let storedIntensity = localStorage.getItem(COLOR_INTENSITY_KEY);
+            if (storedIntensity == null) {
+                // Migrate the old binary "Muted colors" toggle if it was set;
+                // otherwise fall back to the new default of 60%.
+                storedIntensity = localStorage.getItem(MUTED_COLORS_KEY) === "1" ? "20" : String(DEFAULT_COLOR_INTENSITY);
+            }
+            const parsedIntensity = parseInt(storedIntensity, 10);
+            colorIntensity = [20, 40, 60, 80, 100].includes(parsedIntensity) ? parsedIntensity : DEFAULT_COLOR_INTENSITY;
+            updateColorIntensityUI();
             const storedColor = localStorage.getItem(CUSTOM_COLOR_KEY);
             if (storedColor) {
                 vividColor = storedColor;

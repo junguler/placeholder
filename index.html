@@ -1139,6 +1139,26 @@
             if (contrastRatio(inverted, bgHex) >= minRatio) return inverted;
             return contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex) ? "#ffffff" : "#000000";
         }
+        // Nudges hex's LIGHTNESS ONLY (hue & saturation untouched — still
+        // unmistakably the same color) just far enough that it's visible
+        // against bgHex. Used only for borders/hover states, which are
+        // useless if they're literally identical to the flat fill behind
+        // them.
+        function visibleVariant(hex, bgHex, targetRatio, maxShift) {
+            if (contrastRatio(hex, bgHex) >= targetRatio) return hex;
+            const { h, s, l } = hexToHsl(hex);
+            const dir = relLuminance(bgHex) < 0.5 ? 1 : -1;
+            let best = hex, bestRatio = contrastRatio(hex, bgHex);
+            for (let step = 1; step <= (maxShift || 40); step++) {
+                const nl = clampNum(l + dir * step, 0, 100);
+                const candidate = hslToHex(h, s, nl);
+                const ratio = contrastRatio(candidate, bgHex);
+                if (ratio > bestRatio) { bestRatio = ratio; best = candidate; }
+                if (ratio >= targetRatio) return candidate;
+                if (nl <= 0 || nl >= 100) break;
+            }
+            return best;
+        }
         // Desaturates + settles the lightness toward a calmer middle. Only
         // ever called when the "Muted colors" toggle is explicitly on —
         // it's the one deliberate exception to "your color, unchanged."
@@ -1162,23 +1182,23 @@
             const newVals = {};
             // Off (default): your color exactly as picked, no changes.
             // On ("Muted colors"): the one deliberate exception — your color
-            // is desaturated + settled first, then run through the exact
-            // same non-flat, per-surface engine below.
+            // is desaturated + settled first, then applied the exact same
+            // way below.
             const activeColor = mutedColors ? muteColor(vividColor) : vividColor;
-            // Each surface keeps its own original role lightness (so panels,
-            // hover states, and borders stay visually distinct from one
-            // another) while taking the active color's exact hue and
-            // saturation. The accent is the active color, byte-for-byte.
-            const { h, s } = hexToHsl(activeColor);
-            const bgKeys = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color"];
-            for (const key of bgKeys) {
-                if (!base[key]) continue;
-                const { l } = hexToHsl(base[key]);
-                newVals[key] = hslToHex(h, s, l);
-            }
+            // Every surface is your color, byte-for-byte — no hue shift, no
+            // saturation change, no lightness substitution. Backgrounds,
+            // hover fill, and the accent are all the literal same hex.
+            newVals["--bg-primary"] = activeColor;
+            newVals["--bg-secondary"] = activeColor;
+            newVals["--bg-tertiary"] = activeColor;
+            newVals["--bg-hover"] = activeColor;
             newVals["--accent"] = activeColor;
-            const { l: accentL } = hexToHsl(base["--accent"]);
-            newVals["--accent-hover"] = hslToHex(h, s, clampNum(accentL + (accentL > 55 ? -10 : 10), 4, 96));
+            // Borders and the hover state are the ONE necessary exception:
+            // if they were literally identical to the fill behind them,
+            // they'd be invisible. Each gets the smallest possible lightness
+            // nudge (hue & saturation still untouched) needed to be seeable.
+            newVals["--border-color"] = visibleVariant(activeColor, activeColor, 1.6, 40);
+            newVals["--accent-hover"] = visibleVariant(activeColor, activeColor, 1.3, 25);
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
@@ -1191,7 +1211,7 @@
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
-            markActiveSwatch(h);
+            markActiveSwatch(hexToHsl(activeColor).h);
         }
         function setCustomColor(hex) {
             vividColor = hex;

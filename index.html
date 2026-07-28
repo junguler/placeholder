@@ -558,7 +558,7 @@
                                     <div class="settings-row">
                                         <span class="settings-label">Muted colors</span>
                                         <label class="switch">
-                                            <input type="checkbox" id="mutedColorsToggle" aria-label="Muted colors: tone down the custom color for people sensitive to bright, saturated colors" />
+                                            <input type="checkbox" id="mutedColorsToggle" aria-label="Muted colors: give each panel its own shade instead of one flat full-strength color" />
                                             <span class="switch-slider"></span>
                                         </label>
                                     </div>
@@ -1019,10 +1019,12 @@
            black/white so text is never actually unreadable.
 
            "Muted colors" is a separate, opt-in toggle for people who find
-           fully-saturated colors uncomfortable to look at — when it's on,
-           your picked color is desaturated before being applied. It's the
-           only case where the picked color is deliberately altered, and
-           only because you asked for it.
+           the default flat, full-strength look too intense — when it's on,
+           each surface (panel, hover, border) keeps its own original
+           lightness and only takes your color's hue/saturation, so panels
+           stay visually distinct instead of one solid block of color. It's
+           the only case where the picked color renders differently on
+           different surfaces, and only because you asked for it.
            --------------------------------------------------------------- */
         const CUSTOM_COLOR_KEY = "themeCustomColor";
         const MUTED_COLORS_KEY = "themeMutedColors";
@@ -1137,15 +1139,6 @@
             if (contrastRatio(inverted, bgHex) >= minRatio) return inverted;
             return contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex) ? "#ffffff" : "#000000";
         }
-        // Desaturates + settles the lightness toward a calmer middle, for
-        // the opt-in "Muted colors" toggle. Only ever called when that
-        // toggle is explicitly on.
-        function muteColor(hex) {
-            const { h, s, l } = hexToHsl(hex);
-            const mutedS = clampNum(s * 0.32, 6, 32);
-            const mutedL = clampNum(l + (l < 50 ? 14 : -14), 18, 82);
-            return hslToHex(h, mutedS, mutedL);
-        }
         function getActivePaletteKey() {
             const attr = document.documentElement.getAttribute("data-theme");
             if (attr === "light" || attr === "hc-dark" || attr === "hc-light") return attr;
@@ -1157,24 +1150,43 @@
             if (!vividColor) return;
             const root = document.documentElement.style;
             const base = THEME_BASE[getActivePaletteKey()];
-            const exact = mutedColors ? muteColor(vividColor) : vividColor;
-            const keys = [
-                "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
-                "--accent", "--accent-hover",
-            ];
             const newVals = {};
-            for (const key of keys) newVals[key] = exact;
+            if (mutedColors) {
+                // "Muted colors": each surface keeps its own original role
+                // lightness (so panels/hover states are visually distinct
+                // from each other again) while taking your picked color's
+                // hue and saturation. This reads as calmer/less flat than
+                // the default, since no single surface is your full-strength
+                // pick.
+                const { h, s } = hexToHsl(vividColor);
+                const bgKeys = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color"];
+                for (const key of bgKeys) {
+                    if (!base[key]) continue;
+                    const { l } = hexToHsl(base[key]);
+                    newVals[key] = hslToHex(h, s, l);
+                }
+                newVals["--accent"] = vividColor;
+                const { l: accentL } = hexToHsl(base["--accent"]);
+                newVals["--accent-hover"] = hslToHex(h, s, clampNum(accentL + (accentL > 55 ? -10 : 10), 4, 96));
+            } else {
+                // Default: your exact pick, byte-for-byte, on every surface.
+                const keys = [
+                    "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
+                    "--accent", "--accent-hover",
+                ];
+                for (const key of keys) newVals[key] = vividColor;
+            }
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
             for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 3]]) {
                 if (!base[textKey]) continue;
-                newVals[textKey] = readableTextColor(base[textKey], exact, minRatio);
+                newVals[textKey] = readableTextColor(base[textKey], newVals["--bg-primary"], minRatio);
             }
             for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
-            const onAccent = contrastRatio("#ffffff", exact) >= contrastRatio("#000000", exact) ? "#ffffff" : "#000000";
+            const onAccent = contrastRatio("#ffffff", newVals["--accent"]) >= contrastRatio("#000000", newVals["--accent"]) ? "#ffffff" : "#000000";
             root.setProperty("--on-accent", onAccent);
-            const rgb = hexToRgb(exact);
+            const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
             markActiveSwatch(hexToHsl(vividColor).h);
         }

@@ -556,13 +556,6 @@
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
                                     <div class="settings-section-title">Base Color</div>
                                     <div class="settings-row">
-                                        <span class="settings-label">Muted colors</span>
-                                        <label class="switch">
-                                            <input type="checkbox" id="mutedColorsToggle" aria-label="Muted colors: give each panel its own shade instead of one flat full-strength color" />
-                                            <span class="switch-slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="settings-row">
                                         <div class="theme-swatches" id="themeSwatches"></div>
                                     </div>
                                     <div class="theme-custom-row">
@@ -671,7 +664,6 @@
             isPlaylistFile = !1,
             currentFontSize = 16,
             vividColor = null,
-            mutedColors = false,
             currentHls = null,
             streamTimeout = null,
             allFiles = [],
@@ -1007,27 +999,19 @@
 
         /* ---------------------------------------------------------------
            Base Color engine
-           Total control: whatever color you pick is applied exactly as
-           chosen — no hue shift, no saturation clamp, no lightness
-           reshaping — to every surface (backgrounds, borders, accent).
-           Nothing about the color itself is ever touched.
+           Whatever color you pick, its exact hue and saturation are used
+           everywhere — untouched, no clamping, no reshaping. Each surface
+           (main panel, secondary panel, hover state, border) keeps its own
+           original lightness so the app still has visible depth/layering;
+           the accent itself is your picked color exactly, byte-for-byte.
 
            The only intervention is on TEXT, and only when it's reactive:
            a theme's own text color is left alone unless it would actually
-           fail contrast against your color, in which case it's inverted;
-           if inverting still isn't enough, it falls back to plain
-           black/white so text is never actually unreadable.
-
-           "Muted colors" is a separate, opt-in toggle for people who find
-           the default flat, full-strength look too intense — when it's on,
-           each surface (panel, hover, border) keeps its own original
-           lightness and only takes your color's hue/saturation, so panels
-           stay visually distinct instead of one solid block of color. It's
-           the only case where the picked color renders differently on
-           different surfaces, and only because you asked for it.
+           fail contrast against the new background, in which case it's
+           inverted; if inverting still isn't enough, it falls back to
+           plain black/white so text is never actually unreadable.
            --------------------------------------------------------------- */
         const CUSTOM_COLOR_KEY = "themeCustomColor";
-        const MUTED_COLORS_KEY = "themeMutedColors";
         const THEME_BASE = {
             dark: {
                 "--bg-primary": "#0d1117", "--bg-secondary": "#161b22", "--bg-tertiary": "#21262d",
@@ -1151,31 +1135,20 @@
             const root = document.documentElement.style;
             const base = THEME_BASE[getActivePaletteKey()];
             const newVals = {};
-            if (mutedColors) {
-                // "Muted colors": each surface keeps its own original role
-                // lightness (so panels/hover states are visually distinct
-                // from each other again) while taking your picked color's
-                // hue and saturation. This reads as calmer/less flat than
-                // the default, since no single surface is your full-strength
-                // pick.
-                const { h, s } = hexToHsl(vividColor);
-                const bgKeys = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color"];
-                for (const key of bgKeys) {
-                    if (!base[key]) continue;
-                    const { l } = hexToHsl(base[key]);
-                    newVals[key] = hslToHex(h, s, l);
-                }
-                newVals["--accent"] = vividColor;
-                const { l: accentL } = hexToHsl(base["--accent"]);
-                newVals["--accent-hover"] = hslToHex(h, s, clampNum(accentL + (accentL > 55 ? -10 : 10), 4, 96));
-            } else {
-                // Default: your exact pick, byte-for-byte, on every surface.
-                const keys = [
-                    "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
-                    "--accent", "--accent-hover",
-                ];
-                for (const key of keys) newVals[key] = vividColor;
+            // Each surface keeps its own original role lightness (so panels,
+            // hover states, and borders stay visually distinct from one
+            // another) while taking your picked color's exact hue and
+            // saturation. The accent is your pick, byte-for-byte.
+            const { h, s } = hexToHsl(vividColor);
+            const bgKeys = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color"];
+            for (const key of bgKeys) {
+                if (!base[key]) continue;
+                const { l } = hexToHsl(base[key]);
+                newVals[key] = hslToHex(h, s, l);
             }
+            newVals["--accent"] = vividColor;
+            const { l: accentL } = hexToHsl(base["--accent"]);
+            newVals["--accent-hover"] = hslToHex(h, s, clampNum(accentL + (accentL > 55 ? -10 : 10), 4, 96));
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
@@ -1188,7 +1161,7 @@
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
-            markActiveSwatch(hexToHsl(vividColor).h);
+            markActiveSwatch(h);
         }
         function setCustomColor(hex) {
             vividColor = hex;
@@ -1210,11 +1183,6 @@
             clearCustomVars();
             markActiveSwatch(null);
         }
-        function setMutedColors(on) {
-            mutedColors = on;
-            localStorage.setItem(MUTED_COLORS_KEY, on ? "1" : "0");
-            if (vividColor) applyCustomColor();
-        }
         function markActiveSwatch(hue) {
             const wrap = document.getElementById("themeSwatches");
             if (!wrap) return;
@@ -1234,8 +1202,7 @@
         function wireThemeColorPicker() {
             const input = document.getElementById("themeColorInput"),
                 resetBtn = document.getElementById("themeResetBtn"),
-                swatches = document.getElementById("themeSwatches"),
-                mutedToggle = document.getElementById("mutedColorsToggle");
+                swatches = document.getElementById("themeSwatches");
             if (input) input.addEventListener("input", (e) => setCustomColor(e.target.value));
             if (resetBtn) resetBtn.addEventListener("click", () => resetCustomColor());
             if (swatches) swatches.addEventListener("click", (e) => {
@@ -1246,7 +1213,6 @@
                 setCustomColor(hex);
                 if (input) input.value = hex;
             });
-            if (mutedToggle) mutedToggle.addEventListener("change", (e) => setMutedColors(e.target.checked));
             if (window.matchMedia) {
                 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
                     if (vividColor) applyCustomColor();
@@ -1256,9 +1222,6 @@
         function initThemeColor() {
             renderThemeSwatches();
             const input = document.getElementById("themeColorInput");
-            const mutedToggle = document.getElementById("mutedColorsToggle");
-            mutedColors = localStorage.getItem(MUTED_COLORS_KEY) === "1";
-            if (mutedToggle) mutedToggle.checked = mutedColors;
             const storedColor = localStorage.getItem(CUSTOM_COLOR_KEY);
             if (storedColor) {
                 vividColor = storedColor;

@@ -279,7 +279,8 @@
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
         .list-columns { --list-cols: 24px 1fr 70px 90px 100px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: calc(0.4rem + 0.75rem) 0.5rem 0.4rem; margin: -0.75rem 0 2px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: -0.75rem; background: var(--bg-primary); z-index: 5; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
+        .file-list-header.stuck { margin-top: -0.75rem; padding-top: calc(0.4rem + 0.75rem); top: -0.75rem; }
         .file-list-header .col-icon-spacer { width: 24px; }
         .file-list-header .col { display: flex; align-items: center; gap: 0.25rem; cursor: pointer; user-select: none; }
         .file-list-header .col:hover { color: var(--text-primary); }
@@ -1817,11 +1818,24 @@
             render();
             document.getElementById("main").scrollTop = 0;
         }
+        function updateListHeaderStuck() {
+            const mainEl = document.getElementById("main");
+            const listHeader = document.querySelector(".file-list-header");
+            if (!mainEl || !listHeader) return;
+            const mainTop = mainEl.getBoundingClientRect().top;
+            const padTop = parseFloat(getComputedStyle(mainEl).paddingTop) || 0;
+            if (listHeader.classList.contains("stuck")) {
+                if (mainEl.scrollTop < padTop) listHeader.classList.remove("stuck");
+            } else {
+                if (listHeader.getBoundingClientRect().top <= mainTop + padTop) listHeader.classList.add("stuck");
+            }
+        }
         function setupEventListeners() {
             const mainEl = document.getElementById("main");
             const headerEl = document.querySelector(".header");
             mainEl.addEventListener("scroll", () => {
                 headerEl.classList.toggle("scrolled", mainEl.scrollTop > 2);
+                updateListHeaderStuck();
             }, { passive: true });
 
             const n = document.getElementById("search");
@@ -2492,6 +2506,7 @@
                     (searchResultLimit += 100), render();
                 });
             syncSortUI();
+            updateListHeaderStuck();
         }
         async function parsePlaylist(e, t) {
             try {

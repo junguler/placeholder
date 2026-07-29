@@ -279,7 +279,7 @@
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
         .list-columns { --list-cols: 24px 1fr 70px 90px 100px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: calc(0.4rem + 0.75rem) 0.5rem 0.4rem; margin: -0.75rem 0 2px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: -0.75rem; background: var(--bg-primary); z-index: 5; }
         .file-list-header .col-icon-spacer { width: 24px; }
         .file-list-header .col { display: flex; align-items: center; gap: 0.25rem; cursor: pointer; user-select: none; }
         .file-list-header .col:hover { color: var(--text-primary); }
@@ -1976,6 +1976,7 @@
             } else {
                 return;
             }
+            text += "\n";
             const done = () => {
                 if (btn) {
                     btn.classList.add("copied");

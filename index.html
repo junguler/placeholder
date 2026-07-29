@@ -1929,6 +1929,7 @@
                             const input = document.getElementById("themeColorInput");
                             setCustomColor((input && input.value) || "#8080ff");
                         } else {
+                            if (vividColor) resetCustomColor(); // switching to a stock theme drops the custom color
                             saveTheme(e.dataset.theme);
                         }
                     });

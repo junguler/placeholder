@@ -1808,20 +1808,22 @@
         async function init() {
             loadSettings();
             try {
-                const e = await fetch("./file_index.json", { cache: "no-store" });
-                if (!e.ok) throw new Error("Failed to load file index");
-                (fileIndex = await e.json()), 
-                preprocessFiles(fileIndex.root), 
-                setupEventListeners(), setupIntersectionObserver(), render();
-            } catch (e) {
-                console.error(e),
-                    (document.getElementById("main").innerHTML = `
+                const response = await fetch("./file_index.json", { cache: "no-store" });
+                if (!response.ok) throw new Error("Failed to load file index");
+                fileIndex = await response.json();
+                preprocessFiles(fileIndex.root);
+                setupEventListeners();
+                setupIntersectionObserver();
+                render();
+            } catch (err) {
+                console.error(err);
+                document.getElementById("main").innerHTML = `
           <div class="empty-state">
             ${emptyStateIllustrations.error}
             <h2>Could not load files</h2>
             <p>Make sure file_index.json exists.</p>
           </div>
-        `);
+        `;
             }
         }
         function updateSearchClearVisibility() {
@@ -1859,136 +1861,141 @@
                 updateListHeaderStuck();
             }, { passive: true });
 
-            const n = document.getElementById("search");
-            let e;
-            n.addEventListener("input", (t) => {
+            const searchInput = document.getElementById("search");
+            let searchDebounceTimer;
+            searchInput.addEventListener("input", (e) => {
                 updateSearchClearVisibility();
-                clearTimeout(e),
-                    (e = setTimeout(() => {
-                        (searchQuery = t.target.value.toLowerCase().trim()),
-                            (searchResultLimit = 100),
-                            render(),
-                            (document.getElementById("main").scrollTop = 0);
-                    }, 150));
-            }),
-                document.getElementById("searchClearBtn").addEventListener("click", clearSearch),
-                document.getElementById("logoHome").addEventListener("click", () => navigateTo([])),
-                document.getElementById("logoHome").addEventListener("keydown", (e) => {
-                    (e.key === "Enter" || e.key === " ") && (e.preventDefault(), navigateTo([]));
-                }),
-                document.querySelectorAll(".view-btn").forEach((e) => {
-                    e.addEventListener("click", () => setView(e.dataset.view));
-                }),
-                document.getElementById("closeBtn").addEventListener("click", closeModal),
-                document.getElementById("modal").addEventListener("click", (e) => {
-                    e.target === e.currentTarget && closeModal();
-                }),
-                document.getElementById("modalContent").addEventListener("click", (e) => e.stopPropagation()),
-                document.getElementById("modal").addEventListener("keydown", trapModalFocus),
-                document.getElementById("shortcutsBtn").addEventListener("click", openShortcutsModal),
-                document.getElementById("shortcutsCloseBtn").addEventListener("click", closeShortcutsModal),
-                document.getElementById("shortcutsModal").addEventListener("click", (e) => {
-                    e.target === e.currentTarget && closeShortcutsModal();
-                }),
-                document.getElementById("shortcutsModal").addEventListener("keydown", (e) => trapModalFocus(e, "shortcutsModalContent")),
-                document.addEventListener("keydown", (e) => {
-                    const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
-                    if (e.key === "Escape") {
-                        const settingsMenuEl = document.getElementById("settingsMenu");
-                        const themeMenuEl = document.getElementById("themeColorMenu");
-                        if (settingsMenuEl.classList.contains("active")) {
-                            settingsMenuEl.classList.remove("active");
-                            document.getElementById("settingsBtn").setAttribute("aria-expanded", "false");
-                            return;
-                        }
-                        if (themeMenuEl.classList.contains("active")) {
-                            themeMenuEl.classList.remove("active");
-                            document.getElementById("themeColorBtn").setAttribute("aria-expanded", "false");
-                            return;
-                        }
-                        shortcutsOpen ? closeShortcutsModal() : closeModal();
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(() => {
+                    searchQuery = e.target.value.toLowerCase().trim();
+                    searchResultLimit = 100;
+                    render();
+                    document.getElementById("main").scrollTop = 0;
+                }, 150);
+            });
+            document.getElementById("searchClearBtn").addEventListener("click", clearSearch);
+            document.getElementById("logoHome").addEventListener("click", () => navigateTo([]));
+            document.getElementById("logoHome").addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigateTo([]);
+                }
+            });
+            document.querySelectorAll(".view-btn").forEach((btn) => {
+                btn.addEventListener("click", () => setView(btn.dataset.view));
+            });
+            document.getElementById("closeBtn").addEventListener("click", closeModal);
+            document.getElementById("modal").addEventListener("click", (e) => {
+                if (e.target === e.currentTarget) closeModal();
+            });
+            document.getElementById("modalContent").addEventListener("click", (e) => e.stopPropagation());
+            document.getElementById("modal").addEventListener("keydown", trapModalFocus);
+            document.getElementById("shortcutsBtn").addEventListener("click", openShortcutsModal);
+            document.getElementById("shortcutsCloseBtn").addEventListener("click", closeShortcutsModal);
+            document.getElementById("shortcutsModal").addEventListener("click", (e) => {
+                if (e.target === e.currentTarget) closeShortcutsModal();
+            });
+            document.getElementById("shortcutsModal").addEventListener("keydown", (e) => trapModalFocus(e, "shortcutsModalContent"));
+            document.addEventListener("keydown", (e) => {
+                const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
+                if (e.key === "Escape") {
+                    const settingsMenuEl = document.getElementById("settingsMenu");
+                    const themeMenuEl = document.getElementById("themeColorMenu");
+                    if (settingsMenuEl.classList.contains("active")) {
+                        settingsMenuEl.classList.remove("active");
+                        document.getElementById("settingsBtn").setAttribute("aria-expanded", "false");
                         return;
                     }
-                    if (e.key === "?" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !shortcutsOpen) {
+                    if (themeMenuEl.classList.contains("active")) {
+                        themeMenuEl.classList.remove("active");
+                        document.getElementById("themeColorBtn").setAttribute("aria-expanded", "false");
+                        return;
+                    }
+                    if (shortcutsOpen) closeShortcutsModal();
+                    else closeModal();
+                    return;
+                }
+                if (e.key === "?" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !shortcutsOpen) {
+                    e.preventDefault();
+                    openShortcutsModal();
+                    return;
+                }
+                if (e.key === "/" && document.activeElement.tagName !== "INPUT") {
+                    e.preventDefault();
+                    document.getElementById("search").focus();
+                }
+                if (e.key === " ") {
+                    const modalOpen = document.getElementById("modal").classList.contains("active");
+                    const activeEl = document.activeElement;
+                    // Skip when a button (e.g. the focused play button itself, or the
+                    // close button) or form field already owns the spacebar — letting
+                    // the browser's native activation fire avoids a double-toggle.
+                    const ownsSpace = ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(activeEl.tagName);
+                    if (modalOpen && !ownsSpace) {
                         e.preventDefault();
-                        openShortcutsModal();
+                        toggleModalPlayback();
                         return;
                     }
-                    e.key === "/" &&
-                            document.activeElement.tagName !== "INPUT" &&
-                            (e.preventDefault(), document.getElementById("search").focus());
-                    if (e.key === " ") {
-                        const modalOpen = document.getElementById("modal").classList.contains("active");
-                        const activeEl = document.activeElement;
-                        // Skip when a button (e.g. the focused play button itself, or the
-                        // close button) or form field already owns the spacebar — letting
-                        // the browser's native activation fire avoids a double-toggle.
-                        const ownsSpace = ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(activeEl.tagName);
-                        if (modalOpen && !ownsSpace) {
-                            e.preventDefault();
-                            toggleModalPlayback();
-                            return;
-                        }
+                }
+                if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+                    const modalOpen = document.getElementById("modal").classList.contains("active");
+                    const activeEl = document.activeElement;
+                    const isFormField = ["INPUT", "SELECT", "TEXTAREA"].includes(activeEl.tagName);
+                    if (modalOpen && !isFormField) {
+                        e.preventDefault();
+                        handleModalKeydown(e.key);
+                        return;
                     }
-                    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-                        const modalOpen = document.getElementById("modal").classList.contains("active");
-                        const activeEl = document.activeElement;
-                        const isFormField = ["INPUT", "SELECT", "TEXTAREA"].includes(activeEl.tagName);
-                        if (modalOpen && !isFormField) {
-                            e.preventDefault();
-                            handleModalKeydown(e.key);
-                            return;
-                        }
-                        const insideMain = activeEl.closest && activeEl.closest("#main");
-                        const insideTree = activeEl.closest && activeEl.closest("#treeContent");
-                        if (!modalOpen && !insideMain && !insideTree && !isFormField) {
-                            e.preventDefault();
-                            const panel = document.getElementById("treePanel");
-                            e.key === "ArrowLeft" && panel && panel.classList.contains("visible")
-                                ? focusTreePanel()
-                                : focusMainPanel();
-                        }
+                    const insideMain = activeEl.closest && activeEl.closest("#main");
+                    const insideTree = activeEl.closest && activeEl.closest("#treeContent");
+                    if (!modalOpen && !insideMain && !insideTree && !isFormField) {
+                        e.preventDefault();
+                        const panel = document.getElementById("treePanel");
+                        if (e.key === "ArrowLeft" && panel && panel.classList.contains("visible")) focusTreePanel();
+                        else focusMainPanel();
                     }
-                }),
-                document.getElementById("main").addEventListener("click", handleCardClick),
-                document.getElementById("main").addEventListener("click", handleSortHeaderClick),
-                document.getElementById("main").addEventListener("keydown", handleGridKeydown),
-                document.getElementById("treeContent").addEventListener("click", handleTreeClick),
-                document.getElementById("treeContent").addEventListener("keydown", handleTreeKeydown);
+                }
+            });
+            document.getElementById("main").addEventListener("click", handleCardClick);
+            document.getElementById("main").addEventListener("click", handleSortHeaderClick);
+            document.getElementById("main").addEventListener("keydown", handleGridKeydown);
+            document.getElementById("treeContent").addEventListener("click", handleTreeClick);
+            document.getElementById("treeContent").addEventListener("keydown", handleTreeKeydown);
+
             setupDropdown("settingsBtn", "settingsMenu", "settingsDropdown");
             setupDropdown("themeColorBtn", "themeColorMenu", "themeColorDropdown");
-            document.querySelectorAll(".theme-btn").forEach((e) => {
-                    e.addEventListener("click", () => {
-                        if (e.dataset.theme === "custom") {
-                            if (vividColor) return; // already the active look, nothing to do
-                            const input = document.getElementById("themeColorInput");
-                            setCustomColor((input && input.value) || "#8080ff");
-                        } else {
-                            if (vividColor) resetCustomColor(); // switching to a stock theme drops the custom color
-                            saveTheme(e.dataset.theme);
-                        }
-                    });
-                }),
-                document.getElementById("fontDecrease").addEventListener("click", () => changeFontSize(-1)),
-                document.getElementById("fontIncrease").addEventListener("click", () => changeFontSize(1)),
-                document.getElementById("sortSelect").addEventListener("change", (e) => setSortBy(e.target.value)),
-                document.getElementById("nativePlayerToggle").addEventListener("change", (e) => {
-                    (useNativePlayer = e.target.checked),
-                        localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0"),
-                        document.body.classList.toggle("native-player-mode", useNativePlayer);
-                }),
-                wireThemeColorPicker(),
-                document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack),
-                document.getElementById("topNextBtn").addEventListener("click", goToNextTrack),
-                document.getElementById("topShuffleBtn").addEventListener("click", toggleShuffle),
-                document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink),
-                document.getElementById("playlistStop").addEventListener("click", stopPlaylist),
-                document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
+            document.querySelectorAll(".theme-btn").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    if (btn.dataset.theme === "custom") {
+                        if (vividColor) return; // already the active look, nothing to do
+                        const input = document.getElementById("themeColorInput");
+                        setCustomColor((input && input.value) || "#8080ff");
+                    } else {
+                        if (vividColor) resetCustomColor(); // switching to a stock theme drops the custom color
+                        saveTheme(btn.dataset.theme);
+                    }
+                });
+            });
+            document.getElementById("fontDecrease").addEventListener("click", () => changeFontSize(-1));
+            document.getElementById("fontIncrease").addEventListener("click", () => changeFontSize(1));
+            document.getElementById("sortSelect").addEventListener("change", (e) => setSortBy(e.target.value));
+            document.getElementById("nativePlayerToggle").addEventListener("change", (e) => {
+                useNativePlayer = e.target.checked;
+                localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0");
+                document.body.classList.toggle("native-player-mode", useNativePlayer);
+            });
+            wireThemeColorPicker();
+            document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack);
+            document.getElementById("topNextBtn").addEventListener("click", goToNextTrack);
+            document.getElementById("topShuffleBtn").addEventListener("click", toggleShuffle);
+            document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink);
+            document.getElementById("playlistStop").addEventListener("click", stopPlaylist);
+            document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
             setupGotoStepper();
         }
         function copyRawLink() {
             const btn = document.getElementById("copyLinkBtn");
-            const url = new URL(`./${currentFilePath}`, window.location.href).href;
+            const url = new URL(`./${encodePathForUrl(currentFilePath)}`, window.location.href).href;
             const done = () => {
                 btn.classList.add("copied");
                 setTimeout(() => btn.classList.remove("copied"), 1200);
@@ -2007,7 +2014,7 @@
                 if (!item) return;
                 text = item.header ? `${item.header}\n${item.url}` : item.url;
             } else if (currentFilePath) {
-                text = new URL(`./${currentFilePath}`, window.location.href).href;
+                text = new URL(`./${encodePathForUrl(currentFilePath)}`, window.location.href).href;
             } else {
                 return;
             }
@@ -2283,85 +2290,104 @@
             const dir = activeKey === key && activeDir === "asc" ? "desc" : "asc";
             setSortBy(`${key}-${dir}`);
         }
-        function navigateTo(e) {
-            (currentPath = e), (searchQuery = ""), (document.getElementById("search").value = ""), (folderResultLimit = 300);
+        function navigateTo(pathArr) {
+            currentPath = pathArr;
+            searchQuery = "";
+            document.getElementById("search").value = "";
+            folderResultLimit = 300;
             updateSearchClearVisibility();
-            let t = "";
-            for (const n of e) (t += (t ? "/" : "") + n), expandedFolders.add(t);
+            let accumulated = "";
+            for (const segment of pathArr) {
+                accumulated += (accumulated ? "/" : "") + segment;
+                expandedFolders.add(accumulated);
+            }
             render();
             document.getElementById("main").scrollTop = 0;
         }
         function renderBreadcrumb() {
-            const t = document.getElementById("breadcrumb");
-            let e = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
-            currentPath.forEach((t, n) => {
-                const s = n === currentPath.length - 1,
-                    o = escapeHtml(JSON.stringify(currentPath.slice(0, n + 1)));
-                (e += `<span class="breadcrumb-separator">/</span>`),
-                    (e += `<span class="breadcrumb-item${s ? " current" : ""}" data-path="${o}">${escapeHtml(t)}</span>`);
-            }),
-                (t.innerHTML = e),
-                t.querySelectorAll(".breadcrumb-item:not(.current)").forEach((e) => {
-                    e.addEventListener("click", () => {
-                        const path = safeJsonParse(e.dataset.path, null);
-                        if (path) navigateTo(path);
-                    });
+            const breadcrumbEl = document.getElementById("breadcrumb");
+            let html = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
+            currentPath.forEach((segment, i) => {
+                const isCurrent = i === currentPath.length - 1;
+                const pathAttr = escapeHtml(JSON.stringify(currentPath.slice(0, i + 1)));
+                html += `<span class="breadcrumb-separator">/</span>`;
+                html += `<span class="breadcrumb-item${isCurrent ? " current" : ""}" data-path="${pathAttr}">${escapeHtml(segment)}</span>`;
+            });
+            breadcrumbEl.innerHTML = html;
+            breadcrumbEl.querySelectorAll(".breadcrumb-item:not(.current)").forEach((el) => {
+                el.addEventListener("click", () => {
+                    const path = safeJsonParse(el.dataset.path, null);
+                    if (path) navigateTo(path);
                 });
-            const currentCrumb = t.querySelector(".breadcrumb-item.current");
-            currentCrumb && currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
+            });
+            const currentCrumb = breadcrumbEl.querySelector(".breadcrumb-item.current");
+            if (currentCrumb) currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
         }
         function renderTree() {
-            const e = document.getElementById("treeContent");
-            function t(e) {
-                let n = 0;
-                for (const s of e) s.type === "directory" && (n++, s.children && (n += t(s.children)));
-                return n;
+            const treeEl = document.getElementById("treeContent");
+
+            function countFolders(items) {
+                let count = 0;
+                for (const item of items) {
+                    if (item.type === "directory") {
+                        count++;
+                        if (item.children) count += countFolders(item.children);
+                    }
+                }
+                return count;
             }
-            function n(e, t = "", s = 0) {
-                let o = "";
-                const i = e.filter((e) => e.type === "directory");
-                for (const e of i) {
-                    const a = t ? `${t}/${e.name}` : e.name,
-                        r = a.split("/").filter(Boolean),
-                        c = expandedFolders.has(a),
-                        l = JSON.stringify(r) === JSON.stringify(currentPath),
-                        d = e.children?.some((e) => e.type === "directory");
-                    (o += `
-            <div class="tree-item${l ? " active" : ""}" data-path="${escapeHtml(JSON.stringify(r))}" style="padding-left: ${s * 12 + 8}px" tabindex="0" role="treeitem" aria-label="Folder ${escapeHtml(e.name)}">
-              <span class="tree-toggle${d ? (c ? " expanded" : "") : " empty"}" data-path="${a}">
+
+            function renderFolderList(items, parentPath = "", depth = 0) {
+                let html = "";
+                const folders = items.filter((item) => item.type === "directory");
+                for (const folder of folders) {
+                    const folderPath = parentPath ? `${parentPath}/${folder.name}` : folder.name;
+                    const pathArr = folderPath.split("/").filter(Boolean);
+                    const isExpanded = expandedFolders.has(folderPath);
+                    const isActive = JSON.stringify(pathArr) === JSON.stringify(currentPath);
+                    const hasSubfolders = folder.children?.some((child) => child.type === "directory");
+                    html += `
+            <div class="tree-item${isActive ? " active" : ""}" data-path="${escapeHtml(JSON.stringify(pathArr))}" style="padding-left: ${depth * 12 + 8}px" tabindex="0" role="treeitem" aria-label="Folder ${escapeHtml(folder.name)}">
+              <span class="tree-toggle${hasSubfolders ? (isExpanded ? " expanded" : "") : " empty"}" data-path="${escapeHtml(folderPath)}">
                 ${icons.chevron}
               </span>
               ${icons.folder}
-              <span class="tree-item-name">${escapeHtml(e.name)}</span>
+              <span class="tree-item-name">${escapeHtml(folder.name)}</span>
             </div>
-          `),
-                        c && e.children && (o += `<div class="tree-children">${n(e.children, a, s + 1)}</div>`);
+          `;
+                    if (isExpanded && folder.children) {
+                        html += `<div class="tree-children">${renderFolderList(folder.children, folderPath, depth + 1)}</div>`;
+                    }
                 }
-                return o;
+                return html;
             }
-            const o = currentPath.length === 0,
-                i = fileIndex.root.some((e) => e.type === "directory");
-            let s = `
-        <div class="tree-item${o ? " active" : ""}" data-path="[]" style="padding-left: 8px" tabindex="0" role="treeitem" aria-label="Root folder">
-          <span class="tree-toggle${i ? " expanded" : " empty"}" data-path="">
+
+            const isAtRoot = currentPath.length === 0;
+            const rootHasSubfolders = fileIndex.root.some((item) => item.type === "directory");
+            let html = `
+        <div class="tree-item${isAtRoot ? " active" : ""}" data-path="[]" style="padding-left: 8px" tabindex="0" role="treeitem" aria-label="Root folder">
+          <span class="tree-toggle${rootHasSubfolders ? " expanded" : " empty"}" data-path="">
             ${icons.chevron}
           </span>
           ${icons.folder}
           <span class="tree-item-name">Root</span>
         </div>
       `;
-            (s += n(fileIndex.root)), (e.innerHTML = s);
-            const a = t(fileIndex.root) + 1,
-                r = e.parentElement.clientHeight - 32,
-                c = a * 28;
-            e.classList.toggle("needs-scroll", c > r);
+            html += renderFolderList(fileIndex.root);
+            treeEl.innerHTML = html;
+
+            const totalRows = countFolders(fileIndex.root) + 1;
+            const availableHeight = treeEl.parentElement.clientHeight - 32;
+            const neededHeight = totalRows * 28;
+            treeEl.classList.toggle("needs-scroll", neededHeight > availableHeight);
         }
         function getFileIconType(e) {
             return isPlaylistExtension(e) ? "playlist" : null;
         }
         function render() {
-            renderBreadcrumb(), currentView === "tree" && renderTree();
-            const n = document.getElementById("main");
+            renderBreadcrumb();
+            if (currentView === "tree") renderTree();
+            const mainEl = document.getElementById("main");
 
             let all = [];
             if (searchQuery) {
@@ -2372,14 +2398,14 @@
                 all = sortItems(getCurrentItems());
             }
             const activeLimit = searchQuery ? searchResultLimit : folderResultLimit;
-            const e = all.slice(0, activeLimit);
+            const visibleItems = all.slice(0, activeLimit);
 
             if (searchQuery) {
                 announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);
             }
 
-            if (e.length === 0) {
-                n.innerHTML = `
+            if (visibleItems.length === 0) {
+                mainEl.innerHTML = `
           <div class="empty-state">
             ${searchQuery ? emptyStateIllustrations.search : emptyStateIllustrations.folder}
             <h2>${searchQuery ? "No results" : "Empty folder"}</h2>
@@ -2389,16 +2415,16 @@
                 return;
             }
             const isColumnView = currentView === "list" || currentView === "tree";
-            const s = isColumnView ? "file-list list-columns" : "file-grid";
+            const listClass = isColumnView ? "file-list list-columns" : "file-grid";
 
             const fileCount = all.filter((i) => i.type === "file").length;
             const folderCount = all.filter((i) => i.type === "directory").length;
 
-            let t = `
+            let html = `
         <div class="stats-bar">
           <span class="stat">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
-            ${fileCount} files ${all.length > e.length ? `(showing ${e.length} of ${all.length})` : ""}
+            ${fileCount} files ${all.length > visibleItems.length ? `(showing ${visibleItems.length} of ${all.length})` : ""}
           </span>
           <span class="stat">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
@@ -2406,7 +2432,7 @@
           </span>
         </div>
         <div class="main-content">
-          <div class="${s}" id="fileItems" role="grid">
+          <div class="${listClass}" id="fileItems" role="grid">
           ${
               isColumnView && !searchQuery
                   ? `
@@ -2423,7 +2449,7 @@
           }
       `;
             if (currentPath.length > 0 && !searchQuery) {
-                t += `
+                html += `
             <div class="file-card directory parent-dir" data-directory="true" data-path="${escapeHtml(JSON.stringify(currentPath.slice(0, -1)))}" tabindex="0" role="button" aria-label="Go to parent folder">
               <div class="file-icon folder">${icons.folder}</div>
               <div class="file-info">
@@ -2443,9 +2469,9 @@
             </div>
           `;
             }
-            for (const item of e) {
-                const s = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other",
-                    o = icons[s] || icons.other;
+            for (const item of visibleItems) {
+                const iconType = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other";
+                const iconSvg = icons[iconType] || icons.other;
 
                 let clickPath, fullDisplayPath, parentPathArr;
 
@@ -2460,7 +2486,7 @@
                 }
 
                 if (item.type === "directory") {
-                    t += `
+                    html += `
             <div class="file-card directory" data-directory="true" data-path="${escapeHtml(JSON.stringify(parentPathArr))}" tabindex="0" role="button" aria-label="Open folder ${escapeHtml(item.name)}">
               <div class="file-icon folder">${icons.folder}</div>
               <div class="file-info">
@@ -2483,16 +2509,20 @@
             </div>
           `;
                 } else {
-                    let i = "";
+                    let thumbnailHtml = "";
                     if (item.category === "image") {
-                        i = currentView === "grid"
-                            ? `<img class="file-thumbnail lazy" data-src="./${clickPath}" alt="" loading="lazy">`
-                            : `<img class="file-thumbnail file-thumbnail-inline lazy" data-src="./${clickPath}" alt="" loading="lazy">`;
+                        // Both the URL (for the actual request) and the surrounding
+                        // HTML attribute need to be safe: encode special URL chars
+                        // (#, ?, %) first, then escape for the attribute context.
+                        const thumbSrc = escapeHtml(encodePathForUrl(clickPath));
+                        thumbnailHtml = currentView === "grid"
+                            ? `<img class="file-thumbnail lazy" data-src="./${thumbSrc}" alt="" loading="lazy">`
+                            : `<img class="file-thumbnail file-thumbnail-inline lazy" data-src="./${thumbSrc}" alt="" loading="lazy">`;
                     }
-                    t += `
+                    html += `
             <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">
-              ${i}
-              <div class="file-icon ${s}">${o}</div>
+              ${thumbnailHtml}
+              <div class="file-icon ${iconType}">${iconSvg}</div>
               <div class="file-info">
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
@@ -2516,19 +2546,23 @@
           `;
                 }
             }
-            (t += "</div>"),
-                all.length > e.length &&
-                    (t += `<button class="load-more-btn" id="loadMoreBtn">Show more (${all.length - e.length} remaining)</button>`),
-                (t += "</div>"),
-                (n.innerHTML = t),
-                document.querySelectorAll(".file-thumbnail.lazy").forEach((e) => {
-                    intersectionObserver.observe(e);
-                });
+            html += "</div>";
+            if (all.length > visibleItems.length) {
+                html += `<button class="load-more-btn" id="loadMoreBtn">Show more (${all.length - visibleItems.length} remaining)</button>`;
+            }
+            html += "</div>";
+            mainEl.innerHTML = html;
+            document.querySelectorAll(".file-thumbnail.lazy").forEach((img) => {
+                intersectionObserver.observe(img);
+            });
             const loadMoreBtn = document.getElementById("loadMoreBtn");
-            loadMoreBtn &&
+            if (loadMoreBtn) {
                 loadMoreBtn.addEventListener("click", () => {
-                    searchQuery ? (searchResultLimit += 100) : (folderResultLimit += 300), render();
+                    if (searchQuery) searchResultLimit += 100;
+                    else folderResultLimit += 300;
+                    render();
                 });
+            }
             syncSortUI();
             updateListHeaderStuck();
         }
@@ -2731,7 +2765,7 @@
         }
         async function startPlaylistMode() {
             if (!isPlaylistFile || !currentFilePath) return;
-            const e = `./${currentFilePath}`,
+            const e = `./${encodePathForUrl(currentFilePath)}`,
                 t = await parsePlaylist(e, e);
             t.length > 0
                 ? ((currentPlaylist = t),
@@ -2858,7 +2892,7 @@
       `;
         }
         async function showPlaylistAsText() {
-            const e = `./${currentFilePath}`;
+            const e = `./${encodePathForUrl(currentFilePath)}`;
             try {
                 const text = await fetchTextCached(e);
                 renderTextPreview(document.getElementById("modalBody"), text, currentFileName);
@@ -3077,43 +3111,53 @@
             }
         }
 
-        async function openFile(e, t, n) {
+        async function openFile(filePath, fileType, fileName) {
             lastFocusedElement = document.activeElement;
-            const r = document.getElementById("modal"),
-                c = document.getElementById("modalTitle"),
-                s = document.getElementById("modalBody"),
-                i = document.getElementById("downloadBtn"),
-                l = document.getElementById("rawBtn"),
-                d = document.getElementById("playlistBar"),
-                a = document.getElementById("playPlaylistBtn");
-            (currentFilePath = e),
-                (currentFileName = n),
-                (isPlaylistFile = isPlaylistExtension(n)),
-                (c.textContent = n),
-                (i.href = `./${e}`),
-                (i.download = n),
-                (l.href = `./${e}`),
-                (s.innerHTML = '<div class="loading"><div class="spinner"></div></div>'),
-                s.classList.remove("scrollable"),
-                (currentPlaylist = []),
-                (currentPlaylistIndex = 0),
-                (shuffleBag = []),
-                (shuffleHistory = []),
-                closeGotoPopover(),
-                d.classList.remove("active"),
-                isPlaylistFile ? a.classList.remove("hidden") : a.classList.add("hidden"),
-                document.getElementById("modalContent").classList.remove("video-modal"),
-                r.classList.add("active");
+            const modalEl = document.getElementById("modal"),
+                titleEl = document.getElementById("modalTitle"),
+                bodyEl = document.getElementById("modalBody"),
+                downloadBtn = document.getElementById("downloadBtn"),
+                rawLinkBtn = document.getElementById("rawBtn"),
+                playlistBarEl = document.getElementById("playlistBar"),
+                playPlaylistBtn = document.getElementById("playPlaylistBtn");
+
+            currentFilePath = filePath;
+            currentFileName = fileName;
+            isPlaylistFile = isPlaylistExtension(fileName);
+
+            // The actual request URL: percent-encode special chars (#, ?, %)
+            // so filenames containing them resolve correctly instead of
+            // getting truncated at a "fragment" or silently mangled.
+            const fileUrl = `./${encodePathForUrl(filePath)}`;
+            // The same URL, safe to drop into an HTML attribute string.
+            const fileUrlAttr = escapeHtml(fileUrl);
+
+            titleEl.textContent = fileName;
+            downloadBtn.href = fileUrl;
+            downloadBtn.download = fileName;
+            rawLinkBtn.href = fileUrl;
+            bodyEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            bodyEl.classList.remove("scrollable");
+            currentPlaylist = [];
+            currentPlaylistIndex = 0;
+            shuffleBag = [];
+            shuffleHistory = [];
+            closeGotoPopover();
+            playlistBarEl.classList.remove("active");
+            if (isPlaylistFile) playPlaylistBtn.classList.remove("hidden");
+            else playPlaylistBtn.classList.add("hidden");
+            document.getElementById("modalContent").classList.remove("video-modal");
+            modalEl.classList.add("active");
             requestAnimationFrame(() => document.getElementById("closeBtn").focus());
-            const o = `./${e}`;
+            const o = fileUrlAttr;
             try {
-                switch (t) {
+                switch (fileType) {
                     case "image":
-                        s.innerHTML = `<img class="preview-image" src="${o}" alt="${escapeHtml(n)}">`;
+                        bodyEl.innerHTML = `<img class="preview-image" src="${o}" alt="${escapeHtml(fileName)}">`;
                         break;
                     case "video":
                         document.getElementById("modalContent").classList.add("video-modal");
-                        s.innerHTML = `
+                        bodyEl.innerHTML = `
               <div class="preview-media-container">
                 <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link" aria-label="Copy stream link">${icons.info}</button>
                 <video class="preview-video" autoplay playsinline crossOrigin="anonymous" ${mediaTagAttrs()}>
@@ -3124,22 +3168,22 @@
               </div>
             `;
                         // Apply volume and normalization to single files too
-                        const singleVideo = s.querySelector('video');
+                        const singleVideo = bodyEl.querySelector('video');
                         if (singleVideo) {
                             singleVideo.volume = currentVolume;
                             singleVideo.onvolumechange = (e) => { currentVolume = e.target.volume; localStorage.setItem("playerVolume", currentVolume); };
                             setupAudioNormalization(singleVideo);
-                            setupMediaSession(singleVideo, n);
+                            setupMediaSession(singleVideo, fileName);
                             maybeWireMediaControls(singleVideo);
                         }
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
                     case "audio":
-                        s.innerHTML = `
+                        bodyEl.innerHTML = `
               <div class="preview-audio-container">
                 <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link" aria-label="Copy stream link">${icons.info}</button>
                 <div class="audio-icon">${pickPlayerNoteIcon()}</div>
-                <div class="playlist-now-playing">${escapeHtml(n)}</div>
+                <div class="playlist-now-playing">${escapeHtml(fileName)}</div>
                 <audio class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
                   <source src="${o}">
                   Your browser does not support audio playback.
@@ -3148,20 +3192,22 @@
               </div>
             `;
                         // Apply volume and normalization to single files too
-                        const singleAudio = s.querySelector('audio');
+                        const singleAudio = bodyEl.querySelector('audio');
                         if (singleAudio) {
                             singleAudio.volume = currentVolume;
                             singleAudio.onvolumechange = (e) => { currentVolume = e.target.volume; localStorage.setItem("playerVolume", currentVolume); };
                             setupAudioNormalization(singleAudio);
-                            setupMediaSession(singleAudio, n);
+                            setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);
                         }
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
                     case "document":
-                        n.toLowerCase().endsWith(".pdf")
-                            ? (s.innerHTML = `<iframe class="preview-pdf" src="${o}"></iframe>`)
-                            : showUnavailable(s, n, o);
+                        if (fileName.toLowerCase().endsWith(".pdf")) {
+                            bodyEl.innerHTML = `<iframe class="preview-pdf" src="${o}"></iframe>`;
+                        } else {
+                            showUnavailable(bodyEl, fileName, fileUrl);
+                        }
                         break;
                     case "playlist":
                         // Start playing right away instead of waiting for a manual
@@ -3174,47 +3220,49 @@
                     case "data":
                     case "text":
                         try {
-                            const text = await fetchTextCached(o);
-                            renderTextPreview(s, text, n);
-                            s.classList.add("scrollable");
+                            const text = await fetchTextCached(fileUrl);
+                            renderTextPreview(bodyEl, text, fileName);
+                            bodyEl.classList.add("scrollable");
                         } catch (err) {
-                            showUnavailable(s, n, o, err);
+                            showUnavailable(bodyEl, fileName, fileUrl, err);
                         }
                         break;
-                    case "font":
-                        const t = "PreviewFont" + Date.now(),
-                            i = new FontFace(t, `url(${o})`);
-                        await i.load(),
-                            document.fonts.add(i),
-                            (s.innerHTML = `
-              <div style="padding: 1.5rem; text-align: center; font-family: '${t}', sans-serif;">
+                    case "font": {
+                        const fontFamily = "PreviewFont" + Date.now();
+                        const fontFace = new FontFace(fontFamily, `url("${fileUrl}")`);
+                        await fontFace.load();
+                        document.fonts.add(fontFace);
+                        bodyEl.innerHTML = `
+              <div style="padding: 1.5rem; text-align: center; font-family: '${fontFamily}', sans-serif;">
                 <p style="font-size: 2rem; margin-bottom: 0.75rem;">The quick brown fox jumps over the lazy dog</p>
                 <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
                 <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">abcdefghijklmnopqrstuvwxyz</p>
                 <p style="font-size: 1.5rem;">0123456789!@#$%^&*()</p>
               </div>
-            `);
+            `;
                         break;
+                    }
                     default:
-                        showUnavailable(s, n, o);
+                        showUnavailable(bodyEl, fileName, fileUrl);
                 }
-            } catch (e) {
-                console.error(e), showUnavailable(s, n, o);
+            } catch (err) {
+                console.error(err);
+                showUnavailable(bodyEl, fileName, fileUrl);
             }
         }
-        function showUnavailable(e, t, n, err) {
+        function showUnavailable(containerEl, fileName, fileUrl, err) {
             let reason = "This file cannot be previewed.";
             if (err && err.status === 404) reason = "This file could not be found (404).";
             else if (err && err.status) reason = `The server returned an error (HTTP ${err.status}).`;
             else if (err) reason = "This file couldn't be loaded — it may be blocked by CORS or a network issue.";
-            e.innerHTML = `
+            containerEl.innerHTML = `
         <div class="preview-unavailable">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
           </svg>
           <h3>Preview not available</h3>
           <p>${reason}</p>
-          <a class="download-btn" href="${n}" download="${escapeHtml(t)}">
+          <a class="download-btn" href="${escapeHtml(fileUrl)}" download="${escapeHtml(fileName)}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
             </svg>
@@ -3258,8 +3306,8 @@
             }
         }
         function closeModal() {
-            const e = document.getElementById("modal");
-            e.classList.remove("active");
+            const modalEl = document.getElementById("modal");
+            modalEl.classList.remove("active");
 
             if (currentHls) {
                 currentHls.destroy();
@@ -3270,20 +3318,20 @@
                 streamTimeout = null;
             }
 
-            const t = e.querySelector("video"),
-                n = e.querySelector("audio");
-            t && t.pause(),
-                n && n.pause(),
-                (currentPlaylist = []),
-                (currentPlaylistIndex = 0),
-                (shuffleBag = []),
-                (shuffleHistory = []),
-                (currentFilePath = ""),
-                (currentFileName = ""),
-                (isPlaylistFile = !1),
-                closeGotoPopover(),
-                document.getElementById("playlistBar").classList.remove("active"),
-                document.getElementById("playPlaylistBtn").classList.add("hidden");
+            const videoEl = modalEl.querySelector("video");
+            const audioEl = modalEl.querySelector("audio");
+            if (videoEl) videoEl.pause();
+            if (audioEl) audioEl.pause();
+            currentPlaylist = [];
+            currentPlaylistIndex = 0;
+            shuffleBag = [];
+            shuffleHistory = [];
+            currentFilePath = "";
+            currentFileName = "";
+            isPlaylistFile = false;
+            closeGotoPopover();
+            document.getElementById("playlistBar").classList.remove("active");
+            document.getElementById("playPlaylistBtn").classList.add("hidden");
             if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
                 lastFocusedElement.focus();
             }
@@ -3317,6 +3365,16 @@
                 lastFocusedElementShortcuts.focus();
             }
             lastFocusedElementShortcuts = null;
+        }
+        // Percent-encodes a repo-relative path one segment at a time so "/"
+        // is preserved as a directory separator while everything else goes
+        // through encodeURIComponent. Without this, a filename containing
+        // #, ?, or % breaks the request outright: fetch(), <img src>, and
+        // `new URL()` all parse the string as a URL first, so a literal "#"
+        // is read as a fragment marker and everything after it is silently
+        // dropped rather than sent to the server.
+        function encodePathForUrl(path) {
+            return String(path).split("/").map(encodeURIComponent).join("/");
         }
         // Escapes a string for safe use in BOTH HTML text content and HTML
         // attribute values. The textContent/innerHTML round-trip alone only

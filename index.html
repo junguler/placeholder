@@ -142,6 +142,10 @@
         .breadcrumb-item.current { color: var(--text-primary); cursor: default; }
         .breadcrumb-item.current:hover { background: 0 0; }
         .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
+        .breadcrumb-pin-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 0.25rem; padding: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); flex-shrink: 0; }
+        .breadcrumb-pin-btn svg { width: 14px; height: 14px; }
+        .breadcrumb-pin-btn:hover { color: var(--accent); background: var(--bg-hover); }
+        .breadcrumb-pin-btn.pinned { color: var(--accent); }
         .header-actions { display: flex; gap: 0.375rem; align-items: center; }
         .search-container { position: relative; width: 200px; }
         .search-input { width: 100%; padding: 0.375rem 1.75rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
@@ -239,6 +243,18 @@
         .tree-toggle svg { width: 10px; height: 10px; transition: transform var(--transition); }
         .tree-toggle.expanded svg { transform: rotate(90deg); }
         .tree-toggle.empty { visibility: hidden; }
+        .tree-pinned:empty { display: none; }
+        .tree-pinned { border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; flex-shrink: 0; }
+        .tree-pinned-header { padding: 0.5rem 0.75rem 0.25rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .tree-pinned-item { display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); border-left: 2px solid transparent; }
+        .tree-pinned-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .tree-pinned-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
+        .tree-pinned-item svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .tree-pinned-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; }
+        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 0; color: var(--accent); cursor: pointer; }
+        .tree-pinned-unpin svg { width: 12px; height: 12px; }
+        .tree-pinned-item:hover .tree-pinned-unpin, .tree-pinned-unpin:focus-visible { opacity: 1; }
+        .tree-pinned-unpin:hover { color: var(--danger); }
         .main { flex: 1; overflow: auto; padding: 0.75rem; display: flex; flex-direction: column; }
         .main-content { flex: 1; }
         .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--text-muted); }
@@ -446,6 +462,34 @@
         .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
         .shortcut-row dt { display: flex; gap: 0.25rem; flex-shrink: 0; flex-wrap: wrap; }
         .shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; }
+        .stats-modal { max-width: 420px; }
+        .stats-body { padding: 0.85rem 1rem 1rem; overflow-y: auto; }
+        .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 0.65rem 0.5rem; text-align: center; }
+        .stats-summary-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+        .stats-summary-label { display: block; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem; }
+        .stats-breakdown-title { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+        .stats-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; }
+        .stats-row-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); flex-shrink: 0; }
+        .stats-row-icon svg { width: 14px; height: 14px; }
+        .stats-row-label { width: 74px; flex-shrink: 0; font-size: 0.8rem; color: var(--text-secondary); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .stats-row-bar-track { flex: 1; height: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); overflow: hidden; }
+        .stats-row-bar-fill { height: 100%; background: var(--accent); }
+        .stats-row-count { width: 44px; flex-shrink: 0; text-align: right; font-size: 0.75rem; color: var(--text-muted); }
+        /* Compact density: tightens grid/list/tree spacing for people who'd
+           rather see more rows at once than have larger touch targets. */
+        body.compact-density .file-grid { gap: 0.3rem; }
+        body.compact-density .file-card { padding: 0.4rem; gap: 0.2rem; }
+        body.compact-density .file-icon { width: 26px; height: 26px; }
+        body.compact-density .file-name { font-size: 0.75rem; }
+        body.compact-density .file-meta { font-size: 0.65rem; }
+        body.compact-density .file-list .file-card { padding: 0.3rem 0.6rem; gap: 0.4rem; }
+        body.compact-density .file-list .file-icon { width: 20px; height: 20px; }
+        body.compact-density .file-list .file-icon svg { width: 12px; height: 12px; }
+        body.compact-density .file-list-header { padding: 0.25rem 0.5rem; }
+        body.compact-density .tree-item { padding: 0.15rem 0.5rem; }
+        body.compact-density .tree-pinned-item { padding: 0.15rem 0.5rem; }
+        body.compact-density .stats-bar { margin-bottom: 0.3rem; }
         kbd { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.1rem 0.45rem; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; color: var(--text-primary); }
 
         /* --- Visual pass: thin scrollbars everywhere (Firefox) --- */
@@ -506,6 +550,9 @@
                 <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
                     <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
                 </button>
+                <button class="settings-btn" id="statsBtn" title="Library stats" aria-label="Show library stats">
+                    <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M5 9.2h3.2V19H5V9.2zm5.4-4.4h3.2V19h-3.2V4.8zm5.4 8h3.2V19h-3.2v-6.2z"/></svg>
+                </button>
                 <div class="settings-dropdown" id="settingsDropdown">
                     <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
                         <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94.0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24.0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47.0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24.0.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47.0.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98.0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -541,6 +588,16 @@
                                             <option value="date-desc">Date (Newest)</option>
                                             <option value="type">Type</option>
                                         </select>
+                                    </div>
+                                </div>
+                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                                    <div class="settings-section-title">Density</div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Compact rows</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="compactDensityToggle" aria-label="Use compact row density for grid and list views" />
+                                            <span class="switch-slider"></span>
+                                        </label>
                                     </div>
                                 </div>
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
@@ -621,6 +678,7 @@
     </header>
     <div class="app-container">
         <aside class="tree-panel visible" id="treePanel">
+            <div class="tree-pinned" id="treePinned"></div>
             <div class="tree-header">Folders</div>
             <div class="tree-content" id="treeContent"></div>
         </aside>
@@ -690,6 +748,19 @@
             </div>
         </div>
     </div>
+    <div class="modal-overlay" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+        <div class="modal stats-modal" id="statsModalContent">
+            <div class="modal-header">
+                <span class="modal-title" id="statsTitle">Library Stats</span>
+                <div class="modal-actions">
+                    <button class="modal-btn" id="statsCloseBtn" title="Close" aria-label="Close library stats">
+                        <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body stats-body" id="statsBody"></div>
+        </div>
+    </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
     <script>
         let fileIndex = null,
@@ -722,12 +793,15 @@
             folderResultLimit = 300,
             lastFocusedElement = null,
             lastFocusedElementShortcuts = null,
+            lastFocusedElementStats = null,
             fetchCache = new Map(),
             currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
             normalizedElements = new WeakSet(),
             compressor = null,
-            useNativePlayer = false;
+            useNativePlayer = false,
+            pinnedFolders = [],
+            suppressHashSync = false;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
         // slow connection and tracks are getting skipped before they finish buffering.
@@ -747,6 +821,8 @@
             markup: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
             style: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.53 19.65l1.34.56v-9.03l-2.43 5.86c-.41 1.02.08 2.19 1.09 2.61zm19.5-3.7L17.07 3.98c-.31-.75-1.04-1.21-1.81-1.23-.26 0-.53.04-.79.15L7.1 5.95c-.75.31-1.21 1.03-1.23 1.8-.01.27.04.54.15.8l4.96 11.97c.31.76 1.05 1.22 1.83 1.23.26 0 .52-.05.77-.15l7.36-3.05c1.02-.42 1.51-1.59 1.09-2.6zm-9.2 3.8L7.87 7.79l7.35-3.04h.01l4.95 11.95-7.35 3.05z"/></svg>`,
             playlist: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg>`,
+            starOutline: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`,
+            starFilled: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`,
             playCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
             pauseCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
             prevCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>`,
@@ -979,6 +1055,11 @@
             const nativeToggle = document.getElementById("nativePlayerToggle");
             if (nativeToggle) nativeToggle.checked = useNativePlayer;
             document.body.classList.toggle("native-player-mode", useNativePlayer);
+            const compactDensity = localStorage.getItem("compactDensity") === "1";
+            document.body.classList.toggle("compact-density", compactDensity);
+            const compactToggle = document.getElementById("compactDensityToggle");
+            if (compactToggle) compactToggle.checked = compactDensity;
+            loadPinnedFolders();
             initThemeColor();
             updateThemeButtons();
             syncHljsTheme();
@@ -1814,7 +1895,7 @@
                 preprocessFiles(fileIndex.root);
                 setupEventListeners();
                 setupIntersectionObserver();
-                render();
+                navigateTo(hashToPath());
             } catch (err) {
                 console.error(err);
                 document.getElementById("main").innerHTML = `
@@ -1896,8 +1977,18 @@
                 if (e.target === e.currentTarget) closeShortcutsModal();
             });
             document.getElementById("shortcutsModal").addEventListener("keydown", (e) => trapModalFocus(e, "shortcutsModalContent"));
+            document.getElementById("statsBtn").addEventListener("click", openStatsModal);
+            document.getElementById("statsCloseBtn").addEventListener("click", closeStatsModal);
+            document.getElementById("statsModal").addEventListener("click", (e) => {
+                if (e.target === e.currentTarget) closeStatsModal();
+            });
+            document.getElementById("statsModal").addEventListener("keydown", (e) => trapModalFocus(e, "statsModalContent"));
+            window.addEventListener("hashchange", handleHashChange);
+            document.getElementById("treePinned").addEventListener("click", handlePinnedFoldersClick);
+            document.getElementById("treePinned").addEventListener("keydown", handlePinnedFoldersKeydown);
             document.addEventListener("keydown", (e) => {
                 const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
+                const statsOpen = document.getElementById("statsModal").classList.contains("active");
                 if (e.key === "Escape") {
                     const settingsMenuEl = document.getElementById("settingsMenu");
                     const themeMenuEl = document.getElementById("themeColorMenu");
@@ -1911,11 +2002,12 @@
                         document.getElementById("themeColorBtn").setAttribute("aria-expanded", "false");
                         return;
                     }
-                    if (shortcutsOpen) closeShortcutsModal();
+                    if (statsOpen) closeStatsModal();
+                    else if (shortcutsOpen) closeShortcutsModal();
                     else closeModal();
                     return;
                 }
-                if (e.key === "?" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !shortcutsOpen) {
+                if (e.key === "?" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !shortcutsOpen && !statsOpen) {
                     e.preventDefault();
                     openShortcutsModal();
                     return;
@@ -1983,6 +2075,10 @@
                 useNativePlayer = e.target.checked;
                 localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0");
                 document.body.classList.toggle("native-player-mode", useNativePlayer);
+            });
+            document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
+                document.body.classList.toggle("compact-density", e.target.checked);
+                localStorage.setItem("compactDensity", e.target.checked ? "1" : "0");
             });
             wireThemeColorPicker();
             document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack);
@@ -2290,6 +2386,36 @@
             const dir = activeKey === key && activeDir === "asc" ? "desc" : "asc";
             setSortBy(`${key}-${dir}`);
         }
+        // Turns a folder path array into a "#/segment/segment" hash, with each
+        // segment percent-encoded individually so folder names containing /,
+        // #, or % round-trip correctly. Root/home is just "#/".
+        function pathToHash(pathArr) {
+            return "#/" + pathArr.map(encodeURIComponent).join("/");
+        }
+        // Inverse of pathToHash: reads location.hash back into a path array.
+        function hashToPath() {
+            const raw = location.hash.replace(/^#\/?/, "");
+            if (!raw) return [];
+            return raw.split("/").filter(Boolean).map(decodeURIComponent);
+        }
+        // Keeps the URL hash in sync with currentPath so folders are
+        // linkable/bookmarkable and the browser back/forward buttons retrace
+        // navigation history. Guards against re-triggering navigateTo when
+        // the hash change was caused by this same assignment.
+        function syncHashWithPath() {
+            const newHash = pathToHash(currentPath);
+            if (location.hash !== newHash) {
+                suppressHashSync = true;
+                location.hash = newHash;
+            }
+        }
+        function handleHashChange() {
+            if (suppressHashSync) {
+                suppressHashSync = false;
+                return;
+            }
+            navigateTo(hashToPath());
+        }
         function navigateTo(pathArr) {
             currentPath = pathArr;
             searchQuery = "";
@@ -2302,7 +2428,92 @@
                 expandedFolders.add(accumulated);
             }
             render();
+            renderPinnedFolders();
             document.getElementById("main").scrollTop = 0;
+            syncHashWithPath();
+        }
+        // --- Pinned folders ---------------------------------------------
+        // Stored as an array of path arrays, e.g. [["Music","Ambient"], []].
+        // A plain JSON.stringify comparison is used throughout to check
+        // whether two paths refer to the same folder — simple and correct
+        // here since path arrays only ever contain strings.
+        const PINNED_FOLDERS_KEY = "pinnedFolders";
+        function loadPinnedFolders() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(PINNED_FOLDERS_KEY) || "[]");
+                pinnedFolders = Array.isArray(stored) ? stored : [];
+            } catch {
+                pinnedFolders = [];
+            }
+        }
+        function savePinnedFolders() {
+            localStorage.setItem(PINNED_FOLDERS_KEY, JSON.stringify(pinnedFolders));
+        }
+        function isPinned(pathArr) {
+            const target = JSON.stringify(pathArr);
+            return pinnedFolders.some((p) => JSON.stringify(p) === target);
+        }
+        function togglePinCurrentFolder() {
+            if (isPinned(currentPath)) {
+                const target = JSON.stringify(currentPath);
+                pinnedFolders = pinnedFolders.filter((p) => JSON.stringify(p) !== target);
+            } else {
+                pinnedFolders.push(currentPath);
+            }
+            savePinnedFolders();
+            renderPinnedFolders();
+            renderBreadcrumb();
+        }
+        function unpinFolder(pathArr) {
+            const target = JSON.stringify(pathArr);
+            pinnedFolders = pinnedFolders.filter((p) => JSON.stringify(p) !== target);
+            savePinnedFolders();
+            renderPinnedFolders();
+            renderBreadcrumb();
+        }
+        function renderPinnedFolders() {
+            const container = document.getElementById("treePinned");
+            if (!container) return;
+            if (pinnedFolders.length === 0) {
+                container.innerHTML = "";
+                return;
+            }
+            const rows = pinnedFolders.map((pathArr) => {
+                const isActive = JSON.stringify(pathArr) === JSON.stringify(currentPath);
+                const pathAttr = escapeHtml(JSON.stringify(pathArr));
+                const label = pathArr.length ? pathArr.join(" / ") : "Home";
+                const name = pathArr.length ? pathArr[pathArr.length - 1] : "Home";
+                return `
+            <div class="tree-pinned-item${isActive ? " active" : ""}" data-path="${pathAttr}" tabindex="0" role="button" aria-label="Go to pinned folder ${escapeHtml(label)}" title="${escapeHtml(label)}">
+              ${icons.folder}
+              <span class="tree-pinned-name">${escapeHtml(name)}</span>
+              <button type="button" class="tree-pinned-unpin" data-unpin-path="${pathAttr}" title="Unpin" aria-label="Unpin ${escapeHtml(label)}">${icons.starFilled}</button>
+            </div>
+          `;
+            }).join("");
+            container.innerHTML = `<div class="tree-pinned-header">Pinned</div>${rows}`;
+        }
+        function handlePinnedFoldersClick(e) {
+            const unpinBtn = e.target.closest(".tree-pinned-unpin");
+            if (unpinBtn) {
+                e.stopPropagation();
+                const path = safeJsonParse(unpinBtn.dataset.unpinPath, null);
+                if (path) unpinFolder(path);
+                return;
+            }
+            const item = e.target.closest(".tree-pinned-item");
+            if (item) {
+                const path = safeJsonParse(item.dataset.path, null);
+                if (path) navigateTo(path);
+            }
+        }
+        function handlePinnedFoldersKeydown(e) {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            const item = e.target.closest(".tree-pinned-item");
+            if (!item) return;
+            e.preventDefault();
+            const path = safeJsonParse(item.dataset.path, null);
+            if (path) navigateTo(path);
         }
         function renderBreadcrumb() {
             const breadcrumbEl = document.getElementById("breadcrumb");
@@ -2313,6 +2524,8 @@
                 html += `<span class="breadcrumb-separator">/</span>`;
                 html += `<span class="breadcrumb-item${isCurrent ? " current" : ""}" data-path="${pathAttr}">${escapeHtml(segment)}</span>`;
             });
+            const pinned = isPinned(currentPath);
+            html += `<button type="button" class="breadcrumb-pin-btn${pinned ? " pinned" : ""}" id="pinFolderBtn" title="${pinned ? "Unpin this folder" : "Pin this folder"}" aria-label="${pinned ? "Unpin this folder" : "Pin this folder"}" aria-pressed="${pinned}">${pinned ? icons.starFilled : icons.starOutline}</button>`;
             breadcrumbEl.innerHTML = html;
             breadcrumbEl.querySelectorAll(".breadcrumb-item:not(.current)").forEach((el) => {
                 el.addEventListener("click", () => {
@@ -2320,6 +2533,8 @@
                     if (path) navigateTo(path);
                 });
             });
+            const pinBtnEl = document.getElementById("pinFolderBtn");
+            if (pinBtnEl) pinBtnEl.addEventListener("click", togglePinCurrentFolder);
             const currentCrumb = breadcrumbEl.querySelector(".breadcrumb-item.current");
             if (currentCrumb) currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
         }
@@ -3365,6 +3580,83 @@
                 lastFocusedElementShortcuts.focus();
             }
             lastFocusedElementShortcuts = null;
+        }
+        // Human-readable byte size, matching the units getItemSize() already
+        // parses (powers of 1024) so the two stay consistent with each other.
+        function formatBytes(bytes) {
+            if (!bytes) return "0 B";
+            const units = ["B", "KB", "MB", "GB", "TB"];
+            let n = bytes, i = 0;
+            while (n >= 1024 && i < units.length - 1) {
+                n /= 1024;
+                i++;
+            }
+            return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+        }
+        // Walks the already-flattened allFiles list (built once by
+        // preprocessFiles) rather than re-walking fileIndex.root, so this
+        // stays cheap even for a library with thousands of entries.
+        function computeLibraryStats() {
+            let fileCount = 0, folderCount = 0, totalSize = 0;
+            const byCategory = {};
+            for (const item of allFiles) {
+                if (item.type === "directory") {
+                    folderCount++;
+                } else {
+                    fileCount++;
+                    totalSize += getItemSize(item);
+                    const cat = item.category || "other";
+                    byCategory[cat] = (byCategory[cat] || 0) + 1;
+                }
+            }
+            return { fileCount, folderCount, totalSize, byCategory };
+        }
+        function renderLibraryStats() {
+            const body = document.getElementById("statsBody");
+            const { fileCount, folderCount, totalSize, byCategory } = computeLibraryStats();
+            const categories = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+            const maxCount = categories.length ? categories[0][1] : 1;
+            const rows = categories.map(([cat, count]) => {
+                const pct = Math.round((count / maxCount) * 100);
+                return `
+          <div class="stats-row">
+            <span class="stats-row-icon">${icons[cat] || icons.other}</span>
+            <span class="stats-row-label">${escapeHtml(cat)}</span>
+            <span class="stats-row-bar-track"><span class="stats-row-bar-fill" style="width: ${pct}%"></span></span>
+            <span class="stats-row-count">${count.toLocaleString()}</span>
+          </div>
+        `;
+            }).join("");
+            body.innerHTML = `
+        <div class="stats-summary-grid">
+          <div class="stats-summary-item">
+            <span class="stats-summary-value">${fileCount.toLocaleString()}</span>
+            <span class="stats-summary-label">Files</span>
+          </div>
+          <div class="stats-summary-item">
+            <span class="stats-summary-value">${folderCount.toLocaleString()}</span>
+            <span class="stats-summary-label">Folders</span>
+          </div>
+          <div class="stats-summary-item">
+            <span class="stats-summary-value">${formatBytes(totalSize)}</span>
+            <span class="stats-summary-label">Total Size</span>
+          </div>
+        </div>
+        ${categories.length ? `<div class="stats-breakdown-title">By Category</div><div class="stats-breakdown">${rows}</div>` : ""}
+      `;
+        }
+        function openStatsModal() {
+            lastFocusedElementStats = document.activeElement;
+            renderLibraryStats();
+            document.getElementById("statsModal").classList.add("active");
+            document.getElementById("statsCloseBtn").focus();
+        }
+        function closeStatsModal() {
+            document.getElementById("statsModal").classList.remove("active");
+            if (lastFocusedElementStats && typeof lastFocusedElementStats.focus === "function") {
+                lastFocusedElementStats.focus();
+            }
+            lastFocusedElementStats = null;
         }
         // Percent-encodes a repo-relative path one segment at a time so "/"
         // is preserved as a directory separator while everything else goes

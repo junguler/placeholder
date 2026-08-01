@@ -253,6 +253,9 @@
         .tree-pinned-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
         .tree-pinned-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tree-pinned-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; }
+        .tree-pinned-name-stack { display: flex; flex-direction: column; overflow: hidden; flex: 1; line-height: 1.3; }
+        .tree-pinned-filename { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tree-pinned-folder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; color: var(--text-muted); }
         .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--accent-text, var(--accent)); cursor: pointer; }
         .tree-pinned-unpin svg { width: 12px; height: 12px; }
         .tree-pinned-unpin:hover, .tree-pinned-unpin:focus-visible { color: var(--danger); }
@@ -427,7 +430,24 @@
         .playlist-track.buffering::after { content: " \00b7 Buffering\2026"; color: var(--text-muted); font-weight: 400; animation: pulse 1s ease-in-out infinite; }
         .preview-audio.buffering, .preview-video.buffering { opacity: 0.6; transition: opacity 0.15s ease; }
         @media (max-width: 768px) { .search-container { width: 150px; } .tree-panel { width: 180px; } .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); } }
-        @media (max-width: 480px) { .tree-panel { display: none !important; } .search-container { width: 120px; } }
+        @media (max-width: 480px) {
+            .app-container { flex-direction: column; }
+            /* Pinned folders and Favorite files stay visible on mobile in
+               all 3 view modes (grid/list/tree) as a compact strip above the
+               main listing — only the full nested folder tree (redundant
+               with the main list on a small screen) is hidden. */
+            .tree-panel {
+                display: flex !important;
+                width: 100%;
+                max-height: 33vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                overflow-y: auto;
+                flex-shrink: 0;
+            }
+            .tree-panel .tree-header, .tree-panel .tree-content { display: none; }
+            .search-container { width: 120px; }
+        }
         @media (max-width: 640px) {
             .breadcrumb { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
             .breadcrumb::-webkit-scrollbar { display: none; }
@@ -2562,10 +2582,14 @@
                 const pathAttr = escapeHtml(JSON.stringify(pathArr));
                 const label = pathArr.length ? pathArr.join(" / ") : "Home";
                 const name = pathArr.length ? pathArr[pathArr.length - 1] : "Home";
+                const folderLabel = pathArr.length > 1 ? pathArr[pathArr.length - 2] : "";
                 return `
             <div class="tree-pinned-item${isActive ? " active" : ""}" data-path="${pathAttr}" tabindex="0" role="button" aria-label="Go to pinned folder ${escapeHtml(label)}" title="${escapeHtml(label)}">
               ${icons.folder}
-              <span class="tree-pinned-name">${escapeHtml(name)}</span>
+              <span class="tree-pinned-name-stack">
+                <span class="tree-pinned-filename">${escapeHtml(name)}</span>
+                ${folderLabel ? `<span class="tree-pinned-folder">${escapeHtml(folderLabel)}</span>` : ""}
+              </span>
               <button type="button" class="tree-pinned-unpin" data-unpin-path="${pathAttr}" title="Unpin" aria-label="Unpin ${escapeHtml(label)}">${icons.starFilled}</button>
             </div>
           `;
@@ -2627,14 +2651,19 @@
                 return;
             }
             const rows = favoriteFiles.map((path) => {
-                const item = allFiles.find((f) => f.type === "file" && f.path === path);
+                const item = allFiles.find((f) => f.type === "file" && f.fullPath === path);
                 const name = item ? item.name : path.substring(path.lastIndexOf("/") + 1);
                 const iconType = item ? (getFileIconType(item.name) || item.category || "other") : "other";
                 const pathAttr = escapeHtml(path);
+                const parentSegments = path.split("/").slice(0, -1);
+                const folderLabel = parentSegments.length ? parentSegments[parentSegments.length - 1] : "";
                 return `
-            <div class="tree-pinned-item" data-file-path="${pathAttr}" tabindex="0" role="button" aria-label="Open favorite file ${escapeHtml(name)}" title="${escapeHtml(name)}">
+            <div class="tree-pinned-item" data-file-path="${pathAttr}" tabindex="0" role="button" aria-label="Open favorite file ${escapeHtml(name)}${folderLabel ? ` in ${escapeHtml(folderLabel)}` : ""}" title="${escapeHtml(path)}">
               ${icons[iconType] || icons.other}
-              <span class="tree-pinned-name">${escapeHtml(name)}</span>
+              <span class="tree-pinned-name-stack">
+                <span class="tree-pinned-filename">${escapeHtml(name)}</span>
+                ${folderLabel ? `<span class="tree-pinned-folder">${escapeHtml(folderLabel)}</span>` : ""}
+              </span>
               <button type="button" class="tree-pinned-unpin" data-unfavorite-path="${pathAttr}" title="Remove from favorites" aria-label="Remove ${escapeHtml(name)} from favorites">${icons.starFilled}</button>
             </div>
           `;
@@ -2653,7 +2682,7 @@
             if (item) {
                 const path = item.dataset.filePath;
                 if (path) {
-                    const fileItem = allFiles.find((f) => f.type === "file" && f.path === path);
+                    const fileItem = allFiles.find((f) => f.type === "file" && f.fullPath === path);
                     openFile(path, fileItem ? fileItem.category : "", fileItem ? fileItem.name : path.substring(path.lastIndexOf("/") + 1));
                 }
             }
@@ -2665,7 +2694,7 @@
             e.preventDefault();
             const path = item.dataset.filePath;
             if (!path) return;
-            const fileItem = allFiles.find((f) => f.type === "file" && f.path === path);
+            const fileItem = allFiles.find((f) => f.type === "file" && f.fullPath === path);
             openFile(path, fileItem ? fileItem.category : "", fileItem ? fileItem.name : path.substring(path.lastIndexOf("/") + 1));
         }
         function handlePinnedFoldersClick(e) {

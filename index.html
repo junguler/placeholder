@@ -257,7 +257,7 @@
         .tree-pinned-unpin:hover { color: var(--danger); }
         .main { flex: 1; overflow: auto; padding: 0.75rem; display: flex; flex-direction: column; }
         .main-content { flex: 1; }
-        .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--text-muted); }
+        .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); }
         .stat { display: flex; align-items: center; gap: 0.25rem; }
         .stat svg { width: 12px; height: 12px; }
         .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
@@ -456,6 +456,7 @@
         .load-more-btn:hover { border-color: var(--accent); }
         .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
         .modal-btn.copied { color: var(--success) !important; border-color: var(--success); }
+        .modal-btn.favorite-btn.favorited { color: var(--accent) !important; border-color: var(--accent); }
         .shortcuts-modal { max-width: 440px; }
         .shortcuts-body { padding: 0.75rem 1rem 1rem; }
         .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -467,15 +468,28 @@
         .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
         .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 0.65rem 0.5rem; text-align: center; }
         .stats-summary-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-        .stats-summary-label { display: block; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem; }
-        .stats-breakdown-title { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+        .stats-summary-label { display: block; font-size: 0.65rem; line-height: 1.5; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem; }
+        .stats-breakdown-title { font-size: 0.7rem; line-height: 1.5; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
         .stats-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; }
         .stats-row-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); flex-shrink: 0; }
         .stats-row-icon svg { width: 14px; height: 14px; }
-        .stats-row-label { width: 74px; flex-shrink: 0; font-size: 0.8rem; color: var(--text-secondary); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .stats-row-label { width: 74px; flex-shrink: 0; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .stats-row-bar-track { flex: 1; height: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); overflow: hidden; }
         .stats-row-bar-fill { height: 100%; background: var(--accent); }
-        .stats-row-count { width: 44px; flex-shrink: 0; text-align: right; font-size: 0.75rem; color: var(--text-muted); }
+        .stats-row-count { width: 44px; flex-shrink: 0; text-align: right; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); }
+        .stats-playlist-section { margin-bottom: 1rem; padding: 0.65rem 0.7rem 0.7rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); }
+        .stats-playlist-header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; }
+        .stats-playlist-header .stats-row-icon { color: var(--accent); }
+        .stats-playlist-label { flex: 1; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); font-weight: 600; }
+        .stats-playlist-count { font-size: 0.9rem; line-height: 1.4; color: var(--text-primary); font-weight: 700; }
+        .stats-heatmap { display: flex; flex-wrap: wrap; gap: 3px; }
+        .stats-heatmap-cell { width: 10px; height: 10px; flex-shrink: 0; background: var(--bg-primary); border: 1px solid var(--border-color); }
+        .stats-heatmap-cell[data-level="1"] { background: var(--accent); border-color: transparent; opacity: 0.3; }
+        .stats-heatmap-cell[data-level="2"] { background: var(--accent); border-color: transparent; opacity: 0.55; }
+        .stats-heatmap-cell[data-level="3"] { background: var(--accent); border-color: transparent; opacity: 0.8; }
+        .stats-heatmap-cell[data-level="4"] { background: var(--accent); border-color: transparent; opacity: 1; }
+        .stats-heatmap-legend { display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; margin-top: 0.5rem; font-size: 0.65rem; color: var(--text-muted); }
+        .stats-heatmap-legend .stats-heatmap-cell { width: 9px; height: 9px; }
         /* Compact density: tightens grid/list/tree spacing for people who'd
            rather see more rows at once than have larger touch targets. */
         body.compact-density .file-grid { gap: 0.3rem; }
@@ -698,6 +712,7 @@
             <div class="modal-header">
                 <span class="modal-title" id="modalTitle">File Preview</span>
                 <div class="modal-actions">
+                    <button class="modal-btn favorite-btn" id="favoriteBtn" title="Add to favorites" aria-label="Add file to favorites" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
                     <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist" aria-label="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg><span class="btn-label">Play</span></button>
                     <button class="modal-btn" id="copyLinkBtn" title="Copy link" aria-label="Copy raw file link"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>
                     <a class="modal-btn" id="downloadBtn" title="Download" aria-label="Download file" download><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg></a>
@@ -801,6 +816,7 @@
             compressor = null,
             useNativePlayer = false,
             pinnedFolders = [],
+            favoriteFiles = [],
             suppressHashSync = false;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
@@ -1060,6 +1076,7 @@
             const compactToggle = document.getElementById("compactDensityToggle");
             if (compactToggle) compactToggle.checked = compactDensity;
             loadPinnedFolders();
+            loadFavoriteFiles();
             initThemeColor();
             updateThemeButtons();
             syncHljsTheme();
@@ -2085,6 +2102,7 @@
             document.getElementById("topNextBtn").addEventListener("click", goToNextTrack);
             document.getElementById("topShuffleBtn").addEventListener("click", toggleShuffle);
             document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink);
+            document.getElementById("favoriteBtn").addEventListener("click", () => toggleFavoriteFile(currentFilePath));
             document.getElementById("playlistStop").addEventListener("click", stopPlaylist);
             document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
             setupGotoStepper();
@@ -2492,6 +2510,47 @@
           `;
             }).join("");
             container.innerHTML = `<div class="tree-pinned-header">Pinned</div>${rows}`;
+        }
+        // Individual file favorites/stars, toggled from the top-right of the
+        // preview window. Unlike pinned folders (which need a path array),
+        // files already have a single unique string path, so this is a flat
+        // array of those path strings.
+        const FAVORITE_FILES_KEY = "favoriteFiles";
+        function loadFavoriteFiles() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(FAVORITE_FILES_KEY) || "[]");
+                favoriteFiles = Array.isArray(stored) ? stored : [];
+            } catch {
+                favoriteFiles = [];
+            }
+        }
+        function saveFavoriteFiles() {
+            localStorage.setItem(FAVORITE_FILES_KEY, JSON.stringify(favoriteFiles));
+        }
+        function isFavoriteFile(path) {
+            return favoriteFiles.includes(path);
+        }
+        function toggleFavoriteFile(path) {
+            if (!path) return;
+            if (isFavoriteFile(path)) {
+                favoriteFiles = favoriteFiles.filter((p) => p !== path);
+            } else {
+                favoriteFiles.push(path);
+            }
+            saveFavoriteFiles();
+            syncFavoriteBtn(path);
+        }
+        // Updates the preview window's star button to reflect whether the
+        // given path (normally the currently open file) is favorited.
+        function syncFavoriteBtn(path) {
+            const btn = document.getElementById("favoriteBtn");
+            if (!btn) return;
+            const favorited = isFavoriteFile(path);
+            btn.classList.toggle("favorited", favorited);
+            btn.setAttribute("aria-pressed", String(favorited));
+            btn.title = favorited ? "Remove from favorites" : "Add to favorites";
+            btn.setAttribute("aria-label", favorited ? "Remove file from favorites" : "Add file to favorites");
+            btn.innerHTML = favorited ? icons.starFilled : icons.starOutline;
         }
         function handlePinnedFoldersClick(e) {
             const unpinBtn = e.target.closest(".tree-pinned-unpin");
@@ -3351,6 +3410,7 @@
             downloadBtn.href = fileUrl;
             downloadBtn.download = fileName;
             rawLinkBtn.href = fileUrl;
+            syncFavoriteBtn(filePath);
             bodyEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
             bodyEl.classList.remove("scrollable");
             currentPlaylist = [];
@@ -3596,9 +3656,15 @@
         // Walks the already-flattened allFiles list (built once by
         // preprocessFiles) rather than re-walking fileIndex.root, so this
         // stays cheap even for a library with thousands of entries.
+        // Number of cells in the playlist "heatmap" strip, GitHub-contribution-graph
+        // style. Files are walked in their existing (directory-tree) order and
+        // split into this many equal-sized buckets, so the strip reads left to
+        // right the same way the library itself is laid out.
+        const PLAYLIST_HEATMAP_BUCKETS = 48;
         function computeLibraryStats() {
-            let fileCount = 0, folderCount = 0, totalSize = 0;
+            let fileCount = 0, folderCount = 0, totalSize = 0, playlistCount = 0;
             const byCategory = {};
+            const playlistFlags = [];
             for (const item of allFiles) {
                 if (item.type === "directory") {
                     folderCount++;
@@ -3607,13 +3673,26 @@
                     totalSize += getItemSize(item);
                     const cat = item.category || "other";
                     byCategory[cat] = (byCategory[cat] || 0) + 1;
+                    const isPlaylist = isPlaylistExtension(item.name || "");
+                    if (isPlaylist) playlistCount++;
+                    playlistFlags.push(isPlaylist);
                 }
             }
-            return { fileCount, folderCount, totalSize, byCategory };
+            // Bucket the playlist flags into PLAYLIST_HEATMAP_BUCKETS equal
+            // slices of the file list, counting how many playlists land in
+            // each slice - this is what the heatmap cells visualize.
+            const bucketCount = Math.min(PLAYLIST_HEATMAP_BUCKETS, Math.max(playlistFlags.length, 1));
+            const playlistBuckets = new Array(bucketCount).fill(0);
+            playlistFlags.forEach((isPlaylist, i) => {
+                if (!isPlaylist) return;
+                const bucketIndex = Math.min(bucketCount - 1, Math.floor((i / playlistFlags.length) * bucketCount));
+                playlistBuckets[bucketIndex]++;
+            });
+            return { fileCount, folderCount, totalSize, byCategory, playlistCount, playlistBuckets };
         }
         function renderLibraryStats() {
             const body = document.getElementById("statsBody");
-            const { fileCount, folderCount, totalSize, byCategory } = computeLibraryStats();
+            const { fileCount, folderCount, totalSize, byCategory, playlistCount, playlistBuckets } = computeLibraryStats();
             const categories = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
             const maxCount = categories.length ? categories[0][1] : 1;
             const rows = categories.map(([cat, count]) => {
@@ -3627,6 +3706,34 @@
           </div>
         `;
             }).join("");
+            // GitHub-contributions-style strip: each cell is one slice of the
+            // library (in tree order), shaded by how many playlists fall in
+            // that slice relative to the busiest slice.
+            const maxBucket = playlistBuckets.length ? Math.max(...playlistBuckets) : 0;
+            const heatmapCells = playlistBuckets.map((count) => {
+                const level = count === 0 || maxBucket === 0 ? 0 : Math.max(1, Math.ceil((count / maxBucket) * 4));
+                const label = count === 0 ? "No playlists in this part of the library" : `${count.toLocaleString()} playlist${count === 1 ? "" : "s"} in this part of the library`;
+                return `<span class="stats-heatmap-cell" data-level="${level}" title="${escapeHtml(label)}"></span>`;
+            }).join("");
+            const playlistSection = playlistCount > 0 ? `
+        <div class="stats-playlist-section">
+          <div class="stats-playlist-header">
+            <span class="stats-row-icon">${icons.playlist}</span>
+            <span class="stats-playlist-label">M3U / M3U8 Playlists</span>
+            <span class="stats-playlist-count">${playlistCount.toLocaleString()}</span>
+          </div>
+          <div class="stats-heatmap" role="img" aria-label="Distribution of ${playlistCount.toLocaleString()} playlists across the library">${heatmapCells}</div>
+          <div class="stats-heatmap-legend">
+            <span>Less</span>
+            <span class="stats-heatmap-cell" data-level="0"></span>
+            <span class="stats-heatmap-cell" data-level="1"></span>
+            <span class="stats-heatmap-cell" data-level="2"></span>
+            <span class="stats-heatmap-cell" data-level="3"></span>
+            <span class="stats-heatmap-cell" data-level="4"></span>
+            <span>More</span>
+          </div>
+        </div>
+      ` : "";
             body.innerHTML = `
         <div class="stats-summary-grid">
           <div class="stats-summary-item">
@@ -3642,6 +3749,7 @@
             <span class="stats-summary-label">Total Size</span>
           </div>
         </div>
+        ${playlistSection}
         ${categories.length ? `<div class="stats-breakdown-title">By Category</div><div class="stats-breakdown">${rows}</div>` : ""}
       `;
         }

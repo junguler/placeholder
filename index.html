@@ -326,6 +326,30 @@
            rather than floating over the card content. */
         .file-list.list-columns .card-star-btn { position: static; opacity: 0.55; background: none; border: none; width: 20px; height: 20px; }
         .file-list.list-columns .card-star-btn:hover, .file-list.list-columns .card-star-btn:focus-visible, .file-list.list-columns .card-star-btn.starred { opacity: 1; background: none; border: none; }
+        /* Progressive column thinning as the window narrows, so columns never
+           overlap/crowd each other. Each band is bounded on both ends so it
+           can't conflict with a neighboring band regardless of source order. */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .tree-panel { width: 200px; }
+            /* Ext is the least essential column (the file icon + name already
+               convey type), so it's the first to go. */
+            .list-columns { --list-cols: 22px 24px 1fr 90px 100px 80px; }
+            .file-list-header .col-ext { display: none; }
+            .file-list.list-columns .col-ext { display: none; }
+            .file-list-header, .file-list.list-columns .file-card { gap: 0.35rem; }
+        }
+        @media (max-width: 768px) and (min-width: 641px) {
+            .search-container { width: 150px; }
+            .tree-panel { width: 170px; }
+            .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+            /* Ext gone (from the wider band above); Date goes next, Size and
+               Time are kept since "when" and "how big" matter more day-to-day
+               than the exact date. */
+            .list-columns { --list-cols: 22px 24px 1fr 90px 80px; }
+            .file-list-header .col-ext, .file-list-header .col-date { display: none; }
+            .file-list.list-columns .col-ext, .file-list.list-columns .col-date { display: none; }
+            .file-list-header, .file-list.list-columns .file-card { gap: 0.35rem; }
+        }
         @media (max-width: 640px) {
             .list-columns { --list-cols: 22px 24px 1fr 60px; }
             .file-list-header .col-ext, .file-list-header .col-date, .file-list-header .col-time { display: none; }
@@ -429,7 +453,6 @@
         @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
         .playlist-track.buffering::after { content: " \00b7 Buffering\2026"; color: var(--text-muted); font-weight: 400; animation: pulse 1s ease-in-out infinite; }
         .preview-audio.buffering, .preview-video.buffering { opacity: 0.6; transition: opacity 0.15s ease; }
-        @media (max-width: 768px) { .search-container { width: 150px; } .tree-panel { width: 180px; } .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); } }
         @media (max-width: 480px) {
             .app-container { flex-direction: column; }
             /* Pinned folders and Favorite files stay visible on mobile in

@@ -251,10 +251,9 @@
         .tree-pinned-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
         .tree-pinned-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tree-pinned-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; }
-        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 0; color: var(--accent); cursor: pointer; }
+        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--accent); cursor: pointer; }
         .tree-pinned-unpin svg { width: 12px; height: 12px; }
-        .tree-pinned-item:hover .tree-pinned-unpin, .tree-pinned-unpin:focus-visible { opacity: 1; }
-        .tree-pinned-unpin:hover { color: var(--danger); }
+        .tree-pinned-unpin:hover, .tree-pinned-unpin:focus-visible { color: var(--danger); }
         .main { flex: 1; overflow: auto; padding: 0.75rem; display: flex; flex-direction: column; }
         .main-content { flex: 1; }
         .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); }

@@ -9,58 +9,58 @@
     <meta property="og:title" content="File Viewer" />
     <meta property="og:description" content="Browse and preview files from this repository directly in your browser." />
     <meta property="og:type" content="website" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%2315100b' width='24' height='24'/%3E%3Crect fill='%23c17a3d' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%2315100b' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%2315100b' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%23c17a3d' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%23c17a3d' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%2315100b' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23121212' width='24' height='24'/%3E%3Crect fill='%239b5de5' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%23121212' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%23121212' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%239b5de5' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%239b5de5' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%23121212' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
     <script src="./hls.min.js"></script>
     
     <style>
         /* Styles remain consistent */
         :root {
-            --bg-primary: #15100b;
-            --bg-secondary: #1d1611;
-            --bg-tertiary: #271d15;
-            --bg-hover: #3a2b1d;
-            --border-color: #40301f;
-            --text-primary: #f1e6d6;
-            --text-secondary: #b7a288;
-            --text-muted: #83705a;
-            --accent: #c17a3d;
-            --accent-hover: #dd955a;
-            --on-accent: #17100a;
+            --bg-primary: #121212;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #242424;
+            --bg-hover: #343434;
+            --border-color: #3a3a3a;
+            --text-primary: #f0f0f0;
+            --text-secondary: #adadad;
+            --text-muted: #797979;
+            --accent: #9b5de5;
+            --accent-hover: #b280ea;
+            --on-accent: #ffffff;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
             --on-control: var(--text-primary);
             --skeleton-base: var(--bg-tertiary);
             --skeleton-shine: var(--bg-hover);
-            --success: #7fae4e;
-            --warning: #cf9a3d;
-            --danger: #c1503b;
+            --success: #6bbf6b;
+            --warning: #d4a24c;
+            --danger: #d9564a;
             --radius: 0px;
             --radius-sm: 0px;
             --radius-lg: 0px;
             --radius-full: 0px;
-            --shadow: 0 3px 0 rgba(10, 6, 2, 0.5);
-            --shadow-sm: 0 2px 0 rgba(10, 6, 2, 0.4);
-            --shadow-lg: 0 6px 0 rgba(10, 6, 2, 0.55);
-            --accent-glow: rgba(193, 122, 61, 0.3);
+            --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
+            --accent-glow: rgba(155, 93, 229, 0.3);
             --transition: 0.15s ease;
             --font-size-base: 16px;
             --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
         }
         html[data-theme="light"] {
-            --bg-primary: #f7f0e3;
-            --bg-secondary: #efe3cd;
-            --bg-tertiary: #e5d5b6;
-            --bg-hover: #d6c093;
-            --border-color: #c9b083;
-            --text-primary: #2c2013;
-            --text-secondary: #5e4c34;
-            --text-muted: #8a7551;
-            --accent: #9c5620;
-            --accent-hover: #7e4419;
-            --shadow: 0 3px 0 rgba(140, 110, 70, 0.25);
-            --shadow-sm: 0 2px 0 rgba(140, 110, 70, 0.2);
-            --shadow-lg: 0 6px 0 rgba(140, 110, 70, 0.3);
-            --accent-glow: rgba(156, 86, 32, 0.25);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #ececec;
+            --bg-hover: #dddddd;
+            --border-color: #d6d6d6;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4d4d4d;
+            --text-muted: #7a7a7a;
+            --accent: #5b21b6;
+            --accent-hover: #4c1a99;
+            --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+            --accent-glow: rgba(91, 33, 182, 0.22);
         }
         /* High contrast dark: based on the classic Windows high-contrast black scheme
            (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
@@ -105,20 +105,20 @@
         }
         @media (prefers-color-scheme: light) {
             :root:not([data-theme]) {
-                --bg-primary: #f7f0e3;
-                --bg-secondary: #efe3cd;
-                --bg-tertiary: #e5d5b6;
-                --bg-hover: #d6c093;
-                --border-color: #c9b083;
-                --text-primary: #2c2013;
-                --text-secondary: #5e4c34;
-                --text-muted: #8a7551;
-                --accent: #9c5620;
-                --accent-hover: #7e4419;
-                --shadow: 0 3px 0 rgba(140, 110, 70, 0.25);
-                --shadow-sm: 0 2px 0 rgba(140, 110, 70, 0.2);
-                --shadow-lg: 0 6px 0 rgba(140, 110, 70, 0.3);
-                --accent-glow: rgba(156, 86, 32, 0.25);
+                --bg-primary: #ffffff;
+                --bg-secondary: #f5f5f5;
+                --bg-tertiary: #ececec;
+                --bg-hover: #dddddd;
+                --border-color: #d6d6d6;
+                --text-primary: #1a1a1a;
+                --text-secondary: #4d4d4d;
+                --text-muted: #7a7a7a;
+                --accent: #5b21b6;
+                --accent-hover: #4c1a99;
+                --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+                --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
+                --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+                --accent-glow: rgba(91, 33, 182, 0.22);
             }
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -285,20 +285,20 @@
         .file-card.parent-dir .file-name { color: var(--text-secondary); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
-        .file-icon.folder { color: #b7a288; background: rgba(183, 162, 136, 0.14); }
+        .file-icon.folder { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
         .file-icon.image { color: #c58ce0; background: rgba(197, 140, 224, 0.16); }
         .file-icon.video { color: #e2765c; background: rgba(226, 118, 92, 0.16); }
         .file-icon.audio { color: #8fc25a; background: rgba(143, 194, 90, 0.2); }
         .file-icon.code { color: #6fa8dc; background: rgba(111, 168, 220, 0.16); }
         .file-icon.document { color: #e0994f; background: rgba(224, 153, 79, 0.16); }
-        .file-icon.text { color: #b7a288; background: rgba(183, 162, 136, 0.14); }
+        .file-icon.text { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
         .file-icon.data { color: #dcae4e; background: rgba(220, 174, 78, 0.16); }
         .file-icon.archive { color: #b8cfe0; background: rgba(184, 207, 224, 0.16); }
         .file-icon.markup { color: #9bd88a; background: rgba(155, 216, 138, 0.16); }
         .file-icon.style { color: #7fb8dc; background: rgba(127, 184, 220, 0.16); }
         .file-icon.font { color: #e0a85f; background: rgba(224, 168, 95, 0.16); }
         .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
-        .file-icon.other { color: #b7a288; background: rgba(183, 162, 136, 0.14); }
+        .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }

@@ -34,6 +34,9 @@
             --success: #6bbf6b;
             --warning: #d4a24c;
             --danger: #d9564a;
+            /* Stars/pins get their own hue so favoriting reads as a distinct
+               signal from navigation/active-state violet at a glance. */
+            --favorite: #e0b23c;
             --radius: 0px;
             --radius-sm: 0px;
             --radius-lg: 0px;
@@ -61,6 +64,7 @@
             --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
             --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
             --accent-glow: rgba(91, 33, 182, 0.22);
+            --favorite: #8a5d00;
         }
         /* High contrast dark: based on the classic Windows high-contrast black scheme
            (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
@@ -82,6 +86,10 @@
             --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.12);
             --shadow-lg: 0 12px 32px rgba(255, 255, 255, 0.22);
             --accent-glow: rgba(0, 255, 255, 0.35);
+            /* Reuses the classic scheme's magenta "hyperlink" role (distinct
+               from the cyan "title accent" role that --accent already covers)
+               so favorites/pins read as their own kind of highlight. */
+            --favorite: #ff37cb;
         }
         /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
         html[data-theme="hc-light"] {
@@ -102,6 +110,7 @@
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
             --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.22);
             --accent-glow: rgba(255, 0, 0, 0.25);
+            --favorite: #00c834;
         }
         @media (prefers-color-scheme: light) {
             :root:not([data-theme]) {
@@ -119,6 +128,7 @@
                 --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
                 --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
                 --accent-glow: rgba(91, 33, 182, 0.22);
+                --favorite: #8a5d00;
             }
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -147,8 +157,8 @@
         .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
         .breadcrumb-pin-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 0.25rem; padding: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); flex-shrink: 0; }
         .breadcrumb-pin-btn svg { width: 14px; height: 14px; }
-        .breadcrumb-pin-btn:hover { color: var(--accent-text, var(--accent)); background: var(--bg-hover); }
-        .breadcrumb-pin-btn.pinned { color: var(--accent-text, var(--accent)); }
+        .breadcrumb-pin-btn:hover { color: var(--favorite, var(--accent-text, var(--accent))); background: var(--bg-hover); }
+        .breadcrumb-pin-btn.pinned { color: var(--favorite, var(--accent-text, var(--accent))); }
         .header-actions { display: flex; gap: 0.375rem; align-items: center; flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
         .header-actions::-webkit-scrollbar { display: none; }
         .header-actions > * { flex-shrink: 0; }
@@ -168,7 +178,7 @@
         .settings-btn svg { width: 16px; height: 16px; }
         .settings-menu { position: absolute; top: 100%; right: 0; margin-top: 0.375rem; min-width: 230px; z-index: 100; display: none; }
         .settings-menu.active { display: block; }
-        .settings-menu-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; }
+        .settings-menu-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; border-top: 2px solid var(--accent); }
         .settings-menu-header { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.7rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; }
         .settings-menu-title { font-size: 0.8rem; font-weight: 700; letter-spacing: -0.005em; }
         .settings-menu-close { padding: 0.3rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -262,7 +272,7 @@
            via the direction:rtl + text-align:left trick, since the end of
            a path is usually more distinguishing than the start. */
         .tree-pinned-name-stack { display: block; overflow: hidden; flex: 1; min-width: 0; line-height: 1.3; white-space: nowrap; }
-        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--accent-text, var(--accent)); cursor: pointer; }
+        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--favorite, var(--accent-text, var(--accent))); cursor: pointer; }
         .tree-pinned-unpin svg { width: 12px; height: 12px; }
         .tree-pinned-unpin:hover, .tree-pinned-unpin:focus-visible { color: var(--danger); }
         .main { flex: 1; overflow: auto; padding: 0.75rem; display: flex; flex-direction: column; }
@@ -279,8 +289,8 @@
            reachable on touch/mobile as well as desktop. */
         .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.85; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
         .card-star-btn svg { width: 13px; height: 13px; }
-        .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
-        .card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+        .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--favorite, var(--accent-text, var(--accent))); border-color: var(--favorite, var(--accent-text, var(--accent))); }
+        .card-star-btn.starred { opacity: 1; color: var(--favorite, var(--accent-text, var(--accent))); border-color: var(--favorite, var(--accent-text, var(--accent))); }
         .card-star-spacer { width: 22px; flex-shrink: 0; }
         .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
         .file-card.directory { background: var(--bg-secondary); }
@@ -293,14 +303,23 @@
         .file-icon.audio { color: #8fc25a; background: rgba(143, 194, 90, 0.2); }
         .file-icon.code { color: #6fa8dc; background: rgba(111, 168, 220, 0.16); }
         .file-icon.document { color: #e0994f; background: rgba(224, 153, 79, 0.16); }
-        .file-icon.text { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
-        .file-icon.data { color: #dcae4e; background: rgba(220, 174, 78, 0.16); }
-        .file-icon.archive { color: #b8cfe0; background: rgba(184, 207, 224, 0.16); }
-        .file-icon.markup { color: #9bd88a; background: rgba(155, 216, 138, 0.16); }
-        .file-icon.style { color: #7fb8dc; background: rgba(127, 184, 220, 0.16); }
+        /* Cool blue-grey instead of the same flat grey as folder/other, so
+           the three "neutral" categories no longer sit as one indistinct
+           block in the list. */
+        .file-icon.text { color: #93aab8; background: rgba(147, 170, 184, 0.16); }
+        /* Pushed further toward yellow, away from document's orange. */
+        .file-icon.data { color: #d4c23f; background: rgba(212, 194, 63, 0.16); }
+        /* Warm tan/khaki, out of the same blue family as code. */
+        .file-icon.archive { color: #b3966a; background: rgba(179, 150, 106, 0.16); }
+        /* Teal-green, separated from audio's yellow-green. */
+        .file-icon.markup { color: #55c9a6; background: rgba(85, 201, 166, 0.16); }
+        /* Indigo, separated from code's blue. */
+        .file-icon.style { color: #8d93e8; background: rgba(141, 147, 232, 0.16); }
         .file-icon.font { color: #e0a85f; background: rgba(224, 168, 95, 0.16); }
         .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
-        .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
+        /* Darker neutral than folder/text, so the three "misc" greys read as
+           three distinct tones rather than one repeated one. */
+        .file-icon.other { color: #7d7d7d; background: rgba(125, 125, 125, 0.14); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
@@ -316,6 +335,12 @@
         .file-list .file-meta { font-size: 0.7rem; }
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
+        /* Subtle zebra striping: at 2000+ rows a flat list of identically
+           colored boxes is easy to lose your place in. Alternating rows one
+           step up in the surface scale (still well short of --bg-hover, kept
+           for the interactive states) is enough to guide the eye without
+           adding visual noise. */
+        .file-list .file-card:nth-child(even) { background: var(--bg-tertiary); }
         .list-columns { --list-cols: 22px 24px 1fr 70px 90px 100px 80px; }
         .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
         .file-list-header.stuck { margin-top: -0.75rem; padding-top: calc(0.4rem + 0.75rem); top: -0.75rem; }
@@ -517,7 +542,7 @@
             .player-time { min-width: 1.6rem; font-size: 0.65rem; }
             .player-vol { min-width: 1.9rem; font-size: 0.65rem; }
             .settings-menu.active { position: fixed; inset: 0; top: 0; right: 0; margin: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); padding: 0.5rem; z-index: 1000; }
-            .settings-menu-card { width: 100%; max-width: 360px; max-height: 85vh; max-height: 85dvh; display: flex; flex-direction: column; border-top: 2px solid var(--accent); }
+            .settings-menu-card { width: 100%; max-width: 360px; max-height: 85vh; max-height: 85dvh; display: flex; flex-direction: column; }
             .settings-menu-body { max-height: none; flex: 1; }
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -534,7 +559,7 @@
         .load-more-btn:hover { border-color: var(--accent); }
         .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
         .modal-btn.copied { color: var(--success) !important; border-color: var(--success); }
-        .modal-btn.favorite-btn.favorited { color: var(--accent-text, var(--accent)) !important; border-color: var(--accent-text, var(--accent)); }
+        .modal-btn.favorite-btn.favorited { color: var(--favorite, var(--accent-text, var(--accent))) !important; border-color: var(--favorite, var(--accent-text, var(--accent))); }
         .shortcuts-modal { max-width: 440px; }
         .shortcuts-body { padding: 0.75rem 1rem 1rem; }
         .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -585,8 +610,20 @@
         /* --- File card micro-interactions --- */
         .file-card { transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background-color var(--transition); }
         .file-card:hover { transform: translateY(-1px) scale(1.012); }
-        .file-list .file-card:hover { transform: translateX(1px); background: var(--bg-secondary); }
+        .file-list .file-card:hover { transform: translateX(1px); background: var(--bg-hover); }
         .file-card:active { transform: translateY(0) scale(0.995); }
+
+        /* --- Button press: reuses the existing flat --shadow tokens to make
+           the icon-chrome buttons (settings, modal actions, playlist controls)
+           feel like the same kind of pressed hardware button as the modal's
+           offset shadow, rather than a flat color swap on hover. --- */
+        .settings-btn, .modal-btn, .playlist-btn {
+            transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+        }
+        .settings-btn:hover, .modal-btn:hover, .playlist-btn:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+        .settings-btn:active, .modal-btn:active, .playlist-btn:active { box-shadow: none; transform: translateY(1px); }
+        .modal-btn:disabled:hover { box-shadow: none; transform: none; }
+        .playlist-btn:disabled:hover { box-shadow: none; transform: none; }
 
         /* --- Softer, theme-aware focus glow layered on top of the accessible outline --- */
         .file-card:focus-visible, .playlist-btn:focus-visible, .modal-btn:focus-visible, .view-btn:focus-visible, .settings-btn:focus-visible {
@@ -1468,6 +1505,12 @@
             // touching --accent itself (still used correctly as a flat
             // background/border color elsewhere).
             newVals["--accent-text"] = visibleVariant(activeColor, activeColor, 4.5, 100);
+            // Custom mode is deliberately monochrome (everything flattened to
+            // the picked hue), so favorites/pins reuse --accent-text here
+            // instead of the fixed amber --favorite the built-in themes use -
+            // an unrelated color popping through would undercut the whole
+            // point of the flatten engine.
+            newVals["--favorite"] = newVals["--accent-text"];
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
@@ -1495,7 +1538,7 @@
             const keys = [
                 "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
                 "--text-primary", "--text-secondary", "--text-muted",
-                "--accent", "--accent-hover", "--accent-text", "--on-accent", "--accent-glow",
+                "--accent", "--accent-hover", "--accent-text", "--on-accent", "--accent-glow", "--favorite",
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
             ];

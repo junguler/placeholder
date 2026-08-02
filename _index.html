@@ -436,15 +436,6 @@
         .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
-        /* Image lightbox gallery nav — sits over the preview image so people can
-           step through every image in the same folder without closing the modal. */
-        .preview-image-container { position: relative; width: 100%; height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; }
-        .lightbox-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); padding: 0.5rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; opacity: 0.85; }
-        .lightbox-nav-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); opacity: 1; }
-        .lightbox-nav-btn svg { width: 20px; height: 20px; }
-        .lightbox-prev { left: 0.5rem; }
-        .lightbox-next { right: 0.5rem; }
-        .lightbox-nav-count { position: absolute; bottom: 0.5rem; left: 50%; transform: translateX(-50%); background: var(--control-surface); border: 1px solid var(--border-color); color: var(--on-control); font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: var(--radius); z-index: 2; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; word-break: break-all; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
@@ -525,25 +516,6 @@
         .modal-btn.copied { color: var(--success) !important; border-color: var(--success); }
         .modal-btn.favorite-btn.favorited { color: var(--accent-text, var(--accent)) !important; border-color: var(--accent-text, var(--accent)); }
         .shortcuts-modal { max-width: 440px; }
-        .palette-modal { max-width: 560px; width: 90vw; padding: 0; align-self: flex-start; margin-top: 10vh; max-height: 70vh; }
-        .palette-input-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
-        .palette-input-row svg { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; }
-        .palette-input { flex: 1; background: none; border: none; color: var(--text-primary); font-size: 0.95rem; outline: none; min-width: 0; }
-        .palette-input::placeholder { color: var(--text-muted); }
-        .palette-results { overflow-y: auto; flex: 1; min-height: 0; padding: 0.35rem; }
-        .palette-empty { padding: 1.75rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
-        .palette-group-label { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.55rem 0.5rem 0.3rem; }
-        .palette-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.55rem; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; }
-        .palette-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-muted); }
-        .palette-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
-        .palette-item-path { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; flex-shrink: 0; }
-        .palette-item:hover, .palette-item.active { background: var(--bg-hover); }
-        .palette-item.active svg { color: var(--accent-text, var(--accent)); }
-        .palette-footer { display: flex; gap: 0.9rem; padding: 0.5rem 0.9rem; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.7rem; flex-shrink: 0; }
-        .palette-footer kbd { font-size: 0.65rem; padding: 0.05rem 0.3rem; }
-        @media (max-width: 640px) {
-            .palette-modal { margin-top: 0; align-self: center; }
-        }
         .shortcuts-body { padding: 0.75rem 1rem 1rem; }
         .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
         .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -637,9 +609,6 @@
                         <svg viewBox="0 0 24 24" fill="currentcolor" width="12" height="12"><use href="#icon-x"/></svg>
                     </button>
                 </div>
-                <button class="settings-btn" id="paletteBtn" title="Command palette (Ctrl+K)" aria-label="Open command palette">
-                    <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2.41 4L5 9.41 7.59 12 5 14.59 6.41 16l4-4-4-4zM12 15h6v2h-6v-2z"/></svg>
-                </button>
                 <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
                     <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
                 </button>
@@ -757,17 +726,6 @@
                                         <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
                                     </div>
                                 </div>
-                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Backup</div>
-                                    <div class="settings-row">
-                                        <span class="settings-label">Theme, pins, favorites &amp; recents</span>
-                                        <div class="settings-control">
-                                            <button id="exportSettingsBtn" title="Download your settings as a file" aria-label="Export settings to a file">Export</button>
-                                            <button id="importSettingsBtn" title="Restore settings from a file" aria-label="Import settings from a file">Import</button>
-                                        </div>
-                                    </div>
-                                    <input type="file" id="importSettingsInput" accept="application/json,.json" class="sr-only" tabindex="-1" aria-hidden="true" />
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -784,7 +742,6 @@
         <aside class="tree-panel visible" id="treePanel">
             <div class="tree-pinned" id="treePinned"></div>
             <div class="tree-pinned" id="treeFavorites"></div>
-            <div class="tree-pinned" id="treeRecent"></div>
             <div class="tree-header">Folders</div>
             <div class="tree-content" id="treeContent"></div>
         </aside>
@@ -843,7 +800,6 @@
             </div>
             <div class="modal-body shortcuts-body">
                 <dl class="shortcuts-list">
-                    <div class="shortcut-row"><dt><kbd>Ctrl</kbd> <kbd>K</kbd></dt><dd>Open command palette</dd></div>
                     <div class="shortcut-row"><dt><kbd>/</kbd></dt><dd>Focus search</dd></div>
                     <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd>Show this help</dd></div>
                     <div class="shortcut-row"><dt><kbd>Esc</kbd></dt><dd>Close dialog</dd></div>
@@ -867,21 +823,6 @@
                 </div>
             </div>
             <div class="modal-body stats-body" id="statsBody"></div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="paletteModal" role="dialog" aria-modal="true" aria-labelledby="paletteTitle">
-        <div class="modal palette-modal" id="paletteModalContent">
-            <span class="sr-only" id="paletteTitle">Command palette</span>
-            <div class="palette-input-row">
-                <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="paletteInput" class="palette-input" placeholder="Search files or run a command..." autocomplete="off" aria-label="Search files or run a command" role="combobox" aria-expanded="true" aria-controls="paletteResults" />
-            </div>
-            <div class="palette-results" id="paletteResults" role="listbox" aria-label="Command palette results"></div>
-            <div class="palette-footer">
-                <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> navigate</span>
-                <span><kbd>Enter</kbd> select</span>
-                <span><kbd>Esc</kbd> close</span>
-            </div>
         </div>
     </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
@@ -925,10 +866,6 @@
             useNativePlayer = false,
             pinnedFolders = [],
             favoriteFiles = [],
-            recentFiles = [],
-            lastFocusedElementPalette = null,
-            paletteItems = [],
-            paletteIndex = -1,
             suppressHashSync = false;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
@@ -955,9 +892,6 @@
             markup: iconCodeBrackets,
             style: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.53 19.65l1.34.56v-9.03l-2.43 5.86c-.41 1.02.08 2.19 1.09 2.61zm19.5-3.7L17.07 3.98c-.31-.75-1.04-1.21-1.81-1.23-.26 0-.53.04-.79.15L7.1 5.95c-.75.31-1.21 1.03-1.23 1.8-.01.27.04.54.15.8l4.96 11.97c.31.76 1.05 1.22 1.83 1.23.26 0 .52-.05.77-.15l7.36-3.05c1.02-.42 1.51-1.59 1.09-2.6zm-9.2 3.8L7.87 7.79l7.35-3.04h.01l4.95 11.95-7.35 3.05z"/></svg>`,
             playlist: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg>`,
-            command: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2.41 4L5 9.41 7.59 12 5 14.59 6.41 16l4-4-4-4zM12 15h6v2h-6v-2z"/></svg>`,
-            chevronLeft: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>`,
-            chevronRight: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>`,
             starOutline: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`,
             starFilled: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`,
             playCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
@@ -1198,7 +1132,6 @@
             if (compactToggle) compactToggle.checked = compactDensity;
             loadPinnedFolders();
             loadFavoriteFiles();
-            loadRecentFiles();
             initThemeColor();
             updateThemeButtons();
             syncHljsTheme();
@@ -1232,53 +1165,6 @@
             requestAnimationFrame(() => {
                 el.textContent = text;
             });
-        }
-        // --- Settings export / import ---------------------------------------
-        // Every localStorage key the app actually reads is whitelisted here so
-        // export/import stay a plain data copy (no re-derivation of app state).
-        // Import writes straight to localStorage and reloads, which lets the
-        // normal startup path (loadSettings/initThemeColor/etc.) apply
-        // everything exactly the way a fresh visit would - no separate
-        // "apply settings live" code path to keep in sync with the real one.
-        const SETTINGS_STORAGE_KEYS = [
-            "theme", "fontSize", "viewMode", "sortBy", "playerVolume",
-            "useNativePlayer", "compactDensity", "pinnedFolders", "favoriteFiles",
-            "recentFiles", CUSTOM_COLOR_KEY, COLOR_INTENSITY_KEY, MUTED_COLORS_KEY,
-        ];
-        function exportSettings() {
-            const data = {};
-            for (const key of SETTINGS_STORAGE_KEYS) {
-                const value = localStorage.getItem(key);
-                if (value !== null) data[key] = value;
-            }
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "file-viewer-settings.json";
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            announce("Settings exported.");
-        }
-        function importSettingsFromFile(file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    const data = JSON.parse(reader.result);
-                    for (const key of SETTINGS_STORAGE_KEYS) {
-                        if (Object.prototype.hasOwnProperty.call(data, key)) {
-                            localStorage.setItem(key, data[key]);
-                        }
-                    }
-                    announce("Settings imported. Reloading...");
-                    location.reload();
-                } catch {
-                    announce("Import failed: that file isn't a valid settings export.");
-                }
-            };
-            reader.readAsText(file);
         }
         function saveTheme(e) {
             e === "auto"
@@ -2177,28 +2063,6 @@
             });
             document.getElementById("modalContent").addEventListener("click", (e) => e.stopPropagation());
             document.getElementById("modal").addEventListener("keydown", trapModalFocus);
-            document.getElementById("paletteBtn").addEventListener("click", openPalette);
-            document.getElementById("paletteModal").addEventListener("click", (e) => {
-                if (e.target === e.currentTarget) closePalette();
-            });
-            document.getElementById("paletteModal").addEventListener("keydown", (e) => trapModalFocus(e, "paletteModalContent"));
-            document.getElementById("paletteInput").addEventListener("input", (e) => renderPalette(e.target.value));
-            document.getElementById("paletteInput").addEventListener("keydown", (e) => {
-                if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    if (paletteItems.length) { paletteIndex = (paletteIndex + 1) % paletteItems.length; updatePaletteActiveItem(); }
-                } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    if (paletteItems.length) { paletteIndex = (paletteIndex - 1 + paletteItems.length) % paletteItems.length; updatePaletteActiveItem(); }
-                } else if (e.key === "Enter") {
-                    e.preventDefault();
-                    executePaletteItem(paletteIndex);
-                }
-            });
-            document.getElementById("paletteResults").addEventListener("click", (e) => {
-                const item = e.target.closest(".palette-item");
-                if (item) executePaletteItem(parseInt(item.dataset.index, 10));
-            });
             document.getElementById("shortcutsBtn").addEventListener("click", openShortcutsModal);
             document.getElementById("shortcutsCloseBtn").addEventListener("click", closeShortcutsModal);
             document.getElementById("shortcutsModal").addEventListener("click", (e) => {
@@ -2216,24 +2080,12 @@
             document.getElementById("treePinned").addEventListener("keydown", handlePinnedFoldersKeydown);
             document.getElementById("treeFavorites").addEventListener("click", handleFavoriteFilesClick);
             document.getElementById("treeFavorites").addEventListener("keydown", handleFavoriteFilesKeydown);
-            document.getElementById("treeRecent").addEventListener("click", handleRecentFilesClick);
-            document.getElementById("treeRecent").addEventListener("keydown", handleRecentFilesKeydown);
             document.addEventListener("keydown", (e) => {
                 const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
                 const statsOpen = document.getElementById("statsModal").classList.contains("active");
-                const paletteOpen = document.getElementById("paletteModal").classList.contains("active");
-                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-                    e.preventDefault();
-                    paletteOpen ? closePalette() : openPalette();
-                    return;
-                }
                 if (e.key === "Escape") {
                     const settingsMenuEl = document.getElementById("settingsMenu");
                     const themeMenuEl = document.getElementById("themeColorMenu");
-                    if (paletteOpen) {
-                        closePalette();
-                        return;
-                    }
                     if (settingsMenuEl.classList.contains("active")) {
                         settingsMenuEl.classList.remove("active");
                         document.getElementById("settingsBtn").setAttribute("aria-expanded", "false");
@@ -2322,15 +2174,6 @@
             document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
                 document.body.classList.toggle("compact-density", e.target.checked);
                 localStorage.setItem("compactDensity", e.target.checked ? "1" : "0");
-            });
-            document.getElementById("exportSettingsBtn").addEventListener("click", exportSettings);
-            document.getElementById("importSettingsBtn").addEventListener("click", () => {
-                document.getElementById("importSettingsInput").click();
-            });
-            document.getElementById("importSettingsInput").addEventListener("change", (e) => {
-                const file = e.target.files && e.target.files[0];
-                if (file) importSettingsFromFile(file);
-                e.target.value = "";
             });
             wireThemeColorPicker();
             document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack);
@@ -2714,7 +2557,6 @@
             render();
             renderPinnedFolders();
             renderFavoriteFiles();
-            renderRecentFiles();
             document.getElementById("main").scrollTop = 0;
             syncHashWithPath();
         }
@@ -2913,71 +2755,6 @@
         });
         const handlePinnedFoldersClick = pinnedFoldersHandlers.onClick;
         const handlePinnedFoldersKeydown = pinnedFoldersHandlers.onKeydown;
-        // --- Recently viewed files -----------------------------------------
-        // Mirrors the Favorites list visually and structurally (same
-        // "tree-pinned" row markup, same makePinnedListHandlers shape), but is
-        // populated automatically every time a file is opened rather than by
-        // manual starring. Most-recent-first, capped so it stays a quick
-        // jump-back list rather than a full history log.
-        const RECENT_FILES_KEY = "recentFiles";
-        const MAX_RECENT_FILES = 12;
-        function loadRecentFiles() {
-            try {
-                const stored = JSON.parse(localStorage.getItem(RECENT_FILES_KEY) || "[]");
-                recentFiles = Array.isArray(stored) ? stored : [];
-            } catch {
-                recentFiles = [];
-            }
-        }
-        function saveRecentFiles() {
-            localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(recentFiles));
-        }
-        function addRecentFile(path) {
-            if (!path) return;
-            recentFiles = [path, ...recentFiles.filter((p) => p !== path)].slice(0, MAX_RECENT_FILES);
-            saveRecentFiles();
-            renderRecentFiles();
-        }
-        function removeRecentFile(path) {
-            recentFiles = recentFiles.filter((p) => p !== path);
-            saveRecentFiles();
-            renderRecentFiles();
-        }
-        function renderRecentFiles() {
-            const container = document.getElementById("treeRecent");
-            if (!container) return;
-            if (recentFiles.length === 0) {
-                container.innerHTML = "";
-                return;
-            }
-            const rows = recentFiles.map((path) => {
-                const item = allFiles.find((f) => f.type === "file" && f.fullPath === path);
-                const name = item ? item.name : path.substring(path.lastIndexOf("/") + 1);
-                const iconType = item ? (getFileIconType(item.name) || item.category || "other") : "other";
-                const pathAttr = escapeHtml(path);
-                const parentSegments = path.split("/").slice(0, -1);
-                const folderLabel = parentSegments.length ? parentSegments[parentSegments.length - 1] : "";
-                return `
-            <div class="tree-pinned-item" data-file-path="${pathAttr}" tabindex="0" role="button" aria-label="Open recently viewed file ${escapeHtml(name)}${folderLabel ? ` in ${escapeHtml(folderLabel)}` : ""}" title="${escapeHtml(path)}">
-              ${icons[iconType] || icons.other}
-              <span class="tree-pinned-name-stack">
-                <span class="tree-pinned-filename">${escapeHtml(name)}</span>
-                ${folderLabel ? `<span class="tree-pinned-folder">${escapeHtml(folderLabel)}</span>` : ""}
-              </span>
-              <button type="button" class="tree-pinned-unpin" data-remove-recent-path="${pathAttr}" title="Remove from recent" aria-label="Remove ${escapeHtml(name)} from recent"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#icon-x"/></svg></button>
-            </div>
-          `;
-            }).join("");
-            container.innerHTML = `<div class="tree-pinned-header">Recent</div>${rows}`;
-        }
-        const recentFilesHandlers = makePinnedListHandlers({
-            getPath: (item) => item.dataset.filePath,
-            onOpen: openFavoriteFile, // same "find by fullPath and open" logic works for any stored file path
-            getUnpinPath: (btn) => btn.dataset.removeRecentPath,
-            onUnpin: (path) => removeRecentFile(path),
-        });
-        const handleRecentFilesClick = recentFilesHandlers.onClick;
-        const handleRecentFilesKeydown = recentFilesHandlers.onKeydown;
         function renderBreadcrumb() {
             const breadcrumbEl = document.getElementById("breadcrumb");
             let html = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
@@ -3812,7 +3589,6 @@
             currentFilePath = filePath;
             currentFileName = fileName;
             isPlaylistFile = isPlaylistExtension(fileName);
-            addRecentFile(filePath);
 
             // The actual request URL: percent-encode special chars (#, ?, %)
             // so filenames containing them resolve correctly instead of
@@ -3843,8 +3619,7 @@
             try {
                 switch (fileType) {
                     case "image":
-                        bodyEl.innerHTML = `<div class="preview-image-container"><img class="preview-image" src="${o}" alt="${escapeHtml(fileName)}"></div>`;
-                        setupImageLightboxNav(filePath, bodyEl);
+                        bodyEl.innerHTML = `<img class="preview-image" src="${o}" alt="${escapeHtml(fileName)}">`;
                         break;
                     case "video":
                         document.getElementById("modalContent").classList.add("video-modal");
@@ -3941,49 +3716,6 @@
                 showUnavailable(bodyEl, fileName, fileUrl);
             }
         }
-        // Finds every other image living in the same folder as `filePath`
-        // (across the whole tree via allFiles, so this works whether the image
-        // was opened from a normal folder listing or from search results),
-        // sorted by name for a stable gallery order.
-        function getImageSiblings(filePath) {
-            const slashIdx = filePath.lastIndexOf("/");
-            const parent = slashIdx === -1 ? "" : filePath.slice(0, slashIdx);
-            return allFiles
-                .filter((f) => {
-                    if (f.type !== "file") return false;
-                    const iconType = getFileIconType(f.name) || f.category || "other";
-                    if (iconType !== "image") return false;
-                    const fSlashIdx = f.fullPath.lastIndexOf("/");
-                    const fParent = fSlashIdx === -1 ? "" : f.fullPath.slice(0, fSlashIdx);
-                    return fParent === parent;
-                })
-                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
-        }
-        // Adds prev/next arrow buttons (and a "3 / 12" counter) over an open
-        // image preview when there's more than one image alongside it, so
-        // people can browse a folder of images without closing the modal.
-        // ArrowLeft/ArrowRight are wired to these same buttons in
-        // handleModalKeydown below.
-        function setupImageLightboxNav(filePath, bodyEl) {
-            const container = bodyEl.querySelector(".preview-image-container");
-            if (!container) return;
-            const siblings = getImageSiblings(filePath);
-            if (siblings.length <= 1) return;
-            const idx = siblings.findIndex((f) => f.fullPath === filePath);
-            if (idx === -1) return;
-            const prevItem = siblings[(idx - 1 + siblings.length) % siblings.length];
-            const nextItem = siblings[(idx + 1) % siblings.length];
-            const nav = document.createElement("div");
-            nav.className = "lightbox-nav";
-            nav.innerHTML = `
-        <button type="button" class="lightbox-nav-btn lightbox-prev" title="Previous image (&larr;)" aria-label="Previous image">${icons.chevronLeft}</button>
-        <button type="button" class="lightbox-nav-btn lightbox-next" title="Next image (&rarr;)" aria-label="Next image">${icons.chevronRight}</button>
-        <span class="lightbox-nav-count">${idx + 1} / ${siblings.length}</span>
-      `;
-            container.appendChild(nav);
-            nav.querySelector(".lightbox-prev").addEventListener("click", () => openFile(prevItem.fullPath, "image", prevItem.name));
-            nav.querySelector(".lightbox-next").addEventListener("click", () => openFile(nextItem.fullPath, "image", nextItem.name));
-        }
         function showUnavailable(containerEl, fileName, fileUrl, err) {
             let reason = "This file cannot be previewed.";
             if (err && err.status === 404) reason = "This file could not be found (404).";
@@ -4023,19 +3755,12 @@
                 case "ArrowDown":
                     modalBody.scrollBy({ top: 120, behavior: "auto" });
                     break;
-                case "ArrowLeft": {
-                    // Browsing an image with siblings alongside it: step to the
-                    // previous one instead of the playlist/close behavior below.
-                    const prevBtn = modalBody.querySelector(".lightbox-prev");
-                    if (prevBtn) { prevBtn.click(); break; }
+                case "ArrowLeft":
                     // If a playlist is actively playing, stop it and drop back
                     // into the (now-static) preview rather than closing outright.
                     currentPlaylist.length > 0 ? stopPlaylist() : closeModal();
                     break;
-                }
                 case "ArrowRight": {
-                    const nextBtn = modalBody.querySelector(".lightbox-next");
-                    if (nextBtn) { nextBtn.click(); break; }
                     if (isPlaylistFile && currentPlaylist.length === 0) {
                         startPlaylistMode();
                     } else {
@@ -4191,114 +3916,6 @@
                 lastFocusedElementStats.focus();
             }
             lastFocusedElementStats = null;
-        }
-        // --- Command palette -------------------------------------------------
-        // Ctrl/Cmd+K opens a single search box that fuzzy-matches both files
-        // (reusing the exact same searchFiles ranking as the main search box)
-        // and a short list of app commands (theme, view, settings, etc.), so
-        // frequent actions don't require hunting through menus.
-        function getPaletteCommands() {
-            return [
-                { label: "Go to Home", run: () => navigateTo([]) },
-                { label: "Theme: Light", run: () => { if (vividColor) resetCustomColor(); saveTheme("light"); } },
-                { label: "Theme: Dark", run: () => { if (vividColor) resetCustomColor(); saveTheme("dark"); } },
-                { label: "Theme: Auto", run: () => { if (vividColor) resetCustomColor(); saveTheme("auto"); } },
-                { label: "Theme: High Contrast Dark", run: () => { if (vividColor) resetCustomColor(); saveTheme("hc-dark"); } },
-                { label: "Theme: High Contrast Light", run: () => { if (vividColor) resetCustomColor(); saveTheme("hc-light"); } },
-                { label: "View: Grid", run: () => setView("grid") },
-                { label: "View: List", run: () => setView("list") },
-                { label: "View: Tree", run: () => setView("tree") },
-                { label: "Open Settings", run: () => document.getElementById("settingsBtn").click() },
-                { label: "Open Library Stats", run: openStatsModal },
-                { label: "Open Keyboard Shortcuts", run: openShortcutsModal },
-                { label: "Export Settings", run: exportSettings },
-                { label: "Import Settings", run: () => document.getElementById("importSettingsInput").click() },
-            ];
-        }
-        function paletteItemHtml(index, iconSvg, name, path) {
-            return `
-        <div class="palette-item" data-index="${index}" role="option" id="palette-item-${index}">
-          ${iconSvg}
-          <span class="palette-item-name">${escapeHtml(name)}</span>
-          ${path ? `<span class="palette-item-path">${escapeHtml(path)}</span>` : ""}
-        </div>
-      `;
-        }
-        function renderPalette(query) {
-            const resultsEl = document.getElementById("paletteResults");
-            const q = query.trim().toLowerCase();
-            const commands = getPaletteCommands();
-            let matchedCommands, fileMatches;
-            if (!q) {
-                matchedCommands = commands.slice(0, 5);
-                fileMatches = recentFiles
-                    .map((path) => allFiles.find((f) => f.type === "file" && f.fullPath === path))
-                    .filter(Boolean)
-                    .slice(0, 6);
-            } else {
-                matchedCommands = commands.filter((c) => c.label.toLowerCase().includes(q));
-                fileMatches = searchFiles(q).slice(0, 8);
-            }
-            paletteItems = [
-                ...matchedCommands.map((c) => ({ kind: "command", data: c })),
-                ...fileMatches.map((f) => ({ kind: "file", data: f })),
-            ];
-            if (paletteItems.length === 0) {
-                resultsEl.innerHTML = `<div class="palette-empty">No matches</div>`;
-                paletteIndex = -1;
-                return;
-            }
-            let html = "";
-            if (matchedCommands.length) {
-                html += `<div class="palette-group-label">Commands</div>`;
-                matchedCommands.forEach((c, i) => {
-                    html += paletteItemHtml(i, icons.command, c.label, "");
-                });
-            }
-            if (fileMatches.length) {
-                html += `<div class="palette-group-label">${q ? "Files" : "Recent"}</div>`;
-                fileMatches.forEach((f, i) => {
-                    const globalIdx = matchedCommands.length + i;
-                    const iconType = getFileIconType(f.name) || f.category || "other";
-                    const folderPath = f.fullPath.includes("/") ? f.fullPath.slice(0, f.fullPath.lastIndexOf("/")) : "";
-                    html += paletteItemHtml(globalIdx, icons[iconType] || icons.other, f.name, folderPath);
-                });
-            }
-            resultsEl.innerHTML = html;
-            paletteIndex = 0;
-            updatePaletteActiveItem();
-        }
-        function updatePaletteActiveItem() {
-            document.querySelectorAll("#paletteResults .palette-item").forEach((el) => {
-                const active = parseInt(el.dataset.index, 10) === paletteIndex;
-                el.classList.toggle("active", active);
-                if (active) el.scrollIntoView({ block: "nearest" });
-            });
-        }
-        function executePaletteItem(index) {
-            const item = paletteItems[index];
-            if (!item) return;
-            closePalette();
-            if (item.kind === "command") {
-                item.data.run();
-            } else {
-                openFile(item.data.fullPath, item.data.category, item.data.name);
-            }
-        }
-        function openPalette() {
-            lastFocusedElementPalette = document.activeElement;
-            document.getElementById("paletteModal").classList.add("active");
-            const input = document.getElementById("paletteInput");
-            input.value = "";
-            renderPalette("");
-            requestAnimationFrame(() => input.focus());
-        }
-        function closePalette() {
-            document.getElementById("paletteModal").classList.remove("active");
-            if (lastFocusedElementPalette && typeof lastFocusedElementPalette.focus === "function") {
-                lastFocusedElementPalette.focus();
-            }
-            lastFocusedElementPalette = null;
         }
         // Percent-encodes a repo-relative path one segment at a time so "/"
         // is preserved as a directory separator while everything else goes

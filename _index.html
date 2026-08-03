@@ -267,7 +267,7 @@
         .main-content { flex: 1; }
         .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
         .stat { display: flex; align-items: center; gap: 0.25rem; }
-        .stat svg { width: 12px; height: 12px; color: var(--accent-text, var(--accent)); }
+        .stat svg { width: 12px; height: 12px; }
         .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
         .file-list { display: flex; flex-direction: column; gap: 1px; }
         .file-card { position: relative; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
@@ -275,12 +275,7 @@
            pinning folders doesn't require opening the preview modal or
            navigating in first. Always visible (not hover-only) so it's
            reachable on touch/mobile as well as desktop. */
-        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.28; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
-        /* Calmer resting state: unstarred cards only hint at the star until the
-           card itself is hovered/focused (kept a low base opacity rather than 0
-           so the affordance is still discoverable on touch, where :hover never
-           fires). Starred cards stay fully visible regardless (see .starred rule below). */
-        .file-card:hover .card-star-btn, .file-card:focus-within .card-star-btn { opacity: 0.85; }
+        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.6; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
         .card-star-btn svg { width: 13px; height: 13px; }
         .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
         .card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
@@ -305,12 +300,6 @@
         .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
         .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
-        /* Extension badge shown inline next to the filename once the dedicated
-           Ext column is dropped at narrower widths (see breakpoints below), so
-           type info isn't lost when the column disappears — the icon alone has
-           to do less work at a glance. Hidden by default; only surfaces inside
-           list/tree column view, and only once .col-ext itself is hidden. */
-        .file-ext-badge { display: none; margin-left: 0.375rem; padding: 0.05rem 0.3rem; font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-muted); background: var(--bg-tertiary); border: 1px solid var(--border-color); vertical-align: middle; white-space: nowrap; }
         .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
         .file-thumbnail { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
@@ -326,7 +315,7 @@
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
         .list-columns { --list-cols: 22px 24px 1fr 70px 90px 100px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-text, var(--accent)); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); box-shadow: var(--shadow-sm); z-index: 5; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
         .file-list-header.stuck { margin-top: -0.75rem; padding-top: calc(0.4rem + 0.75rem); top: -0.75rem; }
         .file-list-header .col-star-spacer { width: 22px; }
         .file-list-header .col-icon-spacer { width: 24px; }
@@ -339,8 +328,7 @@
         .file-list.list-columns .col-ext, .file-list.list-columns .col-size, .file-list.list-columns .col-date, .file-list.list-columns .col-time { text-align: right; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         /* In list/tree mode the star sits inline as its own grid column
            rather than floating over the card content. */
-        .file-list.list-columns .card-star-btn { position: static; opacity: 0.22; background: none; border: none; width: 20px; height: 20px; }
-        .file-list.list-columns .file-card:hover .card-star-btn, .file-list.list-columns .file-card:focus-within .card-star-btn { opacity: 0.8; }
+        .file-list.list-columns .card-star-btn { position: static; opacity: 0.55; background: none; border: none; width: 20px; height: 20px; }
         .file-list.list-columns .card-star-btn:hover, .file-list.list-columns .card-star-btn:focus-visible, .file-list.list-columns .card-star-btn.starred { opacity: 1; background: none; border: none; }
         /* Progressive column thinning as the window narrows, so columns never
            overlap/crowd each other. Each band is bounded on both ends so it
@@ -352,7 +340,6 @@
             .list-columns { --list-cols: 22px 24px 1fr 90px 100px 80px; }
             .file-list-header .col-ext { display: none; }
             .file-list.list-columns .col-ext { display: none; }
-            .file-list.list-columns .file-ext-badge { display: inline-block; }
             .file-list-header, .file-list.list-columns .file-card { gap: 0.35rem; }
         }
         @media (max-width: 768px) and (min-width: 641px) {
@@ -365,14 +352,12 @@
             .list-columns { --list-cols: 22px 24px 1fr 90px 80px; }
             .file-list-header .col-ext, .file-list-header .col-date { display: none; }
             .file-list.list-columns .col-ext, .file-list.list-columns .col-date { display: none; }
-            .file-list.list-columns .file-ext-badge { display: inline-block; }
             .file-list-header, .file-list.list-columns .file-card { gap: 0.35rem; }
         }
         @media (max-width: 640px) {
             .list-columns { --list-cols: 22px 24px 1fr 80px; }
             .file-list-header .col-ext, .file-list-header .col-date, .file-list-header .col-time { display: none; }
             .file-list.list-columns .col-ext, .file-list.list-columns .col-date, .file-list.list-columns .col-time { display: none; }
-            .file-list.list-columns .file-ext-badge { display: inline-block; }
         }
         .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .empty-state svg:not(.empty-state-illustration) { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
@@ -3076,7 +3061,7 @@
               ${thumbnailHtml}
               <div class="file-icon ${iconType}">${iconSvg}</div>
               <div class="file-info">
-                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>${isColumnView && !searchQuery ? `<span class="file-ext-badge">${escapeHtml(getFileExtension(item.name))}</span>` : ""}
+                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${isColumnView && !searchQuery ? "" : item.sizeFormatted}
                     ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}

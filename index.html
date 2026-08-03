@@ -149,9 +149,7 @@
         .breadcrumb-pin-btn svg { width: 14px; height: 14px; }
         .breadcrumb-pin-btn:hover { color: var(--accent-text, var(--accent)); background: var(--bg-hover); }
         .breadcrumb-pin-btn.pinned { color: var(--accent-text, var(--accent)); }
-        .header-actions { display: flex; gap: 0.375rem; align-items: center; flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
-        .header-actions::-webkit-scrollbar { display: none; }
-        .header-actions > * { flex-shrink: 0; }
+        .header-actions { display: flex; gap: 0.375rem; align-items: center; }
         .header-divider { width: 1px; height: 20px; background: var(--border-color); flex-shrink: 0; margin: 0 0.125rem; }
         .search-container { position: relative; width: 200px; }
         .search-input { width: 100%; padding: 0.375rem 1.75rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
@@ -277,7 +275,7 @@
            pinning folders doesn't require opening the preview modal or
            navigating in first. Always visible (not hover-only) so it's
            reachable on touch/mobile as well as desktop. */
-        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.85; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
+        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.6; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
         .card-star-btn svg { width: 13px; height: 13px; }
         .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
         .card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
@@ -330,7 +328,7 @@
         .file-list.list-columns .col-ext, .file-list.list-columns .col-size, .file-list.list-columns .col-date, .file-list.list-columns .col-time { text-align: right; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         /* In list/tree mode the star sits inline as its own grid column
            rather than floating over the card content. */
-        .file-list.list-columns .card-star-btn { position: static; opacity: 0.8; background: none; border: none; width: 20px; height: 20px; }
+        .file-list.list-columns .card-star-btn { position: static; opacity: 0.55; background: none; border: none; width: 20px; height: 20px; }
         .file-list.list-columns .card-star-btn:hover, .file-list.list-columns .card-star-btn:focus-visible, .file-list.list-columns .card-star-btn.starred { opacity: 1; background: none; border: none; }
         /* Progressive column thinning as the window narrows, so columns never
            overlap/crowd each other. Each band is bounded on both ends so it
@@ -430,11 +428,10 @@
         .player-seek { flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; border-radius: var(--radius-full); }
         .player-seek:disabled { opacity: 0.4; cursor: not-allowed; }
         .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; flex-wrap: nowrap; overflow-x: auto; }
-        .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); opacity: 0.8; transition: transform var(--transition), background-color var(--transition), border-color var(--transition), opacity var(--transition); }
-        .player-controls-row .playlist-btn:hover:not(:disabled), .player-controls-row .playlist-btn:focus-visible { opacity: 1; transform: translateY(-1px); }
-        .player-controls-row .playlist-btn:disabled { opacity: 0.35; }
+        .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); transition: transform var(--transition), background-color var(--transition), border-color var(--transition); }
+        .player-controls-row .playlist-btn:hover:not(:disabled) { transform: translateY(-1px); }
         .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-        .player-play-btn { background: var(--control-surface) !important; border-color: var(--control-surface) !important; color: var(--on-control) !important; border-radius: 0px !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; opacity: 1 !important; box-shadow: 0 3px 0 var(--accent); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
+        .player-play-btn { background: var(--control-surface) !important; border-color: var(--control-surface) !important; color: var(--on-control) !important; border-radius: 0px !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 3px 0 var(--accent); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
         .player-play-btn:hover { background: var(--control-surface-hover) !important; border-color: var(--control-surface-hover) !important; transform: translateY(-1px); box-shadow: 0 4px 0 var(--accent); }
         .player-play-btn:active { transform: translateY(0); }
         .player-play-btn svg { width: 20px; height: 20px; }
@@ -490,13 +487,7 @@
             .breadcrumb::-webkit-scrollbar { display: none; }
             .breadcrumb-item, .breadcrumb-separator { flex-shrink: 0; }
             .modal-overlay { padding: 0; }
-            /* max-height only here (not a forced height) so image/audio/code
-               previews shrink to fit their content instead of stretching
-               into a mostly-empty full-screen box. Video still gets a
-               forced height below since a video element needs a definite
-               height to fill the screen. */
-            .modal { width: 100vw; max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
-            .modal.video-modal { height: 100vh; height: 100dvh; }
+            .modal { width: 100vw; height: 100vh; height: 100dvh; max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
             .modal-header { padding: 0.5rem 0.5rem; gap: 0.375rem; }
             .modal-title { font-size: 0.8rem; }
             .modal-actions { gap: 0.15rem; flex-shrink: 0; }

@@ -285,9 +285,21 @@
         .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
         .card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
         .card-star-spacer { width: 22px; flex-shrink: 0; }
-        .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+        .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
         .file-card.directory { background: var(--bg-secondary); }
         .file-card.parent-dir .file-name { color: var(--text-secondary); }
+        /* --- Zebra striping: alternating cards/rows get a subtly brighter or
+           darker background than the theme's base panel color. This is derived
+           live from --bg-secondary via color-mix(), so it automatically adapts
+           to every theme (light/dark/HC/custom) without needing per-theme
+           overrides — whatever --bg-secondary currently resolves to just gets
+           nudged a touch lighter or darker. --card-bg is stashed so hover and
+           other states can blend from the "right" base instead of flattening
+           back to a single flat tone. In grid view, where cards wrap across
+           columns, this same odd/even alternation reads as a diagonal zig-zag
+           rather than plain horizontal stripes. */
+        .file-card:nth-child(odd) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, white 5%); background: var(--card-bg); }
+        .file-card:nth-child(even) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, black 7%); background: var(--card-bg); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
         .file-icon.folder { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
@@ -304,6 +316,20 @@
         .file-icon.font { color: #e0a85f; background: rgba(224, 168, 95, 0.16); }
         .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
         .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
+        /* --- Per-position icon hue drift: several same-category files sitting
+           beside each other (three .mp3s in a row, a folder full of .jpgs,
+           etc.) otherwise render as visually identical icons. A small cyclical
+           hue-rotate keeps each icon's own category color language intact but
+           nudges it a bit differently across 6 rotating positions, so
+           neighboring same-type icons stay tellable apart at a glance. This is
+           a plain filter on top of whatever color the icon already has, so it
+           applies unchanged across every theme, including the flattened custom
+           theme. Position 6n+1 is left at the unrotated base color. */
+        .file-card:nth-child(6n+2) .file-icon { filter: hue-rotate(15deg); }
+        .file-card:nth-child(6n+3) .file-icon { filter: hue-rotate(-15deg); }
+        .file-card:nth-child(6n+4) .file-icon { filter: hue-rotate(30deg) saturate(1.08); }
+        .file-card:nth-child(6n+5) .file-icon { filter: hue-rotate(-30deg) saturate(1.08); }
+        .file-card:nth-child(6n) .file-icon { filter: hue-rotate(45deg); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         /* Extension badge shown inline next to the filename once the dedicated
            Ext column is dropped at narrower widths (see breakpoints below), so
@@ -591,7 +617,7 @@
         /* --- File card micro-interactions --- */
         .file-card { transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background-color var(--transition); }
         .file-card:hover { transform: translateY(-1px) scale(1.012); }
-        .file-list .file-card:hover { transform: translateX(1px); background: var(--bg-secondary); }
+        .file-list .file-card:hover { transform: translateX(1px); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
         .file-card:active { transform: translateY(0) scale(0.995); }
 
         /* --- Softer, theme-aware focus glow layered on top of the accessible outline --- */

@@ -882,46 +882,61 @@
     </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
     <script>
+        // -- Navigation / browsing state --
         let fileIndex = null,
             currentPath = [],
             currentView = "tree",
-            searchQuery = "",
-            intersectionObserver = null,
             expandedFolders = new Set([""]),
-            currentPlaylist = [],
-            currentPlaylistIndex = 0,
-            isShuffle = false,
-            shuffleBag = [],
-            shuffleHistory = [],
-            currentFilePath = "",
-            currentFileName = "",
-            isPlaylistFile = !1,
-            currentFontSize = 16,
-            vividColor = null,
-            colorIntensity = 60,
-            currentHls = null,
-            streamTimeout = null,
             allFiles = [],
             sortBy = "name-asc",
+            suppressHashSync = false;
+
+        // -- Search / listing state --
+        let searchQuery = "",
             searchResultLimit = 100,
             // Separate (larger) page size for plain folder browsing. Search
             // results are already ranked, so a small page makes sense there;
             // a normal folder listing has no ranking to lean on, so this is
             // set higher to stay invisible for the vast majority of folders
             // and only kick in for the rare folder with hundreds+ of items.
-            folderResultLimit = 300,
-            lastFocusedElement = null,
-            lastFocusedElementShortcuts = null,
-            lastFocusedElementStats = null,
-            fetchCache = new Map(),
-            currentVolume = 0.5, // Default volume set to 50%
+            folderResultLimit = 300;
+
+        // -- Open file / playback state --
+        let currentFilePath = "",
+            currentFileName = "",
+            isPlaylistFile = false,
+            currentPlaylist = [],
+            currentPlaylistIndex = 0,
+            isShuffle = false,
+            shuffleBag = [],
+            shuffleHistory = [],
+            currentHls = null,
+            streamTimeout = null,
+            useNativePlayer = false,
+            fetchCache = new Map();
+
+        // -- Audio pipeline state --
+        let currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
             normalizedElements = new WeakSet(),
-            compressor = null,
-            useNativePlayer = false,
-            pinnedFolders = [],
-            favoriteFiles = [],
-            suppressHashSync = false;
+            compressor = null;
+
+        // -- Theming / UI preference state --
+        let currentFontSize = 16,
+            vividColor = null,
+            colorIntensity = 60;
+
+        // -- Pins / favorites --
+        let pinnedFolders = [],
+            favoriteFiles = [];
+
+        // -- Modal focus restoration: maps modal element id -> the element
+        // that had focus before it opened, so openModal/closeModal (below)
+        // can restore focus on close without a separate variable per modal.
+        let modalFocusReturn = new Map();
+
+        // -- Misc / one-offs --
+        let intersectionObserver = null;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
         // slow connection and tracks are getting skipped before they finish buffering.
@@ -3683,7 +3698,7 @@
         }
 
         async function openFile(filePath, fileType, fileName) {
-            lastFocusedElement = document.activeElement;
+            rememberModalFocus("modal");
             const modalEl = document.getElementById("modal"),
                 titleEl = document.getElementById("modalTitle"),
                 bodyEl = document.getElementById("modalBody"),
@@ -3898,10 +3913,19 @@
             closeGotoPopover();
             document.getElementById("playlistBar").classList.remove("active");
             document.getElementById("playPlaylistBtn").classList.add("hidden");
-            if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
-                lastFocusedElement.focus();
-            }
-            lastFocusedElement = null;
+            restoreModalFocus("modal");
+        }
+        // Shared focus save/restore for all three modals (file preview,
+        // shortcuts, stats), keyed by modal element id so a single Map
+        // replaces what used to be a separate lastFocusedElement* variable
+        // per modal.
+        function rememberModalFocus(modalId) {
+            modalFocusReturn.set(modalId, document.activeElement);
+        }
+        function restoreModalFocus(modalId) {
+            const el = modalFocusReturn.get(modalId);
+            if (el && typeof el.focus === "function") el.focus();
+            modalFocusReturn.delete(modalId);
         }
         function trapModalFocus(e, containerId = "modalContent") {
             if (e.key !== "Tab") return;
@@ -3921,16 +3945,13 @@
             }
         }
         function openShortcutsModal() {
-            lastFocusedElementShortcuts = document.activeElement;
+            rememberModalFocus("shortcutsModal");
             document.getElementById("shortcutsModal").classList.add("active");
             document.getElementById("shortcutsCloseBtn").focus();
         }
         function closeShortcutsModal() {
             document.getElementById("shortcutsModal").classList.remove("active");
-            if (lastFocusedElementShortcuts && typeof lastFocusedElementShortcuts.focus === "function") {
-                lastFocusedElementShortcuts.focus();
-            }
-            lastFocusedElementShortcuts = null;
+            restoreModalFocus("shortcutsModal");
         }
         // Human-readable byte size, matching the units getItemSize() already
         // parses (powers of 1024) so the two stay consistent with each other.
@@ -4011,17 +4032,14 @@
       `;
         }
         function openStatsModal() {
-            lastFocusedElementStats = document.activeElement;
+            rememberModalFocus("statsModal");
             renderLibraryStats();
             document.getElementById("statsModal").classList.add("active");
             document.getElementById("statsCloseBtn").focus();
         }
         function closeStatsModal() {
             document.getElementById("statsModal").classList.remove("active");
-            if (lastFocusedElementStats && typeof lastFocusedElementStats.focus === "function") {
-                lastFocusedElementStats.focus();
-            }
-            lastFocusedElementStats = null;
+            restoreModalFocus("statsModal");
         }
         // Percent-encodes a repo-relative path one segment at a time so "/"
         // is preserved as a directory separator while everything else goes

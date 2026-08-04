@@ -177,8 +177,8 @@
         .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; }
         .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0px; transition: 0.2s; }
-        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: 0px; transition: 0.2s; }
+        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0px; transition: 0.2s; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3); }
+        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: 0px; transition: 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
         .switch input:checked + .switch-slider { background: var(--accent); border-color: var(--accent); }
         .switch input:checked + .switch-slider::before { transform: translateX(16px); background: #fff; }
         .switch input:focus-visible + .switch-slider { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -193,8 +193,8 @@
         .intensity-seg:last-child { border-right: none; }
         .intensity-seg:hover { filter: brightness(1.12); }
         .intensity-seg.active { box-shadow: inset 0 0 0 2px var(--on-control); }
-        .theme-toggle { display: flex; flex-wrap: wrap; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
-        .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; }
+        .theme-toggle { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
+        .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
         .theme-btn:hover { background: var(--bg-hover); }
         .theme-btn.active { background: var(--bg-primary); }
         .theme-btn svg { width: 12px; height: 12px; }
@@ -505,6 +505,12 @@
             }
             .tree-panel .tree-header, .tree-panel .tree-content { display: none; }
             .search-container { width: 120px; }
+            /* header-content's gap applies to both axes; once the search+icons
+               group wraps to its own row below the logo, that same gap reads
+               as too much dead space between the two rows. Tighten just the
+               row gap so the wrap looks like a deliberate two-row layout
+               rather than an overflow accident. */
+            .header-content { row-gap: 0.375rem; }
             /* The pinned/favorites strip previously stacked each entry's
                filename and parent folder on two lines, wasting vertical
                space on small screens. Both are now a single truncated line,
@@ -3059,12 +3065,19 @@
                 const iconType = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other";
                 const iconSvg = icons[iconType] || icons.other;
 
-                let clickPath, fullDisplayPath, parentPathArr;
+                let clickPath, fullDisplayPath, parentDisplayPath, parentPathArr;
 
                 if (searchQuery) {
                     clickPath = item.fullPath;
                     fullDisplayPath = item.fullPath;
                     parentPathArr = item.navPath;
+                    // Search results can come from anywhere in the tree, so a
+                    // location hint is useful — but showing the *full* path
+                    // (including the filename we just showed above it) is
+                    // redundant, and for root-level results it duplicates the
+                    // filename outright. Show only the containing folder, and
+                    // only when there is one.
+                    parentDisplayPath = parentPathArr.slice(0, -1).join("/");
                 } else {
                     fullDisplayPath = (currentPath.length ? currentPath.join("/") + "/" : "") + item.name;
                     clickPath = fullDisplayPath;
@@ -3080,7 +3093,7 @@
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} items`}
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
+                    ${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}
                 </span>
               </div>
               ${
@@ -3110,7 +3123,7 @@
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${isColumnView && !searchQuery ? "" : item.sizeFormatted}
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
+                    ${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}
                 </span>
               </div>
               ${

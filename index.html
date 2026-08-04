@@ -41,6 +41,12 @@
             --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
             --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
             --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
+            /* Used only by the depth presets below (levels 2-5) — the flat
+               default (level 1) keeps its own hand-tuned shadow strings above
+               untouched, so nothing changes unless a person opts into a
+               rounder/deeper look. */
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --shadow-color-strong: rgba(0, 0, 0, 0.6);
             --accent-glow: rgba(155, 93, 229, 0.3);
             --transition: 0.15s ease;
             --font-size-base: 16px;
@@ -60,6 +66,8 @@
             --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
             --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
             --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+            --shadow-color: rgba(0, 0, 0, 0.15);
+            --shadow-color-strong: rgba(0, 0, 0, 0.24);
             --accent-glow: rgba(91, 33, 182, 0.22);
         }
         /* High contrast dark: based on the classic Windows high-contrast black scheme
@@ -81,6 +89,8 @@
             --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
             --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.12);
             --shadow-lg: 0 12px 32px rgba(255, 255, 255, 0.22);
+            --shadow-color: rgba(255, 255, 255, 0.18);
+            --shadow-color-strong: rgba(255, 255, 255, 0.28);
             --accent-glow: rgba(0, 255, 255, 0.35);
         }
         /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
@@ -101,6 +111,8 @@
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
             --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.22);
+            --shadow-color: rgba(0, 0, 0, 0.18);
+            --shadow-color-strong: rgba(0, 0, 0, 0.28);
             --accent-glow: rgba(255, 0, 0, 0.25);
         }
         @media (prefers-color-scheme: light) {
@@ -118,8 +130,60 @@
                 --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
                 --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
                 --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+                --shadow-color: rgba(0, 0, 0, 0.15);
+                --shadow-color-strong: rgba(0, 0, 0, 0.24);
                 --accent-glow: rgba(91, 33, 182, 0.22);
             }
+        }
+        /* --- Interface depth: five looks from the flat, hard-edged default
+           (level 1, no attribute — untouched) up to a fully rounded,
+           layered-shadow "3D" surface (level 5). Only corner radius and
+           shadow shape change; every color still comes from the active
+           color theme via --shadow-color/--shadow-color-strong, so this
+           axis is fully independent of light/dark/HC/custom. */
+        html[data-depth="2"] {
+            --radius: 4px; --radius-sm: 3px; --radius-lg: 7px; --radius-full: 10px;
+            --shadow: 0 2px 5px var(--shadow-color);
+            --shadow-sm: 0 1px 3px var(--shadow-color);
+            --shadow-lg: 0 5px 14px var(--shadow-color);
+        }
+        html[data-depth="3"] {
+            --radius: 8px; --radius-sm: 5px; --radius-lg: 12px; --radius-full: 999px;
+            --shadow: 0 3px 9px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            --shadow-sm: 0 2px 6px var(--shadow-color);
+            --shadow-lg: 0 9px 22px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        html[data-depth="4"] {
+            --radius: 12px; --radius-sm: 7px; --radius-lg: 16px; --radius-full: 999px;
+            --shadow: 0 4px 12px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            --shadow-sm: 0 3px 8px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            --shadow-lg: 0 13px 30px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        html[data-depth="5"] {
+            --radius: 16px; --radius-sm: 10px; --radius-lg: 22px; --radius-full: 999px;
+            --shadow: 0 6px 16px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+            --shadow-sm: 0 4px 10px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            --shadow-lg: 0 18px 40px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+        /* At the three roundest/deepest levels, give resting cards and
+           buttons their own subtle lift too (previously shadow only showed
+           up on hover/inside specific panels) so the surfaces actually read
+           as raised rather than just gaining corners. */
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .file-card,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .settings-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .modal-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .playlist-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .download-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .theme-toggle,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .view-toggle,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .card-star-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .player-info-btn {
+            box-shadow: var(--shadow-sm);
+        }
+        html:is([data-depth="4"], [data-depth="5"]) .settings-menu-card,
+        html:is([data-depth="4"], [data-depth="5"]) .modal,
+        html:is([data-depth="4"], [data-depth="5"]) .player-bar {
+            box-shadow: var(--shadow-lg);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { font-size: var(--font-size-base); }
@@ -177,8 +241,8 @@
         .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; }
         .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0px; transition: 0.2s; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3); }
-        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: 0px; transition: 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-full); transition: 0.2s; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3); }
+        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: var(--radius-full); transition: 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
         .switch input:checked + .switch-slider { background: var(--accent); border-color: var(--accent); }
         .switch input:checked + .switch-slider::before { transform: translateX(16px); background: #fff; }
         .switch input:focus-visible + .switch-slider { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -193,6 +257,16 @@
         .intensity-seg:last-child { border-right: none; }
         .intensity-seg:hover { filter: brightness(1.12); }
         .intensity-seg.active { box-shadow: inset 0 0 0 2px var(--on-control); }
+        /* Depth control reuses the same segmented-bar shell as the color
+           intensity bar (consistent control language), but each segment
+           shows a live radius+shadow preview instead of a color swatch. */
+        .depth-seg { background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; }
+        .depth-seg-preview { display: block; width: 15px; height: 15px; background: var(--on-control); opacity: 0.55; }
+        .depth-seg[data-depth="1"] .depth-seg-preview { border-radius: 0; box-shadow: 1px 2px 0 rgba(0, 0, 0, 0.5); }
+        .depth-seg[data-depth="2"] .depth-seg-preview { border-radius: 3px; box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.45); }
+        .depth-seg[data-depth="3"] .depth-seg-preview { border-radius: 5px; box-shadow: 1px 3px 4px rgba(0, 0, 0, 0.4); }
+        .depth-seg[data-depth="4"] .depth-seg-preview { border-radius: 7px; box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+        .depth-seg[data-depth="5"] .depth-seg-preview { border-radius: 9px; box-shadow: 2px 5px 9px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.25); }
         .theme-toggle { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
         .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
         .theme-btn:hover { background: var(--bg-hover); }
@@ -299,6 +373,14 @@
            rather than plain horizontal stripes. */
         .file-card:nth-child(odd) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, white 5%); background: var(--card-bg); }
         .file-card:nth-child(even) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, black 7%); background: var(--card-bg); }
+        /* Zebra striping is optional (default on) — this flattens every
+           card back to the plain panel color when disabled, from the
+           settings menu. --card-bg still gets set (rather than left alone)
+           so hover/other states that blend from --card-bg fall back to the
+           right flat tone instead of whatever the last theme's zig-zag left
+           behind. */
+        html.no-zebra .file-card:nth-child(odd),
+        html.no-zebra .file-card:nth-child(even) { --card-bg: var(--bg-secondary); background: var(--bg-secondary); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
         .file-icon.folder { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
@@ -727,6 +809,16 @@
                                     </div>
                                 </div>
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                                    <div class="settings-section-title">Appearance</div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Zebra striping</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="zebraStripingToggle" checked aria-label="Alternate card/row background shading in grid and list view" />
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
                                     <div class="settings-section-title">Media Player</div>
                                     <div class="settings-row">
                                         <span class="settings-label">Use native player</span>
@@ -788,6 +880,22 @@
                                     <div class="theme-custom-row">
                                         <input type="color" id="themeColorInput" value="#8080ff" title="Pick a custom color" />
                                         <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
+                                    </div>
+                                </div>
+                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                                    <div class="settings-section-title">Depth</div>
+                                    <div class="settings-row">
+                                        <div class="intensity-bar-wrap">
+                                            <span class="intensity-bar-label">Flat</span>
+                                            <div class="intensity-bar depth-bar" id="depthControl" role="group" aria-label="Interface depth: flat on the left, 3D on the right">
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="1" title="Flat (default)" aria-label="Flat"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="2" title="Subtle" aria-label="Subtle"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="3" title="Soft" aria-label="Soft"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="4" title="Raised" aria-label="Raised"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="5" title="3D" aria-label="3D"><span class="depth-seg-preview"></span></button>
+                                            </div>
+                                            <span class="intensity-bar-label">3D</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -933,7 +1041,8 @@
         // -- Theming / UI preference state --
         let currentFontSize = 16,
             vividColor = null,
-            colorIntensity = 60;
+            colorIntensity = 60,
+            uiDepth = 1;
 
         // -- Pins / favorites --
         let pinnedFolders = [],
@@ -1209,6 +1318,13 @@
             document.body.classList.toggle("compact-density", compactDensity);
             const compactToggle = document.getElementById("compactDensityToggle");
             if (compactToggle) compactToggle.checked = compactDensity;
+            const zebraOn = localStorage.getItem("zebraStriping") !== "0";
+            document.documentElement.classList.toggle("no-zebra", !zebraOn);
+            const zebraToggle = document.getElementById("zebraStripingToggle");
+            if (zebraToggle) zebraToggle.checked = zebraOn;
+            const storedDepth = parseInt(localStorage.getItem(DEPTH_KEY), 10);
+            uiDepth = [1, 2, 3, 4, 5].includes(storedDepth) ? storedDepth : 1;
+            applyDepth(uiDepth, false);
             loadPinnedFolders();
             loadFavoriteFiles();
             initThemeColor();
@@ -1306,6 +1422,7 @@
         const MUTED_COLORS_KEY = "themeMutedColors";
         const COLOR_INTENSITY_KEY = "themeColorIntensity";
         const DEFAULT_COLOR_INTENSITY = 60;
+        const DEPTH_KEY = "uiDepth";
         const THEME_BASE = {
             dark: {
                 "--bg-primary": "#0d1117", "--bg-secondary": "#161b22", "--bg-tertiary": "#21262d",
@@ -1591,6 +1708,24 @@
             if (!wrap) return;
             wrap.querySelectorAll("button[data-intensity]").forEach((btn) => {
                 btn.classList.toggle("active", parseInt(btn.dataset.intensity, 10) === colorIntensity);
+            });
+        }
+        // Interface depth: flat (1, default) through fully 3D (5). Purely a
+        // data-depth attribute on <html> — every visual consequence lives in
+        // CSS (radius/shadow variables), this just persists the choice and
+        // keeps the segmented bar's active state in sync.
+        function applyDepth(level, persist) {
+            uiDepth = level;
+            if (level === 1) document.documentElement.removeAttribute("data-depth");
+            else document.documentElement.setAttribute("data-depth", String(level));
+            if (persist !== false) localStorage.setItem(DEPTH_KEY, String(level));
+            updateDepthUI();
+        }
+        function updateDepthUI() {
+            const wrap = document.getElementById("depthControl");
+            if (!wrap) return;
+            wrap.querySelectorAll("button[data-depth]").forEach((btn) => {
+                btn.classList.toggle("active", parseInt(btn.dataset.depth, 10) === uiDepth);
             });
         }
         function markActiveSwatch(hue) {
@@ -2253,6 +2388,16 @@
             document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
                 document.body.classList.toggle("compact-density", e.target.checked);
                 localStorage.setItem("compactDensity", e.target.checked ? "1" : "0");
+            });
+            document.getElementById("zebraStripingToggle").addEventListener("change", (e) => {
+                document.documentElement.classList.toggle("no-zebra", !e.target.checked);
+                localStorage.setItem("zebraStriping", e.target.checked ? "1" : "0");
+            });
+            const depthControl = document.getElementById("depthControl");
+            if (depthControl) depthControl.addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-depth]");
+                if (!btn) return;
+                applyDepth(parseInt(btn.dataset.depth, 10));
             });
             wireThemeColorPicker();
             document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack);

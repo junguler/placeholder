@@ -1270,18 +1270,6 @@
             currentPlayerNoteIndex = idx;
             return playerNoteIcons[idx];
         }
-        // Tapping the big music glyph above the player swaps it for a
-        // different random one, but only while audio is actually playing.
-        function wirePlayerIconTap(scope) {
-            const iconEl = scope.querySelector(".audio-icon");
-            const audioEl = scope.querySelector("audio");
-            if (!iconEl || !audioEl) return;
-            iconEl.style.cursor = "pointer";
-            iconEl.addEventListener("click", () => {
-                if (audioEl.paused) return;
-                iconEl.innerHTML = pickPlayerNoteIcon();
-            });
-        }
         function loadSettings() {
             const e = localStorage.getItem("theme");
             e && e !== "auto"
@@ -3868,7 +3856,6 @@
                     if (iconEl) iconEl.innerHTML = pickPlayerNoteIcon();
                     updateMediaSessionTitle(s);
                 }
-                wirePlayerIconTap(n);
                 attachPlaylistStream(audio, finalUrl, o);
             }
         }
@@ -3964,7 +3951,6 @@
                             setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);
                         }
-                        wirePlayerIconTap(bodyEl);
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
                     case "document":

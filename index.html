@@ -1247,7 +1247,8 @@
             `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="4.5" cy="16.5" r="2"/><circle cx="4.5" cy="16.5" r="2" fill="none" stroke="var(--bg-tertiary)" stroke-width="0.5"/><path d="M6.5 16.5V4M17 16.5V4" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 4h10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="19" cy="16.5" r="2"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="2" width="18" height="20" rx="2"/><rect x="5.4" y="4.2" width="13.2" height="12.4" rx="0.8" fill="var(--bg-tertiary)"/><path d="M7.5 10.5l3-2 3 4 3-3 2 2" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="9.5" y="18" width="5" height="2" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v12a4 4 0 1 0 2 3.5V7h5v3a2 2 0 1 0 1 1.7V3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>`,
-        ];
+        
+            ,`<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="1.6"/><path d="M6 8h12v2H6z" fill="var(--bg-tertiary)"/><path d="M6 12.5h8v1.5H6z" fill="var(--bg-tertiary)"/><path d="M9 15.5h5v1.5H9z" fill="var(--bg-tertiary)"/></svg>`,];
         let currentPlayerNoteIndex = -1;
         function pickPlayerNoteIcon() {
             if (playerNoteIcons.length <= 1) return playerNoteIcons[0] || "";
@@ -1822,6 +1823,13 @@
                     compactKey += w;
                 }
 
+                // Parse each item's modified date exactly once (instead of on
+                // every render/sort) and cache the Date so the column cells and
+                // date sorts never re-construct a Date for the same item.
+                let dateObj = null;
+                if (node.type === "file") {
+                    try { dateObj = getItemDate(node); } catch (err) { dateObj = null; }
+                }
                 allFiles.push({
                     ...node,
                     fullPath: currentPathStr,
@@ -1830,7 +1838,8 @@
                     normalizedKey: normalizedKey,
                     compactKey: compactKey,
                     boundarySet: boundarySet,
-                    parentPath: pathPrefix.toLowerCase()
+                    parentPath: pathPrefix.toLowerCase(),
+                    dateObj: dateObj
                 });
                 if (node.type === "directory" && node.children) {
                     preprocessFiles(node.children, currentPathStr);
@@ -2682,14 +2691,18 @@
         }
         const MONTH_ABBR = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
         function formatItemDate(item) {
-            const d = getItemDate(item);
-            if (!d) return "—";
+            if (item.dateStr !== undefined) return item.dateStr;
+            const d = item.dateObj ?? getItemDate(item);
+            if (!d) { item.dateStr = "—"; return item.dateStr; }
             const day = String(d.getDate()).padStart(2, "0");
-            return `${d.getFullYear()}/${MONTH_ABBR[d.getMonth()]}/${day}`;
+            item.dateStr = `${d.getFullYear()}/${MONTH_ABBR[d.getMonth()]}/${day}`;
+            return item.dateStr;
         }
         function formatItemTime(item) {
-            const d = getItemDate(item);
-            return d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+            if (item.timeStr !== undefined) return item.timeStr;
+            const d = item.dateObj ?? getItemDate(item);
+            item.timeStr = d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+            return item.timeStr;
         }
         function sortItems(items) {
             const sorted = [...items];
@@ -2709,9 +2722,9 @@
                     case "size-asc":
                         return getItemSize(a) - getItemSize(b);
                     case "date-asc":
-                        return (getItemDate(a)?.getTime() ?? 0) - (getItemDate(b)?.getTime() ?? 0);
+                        return (a.dateObj?.getTime() ?? 0) - (b.dateObj?.getTime() ?? 0);
                     case "date-desc":
-                        return (getItemDate(b)?.getTime() ?? 0) - (getItemDate(a)?.getTime() ?? 0);
+                        return (b.dateObj?.getTime() ?? 0) - (a.dateObj?.getTime() ?? 0);
                     case "type":
                         return (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name);
                     case "name-asc":
@@ -3032,6 +3045,7 @@
         });
         const handlePinnedFoldersClick = pinnedFoldersHandlers.onClick;
         const handlePinnedFoldersKeydown = pinnedFoldersHandlers.onKeydown;
+        let lastBreadcrumbPathKey = null;
         function renderBreadcrumb() {
             const breadcrumbEl = document.getElementById("breadcrumb");
             let html = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
@@ -3053,7 +3067,14 @@
             const pinBtnEl = document.getElementById("pinFolderBtn");
             if (pinBtnEl) pinBtnEl.addEventListener("click", togglePinCurrentFolder);
             const currentCrumb = breadcrumbEl.querySelector(".breadcrumb-item.current");
-            if (currentCrumb) currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
+            // scrollIntoView forces a synchronous layout flush; only do it when
+            // the actual folder path changed (e.g. on navigation), not on every
+            // render (view toggles, star clicks, search keystrokes, etc.).
+            const pathKey = currentPath.join("/");
+            if (currentCrumb && pathKey !== lastBreadcrumbPathKey) {
+                currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
+            }
+            lastBreadcrumbPathKey = pathKey;
         }
         function renderTree() {
             const treeEl = document.getElementById("treeContent");
@@ -3271,8 +3292,8 @@
                         // (#, ?, %) first, then escape for the attribute context.
                         const thumbSrc = escapeHtml(encodePathForUrl(clickPath));
                         thumbnailHtml = currentView === "grid"
-                            ? `<img class="file-thumbnail lazy" data-src="./${thumbSrc}" alt="" loading="lazy">`
-                            : `<img class="file-thumbnail file-thumbnail-inline lazy" data-src="./${thumbSrc}" alt="" loading="lazy">`;
+                            ? `<img class="file-thumbnail lazy" data-src="./${thumbSrc}" alt="" loading="lazy" decoding="async">`
+                            : `<img class="file-thumbnail file-thumbnail-inline lazy" data-src="./${thumbSrc}" alt="" loading="lazy" decoding="async">`;
                     }
                     html += `
             <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">

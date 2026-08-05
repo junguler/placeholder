@@ -10,7 +10,7 @@
     <meta property="og:description" content="Browse and preview files from this repository directly in your browser." />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23121212' width='24' height='24'/%3E%3Crect fill='%239b5de5' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%23121212' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%23121212' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%239b5de5' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%239b5de5' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%23121212' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
-    <script src="./hls.min.js" defer></script>
+    <script src="./hls.min.js"></script>
     
     <style>
         /* Styles remain consistent */
@@ -166,7 +166,6 @@
             flex-direction: column;
             overflow: hidden;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
         }
         .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 0.5rem 1rem; flex-shrink: 0; }
         .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
@@ -310,19 +309,9 @@
         .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
         .stat { display: flex; align-items: center; gap: 0.25rem; }
         .stat svg { width: 12px; height: 12px; color: var(--accent-text, var(--accent)); }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; contain: layout style; }
-        .file-list { display: flex; flex-direction: column; gap: 1px; contain: layout style; }
-        /* content-visibility lets the browser skip layout/paint/style work for
-           off-screen cards entirely (similar benefit to list virtualization,
-           without rewriting the render pipeline). contain-intrinsic-size gives
-           it a placeholder size to reserve so scrollbar/scroll position stay
-           stable before a card has ever been measured; the browser remembers
-           the real size after each card's first layout ("auto"), so this is
-           just a one-time fallback, not a fixed height. Big win for scroll
-           smoothness on mobile once folders have a few hundred entries. */
-        .file-card { position: relative; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; content-visibility: auto; contain-intrinsic-size: auto 160px; }
-        .file-list .file-card { content-visibility: auto; contain-intrinsic-size: auto 46px; }
-        body.compact-density .file-list .file-card { contain-intrinsic-size: auto 34px; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+        .file-list { display: flex; flex-direction: column; gap: 1px; }
+        .file-card { position: relative; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
         /* Star/pin toggle shown directly on each card so favoriting files and
            pinning folders doesn't require opening the preview modal or
            navigating in first. Always visible (not hover-only) so it's
@@ -377,25 +366,19 @@
         .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
         .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
         /* --- Per-position icon hue drift: several same-category files sitting
-            beside each other (three .mp3s in a row, a folder full of .jpgs,
-             etc.) otherwise render as visually identical icons. A cyclical
-             hue-rotate keeps each icon's own category color language intact but
-             swings it around a full 8-step cycle, so neighboring same-type
-             icons stay clearly tellable apart at a glance. Every consecutive
-             position jumps a full ~135deg around the color wheel (360/8*3), so
-             no two neighbors ever land on a similar hue, and the later
-             rotations carry a touch more saturation so they stay vivid instead
-             of muddying. This is a plain filter on top of whatever color the
-             icon already has, so it applies unchanged across every theme,
-             including the flattened custom theme. Position 8n+1 is left at the
-             unrotated base color. */
-        .file-card:nth-child(8n+2) .file-icon { filter: hue-rotate(135deg) saturate(1.1); }
-        .file-card:nth-child(8n+3) .file-icon { filter: hue-rotate(270deg) saturate(1.15); }
-        .file-card:nth-child(8n+4) .file-icon { filter: hue-rotate(45deg) saturate(1.05); }
-        .file-card:nth-child(8n+5) .file-icon { filter: hue-rotate(180deg) saturate(1.1); }
-        .file-card:nth-child(8n+6) .file-icon { filter: hue-rotate(315deg) saturate(1.15); }
-        .file-card:nth-child(8n+7) .file-icon { filter: hue-rotate(90deg) saturate(1.1); }
-        .file-card:nth-child(8n) .file-icon { filter: hue-rotate(225deg) saturate(1.15); }
+           beside each other (three .mp3s in a row, a folder full of .jpgs,
+           etc.) otherwise render as visually identical icons. A small cyclical
+           hue-rotate keeps each icon's own category color language intact but
+           nudges it a bit differently across 6 rotating positions, so
+           neighboring same-type icons stay tellable apart at a glance. This is
+           a plain filter on top of whatever color the icon already has, so it
+           applies unchanged across every theme, including the flattened custom
+           theme. Position 6n+1 is left at the unrotated base color. */
+        .file-card:nth-child(6n+2) .file-icon { filter: hue-rotate(15deg); }
+        .file-card:nth-child(6n+3) .file-icon { filter: hue-rotate(-15deg); }
+        .file-card:nth-child(6n+4) .file-icon { filter: hue-rotate(30deg) saturate(1.08); }
+        .file-card:nth-child(6n+5) .file-icon { filter: hue-rotate(-30deg) saturate(1.08); }
+        .file-card:nth-child(6n) .file-icon { filter: hue-rotate(45deg); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
@@ -461,7 +444,7 @@
         .empty-state svg:not(.empty-state-illustration) { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .empty-state h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text-primary); }
         .empty-state p { font-size: 0.85rem; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; padding: 0.5rem; overscroll-behavior: contain; touch-action: pan-y; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.2s; padding: 0.5rem; overscroll-behavior: contain; touch-action: pan-y; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); border-top: 2px solid var(--accent); }
         .modal.video-modal { height: 95vh; height: 95dvh; }
@@ -2213,42 +2196,25 @@
             render();
             document.getElementById("main").scrollTop = 0;
         }
-        // Cached so updateListHeaderStuck (called on every scroll frame) doesn't
-        // force a synchronous style/layout read each time — padding only
-        // changes on resize/density toggle, both of which invalidate it below.
-        let cachedMainPadTop = null;
-        function invalidateMainPadTopCache() {
-            cachedMainPadTop = null;
-        }
         function updateListHeaderStuck() {
             const mainEl = document.getElementById("main");
             const listHeader = document.querySelector(".file-list-header");
             if (!mainEl || !listHeader) return;
-            if (cachedMainPadTop === null) {
-                cachedMainPadTop = parseFloat(getComputedStyle(mainEl).paddingTop) || 0;
-            }
-            const padTop = cachedMainPadTop;
+            const mainTop = mainEl.getBoundingClientRect().top;
+            const padTop = parseFloat(getComputedStyle(mainEl).paddingTop) || 0;
             if (listHeader.classList.contains("stuck")) {
                 if (mainEl.scrollTop < padTop) listHeader.classList.remove("stuck");
             } else {
-                const mainTop = mainEl.getBoundingClientRect().top;
                 if (listHeader.getBoundingClientRect().top <= mainTop + padTop) listHeader.classList.add("stuck");
             }
         }
         function setupEventListeners() {
             const mainEl = document.getElementById("main");
             const headerEl = document.querySelector(".header");
-            let scrollRafPending = false;
             mainEl.addEventListener("scroll", () => {
-                if (scrollRafPending) return;
-                scrollRafPending = true;
-                requestAnimationFrame(() => {
-                    scrollRafPending = false;
-                    headerEl.classList.toggle("scrolled", mainEl.scrollTop > 2);
-                    updateListHeaderStuck();
-                });
+                headerEl.classList.toggle("scrolled", mainEl.scrollTop > 2);
+                updateListHeaderStuck();
             }, { passive: true });
-            window.addEventListener("resize", invalidateMainPadTopCache, { passive: true });
 
             const searchInput = document.getElementById("search");
             let searchDebounceTimer;

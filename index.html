@@ -366,22 +366,25 @@
         .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
         .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
         /* --- Per-position icon hue drift: several same-category files sitting
-           beside each other (three .mp3s in a row, a folder full of .jpgs,
-            etc.) otherwise render as visually identical icons. A cyclical
-            hue-rotate keeps each icon's own category color language intact but
-            swings it a good distance across 6 rotating positions, so
-            neighboring same-type icons stay clearly tellable apart at a glance.
-            Every step is at least 45deg from its neighbors, and the larger
-            rotations get a touch more saturation so they stay vivid instead of
-            muddying. This is a plain filter on top of whatever color the icon
-            already has, so it applies unchanged across every theme, including
-            the flattened custom theme. Position 6n+1 is left at the unrotated
-            base color. */
-        .file-card:nth-child(6n+2) .file-icon { filter: hue-rotate(45deg) saturate(1.05); }
-        .file-card:nth-child(6n+3) .file-icon { filter: hue-rotate(-45deg) saturate(1.05); }
-        .file-card:nth-child(6n+4) .file-icon { filter: hue-rotate(90deg) saturate(1.1); }
-        .file-card:nth-child(6n+5) .file-icon { filter: hue-rotate(-90deg) saturate(1.1); }
-        .file-card:nth-child(6n) .file-icon { filter: hue-rotate(135deg) saturate(1.15); }
+            beside each other (three .mp3s in a row, a folder full of .jpgs,
+             etc.) otherwise render as visually identical icons. A cyclical
+             hue-rotate keeps each icon's own category color language intact but
+             swings it around a full 8-step cycle, so neighboring same-type
+             icons stay clearly tellable apart at a glance. Every consecutive
+             position jumps a full ~135deg around the color wheel (360/8*3), so
+             no two neighbors ever land on a similar hue, and the later
+             rotations carry a touch more saturation so they stay vivid instead
+             of muddying. This is a plain filter on top of whatever color the
+             icon already has, so it applies unchanged across every theme,
+             including the flattened custom theme. Position 8n+1 is left at the
+             unrotated base color. */
+        .file-card:nth-child(8n+2) .file-icon { filter: hue-rotate(135deg) saturate(1.1); }
+        .file-card:nth-child(8n+3) .file-icon { filter: hue-rotate(270deg) saturate(1.15); }
+        .file-card:nth-child(8n+4) .file-icon { filter: hue-rotate(45deg) saturate(1.05); }
+        .file-card:nth-child(8n+5) .file-icon { filter: hue-rotate(180deg) saturate(1.1); }
+        .file-card:nth-child(8n+6) .file-icon { filter: hue-rotate(315deg) saturate(1.15); }
+        .file-card:nth-child(8n+7) .file-icon { filter: hue-rotate(90deg) saturate(1.1); }
+        .file-card:nth-child(8n) .file-icon { filter: hue-rotate(225deg) saturate(1.15); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }

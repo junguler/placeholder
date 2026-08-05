@@ -41,6 +41,12 @@
             --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
             --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
             --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
+            /* Used only by the depth presets below (levels 2-5) — the flat
+               default (level 1) keeps its own hand-tuned shadow strings above
+               untouched, so nothing changes unless a person opts into a
+               rounder/deeper look. */
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --shadow-color-strong: rgba(0, 0, 0, 0.6);
             --accent-glow: rgba(155, 93, 229, 0.3);
             --transition: 0.15s ease;
             --font-size-base: 16px;
@@ -60,6 +66,8 @@
             --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
             --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
             --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+            --shadow-color: rgba(0, 0, 0, 0.15);
+            --shadow-color-strong: rgba(0, 0, 0, 0.24);
             --accent-glow: rgba(91, 33, 182, 0.22);
         }
         /* High contrast dark: based on the classic Windows high-contrast black scheme
@@ -81,6 +89,8 @@
             --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
             --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.12);
             --shadow-lg: 0 12px 32px rgba(255, 255, 255, 0.22);
+            --shadow-color: rgba(255, 255, 255, 0.18);
+            --shadow-color-strong: rgba(255, 255, 255, 0.28);
             --accent-glow: rgba(0, 255, 255, 0.35);
         }
         /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
@@ -101,6 +111,8 @@
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
             --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.22);
+            --shadow-color: rgba(0, 0, 0, 0.18);
+            --shadow-color-strong: rgba(0, 0, 0, 0.28);
             --accent-glow: rgba(255, 0, 0, 0.25);
         }
         @media (prefers-color-scheme: light) {
@@ -118,8 +130,60 @@
                 --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
                 --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
                 --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+                --shadow-color: rgba(0, 0, 0, 0.15);
+                --shadow-color-strong: rgba(0, 0, 0, 0.24);
                 --accent-glow: rgba(91, 33, 182, 0.22);
             }
+        }
+        /* --- Interface depth: five looks from the flat, hard-edged default
+           (level 1, no attribute — untouched) up to a fully rounded,
+           layered-shadow "3D" surface (level 5). Only corner radius and
+           shadow shape change; every color still comes from the active
+           color theme via --shadow-color/--shadow-color-strong, so this
+           axis is fully independent of light/dark/HC/custom. */
+        html[data-depth="2"] {
+            --radius: 4px; --radius-sm: 3px; --radius-lg: 7px; --radius-full: 10px;
+            --shadow: 0 2px 5px var(--shadow-color);
+            --shadow-sm: 0 1px 3px var(--shadow-color);
+            --shadow-lg: 0 5px 14px var(--shadow-color);
+        }
+        html[data-depth="3"] {
+            --radius: 8px; --radius-sm: 5px; --radius-lg: 12px; --radius-full: 999px;
+            --shadow: 0 3px 9px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            --shadow-sm: 0 2px 6px var(--shadow-color);
+            --shadow-lg: 0 9px 22px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        html[data-depth="4"] {
+            --radius: 12px; --radius-sm: 7px; --radius-lg: 16px; --radius-full: 999px;
+            --shadow: 0 4px 12px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            --shadow-sm: 0 3px 8px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            --shadow-lg: 0 13px 30px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        html[data-depth="5"] {
+            --radius: 16px; --radius-sm: 10px; --radius-lg: 22px; --radius-full: 999px;
+            --shadow: 0 6px 16px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+            --shadow-sm: 0 4px 10px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            --shadow-lg: 0 18px 40px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+        /* At the three roundest/deepest levels, give resting cards and
+           buttons their own subtle lift too (previously shadow only showed
+           up on hover/inside specific panels) so the surfaces actually read
+           as raised rather than just gaining corners. */
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .file-card,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .settings-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .modal-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .playlist-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .download-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .theme-toggle,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .view-toggle,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .card-star-btn,
+        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .player-info-btn {
+            box-shadow: var(--shadow-sm);
+        }
+        html:is([data-depth="4"], [data-depth="5"]) .settings-menu-card,
+        html:is([data-depth="4"], [data-depth="5"]) .modal,
+        html:is([data-depth="4"], [data-depth="5"]) .player-bar {
+            box-shadow: var(--shadow-lg);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { font-size: var(--font-size-base); }
@@ -150,7 +214,6 @@
         .breadcrumb-pin-btn:hover { color: var(--accent-text, var(--accent)); background: var(--bg-hover); }
         .breadcrumb-pin-btn.pinned { color: var(--accent-text, var(--accent)); }
         .header-actions { display: flex; gap: 0.375rem; align-items: center; }
-        .header-divider { width: 1px; height: 20px; background: var(--border-color); flex-shrink: 0; margin: 0 0.125rem; }
         .search-container { position: relative; width: 200px; }
         .search-input { width: 100%; padding: 0.375rem 1.75rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
         .search-input:focus { outline: none; border-color: var(--accent); }
@@ -178,8 +241,8 @@
         .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; }
         .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0px; transition: 0.2s; }
-        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: 0px; transition: 0.2s; }
+        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-full); transition: 0.2s; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3); }
+        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: var(--radius-full); transition: 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
         .switch input:checked + .switch-slider { background: var(--accent); border-color: var(--accent); }
         .switch input:checked + .switch-slider::before { transform: translateX(16px); background: #fff; }
         .switch input:focus-visible + .switch-slider { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -194,8 +257,18 @@
         .intensity-seg:last-child { border-right: none; }
         .intensity-seg:hover { filter: brightness(1.12); }
         .intensity-seg.active { box-shadow: inset 0 0 0 2px var(--on-control); }
-        .theme-toggle { display: flex; flex-wrap: wrap; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
-        .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; }
+        /* Depth control reuses the same segmented-bar shell as the color
+           intensity bar (consistent control language), but each segment
+           shows a live radius+shadow preview instead of a color swatch. */
+        .depth-seg { background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; }
+        .depth-seg-preview { display: block; width: 15px; height: 15px; background: var(--on-control); opacity: 0.55; }
+        .depth-seg[data-depth="1"] .depth-seg-preview { border-radius: 0; box-shadow: 1px 2px 0 rgba(0, 0, 0, 0.5); }
+        .depth-seg[data-depth="2"] .depth-seg-preview { border-radius: 3px; box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.45); }
+        .depth-seg[data-depth="3"] .depth-seg-preview { border-radius: 5px; box-shadow: 1px 3px 4px rgba(0, 0, 0, 0.4); }
+        .depth-seg[data-depth="4"] .depth-seg-preview { border-radius: 7px; box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+        .depth-seg[data-depth="5"] .depth-seg-preview { border-radius: 9px; box-shadow: 2px 5px 9px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.25); }
+        .theme-toggle { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
+        .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
         .theme-btn:hover { background: var(--bg-hover); }
         .theme-btn.active { background: var(--bg-primary); }
         .theme-btn svg { width: 12px; height: 12px; }
@@ -267,7 +340,7 @@
         .main-content { flex: 1; }
         .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
         .stat { display: flex; align-items: center; gap: 0.25rem; }
-        .stat svg { width: 12px; height: 12px; }
+        .stat svg { width: 12px; height: 12px; color: var(--accent-text, var(--accent)); }
         .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
         .file-list { display: flex; flex-direction: column; gap: 1px; }
         .file-card { position: relative; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; }
@@ -275,14 +348,39 @@
            pinning folders doesn't require opening the preview modal or
            navigating in first. Always visible (not hover-only) so it's
            reachable on touch/mobile as well as desktop. */
-        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.6; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
+        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.28; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
+        /* Calmer resting state: unstarred cards only hint at the star until the
+           card itself is hovered/focused (kept a low base opacity rather than 0
+           so the affordance is still discoverable on touch, where :hover never
+           fires). Starred cards stay fully visible regardless (see .starred rule below). */
+        .file-card:hover .card-star-btn, .file-card:focus-within .card-star-btn { opacity: 0.85; }
         .card-star-btn svg { width: 13px; height: 13px; }
         .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
         .card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
         .card-star-spacer { width: 22px; flex-shrink: 0; }
-        .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+        .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
         .file-card.directory { background: var(--bg-secondary); }
         .file-card.parent-dir .file-name { color: var(--text-secondary); }
+        /* --- Zebra striping: alternating cards/rows get a subtly brighter or
+           darker background than the theme's base panel color. This is derived
+           live from --bg-secondary via color-mix(), so it automatically adapts
+           to every theme (light/dark/HC/custom) without needing per-theme
+           overrides — whatever --bg-secondary currently resolves to just gets
+           nudged a touch lighter or darker. --card-bg is stashed so hover and
+           other states can blend from the "right" base instead of flattening
+           back to a single flat tone. In grid view, where cards wrap across
+           columns, this same odd/even alternation reads as a diagonal zig-zag
+           rather than plain horizontal stripes. */
+        .file-card:nth-child(odd) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, white 5%); background: var(--card-bg); }
+        .file-card:nth-child(even) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, black 7%); background: var(--card-bg); }
+        /* Zebra striping is optional (default on) — this flattens every
+           card back to the plain panel color when disabled, from the
+           settings menu. --card-bg still gets set (rather than left alone)
+           so hover/other states that blend from --card-bg fall back to the
+           right flat tone instead of whatever the last theme's zig-zag left
+           behind. */
+        html.no-zebra .file-card:nth-child(odd),
+        html.no-zebra .file-card:nth-child(even) { --card-bg: var(--bg-secondary); background: var(--bg-secondary); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
         .file-icon.folder { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
@@ -299,6 +397,20 @@
         .file-icon.font { color: #e0a85f; background: rgba(224, 168, 95, 0.16); }
         .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
         .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
+        /* --- Per-position icon hue drift: several same-category files sitting
+           beside each other (three .mp3s in a row, a folder full of .jpgs,
+           etc.) otherwise render as visually identical icons. A small cyclical
+           hue-rotate keeps each icon's own category color language intact but
+           nudges it a bit differently across 6 rotating positions, so
+           neighboring same-type icons stay tellable apart at a glance. This is
+           a plain filter on top of whatever color the icon already has, so it
+           applies unchanged across every theme, including the flattened custom
+           theme. Position 6n+1 is left at the unrotated base color. */
+        .file-card:nth-child(6n+2) .file-icon { filter: hue-rotate(15deg); }
+        .file-card:nth-child(6n+3) .file-icon { filter: hue-rotate(-15deg); }
+        .file-card:nth-child(6n+4) .file-icon { filter: hue-rotate(30deg) saturate(1.08); }
+        .file-card:nth-child(6n+5) .file-icon { filter: hue-rotate(-30deg) saturate(1.08); }
+        .file-card:nth-child(6n) .file-icon { filter: hue-rotate(45deg); }
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
@@ -315,7 +427,7 @@
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
         .list-columns { --list-cols: 22px 24px 1fr 70px 90px 100px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-text, var(--accent)); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); box-shadow: var(--shadow-sm); z-index: 5; }
         .file-list-header.stuck { margin-top: -0.75rem; padding-top: calc(0.4rem + 0.75rem); top: -0.75rem; }
         .file-list-header .col-star-spacer { width: 22px; }
         .file-list-header .col-icon-spacer { width: 24px; }
@@ -328,7 +440,8 @@
         .file-list.list-columns .col-ext, .file-list.list-columns .col-size, .file-list.list-columns .col-date, .file-list.list-columns .col-time { text-align: right; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         /* In list/tree mode the star sits inline as its own grid column
            rather than floating over the card content. */
-        .file-list.list-columns .card-star-btn { position: static; opacity: 0.55; background: none; border: none; width: 20px; height: 20px; }
+        .file-list.list-columns .card-star-btn { position: static; opacity: 0.22; background: none; border: none; width: 20px; height: 20px; }
+        .file-list.list-columns .file-card:hover .card-star-btn, .file-list.list-columns .file-card:focus-within .card-star-btn { opacity: 0.8; }
         .file-list.list-columns .card-star-btn:hover, .file-list.list-columns .card-star-btn:focus-visible, .file-list.list-columns .card-star-btn.starred { opacity: 1; background: none; border: none; }
         /* Progressive column thinning as the window narrows, so columns never
            overlap/crowd each other. Each band is bounded on both ends so it
@@ -367,6 +480,11 @@
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); border-top: 2px solid var(--accent); }
         .modal.video-modal { height: 95vh; height: 95dvh; }
+        /* Audio preview content tops out at 500px (.preview-audio-container's
+           own max-width), but the modal defaults to 95vw regardless of
+           content type — on a wide screen that leaves large empty gutters
+           on either side of the player. Cap the modal itself to match. */
+        .modal.compact-modal { max-width: 560px; }
         .modal-overlay.active .modal { transform: scale(1); }
         .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
         .modal-title { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
@@ -474,6 +592,12 @@
             }
             .tree-panel .tree-header, .tree-panel .tree-content { display: none; }
             .search-container { width: 120px; }
+            /* header-content's gap applies to both axes; once the search+icons
+               group wraps to its own row below the logo, that same gap reads
+               as too much dead space between the two rows. Tighten just the
+               row gap so the wrap looks like a deliberate two-row layout
+               rather than an overflow accident. */
+            .header-content { row-gap: 0.375rem; }
             /* The pinned/favorites strip previously stacked each entry's
                filename and parent folder on two lines, wasting vertical
                space on small screens. Both are now a single truncated line,
@@ -481,13 +605,24 @@
             .tree-pinned { padding-bottom: 0.15rem; }
             .tree-pinned-header { padding: 0.3rem 0.5rem 0.1rem; font-size: 0.65rem; }
             .tree-pinned-item { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
+            /* Keyboard shortcuts don't apply on a touchscreen, so the button
+               that surfaces them is dead weight in mobile view. */
+            #shortcutsBtn { display: none; }
         }
         @media (max-width: 640px) {
             .breadcrumb { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
             .breadcrumb::-webkit-scrollbar { display: none; }
             .breadcrumb-item, .breadcrumb-separator { flex-shrink: 0; }
             .modal-overlay { padding: 0; }
-            .modal { width: 100vw; height: 100vh; height: 100dvh; max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
+            /* Was: height: 100vh forced on every modal, which made short
+               content (audio player, stats, keyboard shortcuts) stretch to
+               fill the whole screen with a big blank void below the card.
+               Video still gets full height from the existing
+               .modal.video-modal rule above (it applies at all viewport
+               widths, not just desktop), and image/pdf/text previews size
+               themselves via their own max-height rules, so nothing else
+               needs a forced height here. */
+            .modal { width: 100vw; max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
             .modal-header { padding: 0.5rem 0.5rem; gap: 0.375rem; }
             .modal-title { font-size: 0.8rem; }
             .modal-actions { gap: 0.15rem; flex-shrink: 0; }
@@ -576,7 +711,7 @@
         /* --- File card micro-interactions --- */
         .file-card { transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background-color var(--transition); }
         .file-card:hover { transform: translateY(-1px) scale(1.012); }
-        .file-list .file-card:hover { transform: translateX(1px); background: var(--bg-secondary); }
+        .file-list .file-card:hover { transform: translateX(1px); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
         .file-card:active { transform: translateY(0) scale(0.995); }
 
         /* --- Softer, theme-aware focus glow layered on top of the accessible outline --- */
@@ -620,14 +755,12 @@
                         <svg viewBox="0 0 24 24" fill="currentcolor" width="12" height="12"><use href="#icon-x"/></svg>
                     </button>
                 </div>
-                <div class="header-divider"></div>
                 <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
                     <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
                 </button>
                 <button class="settings-btn" id="statsBtn" title="Library stats" aria-label="Show library stats">
                     <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M5 9.2h3.2V19H5V9.2zm5.4-4.4h3.2V19h-3.2V4.8zm5.4 8h3.2V19h-3.2v-6.2z"/></svg>
                 </button>
-                <div class="header-divider"></div>
                 <div class="settings-dropdown" id="settingsDropdown">
                     <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
                         <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94.0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24.0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47.0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24.0.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47.0.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98.0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -671,6 +804,16 @@
                                         <span class="settings-label">Compact rows</span>
                                         <label class="switch">
                                             <input type="checkbox" id="compactDensityToggle" aria-label="Use compact row density for grid and list views" />
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                                    <div class="settings-section-title">Appearance</div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Zebra striping</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="zebraStripingToggle" checked aria-label="Alternate card/row background shading in grid and list view" />
                                             <span class="switch-slider"></span>
                                         </label>
                                     </div>
@@ -739,11 +882,26 @@
                                         <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
                                     </div>
                                 </div>
+                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
+                                    <div class="settings-section-title">Depth</div>
+                                    <div class="settings-row">
+                                        <div class="intensity-bar-wrap">
+                                            <span class="intensity-bar-label">Flat</span>
+                                            <div class="intensity-bar depth-bar" id="depthControl" role="group" aria-label="Interface depth: flat on the left, 3D on the right">
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="1" title="Flat (default)" aria-label="Flat"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="2" title="Subtle" aria-label="Subtle"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="3" title="Soft" aria-label="Soft"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="4" title="Raised" aria-label="Raised"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="5" title="3D" aria-label="3D"><span class="depth-seg-preview"></span></button>
+                                            </div>
+                                            <span class="intensity-bar-label">3D</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="header-divider"></div>
                 <div class="view-toggle" role="group" aria-label="View mode">
                     <button class="view-btn" data-view="grid" title="Grid" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
                     <button class="view-btn" data-view="list" title="List" aria-label="List view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg></button>
@@ -841,46 +999,62 @@
     </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
     <script>
+        // -- Navigation / browsing state --
         let fileIndex = null,
             currentPath = [],
             currentView = "tree",
-            searchQuery = "",
-            intersectionObserver = null,
             expandedFolders = new Set([""]),
-            currentPlaylist = [],
-            currentPlaylistIndex = 0,
-            isShuffle = false,
-            shuffleBag = [],
-            shuffleHistory = [],
-            currentFilePath = "",
-            currentFileName = "",
-            isPlaylistFile = !1,
-            currentFontSize = 16,
-            vividColor = null,
-            colorIntensity = 60,
-            currentHls = null,
-            streamTimeout = null,
             allFiles = [],
             sortBy = "name-asc",
+            suppressHashSync = false;
+
+        // -- Search / listing state --
+        let searchQuery = "",
             searchResultLimit = 100,
             // Separate (larger) page size for plain folder browsing. Search
             // results are already ranked, so a small page makes sense there;
             // a normal folder listing has no ranking to lean on, so this is
             // set higher to stay invisible for the vast majority of folders
             // and only kick in for the rare folder with hundreds+ of items.
-            folderResultLimit = 300,
-            lastFocusedElement = null,
-            lastFocusedElementShortcuts = null,
-            lastFocusedElementStats = null,
-            fetchCache = new Map(),
-            currentVolume = 0.5, // Default volume set to 50%
+            folderResultLimit = 300;
+
+        // -- Open file / playback state --
+        let currentFilePath = "",
+            currentFileName = "",
+            isPlaylistFile = false,
+            currentPlaylist = [],
+            currentPlaylistIndex = 0,
+            isShuffle = false,
+            shuffleBag = [],
+            shuffleHistory = [],
+            currentHls = null,
+            streamTimeout = null,
+            useNativePlayer = false,
+            fetchCache = new Map();
+
+        // -- Audio pipeline state --
+        let currentVolume = 0.5, // Default volume set to 50%
             audioCtx = null,
             normalizedElements = new WeakSet(),
-            compressor = null,
-            useNativePlayer = false,
-            pinnedFolders = [],
-            favoriteFiles = [],
-            suppressHashSync = false;
+            compressor = null;
+
+        // -- Theming / UI preference state --
+        let currentFontSize = 16,
+            vividColor = null,
+            colorIntensity = 60,
+            uiDepth = 1;
+
+        // -- Pins / favorites --
+        let pinnedFolders = [],
+            favoriteFiles = [];
+
+        // -- Modal focus restoration: maps modal element id -> the element
+        // that had focus before it opened, so openModal/closeModal (below)
+        // can restore focus on close without a separate variable per modal.
+        let modalFocusReturn = new Map();
+
+        // -- Misc / one-offs --
+        let intersectionObserver = null;
         // How long to wait for a track to start loading before we assume it's
         // dead/unreachable and skip to the next one. Raise this if you're on a
         // slow connection and tracks are getting skipped before they finish buffering.
@@ -1144,6 +1318,13 @@
             document.body.classList.toggle("compact-density", compactDensity);
             const compactToggle = document.getElementById("compactDensityToggle");
             if (compactToggle) compactToggle.checked = compactDensity;
+            const zebraOn = localStorage.getItem("zebraStriping") !== "0";
+            document.documentElement.classList.toggle("no-zebra", !zebraOn);
+            const zebraToggle = document.getElementById("zebraStripingToggle");
+            if (zebraToggle) zebraToggle.checked = zebraOn;
+            const storedDepth = parseInt(localStorage.getItem(DEPTH_KEY), 10);
+            uiDepth = [1, 2, 3, 4, 5].includes(storedDepth) ? storedDepth : 1;
+            applyDepth(uiDepth, false);
             loadPinnedFolders();
             loadFavoriteFiles();
             initThemeColor();
@@ -1241,6 +1422,7 @@
         const MUTED_COLORS_KEY = "themeMutedColors";
         const COLOR_INTENSITY_KEY = "themeColorIntensity";
         const DEFAULT_COLOR_INTENSITY = 60;
+        const DEPTH_KEY = "uiDepth";
         const THEME_BASE = {
             dark: {
                 "--bg-primary": "#0d1117", "--bg-secondary": "#161b22", "--bg-tertiary": "#21262d",
@@ -1526,6 +1708,24 @@
             if (!wrap) return;
             wrap.querySelectorAll("button[data-intensity]").forEach((btn) => {
                 btn.classList.toggle("active", parseInt(btn.dataset.intensity, 10) === colorIntensity);
+            });
+        }
+        // Interface depth: flat (1, default) through fully 3D (5). Purely a
+        // data-depth attribute on <html> — every visual consequence lives in
+        // CSS (radius/shadow variables), this just persists the choice and
+        // keeps the segmented bar's active state in sync.
+        function applyDepth(level, persist) {
+            uiDepth = level;
+            if (level === 1) document.documentElement.removeAttribute("data-depth");
+            else document.documentElement.setAttribute("data-depth", String(level));
+            if (persist !== false) localStorage.setItem(DEPTH_KEY, String(level));
+            updateDepthUI();
+        }
+        function updateDepthUI() {
+            const wrap = document.getElementById("depthControl");
+            if (!wrap) return;
+            wrap.querySelectorAll("button[data-depth]").forEach((btn) => {
+                btn.classList.toggle("active", parseInt(btn.dataset.depth, 10) === uiDepth);
             });
         }
         function markActiveSwatch(hue) {
@@ -2188,6 +2388,16 @@
             document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
                 document.body.classList.toggle("compact-density", e.target.checked);
                 localStorage.setItem("compactDensity", e.target.checked ? "1" : "0");
+            });
+            document.getElementById("zebraStripingToggle").addEventListener("change", (e) => {
+                document.documentElement.classList.toggle("no-zebra", !e.target.checked);
+                localStorage.setItem("zebraStriping", e.target.checked ? "1" : "0");
+            });
+            const depthControl = document.getElementById("depthControl");
+            if (depthControl) depthControl.addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-depth]");
+                if (!btn) return;
+                applyDepth(parseInt(btn.dataset.depth, 10));
             });
             wireThemeColorPicker();
             document.getElementById("topPrevBtn").addEventListener("click", goToPrevTrack);
@@ -3013,12 +3223,19 @@
                 const iconType = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other";
                 const iconSvg = icons[iconType] || icons.other;
 
-                let clickPath, fullDisplayPath, parentPathArr;
+                let clickPath, fullDisplayPath, parentDisplayPath, parentPathArr;
 
                 if (searchQuery) {
                     clickPath = item.fullPath;
                     fullDisplayPath = item.fullPath;
                     parentPathArr = item.navPath;
+                    // Search results can come from anywhere in the tree, so a
+                    // location hint is useful — but showing the *full* path
+                    // (including the filename we just showed above it) is
+                    // redundant, and for root-level results it duplicates the
+                    // filename outright. Show only the containing folder, and
+                    // only when there is one.
+                    parentDisplayPath = parentPathArr.slice(0, -1).join("/");
                 } else {
                     fullDisplayPath = (currentPath.length ? currentPath.join("/") + "/" : "") + item.name;
                     clickPath = fullDisplayPath;
@@ -3034,7 +3251,7 @@
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} items`}
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
+                    ${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}
                 </span>
               </div>
               ${
@@ -3064,7 +3281,7 @@
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">
                     ${isColumnView && !searchQuery ? "" : item.sizeFormatted}
-                    ${searchQuery ? `<span class="file-path">${escapeHtml(fullDisplayPath)}</span>` : ""}
+                    ${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}
                 </span>
               </div>
               ${
@@ -3642,7 +3859,7 @@
         }
 
         async function openFile(filePath, fileType, fileName) {
-            lastFocusedElement = document.activeElement;
+            rememberModalFocus("modal");
             const modalEl = document.getElementById("modal"),
                 titleEl = document.getElementById("modalTitle"),
                 bodyEl = document.getElementById("modalBody"),
@@ -3677,7 +3894,7 @@
             playlistBarEl.classList.remove("active");
             if (isPlaylistFile) playPlaylistBtn.classList.remove("hidden");
             else playPlaylistBtn.classList.add("hidden");
-            document.getElementById("modalContent").classList.remove("video-modal");
+            document.getElementById("modalContent").classList.remove("video-modal", "compact-modal");
             modalEl.classList.add("active");
             requestAnimationFrame(() => document.getElementById("closeBtn").focus());
             const o = fileUrlAttr;
@@ -3710,6 +3927,7 @@
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
                     case "audio":
+                        document.getElementById("modalContent").classList.add("compact-modal");
                         bodyEl.innerHTML = `
               <div class="preview-audio-container">
                 <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link" aria-label="Copy stream link">${icons.info}</button>
@@ -3857,10 +4075,19 @@
             closeGotoPopover();
             document.getElementById("playlistBar").classList.remove("active");
             document.getElementById("playPlaylistBtn").classList.add("hidden");
-            if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
-                lastFocusedElement.focus();
-            }
-            lastFocusedElement = null;
+            restoreModalFocus("modal");
+        }
+        // Shared focus save/restore for all three modals (file preview,
+        // shortcuts, stats), keyed by modal element id so a single Map
+        // replaces what used to be a separate lastFocusedElement* variable
+        // per modal.
+        function rememberModalFocus(modalId) {
+            modalFocusReturn.set(modalId, document.activeElement);
+        }
+        function restoreModalFocus(modalId) {
+            const el = modalFocusReturn.get(modalId);
+            if (el && typeof el.focus === "function") el.focus();
+            modalFocusReturn.delete(modalId);
         }
         function trapModalFocus(e, containerId = "modalContent") {
             if (e.key !== "Tab") return;
@@ -3880,16 +4107,13 @@
             }
         }
         function openShortcutsModal() {
-            lastFocusedElementShortcuts = document.activeElement;
+            rememberModalFocus("shortcutsModal");
             document.getElementById("shortcutsModal").classList.add("active");
             document.getElementById("shortcutsCloseBtn").focus();
         }
         function closeShortcutsModal() {
             document.getElementById("shortcutsModal").classList.remove("active");
-            if (lastFocusedElementShortcuts && typeof lastFocusedElementShortcuts.focus === "function") {
-                lastFocusedElementShortcuts.focus();
-            }
-            lastFocusedElementShortcuts = null;
+            restoreModalFocus("shortcutsModal");
         }
         // Human-readable byte size, matching the units getItemSize() already
         // parses (powers of 1024) so the two stay consistent with each other.
@@ -3970,17 +4194,14 @@
       `;
         }
         function openStatsModal() {
-            lastFocusedElementStats = document.activeElement;
+            rememberModalFocus("statsModal");
             renderLibraryStats();
             document.getElementById("statsModal").classList.add("active");
             document.getElementById("statsCloseBtn").focus();
         }
         function closeStatsModal() {
             document.getElementById("statsModal").classList.remove("active");
-            if (lastFocusedElementStats && typeof lastFocusedElementStats.focus === "function") {
-                lastFocusedElementStats.focus();
-            }
-            lastFocusedElementStats = null;
+            restoreModalFocus("statsModal");
         }
         // Percent-encodes a repo-relative path one segment at a time so "/"
         // is preserved as a directory separator while everything else goes

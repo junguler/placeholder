@@ -41,10 +41,10 @@
             --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
             --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
             --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
-            /* Used only by the depth presets below (levels 2-5) — the flat
-               default (level 1) keeps its own hand-tuned shadow strings above
-               untouched, so nothing changes unless a person opts into a
-               rounder/deeper look. */
+            /* The depth control below only ever changes corner radius
+               (--radius*); shadows always come from the base strings above
+               and never change with depth. --shadow-color/--shadow-color-strong
+               are kept as theme-aware shadow tints for any future use. */
             --shadow-color: rgba(0, 0, 0, 0.45);
             --shadow-color-strong: rgba(0, 0, 0, 0.6);
             --accent-glow: rgba(155, 93, 229, 0.3);
@@ -135,55 +135,23 @@
                 --accent-glow: rgba(91, 33, 182, 0.22);
             }
         }
-        /* --- Interface depth: five looks from the flat, hard-edged default
-           (level 1, no attribute — untouched) up to a fully rounded,
-           layered-shadow "3D" surface (level 5). Only corner radius and
-           shadow shape change; every color still comes from the active
-           color theme via --shadow-color/--shadow-color-strong, so this
-           axis is fully independent of light/dark/HC/custom. */
+        /* --- Interface corner rounding: one smooth axis from the flat,
+           hard-edged default (level 1, "square", no attribute) up to a
+           comfortably rounded "round" surface (level 5). Levels 2-4 are
+           simply in-betweens. Only the corner radius changes — the base
+           shadow strings from :root (and each theme) are never altered, so
+           this axis is fully independent of light/dark/HC/custom. */
         html[data-depth="2"] {
             --radius: 4px; --radius-sm: 3px; --radius-lg: 7px; --radius-full: 10px;
-            --shadow: 0 2px 5px var(--shadow-color);
-            --shadow-sm: 0 1px 3px var(--shadow-color);
-            --shadow-lg: 0 5px 14px var(--shadow-color);
         }
         html[data-depth="3"] {
             --radius: 8px; --radius-sm: 5px; --radius-lg: 12px; --radius-full: 999px;
-            --shadow: 0 3px 9px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            --shadow-sm: 0 2px 6px var(--shadow-color);
-            --shadow-lg: 0 9px 22px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
         html[data-depth="4"] {
             --radius: 12px; --radius-sm: 7px; --radius-lg: 16px; --radius-full: 999px;
-            --shadow: 0 4px 12px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            --shadow-sm: 0 3px 8px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-            --shadow-lg: 0 13px 30px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
         html[data-depth="5"] {
             --radius: 16px; --radius-sm: 10px; --radius-lg: 22px; --radius-full: 999px;
-            --shadow: 0 6px 16px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
-            --shadow-sm: 0 4px 10px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            --shadow-lg: 0 18px 40px var(--shadow-color-strong), inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-        }
-        /* At the three roundest/deepest levels, give resting cards and
-           buttons their own subtle lift too (previously shadow only showed
-           up on hover/inside specific panels) so the surfaces actually read
-           as raised rather than just gaining corners. */
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .file-card,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .settings-btn,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .modal-btn,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .playlist-btn,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .download-btn,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .theme-toggle,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .view-toggle,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .card-star-btn,
-        html:is([data-depth="3"], [data-depth="4"], [data-depth="5"]) .player-info-btn {
-            box-shadow: var(--shadow-sm);
-        }
-        html:is([data-depth="4"], [data-depth="5"]) .settings-menu-card,
-        html:is([data-depth="4"], [data-depth="5"]) .modal,
-        html:is([data-depth="4"], [data-depth="5"]) .player-bar {
-            box-shadow: var(--shadow-lg);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { font-size: var(--font-size-base); }
@@ -262,11 +230,11 @@
            shows a live radius+shadow preview instead of a color swatch. */
         .depth-seg { background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; }
         .depth-seg-preview { display: block; width: 15px; height: 15px; background: var(--on-control); opacity: 0.55; }
-        .depth-seg[data-depth="1"] .depth-seg-preview { border-radius: 0; box-shadow: 1px 2px 0 rgba(0, 0, 0, 0.5); }
-        .depth-seg[data-depth="2"] .depth-seg-preview { border-radius: 3px; box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.45); }
-        .depth-seg[data-depth="3"] .depth-seg-preview { border-radius: 5px; box-shadow: 1px 3px 4px rgba(0, 0, 0, 0.4); }
-        .depth-seg[data-depth="4"] .depth-seg-preview { border-radius: 7px; box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
-        .depth-seg[data-depth="5"] .depth-seg-preview { border-radius: 9px; box-shadow: 2px 5px 9px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.25); }
+        .depth-seg[data-depth="1"] .depth-seg-preview { border-radius: 0; }
+        .depth-seg[data-depth="2"] .depth-seg-preview { border-radius: 4px; }
+        .depth-seg[data-depth="3"] .depth-seg-preview { border-radius: 8px; }
+        .depth-seg[data-depth="4"] .depth-seg-preview { border-radius: 12px; }
+        .depth-seg[data-depth="5"] .depth-seg-preview { border-radius: 16px; }
         .theme-toggle { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
         .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
         .theme-btn:hover { background: var(--bg-hover); }
@@ -292,7 +260,7 @@
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom) { opacity: 0.45; }
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom):hover { opacity: 0.8; }
         .theme-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.55rem; width: 100%; padding: 0.15rem 0; }
-        .theme-swatch { width: 28px; height: 28px; border-radius: 0px; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+        .theme-swatch { width: 28px; height: 28px; border-radius: var(--radius-sm); border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
         .theme-swatch:hover { transform: scale(1.1); }
         .theme-swatch.active { border-color: var(--text-primary); }
         .theme-custom-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
@@ -536,7 +504,7 @@
         .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
         .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
         .preview-audio-container { width: 100%; max-width: 500px; padding: 1.25rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; position: relative; }
-        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: 0px; display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
+        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
         .audio-icon svg { width: 54px; height: 54px; filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); }
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .preview-audio { width: 100%; height: 40px; display: none; }
@@ -549,7 +517,7 @@
         .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); transition: transform var(--transition), background-color var(--transition), border-color var(--transition); }
         .player-controls-row .playlist-btn:hover:not(:disabled) { transform: translateY(-1px); }
         .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-        .player-play-btn { background: var(--control-surface) !important; border-color: var(--control-surface) !important; color: var(--on-control) !important; border-radius: 0px !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 3px 0 var(--accent); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
+        .player-play-btn { background: var(--control-surface) !important; border-color: var(--control-surface) !important; color: var(--on-control) !important; border-radius: var(--radius-full) !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 3px 0 var(--accent); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
         .player-play-btn:hover { background: var(--control-surface-hover) !important; border-color: var(--control-surface-hover) !important; transform: translateY(-1px); box-shadow: 0 4px 0 var(--accent); }
         .player-play-btn:active { transform: translateY(0); }
         .player-play-btn svg { width: 20px; height: 20px; }
@@ -570,7 +538,7 @@
         .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
         .download-btn:hover { background: var(--accent-hover); }
         .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
-        .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 0px; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
+        .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: var(--radius-full); animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
         .playlist-track.buffering::after { content: " \00b7 Buffering\2026"; color: var(--text-muted); font-weight: 400; animation: pulse 1s ease-in-out infinite; }
@@ -648,7 +616,7 @@
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: 0 0; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 0px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: var(--radius-full); }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
         :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         .search-input:focus-visible { outline-offset: 0; }
@@ -670,7 +638,7 @@
         .stats-modal { max-width: 420px; }
         .stats-body { padding: 0.85rem 1rem 1rem; overflow-y: auto; }
         .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 0.65rem 0.5rem; text-align: center; }
+        .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.65rem 0.5rem; text-align: center; }
         .stats-summary-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
         .stats-summary-label { display: block; font-size: 0.65rem; line-height: 1.5; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem; }
         .stats-breakdown-title { font-size: 0.7rem; line-height: 1.5; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
@@ -678,7 +646,7 @@
         .stats-row-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); flex-shrink: 0; }
         .stats-row-icon svg { width: 14px; height: 14px; }
         .stats-row-label { width: 88px; flex-shrink: 0; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .stats-row-bar-track { flex: 1; height: 8px; background: var(--control-surface); border: 1px solid var(--border-color); overflow: hidden; }
+        .stats-row-bar-track { flex: 1; height: 8px; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; }
         .stats-row-bar-fill { display: block; height: 100%; min-width: 2px; background: var(--stat-fill, var(--accent)); }
         .stats-row-count { width: 44px; flex-shrink: 0; text-align: right; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); }
         /* Compact density: tightens grid/list/tree spacing for people who'd
@@ -701,7 +669,7 @@
         html { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
 
         /* --- Search match highlighting --- */
-        mark.search-highlight { background: rgba(255, 208, 0, 0.35); color: inherit; font-weight: 700; border-radius: 0px; padding: 0 1px; }
+        mark.search-highlight { background: rgba(255, 208, 0, 0.35); color: inherit; font-weight: 700; border-radius: var(--radius-sm); padding: 0 1px; }
 
         /* --- List/tree view thumbnails for images (previously grid-only) --- */
         .file-list .file-thumbnail:not(.file-thumbnail-inline) { display: none; }
@@ -883,18 +851,18 @@
                                     </div>
                                 </div>
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Depth</div>
+                                    <div class="settings-section-title">Corners</div>
                                     <div class="settings-row">
                                         <div class="intensity-bar-wrap">
-                                            <span class="intensity-bar-label">Flat</span>
-                                            <div class="intensity-bar depth-bar" id="depthControl" role="group" aria-label="Interface depth: flat on the left, 3D on the right">
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="1" title="Flat (default)" aria-label="Flat"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="2" title="Subtle" aria-label="Subtle"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="3" title="Soft" aria-label="Soft"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="4" title="Raised" aria-label="Raised"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="5" title="3D" aria-label="3D"><span class="depth-seg-preview"></span></button>
+                                            <span class="intensity-bar-label">Square</span>
+                                            <div class="intensity-bar depth-bar" id="depthControl" role="group" aria-label="Corner rounding: square on the left, round on the right">
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="1" title="Square" aria-label="Square"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="2" title="Mild" aria-label="Mild"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="3" title="Moderate" aria-label="Moderate"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="4" title="Rounded" aria-label="Rounded"><span class="depth-seg-preview"></span></button>
+                                                <button type="button" class="intensity-seg depth-seg" data-depth="5" title="Round" aria-label="Round"><span class="depth-seg-preview"></span></button>
                                             </div>
-                                            <span class="intensity-bar-label">3D</span>
+                                            <span class="intensity-bar-label">Round</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1710,10 +1678,10 @@
                 btn.classList.toggle("active", parseInt(btn.dataset.intensity, 10) === colorIntensity);
             });
         }
-        // Interface depth: flat (1, default) through fully 3D (5). Purely a
-        // data-depth attribute on <html> — every visual consequence lives in
-        // CSS (radius/shadow variables), this just persists the choice and
-        // keeps the segmented bar's active state in sync.
+        // Interface corner rounding: square (1, default) through round (5).
+        // Purely a data-depth attribute on <html> — every visual consequence
+        // lives in CSS (corner radius variables only), this just persists the
+        // choice and keeps the segmented bar's active state in sync.
         function applyDepth(level, persist) {
             uiDepth = level;
             if (level === 1) document.documentElement.removeAttribute("data-depth");

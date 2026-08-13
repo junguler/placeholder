@@ -1,989 +1,3 @@
-<!doctype html>
-<html lang="en">
-<script>(function(){try{var t=localStorage.getItem("theme");if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>File Viewer</title>
-    <meta name="description" content="Browse and preview files from this repository directly in your browser — code, images, audio, video, and playlists." />
-    <meta property="og:title" content="File Viewer" />
-    <meta property="og:description" content="Browse and preview files from this repository directly in your browser." />
-    <meta property="og:type" content="website" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23121212' width='24' height='24'/%3E%3Crect fill='%239b5de5' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%23121212' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%23121212' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%239b5de5' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%239b5de5' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%23121212' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
-    <script src="./hls.min.js" defer></script>
-    
-    <style>
-        /* Styles remain consistent */
-        :root {
-            --bg-primary: #121212;
-            --bg-secondary: #1a1a1a;
-            --bg-tertiary: #242424;
-            --bg-hover: #343434;
-            --border-color: #3a3a3a;
-            --text-primary: #f0f0f0;
-            --text-secondary: #adadad;
-            --text-muted: #797979;
-            --accent: #9b5de5;
-            --accent-hover: #b280ea;
-            --on-accent: #ffffff;
-            --control-surface: var(--bg-tertiary);
-            --control-surface-hover: var(--bg-hover);
-            --on-control: var(--text-primary);
-            --skeleton-base: var(--bg-tertiary);
-            --skeleton-shine: var(--bg-hover);
-            --success: #6bbf6b;
-            --warning: #d4a24c;
-            --danger: #d9564a;
-            --radius: 0px;
-            --radius-sm: 0px;
-            --radius-lg: 0px;
-            --radius-full: 0px;
-            --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
-            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
-            /* The depth control below only ever changes corner radius
-               (--radius*); shadows always come from the base strings above
-               and never change with depth. --shadow-color/--shadow-color-strong
-               are kept as theme-aware shadow tints for any future use. */
-            --shadow-color: rgba(0, 0, 0, 0.45);
-            --shadow-color-strong: rgba(0, 0, 0, 0.6);
-            --accent-glow: rgba(155, 93, 229, 0.3);
-            --transition: 0.15s ease;
-            --font-size-base: 16px;
-            --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
-        }
-        html[data-theme="light"] {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --bg-tertiary: #ececec;
-            --bg-hover: #dddddd;
-            --border-color: #d6d6d6;
-            --text-primary: #1a1a1a;
-            --text-secondary: #4d4d4d;
-            --text-muted: #7a7a7a;
-            --accent: #5b21b6;
-            --accent-hover: #4c1a99;
-            --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
-            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
-            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
-            --shadow-color: rgba(0, 0, 0, 0.15);
-            --shadow-color-strong: rgba(0, 0, 0, 0.24);
-            --accent-glow: rgba(91, 33, 182, 0.22);
-        }
-        /* High contrast dark: based on the classic Windows high-contrast black scheme
-           (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
-        html[data-theme="hc-dark"] {
-            --bg-primary: #000000;
-            --bg-secondary: #000000;
-            --bg-tertiary: #000000;
-            --bg-hover: #262626;
-            --border-color: #9370ff;
-            --text-primary: #ffffff;
-            --text-secondary: #ffffff;
-            --text-muted: #a3a3a3;
-            --accent: #00ffff;
-            --accent-hover: #33ffff;
-            --success: #00ffff;
-            --warning: #ff37cb;
-            --danger: #ff4444;
-            --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
-            --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.12);
-            --shadow-lg: 0 12px 32px rgba(255, 255, 255, 0.22);
-            --shadow-color: rgba(255, 255, 255, 0.18);
-            --shadow-color-strong: rgba(255, 255, 255, 0.28);
-            --accent-glow: rgba(0, 255, 255, 0.35);
-        }
-        /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
-        html[data-theme="hc-light"] {
-            --bg-primary: #ffffff;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #ffffff;
-            --bg-hover: #d9d9d9;
-            --border-color: #6c8f00;
-            --text-primary: #000000;
-            --text-secondary: #000000;
-            --text-muted: #5c5c5c;
-            --accent: #ff0000;
-            --accent-hover: #cc0000;
-            --success: #ff0000;
-            --warning: #00c834;
-            --danger: #00bbbb;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.22);
-            --shadow-color: rgba(0, 0, 0, 0.18);
-            --shadow-color-strong: rgba(0, 0, 0, 0.28);
-            --accent-glow: rgba(255, 0, 0, 0.25);
-        }
-        @media (prefers-color-scheme: light) {
-            :root:not([data-theme]) {
-                --bg-primary: #ffffff;
-                --bg-secondary: #f5f5f5;
-                --bg-tertiary: #ececec;
-                --bg-hover: #dddddd;
-                --border-color: #d6d6d6;
-                --text-primary: #1a1a1a;
-                --text-secondary: #4d4d4d;
-                --text-muted: #7a7a7a;
-                --accent: #5b21b6;
-                --accent-hover: #4c1a99;
-                --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
-                --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
-                --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
-                --shadow-color: rgba(0, 0, 0, 0.15);
-                --shadow-color-strong: rgba(0, 0, 0, 0.24);
-                --accent-glow: rgba(91, 33, 182, 0.22);
-            }
-        }
-        /* --- Interface corner rounding: one smooth axis from the flat,
-           hard-edged default (level 1, "square", no attribute) up to a
-           comfortably rounded "round" surface (level 5). Levels 2-4 are
-           simply in-betweens. Only the corner radius changes — the base
-           shadow strings from :root (and each theme) are never altered, so
-           this axis is fully independent of light/dark/HC/custom. */
-        html[data-depth="2"] {
-            --radius: 4px; --radius-sm: 3px; --radius-lg: 7px; --radius-full: 10px;
-        }
-        html[data-depth="3"] {
-            --radius: 8px; --radius-sm: 5px; --radius-lg: 12px; --radius-full: 999px;
-        }
-        html[data-depth="4"] {
-            --radius: 12px; --radius-sm: 7px; --radius-lg: 16px; --radius-full: 999px;
-        }
-        html[data-depth="5"] {
-            --radius: 16px; --radius-sm: 10px; --radius-lg: 22px; --radius-full: 999px;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { font-size: var(--font-size-base); }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, segoe ui, noto sans, Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1;
-            height: 100vh;
-            height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 0.5rem 1rem; flex-shrink: 0; }
-        .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-        .logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); cursor: pointer; flex-shrink: 0; }
-        .logo svg { width: 20px; height: 20px; }
-        .breadcrumb { display: flex; align-items: center; gap: 0.125rem; flex-wrap: wrap; font-size: 0.85rem; flex: 1; min-width: 0; }
-        .breadcrumb-item { color: var(--accent-text, var(--accent)); padding: 0.125rem 0.375rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
-        .breadcrumb-item:hover { background: var(--bg-hover); }
-        .breadcrumb-item.current { color: var(--text-primary); cursor: default; }
-        .breadcrumb-item.current:hover { background: 0 0; }
-        .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
-        .breadcrumb-pin-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 0.25rem; padding: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); flex-shrink: 0; }
-        .breadcrumb-pin-btn svg { width: 14px; height: 14px; }
-        .breadcrumb-pin-btn:hover { color: var(--accent-text, var(--accent)); background: var(--bg-hover); }
-        .breadcrumb-pin-btn.pinned { color: var(--accent-text, var(--accent)); }
-        .header-actions { display: flex; gap: 0.375rem; align-items: center; }
-        .search-container { position: relative; width: 200px; }
-        .search-input { width: 100%; padding: 0.375rem 1.75rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
-        .search-input:focus { outline: none; border-color: var(--accent); }
-        .search-input::placeholder { color: var(--text-muted); }
-        .search-icon { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; height: 14px; }
-        .search-clear { position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; align-items: center; justify-content: center; padding: 0.25rem; border-radius: var(--radius); }
-        .search-clear.visible { display: flex; }
-        .search-clear:hover { color: var(--text-primary); background: var(--bg-hover); }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-        .settings-dropdown { position: relative; }
-        .settings-btn { padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .settings-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
-        .settings-btn svg { width: 16px; height: 16px; }
-        .settings-menu { position: absolute; top: 100%; right: 0; margin-top: 0.375rem; min-width: 230px; z-index: 100; display: none; }
-        .settings-menu.active { display: block; }
-        .settings-menu-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; }
-        .settings-menu-header { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.7rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; }
-        .settings-menu-title { font-size: 0.8rem; font-weight: 700; letter-spacing: -0.005em; }
-        .settings-menu-close { padding: 0.3rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .settings-menu-close:hover { background: var(--bg-hover); border-color: var(--accent); }
-        .settings-menu-close svg { width: 14px; height: 14px; }
-        .settings-menu-body { max-height: 70vh; overflow-y: auto; }
-        .settings-section { padding: 0.65rem 0.7rem; }
-        .settings-section-title { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.375rem; }
-        .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; }
-        .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .switch-slider { position: absolute; inset: 0; cursor: pointer; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-full); transition: 0.2s; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3); }
-        .switch-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: var(--text-secondary); border-radius: var(--radius-full); transition: 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
-        .switch input:checked + .switch-slider { background: var(--accent); border-color: var(--accent); }
-        .switch input:checked + .switch-slider::before { transform: translateX(16px); background: #fff; }
-        .switch input:focus-visible + .switch-slider { outline: 2px solid var(--accent); outline-offset: 2px; }
-        .settings-label { font-size: 0.85rem; color: var(--text-secondary); }
-        .settings-control { display: flex; gap: 0.25rem; }
-        .settings-control button { padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; font-size: 0.75rem; }
-        .settings-control button:hover { color: var(--text-primary); border-color: var(--accent); }
-        .intensity-bar-wrap { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
-        .intensity-bar-label { font-size: 0.62rem; color: var(--text-muted); flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.05em; }
-        .intensity-bar { display: flex; flex: 1; height: 1.6rem; border-radius: var(--radius-full); overflow: hidden; border: 1px solid var(--border-color); }
-        .intensity-seg { flex: 1; border: none; border-right: 1px solid rgba(0, 0, 0, 0.15); cursor: pointer; padding: 0; position: relative; }
-        .intensity-seg:last-child { border-right: none; }
-        .intensity-seg:hover { filter: brightness(1.12); }
-        .intensity-seg.active { box-shadow: inset 0 0 0 2px var(--on-control); }
-        /* Depth control reuses the same segmented-bar shell as the color
-           intensity bar (consistent control language), but each segment
-           shows a live radius+shadow preview instead of a color swatch. */
-        .depth-seg { background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; }
-        .depth-seg-preview { display: block; width: 15px; height: 15px; background: var(--on-control); opacity: 0.55; }
-        .depth-seg[data-depth="1"] .depth-seg-preview { border-radius: 0; }
-        .depth-seg[data-depth="2"] .depth-seg-preview { border-radius: 4px; }
-        .depth-seg[data-depth="3"] .depth-seg-preview { border-radius: 8px; }
-        .depth-seg[data-depth="4"] .depth-seg-preview { border-radius: 12px; }
-        .depth-seg[data-depth="5"] .depth-seg-preview { border-radius: 16px; }
-        .theme-toggle { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
-        .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
-        .theme-btn:hover { background: var(--bg-hover); }
-        .theme-btn.active { background: var(--bg-primary); }
-        .theme-btn svg { width: 12px; height: 12px; }
-        /* Label text is forced to a single uniform color (the current theme's own text color) on
-           every button, in every state. Only the icon above carries a distinct per-theme color. */
-        .theme-btn .theme-btn-label { color: var(--text-secondary) !important; }
-        /* Each theme gets its own icon color as a visual identifier. The label text stays on the
-           theme-following neutral color above so it's always legible against whatever background
-           the menu happens to be rendered in (light, dark, HC black, or HC white). */
-        .theme-btn[data-theme="light"] svg { color: #e3a008; }
-        .theme-btn[data-theme="dark"] svg { color: #7c8fff; }
-        .theme-btn[data-theme="auto"] svg { color: #14b8a6; }
-        .theme-btn[data-theme="hc-dark"] svg { color: #22d3ee; }
-        .theme-btn[data-theme="hc-light"] svg { color: #c026d3; }
-        .theme-btn[data-theme="custom"] svg { color: var(--custom-theme-swatch, #8b5cf6); }
-        /* While a custom color is active, the light/dark/HC theme buttons no longer
-           produce visually distinct results (the custom color overrides them all), so
-           they're dimmed to signal that only the underlying (invisible) base has
-           changed, not the look of the app. The Custom button itself stays full
-           strength since it's the one actually driving what's on screen. */
-        .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom) { opacity: 0.45; }
-        .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom):hover { opacity: 0.8; }
-        .theme-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.55rem; width: 100%; padding: 0.15rem 0; }
-        .theme-swatch { width: 28px; height: 28px; border-radius: var(--radius-sm); border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
-        .theme-swatch:hover { transform: scale(1.1); }
-        .theme-swatch.active { border-color: var(--text-primary); }
-        .theme-custom-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
-        .theme-custom-row input[type="color"] { width: 32px; height: 28px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: 0 0; padding: 0; cursor: pointer; }
-        .theme-reset-btn { flex: 1; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); border-radius: var(--radius); padding: 0.3rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
-        .theme-reset-btn:hover { color: var(--text-primary); border-color: var(--accent); }
-        .view-toggle { display: flex; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; }
-        .view-btn { padding: 0.25rem 0.375rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
-        .view-btn:hover { color: var(--text-primary); }
-        .view-btn.active { background: var(--bg-primary); color: var(--text-primary); }
-        .view-btn svg { width: 16px; height: 16px; }
-        .app-container { flex: 1; display: flex; overflow: hidden; }
-        .tree-panel { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
-        .tree-panel.visible { display: flex; }
-        .tree-header { padding: 0.5rem 0.75rem; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
-        .tree-content { padding: 0.25rem 0; overflow-y: auto; flex: 1; min-height: 0; }
-        .tree-content:not(.needs-scroll) { overflow-y: visible; }
-        .tree-item { display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); border-left: 2px solid transparent; }
-        .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .tree-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
-        .tree-item svg { width: 14px; height: 14px; flex-shrink: 0; }
-        .tree-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
-        .tree-children { margin-left: 0.75rem; }
-        .tree-toggle { width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .tree-toggle svg { width: 10px; height: 10px; transition: transform var(--transition); }
-        .tree-toggle.expanded svg { transform: rotate(90deg); }
-        .tree-toggle.empty { visibility: hidden; }
-        .tree-pinned:empty { display: none; }
-        .tree-pinned { border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; flex-shrink: 0; }
-        .tree-pinned-header { padding: 0.5rem 0.75rem 0.25rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-        .tree-pinned-item { display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); border-left: 2px solid transparent; }
-        .tree-pinned-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .tree-pinned-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
-        .tree-pinned-item svg { width: 14px; height: 14px; flex-shrink: 0; }
-        .tree-pinned-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; }
-        /* Single-line label for pinned/favorite entries. Truncates from the
-           *start* of the string (keeping the tail, e.g. "…9/00.m3u" visible)
-           via the direction:rtl + text-align:left trick, since the end of
-           a path is usually more distinguishing than the start. */
-        .tree-pinned-name-stack { display: block; overflow: hidden; flex: 1; min-width: 0; line-height: 1.3; white-space: nowrap; }
-        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--accent-text, var(--accent)); cursor: pointer; }
-        .tree-pinned-unpin svg { width: 12px; height: 12px; }
-        .tree-pinned-unpin:hover, .tree-pinned-unpin:focus-visible { color: var(--danger); }
-        .main { flex: 1; overflow: auto; padding: 0.75rem; display: flex; flex-direction: column; }
-        .main-content { flex: 1; }
-        .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
-        .stat { display: flex; align-items: center; gap: 0.25rem; }
-        .stat svg { width: 12px; height: 12px; color: var(--accent-text, var(--accent)); }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; contain: layout style; }
-        .file-list { display: flex; flex-direction: column; gap: 1px; contain: layout style; }
-        /* content-visibility lets the browser skip layout/paint/style work for
-           off-screen cards entirely (similar benefit to list virtualization,
-           without rewriting the render pipeline). contain-intrinsic-size gives
-           it a placeholder size to reserve so scrollbar/scroll position stay
-           stable before a card has ever been measured; the browser remembers
-           the real size after each card's first layout ("auto"), so this is
-           just a one-time fallback, not a fixed height. Big win for scroll
-           smoothness on mobile once folders have a few hundred entries. */
-        .file-card { position: relative; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; content-visibility: auto; contain-intrinsic-size: auto 160px; }
-        .file-list .file-card { content-visibility: auto; contain-intrinsic-size: auto 46px; }
-        body.compact-density .file-list .file-card { contain-intrinsic-size: auto 34px; }
-        /* Star/pin toggle shown directly on each card so favoriting files and
-           pinning folders doesn't require opening the preview modal or
-           navigating in first. Always visible (not hover-only) so it's
-           reachable on touch/mobile as well as desktop. */
-        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.28; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
-        /* Calmer resting state: unstarred cards only hint at the star until the
-           card itself is hovered/focused (kept a low base opacity rather than 0
-           so the affordance is still discoverable on touch, where :hover never
-           fires). Starred cards stay fully visible regardless (see .starred rule below). */
-        .file-card:hover .card-star-btn, .file-card:focus-within .card-star-btn { opacity: 0.85; }
-        .card-star-btn svg { width: 13px; height: 13px; }
-        .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
-        .card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
-        .card-star-spacer { width: 22px; flex-shrink: 0; }
-        .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
-        .file-card.directory { background: var(--bg-secondary); }
-        .file-card.parent-dir .file-name { color: var(--text-secondary); }
-        /* --- Zebra striping: alternating cards/rows get a subtly brighter or
-           darker background than the theme's base panel color. This is derived
-           live from --bg-secondary via color-mix(), so it automatically adapts
-           to every theme (light/dark/HC/custom) without needing per-theme
-           overrides — whatever --bg-secondary currently resolves to just gets
-           nudged a touch lighter or darker. --card-bg is stashed so hover and
-           other states can blend from the "right" base instead of flattening
-           back to a single flat tone. In grid view, where cards wrap across
-           columns, this same odd/even alternation reads as a diagonal zig-zag
-           rather than plain horizontal stripes. */
-        .file-card:nth-child(odd) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, white 5%); background: var(--card-bg); }
-        .file-card:nth-child(even) { --card-bg: color-mix(in srgb, var(--bg-secondary) 100%, black 7%); background: var(--card-bg); }
-        /* Zebra striping is optional (default on) — this flattens every
-           card back to the plain panel color when disabled, from the
-           settings menu. --card-bg still gets set (rather than left alone)
-           so hover/other states that blend from --card-bg fall back to the
-           right flat tone instead of whatever the last theme's zig-zag left
-           behind. */
-        html.no-zebra .file-card:nth-child(odd),
-        html.no-zebra .file-card:nth-child(even) { --card-bg: var(--bg-secondary); background: var(--bg-secondary); }
-        .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
-        .file-icon svg { width: 20px; height: 20px; }
-        .file-icon.folder { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
-        .file-icon.image { color: #c58ce0; background: rgba(197, 140, 224, 0.16); }
-        .file-icon.video { color: #e2765c; background: rgba(226, 118, 92, 0.16); }
-        .file-icon.audio { color: #8fc25a; background: rgba(143, 194, 90, 0.2); }
-        .file-icon.code { color: #6fa8dc; background: rgba(111, 168, 220, 0.16); }
-        .file-icon.document { color: #e0994f; background: rgba(224, 153, 79, 0.16); }
-        .file-icon.text { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
-        .file-icon.data { color: #dcae4e; background: rgba(220, 174, 78, 0.16); }
-        .file-icon.archive { color: #b8cfe0; background: rgba(184, 207, 224, 0.16); }
-        .file-icon.markup { color: #9bd88a; background: rgba(155, 216, 138, 0.16); }
-        .file-icon.style { color: #7fb8dc; background: rgba(127, 184, 220, 0.16); }
-        .file-icon.font { color: #e0a85f; background: rgba(224, 168, 95, 0.16); }
-        .file-icon.playlist { color: #e08fb0; background: rgba(224, 143, 176, 0.2); }
-        .file-icon.other { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
-        /* --- Per-position icon hue drift: several same-category files sitting
-            beside each other (three .mp3s in a row, a folder full of .jpgs,
-             etc.) otherwise render as visually identical icons. A cyclical
-             hue-rotate keeps each icon's own category color language intact but
-             swings it around a full 8-step cycle, so neighboring same-type
-             icons stay clearly tellable apart at a glance. Every consecutive
-             position jumps a full ~135deg around the color wheel (360/8*3), so
-             no two neighbors ever land on a similar hue, and the later
-             rotations carry a touch more saturation so they stay vivid instead
-             of muddying. This is a plain filter on top of whatever color the
-             icon already has, so it applies unchanged across every theme,
-             including the flattened custom theme. Position 8n+1 is left at the
-             unrotated base color. */
-        .file-card:nth-child(8n+2) .file-icon { filter: hue-rotate(135deg) saturate(1.1); }
-        .file-card:nth-child(8n+3) .file-icon { filter: hue-rotate(270deg) saturate(1.15); }
-        .file-card:nth-child(8n+4) .file-icon { filter: hue-rotate(45deg) saturate(1.05); }
-        .file-card:nth-child(8n+5) .file-icon { filter: hue-rotate(180deg) saturate(1.1); }
-        .file-card:nth-child(8n+6) .file-icon { filter: hue-rotate(315deg) saturate(1.15); }
-        .file-card:nth-child(8n+7) .file-icon { filter: hue-rotate(90deg) saturate(1.1); }
-        .file-card:nth-child(8n) .file-icon { filter: hue-rotate(225deg) saturate(1.15); }
-        .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
-        .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
-        .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
-        .file-thumbnail { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
-        .file-thumbnail.lazy { opacity: 0; transition: opacity 0.2s; }
-        .file-thumbnail.loaded { opacity: 1; }
-        .file-list .file-card { flex-direction: row; text-align: left; padding: 0.5rem 0.75rem; gap: 0.5rem; border-radius: var(--radius); }
-        .file-list .file-card:hover { box-shadow: var(--shadow-sm); border-color: var(--accent); }
-        .file-list .file-icon { width: 24px; height: 24px; }
-        .file-list .file-icon svg { width: 14px; height: 14px; }
-        .file-list .file-info { flex: 1; min-width: 0; }
-        .file-list .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .file-list .file-meta { font-size: 0.7rem; }
-        .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
-        .file-list .file-thumbnail { display: none; }
-        .list-columns { --list-cols: 22px 24px 1fr 70px 90px 100px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-text, var(--accent)); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); box-shadow: var(--shadow-sm); z-index: 5; }
-        .file-list-header.stuck { margin-top: -0.75rem; padding-top: calc(0.4rem + 0.75rem); top: -0.75rem; }
-        .file-list-header .col-star-spacer { width: 22px; }
-        .file-list-header .col-icon-spacer { width: 24px; }
-        .file-list-header .col { display: flex; align-items: center; gap: 0.25rem; cursor: pointer; user-select: none; }
-        .file-list-header .col:hover { color: var(--text-primary); }
-        .file-list-header .col.active { color: var(--text-primary); font-weight: 800; }
-        .file-list-header .sort-arrow { font-size: 0.6rem; width: 0.7em; display: inline-block; }
-        .file-list-header .col-ext, .file-list-header .col-size, .file-list-header .col-date, .file-list-header .col-time { justify-content: flex-end; }
-        .file-list.list-columns .file-card { display: grid; grid-template-columns: var(--list-cols); align-items: center; }
-        .file-list.list-columns .col-ext, .file-list.list-columns .col-size, .file-list.list-columns .col-date, .file-list.list-columns .col-time { text-align: right; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        /* In list/tree mode the star sits inline as its own grid column
-           rather than floating over the card content. */
-        .file-list.list-columns .card-star-btn { position: static; opacity: 0.22; background: none; border: none; width: 20px; height: 20px; }
-        .file-list.list-columns .file-card:hover .card-star-btn, .file-list.list-columns .file-card:focus-within .card-star-btn { opacity: 0.8; }
-        .file-list.list-columns .card-star-btn:hover, .file-list.list-columns .card-star-btn:focus-visible, .file-list.list-columns .card-star-btn.starred { opacity: 1; background: none; border: none; }
-        /* Progressive column thinning as the window narrows, so columns never
-           overlap/crowd each other. Each band is bounded on both ends so it
-           can't conflict with a neighboring band regardless of source order. */
-        @media (max-width: 1024px) and (min-width: 769px) {
-            .tree-panel { width: 200px; }
-            /* Ext is the least essential column (the file icon + name already
-               convey type), so it's the first to go. */
-            .list-columns { --list-cols: 22px 24px 1fr 90px 100px 80px; }
-            .file-list-header .col-ext { display: none; }
-            .file-list.list-columns .col-ext { display: none; }
-            .file-list-header, .file-list.list-columns .file-card { gap: 0.35rem; }
-        }
-        @media (max-width: 768px) and (min-width: 641px) {
-            .search-container { width: 150px; }
-            .tree-panel { width: 170px; }
-            .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-            /* Ext gone (from the wider band above); Date goes next, Size and
-               Time are kept since "when" and "how big" matter more day-to-day
-               than the exact date. */
-            .list-columns { --list-cols: 22px 24px 1fr 90px 80px; }
-            .file-list-header .col-ext, .file-list-header .col-date { display: none; }
-            .file-list.list-columns .col-ext, .file-list.list-columns .col-date { display: none; }
-            .file-list-header, .file-list.list-columns .file-card { gap: 0.35rem; }
-        }
-        @media (max-width: 640px) {
-            .list-columns { --list-cols: 22px 24px 1fr 80px; }
-            .file-list-header .col-ext, .file-list-header .col-date, .file-list-header .col-time { display: none; }
-            .file-list.list-columns .col-ext, .file-list.list-columns .col-date, .file-list.list-columns .col-time { display: none; }
-        }
-        .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
-        .empty-state svg:not(.empty-state-illustration) { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
-        .empty-state h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text-primary); }
-        .empty-state p { font-size: 0.85rem; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; padding: 0.5rem; overscroll-behavior: contain; touch-action: pan-y; }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); border-top: 2px solid var(--accent); }
-        .modal.video-modal { height: 95vh; height: 95dvh; }
-        /* Audio preview content tops out at 500px (.preview-audio-container's
-           own max-width), but the modal defaults to 95vw regardless of
-           content type — on a wide screen that leaves large empty gutters
-           on either side of the player. Cap the modal itself to match. */
-        .modal.compact-modal { max-width: 560px; }
-        .modal-overlay.active .modal { transform: scale(1); }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
-        .modal-title { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-        .modal-actions { display: flex; gap: 0.25rem; }
-        .modal-btn { padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
-        .modal-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
-        .modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .modal-btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
-        .modal-btn svg { width: 16px; height: 16px; }
-        .playlist-btn svg, .player-play-btn svg, .player-info-btn svg, .modal-btn svg, .settings-btn svg, .goto-step-btn svg {
-            filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
-        }
-        .modal-btn.play-playlist-btn { padding: 0.375rem 0.5rem; font-size: 0.75rem; color: var(--accent) !important; }
-        .modal-btn.play-playlist-btn:hover { color: var(--text-primary) !important; }
-        .modal-btn.hidden { display: none; }
-        .playlist-bar { display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); position: relative; }
-        .playlist-bar.active { display: flex; }
-        .playlist-controls { display: flex; gap: 0.25rem; align-items: center; }
-        .playlist-btn.top-native-btn { display: none; }
-        body.native-player-mode .playlist-btn.top-native-btn { display: inline-flex; }
-        .playlist-btn { padding: 0.375rem 0.5rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.75rem; }
-        .playlist-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
-        .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .playlist-btn svg { width: 14px; height: 14px; }
-        .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
-        .playlist-info { flex: 1; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .playlist-track { color: var(--text-primary); font-weight: 500; }
-        .playlist-stop-btn { padding: 0.25rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
-        .playlist-stop-btn:hover { opacity: 0.9; }
-        .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
-        .goto-input { width: 3.4rem; height: 1.25rem; box-sizing: border-box; text-align: center; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
-        .goto-input::-webkit-outer-spin-button, .goto-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .goto-input:focus { outline: none; border-color: var(--accent); }
-        .goto-input:disabled { opacity: 0.4; cursor: not-allowed; }
-        .goto-stepper { display: flex; flex-direction: row; gap: 0.3rem; }
-        .goto-step-btn { width: 2.25rem; height: 1.25rem; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; padding: 0; line-height: 0; }
-        .goto-step-btn svg { width: 22px; height: 22px; }
-        .goto-step-btn:hover:not(:disabled) { background: var(--control-surface-hover); }
-        .goto-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        @media (max-width: 640px) {
-            .goto-input { width: 2.5rem; height: 1.5rem; font-size: 0.9rem; }
-            .goto-stepper { gap: 0.35rem; }
-            .goto-step-btn { width: 2.5rem; height: 1.5rem; }
-            .goto-step-btn svg { width: 24px; height: 24px; }
-        }
-        .modal-body { flex: 1; overflow: hidden; background: var(--bg-primary); display: flex; flex-direction: column; min-height: 0; }
-        .modal-body.scrollable { overflow: auto; }
-        .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; display: block; margin: auto; }
-        .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
-        .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
-        .preview-audio-container { width: 100%; max-width: 500px; padding: 1.25rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; position: relative; }
-        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
-        .audio-icon svg { width: 54px; height: 54px; filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); }
-        .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .preview-audio { width: 100%; height: 40px; display: none; }
-        .preview-audio[controls] { display: block; }
-        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; max-width: 480px; margin: 0.15rem auto 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm); }
-        .player-seek-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
-        .player-seek { flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; border-radius: var(--radius-full); }
-        .player-seek:disabled { opacity: 0.4; cursor: not-allowed; }
-        .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; flex-wrap: nowrap; overflow-x: auto; }
-        .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); transition: transform var(--transition), background-color var(--transition), border-color var(--transition); }
-        .player-controls-row .playlist-btn:hover:not(:disabled) { transform: translateY(-1px); }
-        .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-        .player-play-btn { background: var(--control-surface) !important; border-color: var(--control-surface) !important; color: var(--on-control) !important; border-radius: var(--radius-full) !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 3px 0 var(--accent); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
-        .player-play-btn:hover { background: var(--control-surface-hover) !important; border-color: var(--control-surface-hover) !important; transform: translateY(-1px); box-shadow: 0 4px 0 var(--accent); }
-        .player-play-btn:active { transform: translateY(0); }
-        .player-play-btn svg { width: 20px; height: 20px; }
-        .player-time, .player-vol { font-size: 0.75rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; }
-        .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
-        .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
-        .player-info-btn svg { width: 16px; height: 16px; }
-        .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
-        .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
-        .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; word-break: break-all; }
-        .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
-        .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.75rem; }
-        .preview-code pre code.hljs { background: transparent !important; padding: 0 !important; }
-        .preview-pdf { width: 100%; height: 90vh; border: none; }
-        .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
-        .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
-        .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1.05rem; font-weight: 700; }
-        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
-        .download-btn:hover { background: var(--accent-hover); }
-        .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
-        .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: var(--radius-full); animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
-        .playlist-track.buffering::after { content: " \00b7 Buffering\2026"; color: var(--text-muted); font-weight: 400; animation: pulse 1s ease-in-out infinite; }
-        .preview-audio.buffering, .preview-video.buffering { opacity: 0.6; transition: opacity 0.15s ease; }
-        @media (max-width: 480px) {
-            .app-container { flex-direction: column; }
-            /* Pinned folders and Favorite files stay visible on mobile in
-               all 3 view modes (grid/list/tree) as a compact strip above the
-               main listing — only the full nested folder tree (redundant
-               with the main list on a small screen) is hidden. */
-            .tree-panel {
-                display: flex !important;
-                width: 100%;
-                max-height: 33vh;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                overflow-y: auto;
-                flex-shrink: 0;
-            }
-            .tree-panel .tree-header, .tree-panel .tree-content { display: none; }
-            .search-container { width: 120px; }
-            /* header-content's gap applies to both axes; once the search+icons
-               group wraps to its own row below the logo, that same gap reads
-               as too much dead space between the two rows. Tighten just the
-               row gap so the wrap looks like a deliberate two-row layout
-               rather than an overflow accident. */
-            .header-content { row-gap: 0.375rem; }
-            /* The pinned/favorites strip previously stacked each entry's
-               filename and parent folder on two lines, wasting vertical
-               space on small screens. Both are now a single truncated line,
-               and the header + row chrome is tightened up to match. */
-            .tree-pinned { padding-bottom: 0.15rem; }
-            .tree-pinned-header { padding: 0.3rem 0.5rem 0.1rem; font-size: 0.65rem; }
-            .tree-pinned-item { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
-            /* Keyboard shortcuts don't apply on a touchscreen, so the button
-               that surfaces them is dead weight in mobile view. */
-            #shortcutsBtn { display: none; }
-        }
-        @media (max-width: 640px) {
-            .breadcrumb { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
-            .breadcrumb::-webkit-scrollbar { display: none; }
-            .breadcrumb-item, .breadcrumb-separator { flex-shrink: 0; }
-            .modal-overlay { padding: 0; }
-            /* Was: height: 100vh forced on every modal, which made short
-               content (audio player, stats, keyboard shortcuts) stretch to
-               fill the whole screen with a big blank void below the card.
-               Video still gets full height from the existing
-               .modal.video-modal rule above (it applies at all viewport
-               widths, not just desktop), and image/pdf/text previews size
-               themselves via their own max-height rules, so nothing else
-               needs a forced height here. */
-            .modal { width: 100vw; max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
-            .modal-header { padding: 0.5rem 0.5rem; gap: 0.375rem; }
-            .modal-title { font-size: 0.8rem; }
-            .modal-actions { gap: 0.15rem; flex-shrink: 0; }
-            .modal-btn { padding: 0.4rem; min-width: 32px; min-height: 32px; }
-            .modal-btn svg { width: 15px; height: 15px; }
-            .modal-btn.play-playlist-btn { padding: 0.4rem; }
-            .modal-btn.play-playlist-btn .btn-label { display: none; }
-            .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
-            .playlist-btn span { display: none; }
-            .preview-image { max-height: 80vh; max-height: 80dvh; }
-            .preview-pdf { height: 80vh; height: 80dvh; }
-            .preview-media-container { padding: 0.5rem; }
-            .player-bar { padding: 0.5rem 0.5rem; max-width: 100%; gap: 0.25rem; }
-            .player-bar .playlist-btn { padding: 0.4rem; }
-            .player-bar .playlist-btn svg { width: 12px; height: 12px; }
-            .player-play-btn { width: 2.25rem !important; height: 2.25rem !important; }
-            .player-play-btn svg { width: 16px !important; height: 16px !important; }
-            .player-time { min-width: 1.6rem; font-size: 0.65rem; }
-            .player-vol { min-width: 1.9rem; font-size: 0.65rem; }
-            .settings-menu.active { position: fixed; inset: 0; top: 0; right: 0; margin: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); padding: 0.5rem; z-index: 1000; }
-            .settings-menu-card { width: 100%; max-width: 360px; max-height: 85vh; max-height: 85dvh; display: flex; flex-direction: column; border-top: 2px solid var(--accent); }
-            .settings-menu-body { max-height: none; flex: 1; }
-        }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: 0 0; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: var(--radius-full); }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-        .search-input:focus-visible { outline-offset: 0; }
-        .file-card:focus-visible { outline-offset: -2px; }
-        .breadcrumb { overflow-x: auto; scrollbar-width: thin; flex-wrap: nowrap; }
-        .breadcrumb::-webkit-scrollbar { height: 4px; }
-        .sort-select { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 0.75rem; padding: 0.25rem 0.375rem; }
-        .load-more-btn { display: block; margin: 0.75rem auto 0; padding: 0.375rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; font-size: 0.8rem; }
-        .load-more-btn:hover { border-color: var(--accent); }
-        .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
-        .modal-btn.copied { color: var(--success) !important; border-color: var(--success); }
-        .modal-btn.favorite-btn.favorited { color: var(--accent-text, var(--accent)) !important; border-color: var(--accent-text, var(--accent)); }
-        .shortcuts-modal { max-width: 440px; }
-        .shortcuts-body { padding: 0.75rem 1rem 1rem; }
-        .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
-        .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-        .shortcut-row dt { display: flex; gap: 0.25rem; flex-shrink: 0; flex-wrap: wrap; }
-        .shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; }
-        .stats-modal { max-width: 420px; }
-        .stats-body { padding: 0.85rem 1rem 1rem; overflow-y: auto; }
-        .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.65rem 0.5rem; text-align: center; }
-        .stats-summary-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-        .stats-summary-label { display: block; font-size: 0.65rem; line-height: 1.5; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.2rem; }
-        .stats-breakdown-title { font-size: 0.7rem; line-height: 1.5; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
-        .stats-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; }
-        .stats-row-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); flex-shrink: 0; }
-        .stats-row-icon svg { width: 14px; height: 14px; }
-        .stats-row-label { width: 88px; flex-shrink: 0; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .stats-row-bar-track { flex: 1; height: 8px; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; }
-        .stats-row-bar-fill { display: block; height: 100%; min-width: 2px; background: var(--stat-fill, var(--accent)); }
-        .stats-row-count { width: 44px; flex-shrink: 0; text-align: right; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); }
-        /* Compact density: tightens grid/list/tree spacing for people who'd
-           rather see more rows at once than have larger touch targets. */
-        body.compact-density .file-grid { gap: 0.3rem; }
-        body.compact-density .file-card { padding: 0.4rem; gap: 0.2rem; }
-        body.compact-density .file-icon { width: 26px; height: 26px; }
-        body.compact-density .file-name { font-size: 0.75rem; }
-        body.compact-density .file-meta { font-size: 0.65rem; }
-        body.compact-density .file-list .file-card { padding: 0.3rem 0.6rem; gap: 0.4rem; }
-        body.compact-density .file-list .file-icon { width: 20px; height: 20px; }
-        body.compact-density .file-list .file-icon svg { width: 12px; height: 12px; }
-        body.compact-density .file-list-header { padding: 0.25rem 0.5rem; }
-        body.compact-density .tree-item { padding: 0.15rem 0.5rem; }
-        body.compact-density .tree-pinned-item { padding: 0.15rem 0.5rem; }
-        body.compact-density .stats-bar { margin-bottom: 0.3rem; }
-        kbd { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.1rem 0.45rem; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, sf mono, Menlo, Consolas, monospace; color: var(--text-primary); }
-
-        /* --- Visual pass: thin scrollbars everywhere (Firefox) --- */
-        html { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
-
-        /* --- Search match highlighting --- */
-        mark.search-highlight { background: rgba(255, 208, 0, 0.35); color: inherit; font-weight: 700; border-radius: var(--radius-sm); padding: 0 1px; }
-
-        /* --- List/tree view thumbnails for images (previously grid-only) --- */
-        .file-list .file-thumbnail:not(.file-thumbnail-inline) { display: none; }
-        .file-thumbnail-inline { width: 24px; height: 24px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
-        .file-list .file-card:has(.file-thumbnail-inline.loaded) .file-icon { display: none; }
-
-        /* --- File card micro-interactions --- */
-        .file-card { transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background-color var(--transition); }
-        .file-card:hover { transform: translateY(-1px) scale(1.012); }
-        .file-list .file-card:hover { transform: translateX(1px); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
-        .file-card:active { transform: translateY(0) scale(0.995); }
-
-        /* --- Softer, theme-aware focus glow layered on top of the accessible outline --- */
-        .file-card:focus-visible, .playlist-btn:focus-visible, .modal-btn:focus-visible, .view-btn:focus-visible, .settings-btn:focus-visible {
-            box-shadow: 0 0 0 3px var(--accent-glow);
-        }
-
-        /* --- Sticky header gains depth only once content is scrolled beneath it --- */
-        .header { box-shadow: 0 1px 0 rgba(0, 0, 0, 0); transition: box-shadow var(--transition); position: relative; z-index: 10; }
-        .header.scrolled { box-shadow: var(--shadow); }
-
-        /* --- Skeleton loading state (replaces spinner+text on initial load) --- */
-        .skeleton-list { display: flex; flex-direction: column; gap: 1px; padding-top: 0.25rem; }
-        .skeleton-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: var(--radius-sm); }
-        .skeleton-block { border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 37%, var(--skeleton-base) 63%); background-size: 400% 100%; animation: skeleton-shimmer 1.4s ease infinite; }
-        .skeleton-icon { width: 24px; height: 24px; flex-shrink: 0; }
-        .skeleton-name { height: 12px; width: 45%; }
-        .skeleton-meta { height: 10px; width: 15%; margin-left: auto; }
-        @keyframes skeleton-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-
-        /* --- Empty state illustration --- */
-        .empty-state-illustration { width: 96px; height: 96px; margin: 0 auto 0.75rem; }
-    </style>
-</head>
-<body>
-    <svg style="display:none" aria-hidden="true">
-        <symbol id="icon-x" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
-    </svg>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="Go to home folder">
-                <svg viewBox="0 0 24 24" fill="currentcolor"><rect x="2" y="5" width="20" height="14"/><circle cx="8" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="16" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="8" cy="12" r="0.8"/><circle cx="16" cy="12" r="0.8"/><rect x="10" y="15.6" width="4" height="1.6" fill="var(--bg-secondary)"/></svg>
-                <span>File Viewer</span>
-            </div>
-            <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb"></nav>
-            <div class="header-actions">
-                <div class="search-container">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentcolor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" aria-label="Search files" />
-                    <button class="search-clear" id="searchClearBtn" type="button" title="Clear search" aria-label="Clear search">
-                        <svg viewBox="0 0 24 24" fill="currentcolor" width="12" height="12"><use href="#icon-x"/></svg>
-                    </button>
-                </div>
-                <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
-                    <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
-                </button>
-                <button class="settings-btn" id="statsBtn" title="Library stats" aria-label="Show library stats">
-                    <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M5 9.2h3.2V19H5V9.2zm5.4-4.4h3.2V19h-3.2V4.8zm5.4 8h3.2V19h-3.2v-6.2z"/></svg>
-                </button>
-                <div class="settings-dropdown" id="settingsDropdown">
-                    <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
-                        <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94.0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24.0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47.0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24.0.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47.0.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98.0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                    </button>
-                    <div class="settings-menu" id="settingsMenu">
-                        <div class="settings-menu-card">
-                            <div class="settings-menu-header">
-                                <span class="settings-menu-title">Settings</span>
-                                <button class="settings-menu-close" id="settingsMenuCloseBtn" title="Close" aria-label="Close settings"><svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg></button>
-                            </div>
-                            <div class="settings-menu-body">
-                                <div class="settings-section">
-                                    <div class="settings-section-title">Font Size</div>
-                                    <div class="settings-row">
-                                        <span class="settings-label" id="fontSizeLabel">14px</span>
-                                        <div class="settings-control">
-                                            <button id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
-                                            <button id="fontIncrease" title="Increase font size" aria-label="Increase font size">A+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Sort By</div>
-                                    <div class="settings-row">
-                                        <select class="sort-select" id="sortSelect" aria-label="Sort files by">
-                                            <option value="name-asc">Name (A-Z)</option>
-                                            <option value="name-desc">Name (Z-A)</option>
-                                            <option value="ext-asc">Extension (A-Z)</option>
-                                            <option value="ext-desc">Extension (Z-A)</option>
-                                            <option value="size-asc">Size (Smallest)</option>
-                                            <option value="size-desc">Size (Largest)</option>
-                                            <option value="date-asc">Date (Oldest)</option>
-                                            <option value="date-desc">Date (Newest)</option>
-                                            <option value="type">Type</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Density</div>
-                                    <div class="settings-row">
-                                        <span class="settings-label">Compact rows</span>
-                                        <label class="switch">
-                                            <input type="checkbox" id="compactDensityToggle" aria-label="Use compact row density for grid and list views" />
-                                            <span class="switch-slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Appearance</div>
-                                    <div class="settings-row">
-                                        <span class="settings-label">Zebra striping</span>
-                                        <label class="switch">
-                                            <input type="checkbox" id="zebraStripingToggle" checked aria-label="Alternate card/row background shading in grid and list view" />
-                                            <span class="switch-slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Media Player</div>
-                                    <div class="settings-row">
-                                        <span class="settings-label">Use native player</span>
-                                        <label class="switch">
-                                            <input type="checkbox" id="nativePlayerToggle" aria-label="Use native browser player controls instead of the custom player" />
-                                            <span class="switch-slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-dropdown" id="themeColorDropdown">
-                    <button class="settings-btn" id="themeColorBtn" title="Theme &amp; color" aria-label="Theme and color settings" aria-haspopup="true" aria-expanded="false">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h1.5A4.5 4.5 0 0 0 21 10c0-4-4-7-9-7z"/><circle cx="7.5" cy="10.5" r="1.4" fill="currentcolor" stroke="none"/><circle cx="10.5" cy="7" r="1.4" fill="currentcolor" stroke="none"/><circle cx="14.5" cy="7" r="1.4" fill="currentcolor" stroke="none"/><circle cx="17" cy="10.5" r="1.4" fill="currentcolor" stroke="none"/></svg>
-                    </button>
-                    <div class="settings-menu" id="themeColorMenu">
-                        <div class="settings-menu-card">
-                            <div class="settings-menu-header">
-                                <span class="settings-menu-title">Theme &amp; Color</span>
-                                <button class="settings-menu-close" id="themeMenuCloseBtn" title="Close" aria-label="Close theme settings"><svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg></button>
-                            </div>
-                            <div class="settings-menu-body">
-                                <div class="settings-section">
-                                    <div class="settings-section-title">Theme</div>
-                                    <div class="settings-row">
-                                        <div class="theme-toggle" id="themeToggle">
-                                            <button class="theme-btn" data-theme="light" title="Light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 7c-2.76.0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55.0 1-.45 1-1s-.45-1-1-1H2c-.55.0-1 .45-1 1s.45 1 1 1zm18 0h2c.55.0 1-.45 1-1s-.45-1-1-1h-2c-.55.0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0s.39-1.03.0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41.0-.39.39-.39 1.03.0 1.41l1.06 1.06c.39.39 1.03.39 1.41.0.39-.39.39-1.03.0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03.0-1.41-.39-.39-1.03-.39-1.41.0l-1.06 1.06c-.39.39-.39 1.03.0 1.41s1.03.39 1.41.0l1.06-1.06z"/></svg><span class="theme-btn-label">Light</span></button>
-                                            <button class="theme-btn" data-theme="dark" title="Dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3c-4.97.0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98.0-5.4-2.42-5.4-5.4.0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg><span class="theme-btn-label">Dark</span></button>
-                                            <button class="theme-btn" data-theme="auto" title="System theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28.0-.5.22-.5.5.0.12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5.0 0112 22zm0-18c-4.41.0-8 3.59-8 8s3.59 8 8 8c.28.0.5-.22.5-.5a.54.54.0 00-.14-.35c-.41-.46-.63-1.05-.63-1.65a2.5 2.5.0 012.5-2.5H16c2.21.0 4-1.79 4-4 0-3.86-3.59-7-8-7z"/><circle cx="6.5" cy="11.5" r="1.5"/><circle cx="9.5" cy="7.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/><circle cx="17.5" cy="11.5" r="1.5"/></svg><span class="theme-btn-label">Auto</span></button>
-                                            <button class="theme-btn" data-theme="hc-dark" title="High contrast dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 2v16a8 8 0 010-16z"/></svg><span class="theme-btn-label">HC Dark</span></button>
-                                            <button class="theme-btn" data-theme="hc-light" title="High contrast light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 18V4a8 8 0 010 16z"/></svg><span class="theme-btn-label">HC Light</span></button>
-                                            <button class="theme-btn theme-btn-custom" data-theme="custom" title="Custom color theme — active whenever a custom color is set"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2 0-.52-.2-.99-.53-1.34-.32-.34-.52-.8-.52-1.32.0-1.1.9-2 2-2H17c2.76.0 5-2.24 5-5C22 6.13 17.5 2 12 2zm-5.5 9c-.83.0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83.0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83.0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5S18.33 11 17.5 11z"/></svg><span class="theme-btn-label">Custom</span></button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Base Color</div>
-                                    <div class="settings-row">
-                                        <span class="settings-label">Color intensity</span>
-                                    </div>
-                                    <div class="settings-row">
-                                        <div class="intensity-bar-wrap">
-                                            <span class="intensity-bar-label">Vivid</span>
-                                            <div class="intensity-bar" id="colorIntensityControl" role="group" aria-label="Color intensity: vivid on the left, muted on the right">
-                                                <button type="button" class="intensity-seg" data-intensity="100" title="Vivid (100%)" aria-label="Vivid"></button>
-                                                <button type="button" class="intensity-seg" data-intensity="80" title="80%" aria-label="80%"></button>
-                                                <button type="button" class="intensity-seg" data-intensity="60" title="60% (default)" aria-label="60%, default"></button>
-                                                <button type="button" class="intensity-seg" data-intensity="40" title="40%" aria-label="40%"></button>
-                                                <button type="button" class="intensity-seg" data-intensity="20" title="Muted (20%)" aria-label="Muted"></button>
-                                            </div>
-                                            <span class="intensity-bar-label">Muted</span>
-                                        </div>
-                                    </div>
-                                    <div class="settings-row">
-                                        <div class="theme-swatches" id="themeSwatches"></div>
-                                    </div>
-                                    <div class="theme-custom-row">
-                                        <input type="color" id="themeColorInput" value="#8080ff" title="Pick a custom color" />
-                                        <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
-                                    </div>
-                                </div>
-                                <div class="settings-section" style="border-top: 1px solid var(--border-color)">
-                                    <div class="settings-section-title">Corners</div>
-                                    <div class="settings-row">
-                                        <div class="intensity-bar-wrap">
-                                            <span class="intensity-bar-label">Square</span>
-                                            <div class="intensity-bar depth-bar" id="depthControl" role="group" aria-label="Corner rounding: square on the left, round on the right">
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="1" title="Square" aria-label="Square"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="2" title="Mild" aria-label="Mild"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="3" title="Moderate" aria-label="Moderate"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="4" title="Rounded" aria-label="Rounded"><span class="depth-seg-preview"></span></button>
-                                                <button type="button" class="intensity-seg depth-seg" data-depth="5" title="Round" aria-label="Round"><span class="depth-seg-preview"></span></button>
-                                            </div>
-                                            <span class="intensity-bar-label">Round</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="view-toggle" role="group" aria-label="View mode">
-                    <button class="view-btn" data-view="grid" title="Grid" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
-                    <button class="view-btn" data-view="list" title="List" aria-label="List view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg></button>
-                    <button class="view-btn active" data-view="tree" title="Tree" aria-label="Tree view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/></svg></button>
-                </div>
-            </div>
-        </div>
-    </header>
-    <div class="app-container">
-        <aside class="tree-panel visible" id="treePanel">
-            <div class="tree-pinned" id="treePinned"></div>
-            <div class="tree-pinned" id="treeFavorites"></div>
-            <div class="tree-header">Folders</div>
-            <div class="tree-content" id="treeContent"></div>
-        </aside>
-        <main class="main" id="main">
-            <div class="skeleton-list" aria-hidden="true">
-                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name"></div><div class="skeleton-block skeleton-meta"></div></div>
-                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:60%"></div><div class="skeleton-block skeleton-meta"></div></div>
-                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:35%"></div><div class="skeleton-block skeleton-meta"></div></div>
-                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:50%"></div><div class="skeleton-block skeleton-meta"></div></div>
-                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:40%"></div><div class="skeleton-block skeleton-meta"></div></div>
-                <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:55%"></div><div class="skeleton-block skeleton-meta"></div></div>
-            </div>
-        </main>
-    </div>
-    <div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal" id="modalContent">
-            <div class="modal-header">
-                <span class="modal-title" id="modalTitle">File Preview</span>
-                <div class="modal-actions">
-                    <button class="modal-btn favorite-btn" id="favoriteBtn" title="Add to favorites" aria-label="Add file to favorites" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
-                    <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist" aria-label="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg><span class="btn-label">Play</span></button>
-                    <button class="modal-btn" id="copyLinkBtn" title="Copy link" aria-label="Copy raw file link"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>
-                    <a class="modal-btn" id="downloadBtn" title="Download" aria-label="Download file" download><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg></a>
-                    <a class="modal-btn" id="rawBtn" title="Open raw" aria-label="Open raw file in new tab" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 19H5V5h7V3H5c-1.11.0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1.0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>
-                    <button class="modal-btn" id="closeBtn" title="Close" aria-label="Close preview"><svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg></button>
-                </div>
-            </div>
-            <div class="playlist-bar" id="playlistBar">
-                <div class="playlist-controls">
-                    <button class="playlist-btn prev-btn top-native-btn" id="topPrevBtn" title="Previous track" aria-label="Previous track" disabled><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" /></svg></button>
-                    <button class="playlist-btn next-btn top-native-btn" id="topNextBtn" title="Next track" aria-label="Next track" disabled><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg></button>
-                    <button class="playlist-btn shuffle-btn top-native-btn" id="topShuffleBtn" title="Shuffle" aria-label="Toggle shuffle" aria-pressed="false" disabled><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg></button>
-                    <div class="goto-quick" id="gotoQuick" title="Go to track">
-                        <input type="number" class="goto-input" id="gotoInput" min="1" step="1" inputmode="numeric" aria-label="Go to track number" />
-                        <div class="goto-stepper">
-                            <button type="button" class="goto-step-btn" id="gotoDownBtn" aria-label="Previous track number" title="Hold to skip faster"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 10l5 5 5-5z" /></svg></button>
-                            <button type="button" class="goto-step-btn" id="gotoUpBtn" aria-label="Next track number" title="Hold to skip faster"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14l5-5 5 5z" /></svg></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span></div>
-                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist">Stop</button>
-            </div>
-            <div class="modal-body" id="modalBody"></div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
-        <div class="modal shortcuts-modal" id="shortcutsModalContent">
-            <div class="modal-header">
-                <span class="modal-title" id="shortcutsTitle">Keyboard Shortcuts</span>
-                <div class="modal-actions">
-                    <button class="modal-btn" id="shortcutsCloseBtn" title="Close" aria-label="Close keyboard shortcuts">
-                        <svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg>
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body shortcuts-body">
-                <dl class="shortcuts-list">
-                    <div class="shortcut-row"><dt><kbd>/</kbd></dt><dd>Focus search</dd></div>
-                    <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd>Show this help</dd></div>
-                    <div class="shortcut-row"><dt><kbd>Esc</kbd></dt><dd>Close dialog</dd></div>
-                    <div class="shortcut-row"><dt><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd>Navigate files &amp; folders</dd></div>
-                    <div class="shortcut-row"><dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt><dd>Open selected file or folder</dd></div>
-                    <div class="shortcut-row"><dt><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> (in preview)</dt><dd>Stop / play playlist track</dd></div>
-                    <div class="shortcut-row"><dt><kbd>&uarr;</kbd> / <kbd>&darr;</kbd> (in preview)</dt><dd>Scroll preview</dd></div>
-                    <div class="shortcut-row"><dt><kbd>Space</kbd> (in preview)</dt><dd>Play / pause media</dd></div>
-                </dl>
-            </div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
-        <div class="modal stats-modal" id="statsModalContent">
-            <div class="modal-header">
-                <span class="modal-title" id="statsTitle">Library Stats</span>
-                <div class="modal-actions">
-                    <button class="modal-btn" id="statsCloseBtn" title="Close" aria-label="Close library stats">
-                        <svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg>
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body stats-body" id="statsBody"></div>
-        </div>
-    </div>
-    <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
-    <script>
         // -- Navigation / browsing state --
         let fileIndex = null,
             currentPath = [],
@@ -1113,33 +127,11 @@
         const playerNoteIcons = [
             // --- Cassette tapes ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.90"/><circle cx="17" cy="12" r="0.90"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="3.4" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="1.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="1.09"/><circle cx="17" cy="12" r="0.75"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="1.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="3.4" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.75"/><circle cx="17" cy="12" r="1.09"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(-7 12 12)"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.90"/><circle cx="17" cy="12" r="0.90"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></g></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(7 12 12)"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.90"/><circle cx="17" cy="12" r="0.90"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></g></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.90"/><circle cx="17" cy="12" r="0.90"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><circle cx="3.4" cy="6.2" r="0.55" fill="var(--bg-tertiary)"/><circle cx="20.6" cy="6.2" r="0.55" fill="var(--bg-tertiary)"/><circle cx="3.4" cy="17.8" r="0.55" fill="var(--bg-tertiary)"/><circle cx="20.6" cy="17.8" r="0.55" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="3.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="1.3" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="1.22"/><circle cx="17" cy="12" r="0.75"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="1.3" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="3.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.75"/><circle cx="17" cy="12" r="1.22"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.90"/><circle cx="17" cy="12" r="0.90"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><path d="M9.8 12h4.4" stroke="var(--bg-tertiary)" stroke-width="1.1"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.90"/><circle cx="17" cy="12" r="0.90"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><rect x="3.5" y="5.6" width="17" height="3.6" rx="0.6" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="3.1" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="3.1" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.99"/><circle cx="17" cy="12" r="0.99"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><rect x="1.5" y="4" width="21" height="2.2" rx="1" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(-4 12 12)"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.90"/><circle cx="17" cy="12" r="0.90"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><circle cx="12" cy="7" r="1.1" fill="var(--bg-tertiary)"/></g></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="5" width="22" height="14" rx="1.6"/><circle cx="7" cy="12" r="2.5" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.5" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.80"/><circle cx="17" cy="12" r="0.80"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.3" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.3" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.7"/><circle cx="17" cy="12" r="0.7"/><path d="M7 12h10" stroke="var(--bg-tertiary)" stroke-width="0.8"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.9"/><circle cx="17" cy="12" r="0.9"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><rect x="4" y="6" width="16" height="1.6" rx="0.6" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(-14 12 12)"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.9"/><circle cx="17" cy="12" r="0.9"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></g></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><path d="M7 9.6a2.4 2.4 0 0 1 0 4.8" fill="none" stroke="currentColor" stroke-width="0.9"/><path d="M17 9.6a2.4 2.4 0 0 1 0 4.8" fill="none" stroke="currentColor" stroke-width="0.9"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><rect x="3" y="5.2" width="18" height="1.2" rx="0.4" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="1.5" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.9"/><circle cx="17" cy="12" r="0.6"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><circle cx="3.4" cy="6.2" r="0.5" fill="var(--bg-tertiary)"/><circle cx="20.6" cy="6.2" r="0.5" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.9"/><circle cx="17" cy="12" r="0.9"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/><path d="M4 8.5h16" stroke="var(--bg-tertiary)" stroke-width="0.7" stroke-dasharray="1 1.2"/></svg>`,
             // --- Boomboxes ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="7" width="22" height="13" rx="1.6"/><path d="M3.5 7 L6 1.5 M20.5 7 L18 1.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="6.5" cy="14" r="3.6" fill="var(--bg-tertiary)"/><circle cx="17.5" cy="14" r="3.6" fill="var(--bg-tertiary)"/><circle cx="6.5" cy="14" r="1.4"/><circle cx="17.5" cy="14" r="1.4"/><rect x="10.3" y="8.4" width="3.4" height="1.5" rx="0.4" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="7" width="22" height="13" rx="1.6"/><path d="M3.5 7 L6 1.5 M20.5 7 L18 1.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="5.6" cy="14" r="2.9" fill="var(--bg-tertiary)"/><circle cx="18.4" cy="14" r="2.9" fill="var(--bg-tertiary)"/><circle cx="5.6" cy="14" r="1.1"/><circle cx="18.4" cy="14" r="1.1"/><rect x="9.4" y="11.6" width="5.2" height="4.5" rx="0.6" fill="var(--bg-tertiary)"/><circle cx="11.2" cy="13.9" r="1"/><circle cx="12.8" cy="13.9" r="1"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 1h7v3.4h-7z"/><rect x="2" y="5.5" width="20" height="17" rx="1.8"/><circle cx="7.5" cy="15" r="3.8" fill="var(--bg-tertiary)"/><circle cx="16.5" cy="15" r="3.8" fill="var(--bg-tertiary)"/><circle cx="7.5" cy="15" r="1.5"/><circle cx="16.5" cy="15" r="1.5"/><rect x="10" y="7.2" width="4" height="1.4" rx="0.4" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="6.5" width="22" height="14" rx="1.6"/><path d="M12 6.5 L12 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="5.8" cy="13.5" r="2.8" fill="var(--bg-tertiary)"/><circle cx="18.2" cy="13.5" r="2.8" fill="var(--bg-tertiary)"/><circle cx="5.8" cy="13.5" r="1.1"/><circle cx="18.2" cy="13.5" r="1.1"/><rect x="9.5" y="11.5" width="2.4" height="4" rx="0.4" fill="var(--bg-tertiary)"/><rect x="12.1" y="11.5" width="2.4" height="4" rx="0.4" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="7" width="22" height="13" rx="1.6"/><path d="M4 7 L7 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M20 7 L17 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="6.5" cy="14" r="3.4" fill="var(--bg-tertiary)"/><circle cx="17.5" cy="14" r="3.4" fill="var(--bg-tertiary)"/><rect x="10.4" y="12" width="3.2" height="4" rx="0.4" fill="var(--bg-tertiary)"/><rect x="2" y="18.6" width="3" height="0.9" fill="var(--bg-tertiary)"/><rect x="6" y="18.6" width="3" height="0.9" fill="var(--bg-tertiary)"/><rect x="10" y="18.6" width="3" height="0.9" fill="var(--bg-tertiary)"/><rect x="14" y="18.6" width="3" height="0.9" fill="var(--bg-tertiary)"/><rect x="18" y="18.6" width="3" height="0.9" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="8" width="20" height="12" rx="1.6"/><circle cx="7" cy="14" r="3.2" fill="var(--bg-tertiary)"/><circle cx="17" cy="14" r="3.2" fill="var(--bg-tertiary)"/><circle cx="7" cy="14" r="1.3"/><circle cx="17" cy="14" r="1.3"/><rect x="3" y="4" width="18" height="3.4" rx="1"/><circle cx="6" cy="5.7" r="0.7" fill="var(--bg-tertiary)"/><circle cx="18" cy="5.7" r="0.7" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="6" width="22" height="15" rx="1.6"/><path d="M18 6 L21.5 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="6" cy="13.6" r="3.4" fill="var(--bg-tertiary)"/><circle cx="6" cy="13.6" r="1.3"/><rect x="10.5" y="10" width="9" height="7" rx="0.7" fill="var(--bg-tertiary)"/><rect x="12" y="11.5" width="1.4" height="4" fill="currentColor"/><rect x="14.2" y="12.4" width="1.4" height="3.1" fill="currentColor"/><rect x="16.4" y="11" width="1.4" height="4.5" fill="currentColor"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="8.5" width="21" height="10.5" rx="1.5"/><path d="M3.5 8.5 L5.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/><path d="M20.5 8.5 L18.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/><circle cx="6.3" cy="13.7" r="2.6" fill="var(--bg-tertiary)"/><circle cx="17.7" cy="13.7" r="2.6" fill="var(--bg-tertiary)"/><rect x="10" y="11.7" width="4" height="3.8" rx="0.4" fill="var(--bg-tertiary)"/><rect x="2.5" y="1" width="6" height="1.6" rx="0.6"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="4.5" width="22" height="16.5" rx="1.8"/><circle cx="7" cy="14.5" r="4" fill="var(--bg-tertiary)"/><circle cx="17" cy="14.5" r="4" fill="var(--bg-tertiary)"/><circle cx="7" cy="14.5" r="1.6"/><circle cx="17" cy="14.5" r="1.6"/><rect x="2.4" y="6.4" width="19.2" height="4" rx="0.6" fill="var(--bg-tertiary)"/><rect x="4" y="7.6" width="1.2" height="1.6"/><rect x="6" y="7" width="1.2" height="2.2"/><rect x="8" y="7.9" width="1.2" height="1.3"/><rect x="10" y="7.3" width="1.2" height="1.9"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="20" height="12" rx="1.6"/><circle cx="7" cy="13" r="3.2" fill="var(--bg-tertiary)"/><circle cx="17" cy="13" r="3.2" fill="var(--bg-tertiary)"/><circle cx="7" cy="13" r="1.4"/><circle cx="17" cy="13" r="1.4"/><rect x="10.5" y="8.2" width="3" height="1.4" rx="0.4" fill="var(--bg-tertiary)"/><rect x="4" y="3.5" width="2" height="4" rx="0.6"/><rect x="18" y="3.5" width="2" height="4" rx="0.6"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="8" width="20" height="11" rx="1.6"/><circle cx="6.5" cy="13.5" r="2.6" fill="var(--bg-tertiary)"/><circle cx="17.5" cy="13.5" r="2.6" fill="var(--bg-tertiary)"/><rect x="10" y="10.5" width="4" height="1" fill="var(--bg-tertiary)"/><rect x="10" y="12.3" width="4" height="1" fill="var(--bg-tertiary)"/><rect x="10" y="14.1" width="2.6" height="1" fill="var(--bg-tertiary)"/><path d="M5 8V5.5a1.5 1.5 0 0 1 1.5-1.5h11A1.5 1.5 0 0 1 19 5.5V8" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>`,
@@ -1160,8 +152,6 @@
             // --- Portable players / walkman / MP3 / smart speaker ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="1" width="14" height="22" rx="2.8"/><rect x="6.8" y="3.2" width="10.4" height="8.6" rx="0.9" fill="var(--bg-tertiary)"/><circle cx="12" cy="18" r="4.5" fill="var(--bg-tertiary)"/><circle cx="12" cy="18" r="1.5"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="4.5" width="22" height="15" rx="2.2"/><rect x="5.5" y="7.3" width="13" height="7" rx="0.9" fill="var(--bg-tertiary)"/><circle cx="9.5" cy="10.8" r="1.9"/><circle cx="14.5" cy="10.8" r="1.9"/><rect x="3" y="16.6" width="3.4" height="1.6" rx="0.4" fill="var(--bg-tertiary)"/><rect x="7.4" y="16.6" width="3.4" height="1.6" rx="0.4" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="5.5" width="19" height="14" rx="2.2"/><rect x="4.5" y="8" width="12" height="6" rx="0.8" fill="var(--bg-tertiary)"/><circle cx="7.6" cy="11" r="1.5"/><circle cx="12.6" cy="11" r="1.5"/><rect x="20.4" y="10.4" width="3.4" height="2" rx="1"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="3" width="21" height="19" rx="2.2"/><circle cx="12" cy="11.5" r="7" fill="var(--bg-tertiary)"/><circle cx="12" cy="11.5" r="1.8"/><rect x="9.5" y="0.8" width="6.5" height="2.2" rx="0.6"/><circle cx="19.5" cy="19" r="1.2" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="1" width="18" height="22" rx="3"/><rect x="5.5" y="3.7" width="13" height="10.4" rx="1" fill="var(--bg-tertiary)"/><path d="M9.8 6.4 L15 9 L9.8 11.6Z"/><rect x="4.5" y="15.6" width="15" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/><rect x="4.5" y="18" width="9" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4a6 6 0 0 1 12 0v14a6 6 0 0 1-12 0z"/><ellipse cx="12" cy="18" rx="6" ry="4" fill="var(--bg-tertiary)"/><circle cx="12" cy="6.2" r="1" fill="var(--bg-tertiary)"/><path d="M8 7.5a4 4 0 0 0 8 0" stroke="var(--bg-tertiary)" stroke-width="1" fill="none"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="2" width="10" height="20" rx="3.6"/><rect x="8.6" y="4" width="6.8" height="4.4" rx="0.7" fill="var(--bg-tertiary)"/><circle cx="12" cy="15" r="3.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="15" r="1.1"/><circle cx="12" cy="19.5" r="0.9" fill="var(--bg-tertiary)"/></svg>`,
@@ -1171,24 +161,21 @@
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="2" width="12" height="20" rx="2.4"/><rect x="8" y="4.4" width="8" height="6.2" rx="0.6" fill="var(--bg-tertiary)"/><circle cx="12" cy="16.6" r="2.6" fill="var(--bg-tertiary)"/><circle cx="12" cy="16.6" r="0.8"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="1.5" width="10" height="21" rx="3"/><circle cx="12" cy="14.5" r="4.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="14.5" r="1.2"/><rect x="9.5" y="4" width="5" height="4.4" rx="0.6" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="3" width="8" height="18" rx="4"/><circle cx="12" cy="9" r="2.6" fill="var(--bg-tertiary)"/><rect x="10.2" y="14" width="3.6" height="0.9" rx="0.4" fill="var(--bg-tertiary)"/><rect x="10.2" y="16" width="3.6" height="0.9" rx="0.4" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="6" width="14" height="16" rx="2.4"/><rect x="7" y="8.4" width="10" height="6" rx="0.6" fill="var(--bg-tertiary)"/><circle cx="12" cy="18" r="1.6" fill="var(--bg-tertiary)"/><path d="M9 6V4.5a3 3 0 0 1 6 0V6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="9" width="16" height="13" rx="6.5"/><circle cx="12" cy="15.5" r="3.4" fill="var(--bg-tertiary)"/><path d="M8 9V6a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="17" r="1.4" fill="var(--bg-tertiary)"/><rect x="7" y="5.4" width="10" height="8" rx="0.6" fill="var(--bg-tertiary)"/><path d="M9.5 8.5l2 1.6-2 1.6z"/></svg>`,
             // --- Headphones / earbuds ---
             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 16v-4a9 9 0 0 1 18 0v4"/><rect x="1" y="15" width="4.6" height="7.4" rx="2.1" fill="currentColor" stroke="none"/><rect x="18.4" y="15" width="4.6" height="7.4" rx="2.1" fill="currentColor" stroke="none"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4.5 15v-2.5a7.5 7.5 0 0 1 15 0v2.5"/><circle cx="4" cy="17" r="3" fill="currentColor" stroke="none"/><circle cx="20" cy="17" r="3" fill="currentColor" stroke="none"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="5.5" r="3"/><circle cx="18.5" cy="5.5" r="3"/><path d="M5.5 8.5 C 5.5 16, 9.5 17, 9.5 22" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M18.5 8.5 C 18.5 16, 14 17, 12 18.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="16" width="10" height="7" rx="1.6" fill="var(--bg-tertiary)" stroke="currentColor" stroke-width="1.4"/><circle cx="9.5" cy="6" r="2.7"/><circle cx="14.5" cy="6" r="2.7"/><rect x="8.7" y="9" width="1.6" height="7" rx="0.6"/><rect x="13.7" y="9" width="1.6" height="7" rx="0.6"/></svg>`,
+            
             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 13.5v-2a8 8 0 0 1 16 0v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="2.5" y="12.5" width="4" height="6.4" rx="1.6"/><rect x="17.5" y="12.5" width="4" height="6.4" rx="1.6"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="6" cy="12" rx="2.6" ry="4.4"/><ellipse cx="18" cy="12" rx="2.6" ry="4.4"/><path d="M6 8V6.5A6 6 0 0 1 18 6.5V8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="6" r="2.2"/><circle cx="17" cy="6" r="2.2"/><path d="M7 8.2v3.4a2 2 0 0 0 2 2h1.5M17 8.2v9.8a2 2 0 0 1-2 2h-1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+            
             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a7.5 7.5 0 0 0-7.5 7.5V17a2 2 0 0 0 2 2H8a1 1 0 0 0 1-1v-4.5a1 1 0 0 0-1-1H6.1V10.5a5.9 5.9 0 0 1 11.8 0V12.5H16a1 1 0 0 0-1 1V18a1 1 0 0 0 1 1h1.5a2 2 0 0 0 2-2v-6.5A7.5 7.5 0 0 0 12 3z"/></svg>`,
             // --- Microphones ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="8.5" y="1.5" width="7" height="13" rx="3.5"/><path d="M7.5 6.5h9M7.5 9.5h9M7.5 12.5h9" stroke="var(--bg-tertiary)" stroke-width="1"/><path d="M5.5 12.5a6.5 6.5 0 0 0 13 0" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="1.8"/><line x1="7.5" y1="23" x2="16.5" y2="23" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="9" y="1" width="6" height="12" rx="3"/><path d="M6 12a6 6 0 0 0 12 0" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="21" stroke="currentColor" stroke-width="1.8"/><path d="M17 5 L21.5 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M17 8 L22 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="6" y="21.5" width="12" height="1.8" rx="0.8"/></svg>`,
             // --- Keys / wind / percussion ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="5" width="22" height="15" rx="1.2"/><rect x="3.9" y="5" width="2" height="9.4"/><rect x="10" y="5" width="2" height="9.4"/><rect x="16.1" y="5" width="2" height="9.4"/><rect x="1.4" y="14.4" width="3" height="5.4" fill="var(--bg-tertiary)"/><rect x="7.5" y="14.4" width="3" height="5.4" fill="var(--bg-tertiary)"/><rect x="13.6" y="14.4" width="3" height="5.4" fill="var(--bg-tertiary)"/><rect x="19.7" y="14.4" width="2.3" height="5.4" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="8" rx="10.5" ry="3.5"/><path d="M1.5 8v9a10.5 3.5 0 0 0 21 0V8z"/><path d="M3 9.4l1.6 7.2M7.3 10.8l1 7.6M12 11.3v7.6M16.7 10.8l-1 7.6M21 9.4l-1.6 7.2" stroke="var(--bg-tertiary)" stroke-width="0.9"/><circle cx="12" cy="8" r="1" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="8" width="22" height="9" rx="4.5"/><circle cx="6.5" cy="12.5" r="2" fill="var(--bg-tertiary)"/><circle cx="12" cy="12.5" r="2" fill="var(--bg-tertiary)"/><circle cx="17.5" cy="12.5" r="2" fill="var(--bg-tertiary)"/><path d="M4 6.5h4M10 6.5h4M16 6.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l1.5-6 2 12 2-9 1.5 4h8"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6" width="20" height="12" rx="1"/><rect x="2" y="6" width="2.85" height="8" fill="var(--bg-tertiary)"/><rect x="6" y="6" width="2.85" height="8" fill="var(--bg-tertiary)"/><rect x="10" y="6" width="2.85" height="8" fill="var(--bg-tertiary)"/><rect x="14" y="6" width="2.85" height="8" fill="var(--bg-tertiary)"/><rect x="18" y="6" width="2.85" height="8" fill="var(--bg-tertiary)"/></svg>`,
@@ -1197,7 +184,6 @@
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="1" width="12" height="22" rx="1.6"/><circle cx="12" cy="7.5" r="3.2" fill="var(--bg-tertiary)"/><circle cx="12" cy="7.5" r="1.1"/><circle cx="12" cy="17" r="4.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="17" r="1.6"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="9.5" height="20" rx="1.4"/><circle cx="6.7" cy="7" r="2.6" fill="var(--bg-tertiary)"/><circle cx="6.7" cy="15" r="3.2" fill="var(--bg-tertiary)"/><rect x="12.5" y="2" width="9.5" height="20" rx="1.4"/><circle cx="17.2" cy="7" r="2.6" fill="var(--bg-tertiary)"/><circle cx="17.2" cy="15" r="3.2" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="18" rx="1.6"/><rect x="4" y="5" width="16" height="7" rx="0.9" fill="var(--bg-tertiary)"/><path d="M6 10l1.4-2.4 1.6 3 1.6-4 1.6 3.4 1.6-2.4 1.6 2.4 1.6-1.6" stroke="currentColor" stroke-width="0.9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="16.4" r="1.4"/><circle cx="10" cy="16.4" r="1.4"/><circle cx="14" cy="16.4" r="1.4"/><circle cx="18" cy="16.4" r="1.4"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="9" width="18" height="13" rx="1.4"/><rect x="3" y="1" width="18" height="7.4" rx="1.4"/><circle cx="7" cy="4.7" r="1.6" fill="var(--bg-tertiary)"/><circle cx="12" cy="4.7" r="1.6" fill="var(--bg-tertiary)"/><circle cx="17" cy="4.7" r="1.6" fill="var(--bg-tertiary)"/><circle cx="12" cy="15.5" r="5" fill="var(--bg-tertiary)"/><circle cx="12" cy="15.5" r="1.8"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.6"/><circle cx="12" cy="12" r="8.2" fill="var(--bg-tertiary)"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="12" cy="12" r="1.3"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="1.5" width="12" height="21" rx="1.6"/><circle cx="12" cy="7" r="2.6" fill="var(--bg-tertiary)"/><circle cx="12" cy="7" r="0.8"/><circle cx="12" cy="15.5" r="4" fill="var(--bg-tertiary)"/><circle cx="12" cy="15.5" r="1.3"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="16" rx="1.6"/><circle cx="8" cy="12" r="3.4" fill="var(--bg-tertiary)"/><circle cx="8" cy="12" r="1.1"/><circle cx="17" cy="7.5" r="1" fill="var(--bg-tertiary)"/><rect x="13.5" y="10.2" width="6.5" height="0.9" rx="0.4" fill="var(--bg-tertiary)"/><rect x="13.5" y="12.4" width="6.5" height="0.9" rx="0.4" fill="var(--bg-tertiary)"/><rect x="13.5" y="14.6" width="4.2" height="0.9" rx="0.4" fill="var(--bg-tertiary)"/></svg>`,
@@ -1207,11 +193,9 @@
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="7.5" width="22" height="14.5" rx="1.6"/><path d="M17.5 7.5 L21 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="7" cy="14.7" r="3.6" fill="var(--bg-tertiary)"/><circle cx="7" cy="14.7" r="1.2"/><rect x="12.5" y="11.6" width="8.5" height="2.2" rx="0.7" fill="var(--bg-tertiary)"/><rect x="12.5" y="16" width="8.5" height="2.2" rx="0.7" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="18" rx="1.4"/><rect x="6" y="1" width="1.2" height="4"/><circle cx="12" cy="10" r="4.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="10" r="1.3"/><rect x="7" y="16.4" width="10" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/><rect x="7" y="18.6" width="10" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="6" width="22" height="16" rx="1.6"/><circle cx="12" cy="13.6" r="6.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="13.6" r="1.5"/><line x1="12" y1="13.6" x2="16" y2="10.4" stroke="currentColor" stroke-width="1.3"/><circle cx="4.8" cy="9" r="0.7" fill="var(--bg-tertiary)"/><circle cx="19.2" cy="9" r="0.7" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 10 L12 1 L20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="10" width="20" height="12" rx="1.6"/><circle cx="7.5" cy="16" r="2.6" fill="var(--bg-tertiary)"/><circle cx="16.5" cy="16" r="2.6" fill="var(--bg-tertiary)"/><circle cx="7.5" cy="16" r="0.9"/><circle cx="16.5" cy="16" r="0.9"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="9" width="21" height="12" rx="1.5"/><rect x="6" y="9" width="12" height="6" rx="0.8" fill="var(--bg-tertiary)"/><path d="M4 9c0-4.5 3.5-8 8-8s8 3.5 8 8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="18" r="1.6" fill="var(--bg-tertiary)"/><circle cx="12" cy="18" r="1.6" fill="var(--bg-tertiary)"/><circle cx="18" cy="18" r="1.6" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.5" y="8" width="19" height="12" rx="1.8"/><circle cx="7" cy="14" r="2.6" fill="var(--bg-tertiary)"/><rect x="12" y="11" width="7" height="1" rx="0.4" fill="var(--bg-tertiary)"/><rect x="12" y="13.2" width="7" height="1" rx="0.4" fill="var(--bg-tertiary)"/><path d="M17 8 20 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="7" width="18" height="13" rx="1.6"/><circle cx="8" cy="13.5" r="3.2" fill="var(--bg-tertiary)"/><circle cx="8" cy="13.5" r="1"/><rect x="13" y="10.6" width="6" height="0.9" rx="0.4" fill="var(--bg-tertiary)"/><rect x="13" y="12.6" width="4.4" height="0.9" rx="0.4" fill="var(--bg-tertiary)"/><path d="M6 7V4.5a2 2 0 0 1 4 0V7" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="9" width="18" height="11" rx="1.6"/><circle cx="12" cy="14.5" r="3.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="14.5" r="1"/><rect x="5" y="11" width="3" height="1" rx="0.4" fill="var(--bg-tertiary)"/><rect x="16" y="11" width="3" height="1" rx="0.4" fill="var(--bg-tertiary)"/><path d="M12 9V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="3" r="1"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.5" y="6" width="19" height="14" rx="1.8"/><circle cx="7.5" cy="13" r="3.6" fill="var(--bg-tertiary)"/><circle cx="7.5" cy="13" r="1.1"/><rect x="13" y="9.4" width="6.5" height="1" rx="0.4" fill="var(--bg-tertiary)"/><rect x="13" y="11.6" width="6.5" height="1" rx="0.4" fill="var(--bg-tertiary)"/><rect x="13" y="13.8" width="4" height="1" rx="0.4" fill="var(--bg-tertiary)"/><rect x="5" y="3.5" width="14" height="2.5" rx="1" fill="var(--bg-tertiary)"/></svg>`,
             // --- DJ / mixing ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="3" width="22" height="18" rx="1.4"/><rect x="3" y="5.5" width="3" height="13" rx="1" fill="var(--bg-tertiary)"/><rect x="7.4" y="5.5" width="3" height="13" rx="1" fill="var(--bg-tertiary)"/><rect x="11.8" y="5.5" width="3" height="13" rx="1" fill="var(--bg-tertiary)"/><rect x="16.2" y="5.5" width="3" height="13" rx="1" fill="var(--bg-tertiary)"/><rect x="2.4" y="9" width="2.2" height="1.6"/><rect x="6.8" y="13" width="2.2" height="1.6"/><rect x="11.2" y="7" width="2.2" height="1.6"/><rect x="15.6" y="15" width="2.2" height="1.6"/></svg>`,
@@ -1227,10 +211,6 @@
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="16" width="2.4" height="5" rx="0.6"/><rect x="7.2" y="12" width="2.4" height="9" rx="0.6"/><rect x="11.4" y="8" width="2.4" height="13" rx="0.6"/><rect x="15.6" y="11" width="2.4" height="10" rx="0.6"/><rect x="19.8" y="5" width="2.4" height="16" rx="0.6"/></svg>`,
             // --- Cassette / boombox extras ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.9"/><circle cx="17" cy="12" r="0.9"/><rect x="3" y="6.4" width="6" height="2.4" rx="0.5" fill="var(--bg-tertiary)"/><rect x="9" y="16.6" width="6" height="1.9" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="4" width="21" height="16" rx="1.8"/><path d="M4 4 L4 20 M20 4 L20 20" stroke="var(--bg-tertiary)" stroke-width="0.8"/><circle cx="7" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="17" cy="12" r="2.8" fill="var(--bg-tertiary)"/><circle cx="7" cy="12" r="0.9"/><circle cx="17" cy="12" r="0.9"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="7" width="22" height="13" rx="1.6"/><path d="M3.5 7 L6 1.5 M20.5 7 L18 1.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="4" y="10" width="6.5" height="7" rx="0.6" fill="var(--bg-tertiary)"/><rect x="13.5" y="10" width="6.5" height="7" rx="0.6" fill="var(--bg-tertiary)"/><circle cx="7.2" cy="13.5" r="1.5"/><circle cx="16.8" cy="13.5" r="1.5"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="9" width="20" height="12" rx="1.6"/><path d="M4.5 9V4.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2V9" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7.5" cy="15" r="3" fill="var(--bg-tertiary)"/><circle cx="16.5" cy="15" r="3" fill="var(--bg-tertiary)"/><circle cx="7.5" cy="15" r="1.1"/><circle cx="16.5" cy="15" r="1.1"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="6" width="22" height="15" rx="1.8"/><rect x="3" y="8" width="18" height="4.2" rx="0.6" fill="var(--bg-tertiary)"/><circle cx="7" cy="17" r="3" fill="var(--bg-tertiary)"/><circle cx="17" cy="17" r="3" fill="var(--bg-tertiary)"/><circle cx="7" cy="17" r="1.1"/><circle cx="17" cy="17" r="1.1"/></svg>`,
             // --- CD / vinyl extras ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="11"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="var(--bg-tertiary)" stroke-width="0.9"/><circle cx="12" cy="12" r="3" fill="var(--bg-tertiary)"/><circle cx="12" cy="12" r="1" /></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="1.6"/><circle cx="12" cy="12" r="7" fill="var(--bg-tertiary)"/><circle cx="12" cy="12" r="6.9" fill="none" stroke="currentColor" stroke-width="0.4"/><circle cx="12" cy="12" r="1.9"/></svg>`,
@@ -1243,7 +223,6 @@
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="6" height="9" rx="3"/><rect x="15" y="4" width="6" height="9" rx="3"/><path d="M6 13v3a6 6 0 0 0 12 0v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 12a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><rect x="2.5" y="11.5" width="4.2" height="7.5" rx="2.1"/><rect x="17.3" y="11.5" width="4.2" height="7.5" rx="2.1"/><circle cx="4.6" cy="10" r="1" fill="var(--bg-tertiary)"/></svg>`,
             // --- Keys / wind / percussion extras ---
-            `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="6" rx="8.5" ry="3"/><path d="M3.5 6v10a8.5 3 0 0 0 17 0V6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="3.5" cy="10.5" r="1.3" fill="var(--bg-tertiary)"/><circle cx="20.5" cy="10.5" r="1.3" fill="var(--bg-tertiary)"/><circle cx="12" cy="15" r="1.3" fill="var(--bg-tertiary)"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 15c0-3 2-5 5-5h10c3 0 5 2 5 5v1c0 3-2 5-5 5H7c-3 0-5-2-5-5z"/><path d="M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="16" r="1.6" fill="var(--bg-tertiary)"/><circle cx="15.5" cy="16" r="1.6" fill="var(--bg-tertiary)"/></svg>`,
             // --- Speaker / amp extras ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="4" width="20" height="16" rx="1.6"/><circle cx="8" cy="12" r="4.4" fill="var(--bg-tertiary)"/><circle cx="8" cy="12" r="1.5"/><rect x="15" y="7" width="4.5" height="2" rx="0.6" fill="var(--bg-tertiary)"/><rect x="15" y="10.5" width="4.5" height="2" rx="0.6" fill="var(--bg-tertiary)"/><rect x="15" y="14" width="4.5" height="2" rx="0.6" fill="var(--bg-tertiary)"/></svg>`,
@@ -1252,14 +231,38 @@
             // --- Radio extras ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="8" width="22" height="12" rx="1.6"/><circle cx="6" cy="14" r="3" fill="var(--bg-tertiary)"/><circle cx="6" cy="14" r="1"/><path d="M11 11h9M11 14h9M11 17h5" stroke="var(--bg-tertiary)" stroke-width="1.4" stroke-linecap="round"/><path d="M18 8 L20 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="6" width="18" height="13" rx="1.5"/><rect x="3" y="6" width="18" height="13" rx="1.5" fill="none" stroke="var(--bg-tertiary)" stroke-width="0.5"/><rect x="5.5" y="8.3" width="8" height="4.4" rx="0.5" fill="var(--bg-tertiary)"/><line x1="9.5" y1="8.3" x2="9.5" y2="12.7" stroke="currentColor" stroke-width="0.8"/><circle cx="17.5" cy="10.5" r="2" fill="var(--bg-tertiary)"/><rect x="5.5" y="14.5" width="13" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1v3M8 2.5l1 3M16 2.5l-1 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="3" y="5" width="18" height="16" rx="1.8"/><circle cx="8.5" cy="13" r="3.4" fill="var(--bg-tertiary)"/><circle cx="8.5" cy="13" r="1.1"/><rect x="13.5" y="9.5" width="6" height="7" rx="0.6" fill="var(--bg-tertiary)"/></svg>`,
             // --- DJ / mixing extras ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="4" width="22" height="16" rx="1.6"/><rect x="3" y="6.5" width="4" height="11" rx="1" fill="var(--bg-tertiary)"/><rect x="8.5" y="6.5" width="4" height="11" rx="1" fill="var(--bg-tertiary)"/><rect x="14" y="6.5" width="4" height="11" rx="1" fill="var(--bg-tertiary)"/><rect x="19.5" y="6.5" width="2.5" height="11" rx="1" fill="var(--bg-tertiary)"/><circle cx="5" cy="10" r="1.3"/><circle cx="10.5" cy="14" r="1.3"/><circle cx="16" cy="9" r="1.3"/></svg>`,
             // --- Misc extras ---
             `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 15l2.5-6 2 4 2-8 2 6 2-2" fill="none" stroke="var(--bg-tertiary)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4a2 2 0 0 1 2 2v10.5a3.2 3.2 0 1 1-2-3V6a1 1 0 0 0-1-1H2V4z"/><path d="M14 4a2 2 0 0 1 2 2v10.5a3.2 3.2 0 1 1-2-3V6a1 1 0 0 0-1-1h-1V4z"/><path d="M8 3l8-1v3l-8 1z"/></svg>`,
             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h5l1.5 2H18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="7" y="9" width="10" height="1.4" fill="var(--bg-tertiary)"/><rect x="7" y="12" width="10" height="1.4" fill="var(--bg-tertiary)"/><rect x="7" y="15" width="6" height="1.4" fill="var(--bg-tertiary)"/></svg>`,
-        ];
+            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v11.5a3 3 0 1 0 2 2.8V7h8v6.5a3 3 0 1 0 2 2.8V3z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="9" width="3.6" height="6"/><rect x="6.4" y="4" width="3.6" height="16"/><rect x="11.8" y="12" width="3.6" height="3"/><rect x="17.2" y="7" width="3.6" height="11"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="9" y="6" width="2" height="12" rx="1"/><rect x="5" y="9" width="2" height="6" rx="1"/><rect x="13" y="9" width="2" height="6" rx="1"/><rect x="17" y="4" width="2" height="16" rx="1"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 14c2-8 4-8 6 0s4 8 6 0 4-8 6 0"/><path d="M2 10c2 8 4 8 6 0s4-8 6 0 4 8 6 0" opacity="0.55"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="9" r="3.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="9" r="1.2"/><path d="M9 16l3 3 3-3z" fill="var(--bg-tertiary)"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.5" y="9" width="21" height="11" rx="1.6"/><path d="M5 9V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="14" r="2.7" fill="var(--bg-tertiary)"/><circle cx="7" cy="14" r="0.9"/><rect x="11.5" y="11.6" width="7" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/><rect x="11.5" y="14" width="5.4" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/><rect x="11.5" y="16.4" width="7.4" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.5" y="4" width="19" height="16" rx="1.6"/><rect x="5" y="6.5" width="14" height="6" rx="0.7" fill="var(--bg-tertiary)"/><circle cx="7" cy="17" r="1.6" fill="var(--bg-tertiary)"/><circle cx="17" cy="17" r="1.6" fill="var(--bg-tertiary)"/><circle cx="7" cy="17" r="0.5"/><circle cx="17" cy="17" r="0.5"/><rect x="10" y="15.4" width="4" height="1.4" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 13c0-5 4-9 9-9s9 4 9 9"/><path d="M6 13c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M9 13c0-1.7 1.3-3 3-3s3 1.3 3 3"/><circle cx="12" cy="14" r="1.6" fill="currentColor" stroke="none"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="1.5" width="12" height="21" rx="1.6"/><circle cx="12" cy="8" r="3.4" fill="var(--bg-tertiary)"/><circle cx="12" cy="8" r="1.2"/><circle cx="12" cy="17" r="4" fill="var(--bg-tertiary)"/><circle cx="12" cy="17" r="1.5"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="3" width="8" height="18" rx="2"/><circle cx="12" cy="8.5" r="2.2" fill="var(--bg-tertiary)"/><circle cx="12" cy="8.5" r="0.8"/><circle cx="12" cy="15.5" r="3" fill="var(--bg-tertiary)"/><circle cx="12" cy="15.5" r="1"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="8.5" height="18" rx="1.4"/><circle cx="6.2" cy="8" r="2.4" fill="var(--bg-tertiary)"/><circle cx="6.2" cy="8" r="0.8"/><circle cx="6.2" cy="15" r="3" fill="var(--bg-tertiary)"/><circle cx="6.2" cy="15" r="1"/><rect x="13.5" y="3" width="8.5" height="18" rx="1.4"/><circle cx="17.8" cy="8" r="2.4" fill="var(--bg-tertiary)"/><circle cx="17.8" cy="8" r="0.8"/><circle cx="17.8" cy="15" r="3" fill="var(--bg-tertiary)"/><circle cx="17.8" cy="15" r="1"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="2" width="18" height="20" rx="1.6"/><rect x="5.4" y="4.2" width="13.2" height="5.4" rx="0.8" fill="var(--bg-tertiary)"/><rect x="5.4" y="11.4" width="13.2" height="5.4" rx="0.8" fill="var(--bg-tertiary)"/><circle cx="12" cy="20.2" r="1" fill="var(--bg-tertiary)"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="3" width="22" height="18" rx="1.4"/><rect x="3" y="5.5" width="18" height="3" rx="0.5" fill="var(--bg-tertiary)"/><rect x="3" y="10" width="3" height="9" rx="0.6" fill="var(--bg-tertiary)"/><rect x="7.5" y="10" width="3" height="9" rx="0.6" fill="var(--bg-tertiary)"/><rect x="12" y="10" width="3" height="9" rx="0.6" fill="var(--bg-tertiary)"/><rect x="16.5" y="10" width="3" height="9" rx="0.6" fill="var(--bg-tertiary)"/><rect x="2.4" y="8.5" width="4.2" height="1.2" fill="currentColor"/><rect x="6.9" y="8.5" width="4.2" height="1.2" fill="currentColor"/><rect x="11.4" y="8.5" width="4.2" height="1.2" fill="currentColor"/><rect x="15.9" y="8.5" width="4.2" height="1.2" fill="currentColor"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="5" width="22" height="15" rx="1.4"/><rect x="2.8" y="7" width="1.8" height="11" fill="var(--bg-tertiary)"/><rect x="5.6" y="7" width="1.8" height="11" fill="var(--bg-tertiary)"/><rect x="8.4" y="7" width="1.8" height="11" fill="var(--bg-tertiary)"/><rect x="11.2" y="7" width="1.8" height="11" fill="var(--bg-tertiary)"/><rect x="14" y="7" width="1.8" height="11" fill="var(--bg-tertiary)"/><rect x="16.8" y="7" width="1.8" height="11" fill="var(--bg-tertiary)"/><rect x="19.6" y="7" width="1.8" height="11" fill="var(--bg-tertiary)"/><rect x="2.3" y="12.5" width="2.8" height="1.3" fill="currentColor"/><rect x="8.9" y="9" width="2.8" height="1.3" fill="currentColor"/><rect x="15.5" y="15" width="2.8" height="1.3" fill="currentColor"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="8" width="4" height="8" rx="1"/><rect x="7" y="3" width="4" height="18" rx="1"/><rect x="13" y="10" width="4" height="4" rx="1"/><rect x="19" y="5" width="4" height="14" rx="1"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="11" width="3" height="2" rx="0.6"/><rect x="7" y="7" width="3" height="10" rx="0.6"/><rect x="12" y="4" width="3" height="16" rx="0.6"/><rect x="17" y="10" width="3" height="4" rx="0.6"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 16c1-6 3-9 4-6s3 8 4 4 3-6 4-2 3 4 4 1 3 2 4-2" fill="none"/><path d="M2 10c1 6 3 9 4 6s3-8 4-4 3 6 4 2 3-4 4 0 3-1 4-3" opacity="0.55" fill="none"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h4l2-6 3 12 2-8 2 4h5"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="5" width="3" height="14" rx="0.6"/><rect x="7" y="9" width="3" height="6" rx="0.6"/><rect x="12" y="2" width="3" height="20" rx="0.6"/><rect x="17" y="10" width="3" height="4" rx="0.6"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2v13.5a3 3 0 1 0 2 2.8V7h8v8.5a3 3 0 1 0 2 2.8V2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v12a4 4 0 1 0 2 3.5V8h6v6a4 4 0 1 0 2 3.5V3z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="6.5" cy="18" rx="4" ry="2.6"/><ellipse cx="17.5" cy="18" rx="4" ry="2.6"/><path d="M6.5 15.4V5M17.5 15.4V5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="4.5" cy="16.5" r="2"/><circle cx="4.5" cy="16.5" r="2" fill="none" stroke="var(--bg-tertiary)" stroke-width="0.5"/><path d="M6.5 16.5V4M17 16.5V4" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 4h10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="19" cy="16.5" r="2"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="2" width="18" height="20" rx="2"/><rect x="5.4" y="4.2" width="13.2" height="12.4" rx="0.8" fill="var(--bg-tertiary)"/><path d="M7.5 10.5l3-2 3 4 3-3 2 2" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="9.5" y="18" width="5" height="2" rx="0.5" fill="var(--bg-tertiary)"/></svg>`,
+            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v12a4 4 0 1 0 2 3.5V7h5v3a2 2 0 1 0 1 1.7V3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>`,
+        
+            ,`<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="1.6"/><path d="M6 8h12v2H6z" fill="var(--bg-tertiary)"/><path d="M6 12.5h8v1.5H6z" fill="var(--bg-tertiary)"/><path d="M9 15.5h5v1.5H9z" fill="var(--bg-tertiary)"/></svg>`,];
         let currentPlayerNoteIndex = -1;
         function pickPlayerNoteIcon() {
             if (playerNoteIcons.length <= 1) return playerNoteIcons[0] || "";
@@ -1269,6 +272,18 @@
             } while (idx === currentPlayerNoteIndex);
             currentPlayerNoteIndex = idx;
             return playerNoteIcons[idx];
+        }
+        // Tapping the big music glyph above the player swaps it for a
+        // different random one, but only while audio is actually playing.
+        function wirePlayerIconTap(scope) {
+            const iconEl = scope.querySelector(".audio-icon");
+            const audioEl = scope.querySelector("audio");
+            if (!iconEl || !audioEl) return;
+            iconEl.style.cursor = "pointer";
+            iconEl.addEventListener("click", () => {
+                if (audioEl.paused) return;
+                iconEl.innerHTML = pickPlayerNoteIcon();
+            });
         }
         function loadSettings() {
             const e = localStorage.getItem("theme");
@@ -1822,6 +837,13 @@
                     compactKey += w;
                 }
 
+                // Parse each item's modified date exactly once (instead of on
+                // every render/sort) and cache the Date so the column cells and
+                // date sorts never re-construct a Date for the same item.
+                let dateObj = null;
+                if (node.type === "file") {
+                    try { dateObj = getItemDate(node); } catch (err) { dateObj = null; }
+                }
                 allFiles.push({
                     ...node,
                     fullPath: currentPathStr,
@@ -1830,7 +852,8 @@
                     normalizedKey: normalizedKey,
                     compactKey: compactKey,
                     boundarySet: boundarySet,
-                    parentPath: pathPrefix.toLowerCase()
+                    parentPath: pathPrefix.toLowerCase(),
+                    dateObj: dateObj
                 });
                 if (node.type === "directory" && node.children) {
                     preprocessFiles(node.children, currentPathStr);
@@ -2682,14 +1705,18 @@
         }
         const MONTH_ABBR = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
         function formatItemDate(item) {
-            const d = getItemDate(item);
-            if (!d) return "—";
+            if (item.dateStr !== undefined) return item.dateStr;
+            const d = item.dateObj ?? getItemDate(item);
+            if (!d) { item.dateStr = "—"; return item.dateStr; }
             const day = String(d.getDate()).padStart(2, "0");
-            return `${d.getFullYear()}/${MONTH_ABBR[d.getMonth()]}/${day}`;
+            item.dateStr = `${d.getFullYear()}/${MONTH_ABBR[d.getMonth()]}/${day}`;
+            return item.dateStr;
         }
         function formatItemTime(item) {
-            const d = getItemDate(item);
-            return d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+            if (item.timeStr !== undefined) return item.timeStr;
+            const d = item.dateObj ?? getItemDate(item);
+            item.timeStr = d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+            return item.timeStr;
         }
         function sortItems(items) {
             const sorted = [...items];
@@ -2709,9 +1736,9 @@
                     case "size-asc":
                         return getItemSize(a) - getItemSize(b);
                     case "date-asc":
-                        return (getItemDate(a)?.getTime() ?? 0) - (getItemDate(b)?.getTime() ?? 0);
+                        return (a.dateObj?.getTime() ?? 0) - (b.dateObj?.getTime() ?? 0);
                     case "date-desc":
-                        return (getItemDate(b)?.getTime() ?? 0) - (getItemDate(a)?.getTime() ?? 0);
+                        return (b.dateObj?.getTime() ?? 0) - (a.dateObj?.getTime() ?? 0);
                     case "type":
                         return (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name);
                     case "name-asc":
@@ -3032,6 +2059,7 @@
         });
         const handlePinnedFoldersClick = pinnedFoldersHandlers.onClick;
         const handlePinnedFoldersKeydown = pinnedFoldersHandlers.onKeydown;
+        let lastBreadcrumbPathKey = null;
         function renderBreadcrumb() {
             const breadcrumbEl = document.getElementById("breadcrumb");
             let html = `<span class="breadcrumb-item${currentPath.length === 0 ? " current" : ""}" data-path="[]">Home</span>`;
@@ -3053,7 +2081,14 @@
             const pinBtnEl = document.getElementById("pinFolderBtn");
             if (pinBtnEl) pinBtnEl.addEventListener("click", togglePinCurrentFolder);
             const currentCrumb = breadcrumbEl.querySelector(".breadcrumb-item.current");
-            if (currentCrumb) currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
+            // scrollIntoView forces a synchronous layout flush; only do it when
+            // the actual folder path changed (e.g. on navigation), not on every
+            // render (view toggles, star clicks, search keystrokes, etc.).
+            const pathKey = currentPath.join("/");
+            if (currentCrumb && pathKey !== lastBreadcrumbPathKey) {
+                currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
+            }
+            lastBreadcrumbPathKey = pathKey;
         }
         function renderTree() {
             const treeEl = document.getElementById("treeContent");
@@ -3271,8 +2306,8 @@
                         // (#, ?, %) first, then escape for the attribute context.
                         const thumbSrc = escapeHtml(encodePathForUrl(clickPath));
                         thumbnailHtml = currentView === "grid"
-                            ? `<img class="file-thumbnail lazy" data-src="./${thumbSrc}" alt="" loading="lazy">`
-                            : `<img class="file-thumbnail file-thumbnail-inline lazy" data-src="./${thumbSrc}" alt="" loading="lazy">`;
+                            ? `<img class="file-thumbnail lazy" data-src="./${thumbSrc}" alt="" loading="lazy" decoding="async">`
+                            : `<img class="file-thumbnail file-thumbnail-inline lazy" data-src="./${thumbSrc}" alt="" loading="lazy" decoding="async">`;
                     }
                     html += `
             <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">
@@ -3856,6 +2891,7 @@
                     if (iconEl) iconEl.innerHTML = pickPlayerNoteIcon();
                     updateMediaSessionTitle(s);
                 }
+                wirePlayerIconTap(n);
                 attachPlaylistStream(audio, finalUrl, o);
             }
         }
@@ -3951,6 +2987,7 @@
                             setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);
                         }
+                        wirePlayerIconTap(bodyEl);
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
                     case "document":
@@ -4291,6 +3328,3 @@
             return escapeHtml(name);
         }
         init();
-    </script>
-</body>
-</html>

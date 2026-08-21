@@ -1275,41 +1275,6 @@
             currentPlayerNoteIndex = idx;
             return playerNoteIcons[idx];
         }
-        // Auto-swap registry: one timer per active <audio>, only ticking
-        // while that audio is actually playing and the tab is visible.
-        // Uses a single shared visibilitychange listener rather than one
-        // per player instance, so nothing accumulates across track/file
-        // changes or repeated modal opens.
-        const AUTO_SWAP_MS = 30000;
-        const autoSwapRegistry = new Map(); // audioEl -> { iconEl, timer }
-        let autoSwapVisibilityWired = false;
-        function ensureAutoSwapVisibilityListener() {
-            if (autoSwapVisibilityWired) return;
-            autoSwapVisibilityWired = true;
-            document.addEventListener("visibilitychange", () => {
-                autoSwapRegistry.forEach((_entry, audioEl) => {
-                    if (document.hidden) {
-                        stopAutoSwap(audioEl);
-                    } else if (!audioEl.paused) {
-                        startAutoSwap(audioEl);
-                    }
-                });
-            });
-        }
-        function startAutoSwap(audioEl) {
-            const entry = autoSwapRegistry.get(audioEl);
-            if (!entry || entry.timer || document.hidden || audioEl.paused) return;
-            entry.timer = setInterval(() => {
-                entry.iconEl.innerHTML = pickPlayerNoteIcon();
-            }, AUTO_SWAP_MS);
-        }
-        function stopAutoSwap(audioEl) {
-            const entry = autoSwapRegistry.get(audioEl);
-            if (entry && entry.timer) {
-                clearInterval(entry.timer);
-                entry.timer = null;
-            }
-        }
         // Tapping the big music glyph above the player swaps it for a
         // different random one, but only while audio is actually playing.
         function wirePlayerIconTap(scope) {
@@ -1321,22 +1286,6 @@
                 if (audioEl.paused) return;
                 iconEl.innerHTML = pickPlayerNoteIcon();
             });
-            if (!autoSwapRegistry.has(audioEl)) {
-                autoSwapRegistry.set(audioEl, { iconEl, timer: null });
-                ensureAutoSwapVisibilityListener();
-                audioEl.addEventListener("play", () => startAutoSwap(audioEl));
-                audioEl.addEventListener("pause", () => stopAutoSwap(audioEl));
-                audioEl.addEventListener("ended", () => stopAutoSwap(audioEl));
-                audioEl.addEventListener("emptied", () => {
-                    stopAutoSwap(audioEl);
-                    autoSwapRegistry.delete(audioEl);
-                });
-            } else {
-                // Same audio element across a track change; the icon node
-                // is reused too, but keep the registry's reference fresh.
-                autoSwapRegistry.get(audioEl).iconEl = iconEl;
-            }
-            if (!audioEl.paused) startAutoSwap(audioEl);
         }
         function loadSettings() {
             const e = localStorage.getItem("theme");

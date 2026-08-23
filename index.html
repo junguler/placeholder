@@ -3638,6 +3638,12 @@
         function stopPlaylist() {
             destroyHls();
             clearStreamTimeout();
+            const activeMedia = document.getElementById("audioPlayer") || document.getElementById("videoPlayer");
+            if (activeMedia) {
+                activeMedia.pause();
+                activeMedia.removeAttribute("src");
+                activeMedia.load();
+            }
             (currentPlaylist = []),
                 (currentPlaylistIndex = 0),
                 (shuffleBag = []),

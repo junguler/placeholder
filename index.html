@@ -1275,6 +1275,39 @@
             currentPlayerNoteIndex = idx;
             return playerNoteIcons[idx];
         }
+        // The glyphs all share a "0 0 24 24" viewBox, but several of them
+        // (antennas, headband arcs, cassette feet, etc.) aren't actually
+        // drawn symmetrically inside that box - so even though the <svg>
+        // itself sits dead center in the .audio-icon square, the visible
+        // artwork can look off-center. Rather than hand-tune every path,
+        // measure each icon's real drawn bounding box once it's in the DOM
+        // and recenter its viewBox on that, with a little breathing room.
+        // This keeps every glyph (present or future) centered regardless
+        // of how its coordinates happen to be laid out.
+        function centerAudioIconSvg(containerEl) {
+            const svg = containerEl && containerEl.querySelector("svg");
+            if (!svg) return;
+            let bbox;
+            try {
+                bbox = svg.getBBox();
+            } catch (e) {
+                return; // element not renderable yet (e.g. detached/hidden)
+            }
+            if (!bbox || (!bbox.width && !bbox.height)) return;
+            const cx = bbox.x + bbox.width / 2;
+            const cy = bbox.y + bbox.height / 2;
+            const PADDING = 1.15; // slight margin so glyphs don't touch the edges
+            const size = Math.max(bbox.width, bbox.height) * PADDING;
+            svg.setAttribute("viewBox", `${cx - size / 2} ${cy - size / 2} ${size} ${size}`);
+        }
+        // Sets a glyph's markup on an .audio-icon container and recenters it.
+        // Use this (instead of setting innerHTML directly) anywhere a note
+        // icon is swapped in after the container already exists in the DOM.
+        function setPlayerIcon(iconEl, svgMarkup) {
+            if (!iconEl) return;
+            iconEl.innerHTML = svgMarkup;
+            centerAudioIconSvg(iconEl);
+        }
         // Auto-swap registry: one timer per active <audio>, only ticking
         // while that audio is actually playing and the tab is visible.
         // Uses a single shared visibilitychange listener rather than one
@@ -1298,22 +1331,13 @@
         }
         function startAutoSwap(audioEl) {
             const entry = autoSwapRegistry.get(audioEl);
-            console.log("[autoswap] startAutoSwap called", {
-                hasEntry: !!entry,
-                alreadyTimer: !!(entry && entry.timer),
-                hidden: document.hidden,
-                paused: audioEl.paused,
-            });
             if (!entry || entry.timer || document.hidden || audioEl.paused) return;
             entry.timer = setInterval(() => {
-                console.log("[autoswap] tick, iconEl connected:", entry.iconEl.isConnected);
-                entry.iconEl.innerHTML = pickPlayerNoteIcon();
+                setPlayerIcon(entry.iconEl, pickPlayerNoteIcon());
             }, AUTO_SWAP_MS);
-            console.log("[autoswap] timer started", entry.timer);
         }
         function stopAutoSwap(audioEl) {
             const entry = autoSwapRegistry.get(audioEl);
-            console.log("[autoswap] stopAutoSwap called", { hasTimer: !!(entry && entry.timer) });
             if (entry && entry.timer) {
                 clearInterval(entry.timer);
                 entry.timer = null;
@@ -1324,19 +1348,18 @@
         function wirePlayerIconTap(scope) {
             const iconEl = scope.querySelector(".audio-icon");
             const audioEl = scope.querySelector("audio");
-            console.log("[autoswap] wirePlayerIconTap called", { hasIcon: !!iconEl, hasAudio: !!audioEl, alreadyRegistered: audioEl ? autoSwapRegistry.has(audioEl) : null });
             if (!iconEl || !audioEl) return;
             iconEl.style.cursor = "pointer";
             iconEl.addEventListener("click", () => {
                 if (audioEl.paused) return;
-                iconEl.innerHTML = pickPlayerNoteIcon();
+                setPlayerIcon(iconEl, pickPlayerNoteIcon());
             });
             if (!autoSwapRegistry.has(audioEl)) {
                 autoSwapRegistry.set(audioEl, { iconEl, timer: null });
                 ensureAutoSwapVisibilityListener();
-                audioEl.addEventListener("play", () => { console.log("[autoswap] 'play' event fired"); startAutoSwap(audioEl); });
-                audioEl.addEventListener("pause", () => { console.log("[autoswap] 'pause' event fired"); stopAutoSwap(audioEl); });
-                audioEl.addEventListener("ended", () => { console.log("[autoswap] 'ended' event fired"); stopAutoSwap(audioEl); });
+                audioEl.addEventListener("play", () => startAutoSwap(audioEl));
+                audioEl.addEventListener("pause", () => stopAutoSwap(audioEl));
+                audioEl.addEventListener("ended", () => stopAutoSwap(audioEl));
                 audioEl.addEventListener("emptied", () => {
                     // `emptied` fires every time attachPlaylistStream() calls
                     // mediaEl.load() for a track change (spec behavior), not
@@ -1347,7 +1370,6 @@
                     // so the timer silently never (re)starts after the
                     // first track. Only drop the entry once the audio
                     // element itself has actually left the DOM.
-                    console.log("[autoswap] 'emptied' event fired", { stillConnected: audioEl.isConnected });
                     stopAutoSwap(audioEl);
                     if (!audioEl.isConnected) {
                         autoSwapRegistry.delete(audioEl);
@@ -3976,12 +3998,13 @@
                     setupMediaSession(audio, s);
                     maybeWireMediaControls(audio);
                     document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
+                    centerAudioIconSvg(n.querySelector(".audio-icon"));
                 } else {
                     destroyHls();
                     const titleEl = n.querySelector(".playlist-now-playing");
                     if (titleEl) titleEl.textContent = s;
                     const iconEl = n.querySelector(".audio-icon");
-                    if (iconEl) iconEl.innerHTML = pickPlayerNoteIcon();
+                    if (iconEl) setPlayerIcon(iconEl, pickPlayerNoteIcon());
                     updateMediaSessionTitle(s);
                 }
                 wirePlayerIconTap(n);
@@ -4082,6 +4105,7 @@
                         }
                         wirePlayerIconTap(bodyEl);
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
+                        centerAudioIconSvg(bodyEl.querySelector(".audio-icon"));
                         break;
                     case "document":
                         if (fileName.toLowerCase().endsWith(".pdf")) {

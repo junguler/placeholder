@@ -1338,9 +1338,20 @@
                 audioEl.addEventListener("pause", () => { console.log("[autoswap] 'pause' event fired"); stopAutoSwap(audioEl); });
                 audioEl.addEventListener("ended", () => { console.log("[autoswap] 'ended' event fired"); stopAutoSwap(audioEl); });
                 audioEl.addEventListener("emptied", () => {
-                    console.log("[autoswap] 'emptied' event fired");
+                    // `emptied` fires every time attachPlaylistStream() calls
+                    // mediaEl.load() for a track change (spec behavior), not
+                    // just when the player is actually torn down. Deleting
+                    // the registry entry here used to race the follow-up
+                    // "play" event: load() -> emptied (entry deleted) ->
+                    // play() -> startAutoSwap() finds no entry and bails,
+                    // so the timer silently never (re)starts after the
+                    // first track. Only drop the entry once the audio
+                    // element itself has actually left the DOM.
+                    console.log("[autoswap] 'emptied' event fired", { stillConnected: audioEl.isConnected });
                     stopAutoSwap(audioEl);
-                    autoSwapRegistry.delete(audioEl);
+                    if (!audioEl.isConnected) {
+                        autoSwapRegistry.delete(audioEl);
+                    }
                 });
             } else {
                 // Same audio element across a track change; the icon node

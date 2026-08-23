@@ -1298,13 +1298,22 @@
         }
         function startAutoSwap(audioEl) {
             const entry = autoSwapRegistry.get(audioEl);
+            console.log("[autoswap] startAutoSwap called", {
+                hasEntry: !!entry,
+                alreadyTimer: !!(entry && entry.timer),
+                hidden: document.hidden,
+                paused: audioEl.paused,
+            });
             if (!entry || entry.timer || document.hidden || audioEl.paused) return;
             entry.timer = setInterval(() => {
+                console.log("[autoswap] tick, iconEl connected:", entry.iconEl.isConnected);
                 entry.iconEl.innerHTML = pickPlayerNoteIcon();
             }, AUTO_SWAP_MS);
+            console.log("[autoswap] timer started", entry.timer);
         }
         function stopAutoSwap(audioEl) {
             const entry = autoSwapRegistry.get(audioEl);
+            console.log("[autoswap] stopAutoSwap called", { hasTimer: !!(entry && entry.timer) });
             if (entry && entry.timer) {
                 clearInterval(entry.timer);
                 entry.timer = null;
@@ -1315,6 +1324,7 @@
         function wirePlayerIconTap(scope) {
             const iconEl = scope.querySelector(".audio-icon");
             const audioEl = scope.querySelector("audio");
+            console.log("[autoswap] wirePlayerIconTap called", { hasIcon: !!iconEl, hasAudio: !!audioEl, alreadyRegistered: audioEl ? autoSwapRegistry.has(audioEl) : null });
             if (!iconEl || !audioEl) return;
             iconEl.style.cursor = "pointer";
             iconEl.addEventListener("click", () => {
@@ -1324,10 +1334,11 @@
             if (!autoSwapRegistry.has(audioEl)) {
                 autoSwapRegistry.set(audioEl, { iconEl, timer: null });
                 ensureAutoSwapVisibilityListener();
-                audioEl.addEventListener("play", () => startAutoSwap(audioEl));
-                audioEl.addEventListener("pause", () => stopAutoSwap(audioEl));
-                audioEl.addEventListener("ended", () => stopAutoSwap(audioEl));
+                audioEl.addEventListener("play", () => { console.log("[autoswap] 'play' event fired"); startAutoSwap(audioEl); });
+                audioEl.addEventListener("pause", () => { console.log("[autoswap] 'pause' event fired"); stopAutoSwap(audioEl); });
+                audioEl.addEventListener("ended", () => { console.log("[autoswap] 'ended' event fired"); stopAutoSwap(audioEl); });
                 audioEl.addEventListener("emptied", () => {
+                    console.log("[autoswap] 'emptied' event fired");
                     stopAutoSwap(audioEl);
                     autoSwapRegistry.delete(audioEl);
                 });

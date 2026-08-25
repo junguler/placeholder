@@ -290,7 +290,9 @@
         .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
         .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
         .preview-audio-container { width: 100%; max-width: 500px; padding: 1.25rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; position: relative; }
-        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); font-family: "PlayerIconFont", sans-serif; font-size: 44px; line-height: 1; user-select: none; }
+        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); user-select: none; overflow: hidden; }
+        .audio-icon-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+        .audio-icon-glyph { font-family: "PlayerIconFont", sans-serif; font-size: 55px; fill: currentColor; }
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .preview-audio { width: 100%; height: 40px; display: none; }
         .preview-audio[controls] { display: block; }
@@ -543,6 +545,16 @@
     </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
     <script>
+        // Warm up the PlayerIconFont webfont as early as possible. It's
+        // only referenced via CSS classes on elements that don't exist
+        // until an audio player is opened, so without an explicit nudge
+        // here the browser wouldn't start fetching/parsing it until then —
+        // and canvas measureText() (used to size/center the player-icon
+        // glyphs, see setPlayerIcon below) needs it already loaded or it
+        // silently measures the fallback font instead.
+        if (window.document && document.fonts && document.fonts.load) {
+            document.fonts.load('55px "PlayerIconFont"').catch(() => {});
+        }
         // -- Navigation / browsing state --
         let fileIndex = null,
             currentPath = [],
@@ -693,13 +705,96 @@
             currentPlayerNoteIndex = idx;
             return playerNoteIcons[idx];
         }
-        // Sets a glyph on an .audio-icon container. Icons are now single
-        // characters from the PlayerIconFont webfont (see playerNoteIcons
-        // above), so this is just a text swap — no more SVG bbox recentering
-        // needed since the font glyphs are already drawn on-center.
+        // Per-glyph ink-box cache. Nerd Font glyphs are drawn at wildly
+        // different visual sizes inside their em box (a headphone glyph
+        // might fill it edge-to-edge, a notehead might be a small mark
+        // near the baseline), so a flat font-size alone leaves the icon
+        // above the player looking inconsistent. We measure each glyph's
+        // true ink bounding box once and cache it — the result only
+        // depends on the glyph + font-size, both constant for the app's
+        // lifetime.
+        //
+        // Note: SVG <text>.getBBox() looked like the obvious tool here,
+        // but in practice it returns a box derived from font metrics
+        // (ascent/descent + advance width) rather than the glyph's actual
+        // drawn ink — every glyph in the pool came back with an identical
+        // box regardless of shape. Canvas 2D's measureText() with its
+        // actualBoundingBox* fields gives the real tight ink bounds, so
+        // that's used purely for measurement; the glyph is still painted
+        // as an SVG <text> for crisp scaling.
+        const _glyphMetricsCache = new Map();
+        const AUDIO_ICON_GLYPH_TARGET = 38; // px, ink size every glyph is normalized to (~25% bigger than the old flat 44px font look)
+        const AUDIO_ICON_GLYPH_SCALE_MIN = 0.6;
+        const AUDIO_ICON_GLYPH_SCALE_MAX = 2.4;
+        const AUDIO_ICON_GLYPH_FONT_PX = 55;
+        const AUDIO_ICON_GLYPH_FONT_SPEC = `${AUDIO_ICON_GLYPH_FONT_PX}px "PlayerIconFont", sans-serif`;
+        let _glyphMeasureCtx = null;
+        function measureGlyphInk(glyph) {
+            // Don't cache measurements taken before the webfont has
+            // actually loaded — they'd reflect the fallback font's metrics
+            // (which happen to be identical for every unsupported private-
+            // use codepoint) and get stuck that way for the rest of the
+            // session.
+            const fontReady = !document.fonts || document.fonts.check(AUDIO_ICON_GLYPH_FONT_SPEC);
+            if (fontReady && _glyphMetricsCache.has(glyph)) return _glyphMetricsCache.get(glyph);
+            if (!_glyphMeasureCtx) {
+                _glyphMeasureCtx = document.createElement("canvas").getContext("2d");
+            }
+            _glyphMeasureCtx.font = AUDIO_ICON_GLYPH_FONT_SPEC;
+            const m = _glyphMeasureCtx.measureText(glyph);
+            let metrics = null;
+            if (m && isFinite(m.actualBoundingBoxLeft) && isFinite(m.actualBoundingBoxRight) &&
+                isFinite(m.actualBoundingBoxAscent) && isFinite(m.actualBoundingBoxDescent)) {
+                const width = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
+                const height = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+                if (width > 0 && height > 0) {
+                    // Canvas measures from an (0,0) origin placed at the text's
+                    // drawing point on the alphabetic baseline; "ascent"/"left"
+                    // extend up/left (negative y, negative x from that point).
+                    metrics = { x: -m.actualBoundingBoxLeft, y: -m.actualBoundingBoxAscent, width, height };
+                }
+            }
+            if (fontReady) _glyphMetricsCache.set(glyph, metrics);
+            return metrics;
+        }
+        // Re-applies every currently-visible player icon once the webfont
+        // finishes loading, in case any were first drawn (and mis-measured
+        // against the fallback font) before that happened.
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                if (!document.fonts.check(AUDIO_ICON_GLYPH_FONT_SPEC)) return;
+                _glyphMetricsCache.clear();
+                document.querySelectorAll(".audio-icon").forEach((iconEl) => {
+                    const textEl = iconEl.querySelector(".audio-icon-glyph");
+                    if (textEl && textEl.textContent) setPlayerIcon(iconEl, textEl.textContent);
+                });
+            });
+        }
+        // Sets a glyph on an .audio-icon container's inner SVG <text>, then
+        // scales + centers it around its own measured ink bounding box so
+        // every glyph in the pool reads as the same size and sits
+        // dead-center, regardless of how the source font drew it.
         function setPlayerIcon(iconEl, glyph) {
             if (!iconEl) return;
-            iconEl.textContent = glyph;
+            let textEl = iconEl.querySelector(".audio-icon-glyph");
+            if (!textEl) {
+                // Backfill the SVG wrapper for any stale markup that still
+                // has the glyph as plain textContent on .audio-icon.
+                iconEl.innerHTML = '<svg class="audio-icon-svg" viewBox="0 0 80 80"><text class="audio-icon-glyph" x="0" y="0"></text></svg>';
+                textEl = iconEl.querySelector(".audio-icon-glyph");
+            }
+            textEl.removeAttribute("transform");
+            textEl.textContent = glyph;
+            const ink = measureGlyphInk(glyph);
+            if (!ink) return; // blank/whitespace glyph — nothing to center or scale
+            const cx = ink.x + ink.width / 2;
+            const cy = ink.y + ink.height / 2;
+            let scale = AUDIO_ICON_GLYPH_TARGET / Math.max(ink.width, ink.height);
+            scale = Math.min(AUDIO_ICON_GLYPH_SCALE_MAX, Math.max(AUDIO_ICON_GLYPH_SCALE_MIN, scale));
+            // The viewBox is 80x80, so (40,40) is its midpoint: shift the
+            // glyph's ink center to the origin, scale it up uniformly, then
+            // move it back out to the box center.
+            textEl.setAttribute("transform", `translate(40,40) scale(${scale}) translate(${-cx},${-cy})`);
         }
         // Auto-swap registry: one timer per active <audio>, only ticking while
         // that audio is playing and the tab is visible. Uses a single shared
@@ -2647,7 +2742,7 @@
                     n.innerHTML = `
                       <div class="preview-audio-container">
                         <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link &amp; header" aria-label="Copy stream link and header">${icons.info}</button>
-                        <div class="audio-icon">${pickPlayerNoteIcon()}</div>
+                        <div class="audio-icon"><svg class="audio-icon-svg" viewBox="0 0 80 80"><text class="audio-icon-glyph" x="0" y="0"></text></svg></div>
                         <div class="playlist-now-playing">${escapeHtml(s)}</div>
                         <audio id="audioPlayer" class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
                           Your browser does not support audio playback.
@@ -2662,6 +2757,7 @@
                     setupMediaSession(audio, s);
                     maybeWireMediaControls(audio);
                     document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
+                    setPlayerIcon(n.querySelector(".audio-icon"), pickPlayerNoteIcon());
                 } else {
                     destroyHls();
                     const titleEl = n.querySelector(".playlist-now-playing");
@@ -2747,7 +2843,7 @@
                         bodyEl.innerHTML = `
               <div class="preview-audio-container">
                 <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link" aria-label="Copy stream link">${icons.info}</button>
-                <div class="audio-icon">${pickPlayerNoteIcon()}</div>
+                <div class="audio-icon"><svg class="audio-icon-svg" viewBox="0 0 80 80"><text class="audio-icon-glyph" x="0" y="0"></text></svg></div>
                 <div class="playlist-now-playing">${escapeHtml(fileName)}</div>
                 <audio class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
                   <source src="${o}">
@@ -2765,6 +2861,7 @@
                             setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);
                         }
+                        setPlayerIcon(bodyEl.querySelector(".audio-icon"), pickPlayerNoteIcon());
                         wirePlayerIconTap(bodyEl);
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;

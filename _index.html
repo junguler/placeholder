@@ -27,172 +27,133 @@
             font-style: normal;
             font-display: block;
         }
-        /* --- Teletext / videotex theme system ---
-           All four original themes (dark/default, light, hc-dark, hc-light)
-           plus the custom accent-color picker and corner-depth control are
-           kept fully intact and functional — switching them still changes
-           the whole app. Each theme has been re-tuned to be a genuine
-           teletext/videotex palette instead of the old plain dark/light UI
-           colors. --tt-1..--tt-6 are new "call-sign" variables for the six
-           classic CRT teletext colors (blue/red/green/yellow/cyan/magenta)
-           used by the structural chrome below (topbar, FASTEXT keys, file
-           category badges, now-playing bar); they're re-tuned per theme too
-           so contrast stays right on both black and white canvases. Plain
-           --accent is left alone for the custom color picker to drive, so
-           personalization still works on top of all of this. */
         :root {
-            --bg-primary: #000000;
-            --bg-secondary: #000000;
-            --bg-tertiary: #000000;
-            --bg-hover: #003333;
-            --border-color: #00e5e5;
-            --text-primary: #ffffff;
-            --text-secondary: #00ff66;
-            --text-muted: #009999;
-            --accent: #ffe600;
-            --accent-hover: #fff066;
-            --on-accent: #000000;
+            --bg-primary: #121212;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #242424;
+            --bg-hover: #343434;
+            --border-color: #3a3a3a;
+            --text-primary: #f0f0f0;
+            --text-secondary: #adadad;
+            --text-muted: #797979;
+            --accent: #9b5de5;
+            --accent-hover: #b280ea;
+            --on-accent: #ffffff;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
-            --on-control: #00e5e5;
-            --skeleton-base: #001a1a;
-            --skeleton-shine: #004d4d;
-            --success: #00ff66;
-            --warning: #ffe600;
-            --danger: #ff2b2b;
+            --on-control: var(--text-primary);
+            --skeleton-base: var(--bg-tertiary);
+            --skeleton-shine: var(--bg-hover);
+            --success: #6bbf6b;
+            --warning: #d4a24c;
+            --danger: #d9564a;
             --radius: 0px;
             --radius-sm: 0px;
             --radius-lg: 0px;
             --radius-full: 0px;
-            --shadow: none;
-            --shadow-sm: none;
-            --shadow-lg: none;
-            --shadow-color: rgba(0, 0, 0, 0.6);
-            --shadow-color-strong: rgba(0, 0, 0, 0.75);
-            --accent-glow: rgba(255, 230, 0, 0.3);
-            --transition: 0.12s ease;
+            --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
+            /* The depth control below only ever changes corner radius
+               (--radius*); shadows always come from the base strings above
+               and never change with depth. --shadow-color/--shadow-color-strong
+               are kept as theme-aware shadow tints for any future use. */
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --shadow-color-strong: rgba(0, 0, 0, 0.6);
+            --accent-glow: rgba(155, 93, 229, 0.3);
+            --transition: 0.15s ease;
             --font-size-base: 16px;
-            --font-mono: "Courier New", "Cascadia Mono", Consolas, ui-monospace, monospace;
-            --tt-1: #1a1aff; --tt-1-fg: #ffffff;
-            --tt-2: #ff2b2b; --tt-2-fg: #ffffff;
-            --tt-3: #00d94f; --tt-3-fg: #000000;
-            --tt-4: #ffe600; --tt-4-fg: #000000;
-            --tt-5: #00e5e5; --tt-5-fg: #000000;
-            --tt-6: #ff33ff; --tt-6-fg: #000000;
+            --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
         }
-        /* Light / "paper videotex": a Prestel-style light index page —
-           deep, saturated call-sign colors so blocks stay legible on white
-           instead of washing out like pastel UI colors would. */
         html[data-theme="light"] {
             --bg-primary: #ffffff;
-            --bg-secondary: #f0f0f0;
-            --bg-tertiary: #e4e4e4;
-            --bg-hover: #ffe600;
-            --border-color: #0000aa;
-            --text-primary: #000000;
-            --text-secondary: #005c1f;
-            --text-muted: #555555;
-            --accent: #0000aa;
-            --accent-hover: #2222cc;
-            --shadow: none;
-            --shadow-sm: none;
-            --shadow-lg: none;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #ececec;
+            --bg-hover: #dddddd;
+            --border-color: #d6d6d6;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4d4d4d;
+            --text-muted: #7a7a7a;
+            --accent: #5b21b6;
+            --accent-hover: #4c1a99;
+            --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
             --shadow-color: rgba(0, 0, 0, 0.15);
             --shadow-color-strong: rgba(0, 0, 0, 0.24);
-            --accent-glow: rgba(0, 0, 170, 0.2);
-            --tt-1: #0000aa; --tt-1-fg: #ffffff;
-            --tt-2: #b30000; --tt-2-fg: #ffffff;
-            --tt-3: #006622; --tt-3-fg: #ffffff;
-            --tt-4: #cc9900; --tt-4-fg: #000000;
-            --tt-5: #00707d; --tt-5-fg: #ffffff;
-            --tt-6: #990099; --tt-6-fg: #ffffff;
+            --accent-glow: rgba(91, 33, 182, 0.22);
         }
-        /* High contrast dark: pushed even further from the base dark theme —
-           pure primaries, max saturation, for maximum legibility. */
+        /* High contrast dark: based on the classic Windows high-contrast black scheme
+           (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
         html[data-theme="hc-dark"] {
             --bg-primary: #000000;
             --bg-secondary: #000000;
             --bg-tertiary: #000000;
             --bg-hover: #262626;
-            --border-color: #ffffff;
+            --border-color: #9370ff;
             --text-primary: #ffffff;
             --text-secondary: #ffffff;
-            --text-muted: #b3b3b3;
+            --text-muted: #a3a3a3;
             --accent: #00ffff;
-            --accent-hover: #66ffff;
-            --success: #00ff00;
-            --warning: #ffff00;
-            --danger: #ff5050;
-            --shadow: none;
-            --shadow-sm: none;
-            --shadow-lg: none;
+            --accent-hover: #33ffff;
+            --success: #00ffff;
+            --warning: #ff37cb;
+            --danger: #ff4444;
+            --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+            --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.12);
+            --shadow-lg: 0 12px 32px rgba(255, 255, 255, 0.22);
             --shadow-color: rgba(255, 255, 255, 0.18);
             --shadow-color-strong: rgba(255, 255, 255, 0.28);
             --accent-glow: rgba(0, 255, 255, 0.35);
-            --tt-1: #5555ff; --tt-1-fg: #ffffff;
-            --tt-2: #ff0000; --tt-2-fg: #ffffff;
-            --tt-3: #00ff00; --tt-3-fg: #000000;
-            --tt-4: #ffff00; --tt-4-fg: #000000;
-            --tt-5: #00ffff; --tt-5-fg: #000000;
-            --tt-6: #ff00ff; --tt-6-fg: #000000;
         }
-        /* High contrast light: the hc-dark palette inverted, same idea. */
+        /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
         html[data-theme="hc-light"] {
             --bg-primary: #ffffff;
             --bg-secondary: #ffffff;
             --bg-tertiary: #ffffff;
-            --bg-hover: #e0e0e0;
-            --border-color: #000000;
+            --bg-hover: #d9d9d9;
+            --border-color: #6c8f00;
             --text-primary: #000000;
             --text-secondary: #000000;
-            --text-muted: #4d4d4d;
-            --accent: #0000ff;
-            --accent-hover: #3333ff;
-            --success: #007a00;
-            --warning: #997a00;
-            --danger: #cc0000;
-            --shadow: none;
-            --shadow-sm: none;
-            --shadow-lg: none;
+            --text-muted: #5c5c5c;
+            --accent: #ff0000;
+            --accent-hover: #cc0000;
+            --success: #ff0000;
+            --warning: #00c834;
+            --danger: #00bbbb;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.22);
             --shadow-color: rgba(0, 0, 0, 0.18);
             --shadow-color-strong: rgba(0, 0, 0, 0.28);
-            --accent-glow: rgba(0, 0, 255, 0.25);
-            --tt-1: #0000ff; --tt-1-fg: #ffffff;
-            --tt-2: #cc0000; --tt-2-fg: #ffffff;
-            --tt-3: #008000; --tt-3-fg: #ffffff;
-            --tt-4: #cc9900; --tt-4-fg: #000000;
-            --tt-5: #006680; --tt-5-fg: #ffffff;
-            --tt-6: #990099; --tt-6-fg: #ffffff;
+            --accent-glow: rgba(255, 0, 0, 0.25);
         }
         @media (prefers-color-scheme: light) {
             :root:not([data-theme]) {
                 --bg-primary: #ffffff;
-                --bg-secondary: #f0f0f0;
-                --bg-tertiary: #e4e4e4;
-                --bg-hover: #ffe600;
-                --border-color: #0000aa;
-                --text-primary: #000000;
-                --text-secondary: #005c1f;
-                --text-muted: #555555;
-                --accent: #0000aa;
-                --accent-hover: #2222cc;
-                --shadow: none;
-                --shadow-sm: none;
-                --shadow-lg: none;
+                --bg-secondary: #f5f5f5;
+                --bg-tertiary: #ececec;
+                --bg-hover: #dddddd;
+                --border-color: #d6d6d6;
+                --text-primary: #1a1a1a;
+                --text-secondary: #4d4d4d;
+                --text-muted: #7a7a7a;
+                --accent: #5b21b6;
+                --accent-hover: #4c1a99;
+                --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+                --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
+                --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
                 --shadow-color: rgba(0, 0, 0, 0.15);
                 --shadow-color-strong: rgba(0, 0, 0, 0.24);
-                --accent-glow: rgba(0, 0, 170, 0.2);
-                --tt-1: #0000aa; --tt-1-fg: #ffffff;
-                --tt-2: #b30000; --tt-2-fg: #ffffff;
-                --tt-3: #006622; --tt-3-fg: #ffffff;
-                --tt-4: #cc9900; --tt-4-fg: #000000;
-                --tt-5: #00707d; --tt-5-fg: #ffffff;
-                --tt-6: #990099; --tt-6-fg: #ffffff;
+                --accent-glow: rgba(91, 33, 182, 0.22);
             }
         }
-        /* --- Interface corner rounding: unchanged from before — level 1
-           (no attribute) is the authentic square-cornered teletext default;
-           levels 2-5 are still available for anyone who wants to soften it. */
+        /* --- Interface corner rounding: one smooth axis from the flat,
+           hard-edged default (level 1, "square", no attribute) up to a
+           comfortably rounded "round" surface (level 5). Levels 2-4 are
+           simply in-betweens. Only the corner radius changes — the base
+           shadow strings from :root (and each theme) are never altered, so
+           this axis is fully independent of light/dark/HC/custom. */
         html[data-depth="2"] {
             --radius: 4px; --radius-sm: 3px; --radius-lg: 7px; --radius-full: 10px;
         }
@@ -772,281 +733,6 @@
 
         /* --- Empty state illustration --- */
         .empty-state-illustration { width: 96px; height: 96px; margin: 0 auto 0.75rem; }
-
-        /* ==========================================================
-           TELETEXT / VIDEOTEX STRUCTURAL REDESIGN
-           This is a real component redesign, not a recolor pass: header
-           chrome, function keys, file-type badges and navigation markers
-           are rebuilt as actual teletext page furniture. Everything still
-           reads its colors from the CSS variables above (including the
-           new --tt-1..--tt-6 "call-sign" colors), so the full theme system
-           — dark / light / hc-dark / hc-light / custom accent / corner
-           depth — still works exactly as before and reshapes this look
-           instead of being replaced by it. Nothing here touches JS logic;
-           file-type badges below key off classes/attributes the app
-           already renders (data-category, .directory, .expanded, etc).
-           ========================================================== */
-
-        html, body {
-            font-family: var(--font-mono);
-            letter-spacing: 0.02em;
-        }
-        /* Faint CRT scanlines for atmosphere — neutral tone so it reads
-           right on both black and white canvases; never intercepts clicks. */
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 999;
-            background: repeating-linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.035) 0px,
-                rgba(0, 0, 0, 0.035) 1px,
-                transparent 1px,
-                transparent 3px
-            );
-        }
-        button, input, select, .settings-label, .settings-section-title { font-family: var(--font-mono); }
-
-        /* --- Header / topbar: page number + title, FASTEXT-style function
-           keys, and a separate full-width "path" bar for the breadcrumb —
-           real teletext page furniture instead of a generic toolbar. --- */
-        .header {
-            background: var(--tt-1);
-            border-bottom: 3px solid var(--border-color);
-            padding: 0.4rem 0.6rem;
-        }
-        .header-content { max-width: none; gap: 0.5rem; row-gap: 0.35rem; align-items: center; }
-        .logo { color: var(--tt-1-fg); font-weight: 800; letter-spacing: 0.08em; gap: 0.5rem; }
-        .logo svg { color: var(--tt-1-fg); }
-        .logo svg circle { fill: var(--tt-1); }
-        .logo span {
-            display: inline-block;
-            text-transform: uppercase;
-            font-size: 0.95rem;
-            transform: scaleY(1.6);
-            transform-origin: left center;
-            margin-right: 0.4em;
-        }
-        /* Decorative page/sub-page counter — JS keeps the numbers live
-           (nav depth as the page number, visible/total items as the
-           sub-page), so it's real information, not just a static label. */
-        .tt-pagenum {
-            color: var(--tt-1-fg);
-            font-weight: 700;
-            font-size: 0.68rem;
-            letter-spacing: 0.05em;
-            border: 2px solid var(--tt-1-fg);
-            padding: 0.1rem 0.4rem;
-            white-space: nowrap;
-        }
-        @keyframes tt-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-        .tt-pagenum .tt-dot { display: inline-block; animation: tt-blink 1.4s step-start infinite; }
-
-        /* Breadcrumb becomes its own full-width "path" bar under the topbar */
-        .breadcrumb {
-            order: 5; flex-basis: 100%; width: 100%;
-            background: var(--bg-primary); color: var(--text-primary);
-            border-top: 2px solid var(--border-color);
-            border-bottom: 2px solid var(--border-color);
-            padding: 0.3rem 0.6rem; margin-top: 0.35rem;
-            font-weight: 700; text-transform: uppercase;
-        }
-        .breadcrumb-item { color: var(--tt-5); }
-        .breadcrumb-item:hover { background: var(--tt-5); color: var(--tt-5-fg); }
-        .breadcrumb-item.current { color: var(--text-primary); }
-        .breadcrumb-item.current:hover { background: none; color: var(--text-primary); }
-        .breadcrumb-separator { color: var(--tt-5); font-weight: 700; }
-        .breadcrumb-pin-btn { color: var(--tt-4); }
-        .breadcrumb-pin-btn:hover { background: var(--tt-4); color: var(--tt-4-fg); }
-        .breadcrumb-pin-btn.pinned { color: var(--tt-2); }
-
-        .header-actions { gap: 0.35rem; align-items: stretch; }
-        .search-container { width: 190px; }
-        .search-input {
-            background: var(--bg-primary); border: 2px solid var(--tt-3); color: var(--tt-3);
-            text-transform: uppercase; letter-spacing: 0.03em; caret-color: var(--tt-3);
-        }
-        .search-input::placeholder { color: var(--tt-3); opacity: 0.55; }
-        /* Reveal-style blinking cursor after an empty, focused search box */
-        .search-container { position: relative; }
-        .search-container.tt-cursor::after {
-            content: "_";
-            position: absolute; left: 2.1rem; top: 50%; transform: translateY(-55%);
-            color: var(--tt-3); font-weight: 800; pointer-events: none;
-            animation: tt-blink 1s step-start infinite;
-        }
-        .search-icon { color: var(--tt-3); }
-        .search-clear { color: var(--tt-3); }
-        .search-clear:hover { background: var(--tt-3); color: var(--bg-primary); }
-
-        /* FASTEXT-style function keys — fixed red/green/yellow/blue like a
-           real teletext remote control legend, deliberately independent of
-           theme/accent so they always read the same way. Reshaped from
-           small icon squares into labeled keys. */
-        #shortcutsBtn, #statsBtn, #settingsBtn, #themeColorBtn {
-            width: auto; height: auto; flex-direction: column; gap: 0.15rem;
-            padding: 0.3rem 0.55rem; border-width: 2px; border-style: solid;
-            font-size: 0.55rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em;
-        }
-        #shortcutsBtn svg, #statsBtn svg, #settingsBtn svg, #themeColorBtn svg { width: 15px; height: 15px; }
-        #shortcutsBtn::after { content: "Help"; }
-        #statsBtn::after { content: "Stats"; }
-        #settingsBtn::after { content: "Set"; }
-        #themeColorBtn::after { content: "Theme"; }
-        #shortcutsBtn { background: var(--tt-2); border-color: var(--tt-2); color: var(--tt-2-fg) !important; }
-        #statsBtn { background: var(--tt-3); border-color: var(--tt-3); color: var(--tt-3-fg) !important; }
-        #settingsBtn { background: var(--tt-4); border-color: var(--tt-4); color: var(--tt-4-fg) !important; }
-        #themeColorBtn { background: var(--tt-1); border-color: var(--tt-1); color: var(--tt-1-fg) !important; }
-        #shortcutsBtn:hover, #statsBtn:hover, #settingsBtn:hover, #themeColorBtn:hover { filter: brightness(1.2); }
-
-        .view-toggle { background: var(--bg-primary); border: 2px solid var(--tt-4); padding: 2px; gap: 2px; }
-        .view-btn { color: var(--tt-4); }
-        .view-btn:hover { color: var(--text-primary); }
-        .view-btn.active { background: var(--tt-3); color: var(--tt-3-fg); }
-
-        /* --- Dropdown menus (Settings + Theme & Color) --- */
-        .settings-menu-card { background: var(--bg-primary); border: 3px solid var(--border-color); }
-        .settings-menu-header { background: var(--tt-1); color: var(--tt-1-fg); border-bottom: 2px solid var(--border-color); }
-        .settings-menu-close { color: var(--tt-1-fg); }
-        .settings-menu-title { text-transform: uppercase; letter-spacing: 0.05em; }
-        .settings-section-title { color: var(--tt-5); text-transform: uppercase; letter-spacing: 0.04em; }
-        .settings-label { color: var(--text-secondary); }
-        .settings-control button { border-width: 2px; }
-        .sort-select { border: 2px solid var(--tt-3); color: var(--tt-3); text-transform: uppercase; }
-        .switch-slider { border-width: 2px; }
-        .theme-btn, .intensity-seg, .depth-seg { border-width: 2px !important; }
-        .theme-btn.active, .intensity-seg.active, .depth-seg.active { outline: 2px solid var(--tt-4); outline-offset: 1px; }
-
-        /* --- Sidebar tree --- */
-        .tree-panel { background: var(--bg-primary); border-right: 3px solid var(--border-color); }
-        .tree-header { background: var(--bg-primary); color: var(--tt-5); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid var(--border-color); }
-        .tree-pinned-header { color: var(--tt-4); text-transform: uppercase; letter-spacing: 0.06em; }
-        .tree-item, .tree-pinned-item { color: var(--text-secondary); }
-        .tree-item:hover, .tree-pinned-item:hover { background: var(--tt-5); color: var(--tt-5-fg); }
-        .tree-item.active { background: var(--tt-5); color: var(--tt-5-fg); border-left: 4px solid var(--tt-4); font-weight: 700; }
-        .tree-pinned-item.active { background: var(--tt-4); color: var(--tt-4-fg); }
-        .tree-pinned-item { color: var(--tt-4); }
-        .tree-pinned-unpin { color: var(--tt-2); }
-        .tree-pinned-unpin:hover { background: var(--tt-2); color: var(--tt-2-fg); }
-        /* Expand/collapse arrows as real teletext-style characters, not a
-           rotated icon glyph */
-        .tree-toggle svg { display: none; }
-        .tree-toggle::before { content: "+"; font-weight: 800; color: var(--tt-4); }
-        .tree-toggle.expanded::before { content: "\2212"; }
-        .tree-toggle.empty::before { content: ""; }
-        .tree-item.active .tree-toggle::before { color: inherit; }
-
-        /* --- File grid / list: type icons become bracket-coded teletext
-           badges (a real content/structure change, not a recolor) --- */
-        .main { background: var(--bg-primary); }
-        .file-card { border: 2px solid var(--border-color); }
-        .file-card:hover { border-color: var(--tt-4); }
-        .file-card .file-name { color: var(--text-secondary); text-transform: uppercase; }
-        .file-card.directory .file-name { color: var(--tt-5); }
-        .file-card.parent-dir .file-name { color: var(--text-primary); }
-        .file-meta, .file-size { color: var(--tt-4) !important; }
-        .file-list .file-card { border: 2px solid var(--border-color); margin-bottom: 3px; border-radius: 0; }
-        .file-list .file-card:hover { border-color: var(--tt-4); }
-        .file-list-header { background: var(--bg-primary); color: var(--tt-5); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 2px solid var(--border-color); }
-        .card-star-btn.starred, .card-star-btn:hover { color: var(--tt-4) !important; }
-        .empty-state { color: var(--text-secondary); }
-        .empty-state h2 { color: var(--text-primary); text-transform: uppercase; }
-        .load-more-btn { border: 2px solid var(--tt-5); color: var(--tt-5); text-transform: uppercase; }
-        .load-more-btn:hover { background: var(--tt-5); color: var(--tt-5-fg); }
-        .truncation-notice { border-bottom: 2px solid var(--tt-4); color: var(--tt-4); }
-        mark.search-highlight { background: var(--tt-4); color: var(--tt-4-fg); }
-
-        .file-card:nth-child(n) .file-icon, .file-icon { filter: none !important; background: transparent !important; }
-        .file-icon {
-            border: 2px solid currentColor;
-            font-weight: 800; font-size: 0.55rem; letter-spacing: 0.01em;
-        }
-        .file-icon svg { display: none; }
-        .file-icon.folder { color: var(--tt-5); }
-        .file-icon.folder::before { content: "DIR"; }
-        .file-icon.audio { color: var(--tt-3); }
-        .file-icon.audio::before { content: "AUD"; }
-        .file-icon.playlist { color: var(--tt-3); }
-        .file-icon.playlist::before { content: "M3U"; }
-        .file-icon.video { color: var(--tt-6); }
-        .file-icon.video::before { content: "VID"; }
-        .file-icon.image { color: var(--tt-4); }
-        .file-icon.image::before { content: "IMG"; }
-        .file-icon.archive { color: var(--tt-2); }
-        .file-icon.archive::before { content: "ZIP"; }
-        .file-icon.code { color: var(--tt-5); }
-        .file-icon.code::before { content: "COD"; }
-        .file-icon.markup { color: var(--tt-5); }
-        .file-icon.markup::before { content: "TAG"; }
-        .file-icon.style { color: var(--tt-5); }
-        .file-icon.style::before { content: "CSS"; }
-        .file-icon.document { color: var(--text-secondary); }
-        .file-icon.document::before { content: "DOC"; }
-        .file-icon.text { color: var(--text-secondary); }
-        .file-icon.text::before { content: "TXT"; }
-        .file-icon.data { color: var(--text-secondary); }
-        .file-icon.data::before { content: "DAT"; }
-        .file-icon.font { color: var(--text-secondary); }
-        .file-icon.font::before { content: "FNT"; }
-        .file-icon.other { color: var(--text-secondary); }
-        .file-icon.other::before { content: "---"; }
-
-        /* --- Modals --- */
-        .modal-overlay { background: rgba(0, 0, 0, 0.85); }
-        .modal { background: var(--bg-primary); border: 3px solid var(--border-color); }
-        .modal-header { background: var(--tt-1); color: var(--tt-1-fg); border-bottom: 2px solid var(--border-color); }
-        .modal-title { text-transform: uppercase; letter-spacing: 0.04em; }
-        .modal-btn { border-width: 2px; }
-        .modal-btn.favorite-btn.favorited { color: var(--tt-4) !important; border-color: var(--tt-4); }
-        .modal-btn.play-playlist-btn { color: var(--tt-3) !important; }
-        .modal-btn.copied { color: var(--tt-3) !important; border-color: var(--tt-3); }
-
-        /* --- Playlist bar: fixed magenta "now playing" marquee --- */
-        .playlist-bar { background: var(--tt-6); color: var(--tt-6-fg); border-bottom: 2px solid var(--border-color); }
-        .playlist-info, .playlist-track { color: var(--tt-6-fg); }
-        .playlist-btn { border-width: 2px; }
-        .goto-input, .goto-step-btn { border-width: 2px; }
-
-        /* --- Inline audio/video player --- */
-        .player-bar { border: 3px solid var(--border-color); }
-        .player-play-btn { border-width: 2px !important; }
-        .player-info-btn { border-width: 2px; }
-        .audio-icon { border: 2px solid var(--border-color); border-radius: 0 !important; }
-        .preview-video { border-radius: 0; }
-        .preview-unavailable h3 { text-transform: uppercase; }
-        .download-btn { text-transform: uppercase; letter-spacing: 0.04em; }
-
-        /* --- Keyboard shortcuts modal --- */
-        kbd { border: 2px solid var(--tt-5); color: var(--tt-5); background: var(--bg-primary); }
-
-        /* --- Stats modal --- */
-        .stats-summary-item { border: 2px solid var(--border-color); }
-        .stats-summary-label { color: var(--tt-5); }
-        .stats-breakdown-title { color: var(--tt-5); }
-        .stats-row-label { text-transform: uppercase; }
-        .stats-row-bar-track { border: 1px solid var(--border-color); }
-        .stats-row-count { color: var(--tt-4); }
-
-        /* --- Density tightening: reclaim wasted space everywhere --- */
-        .header { padding-top: 0.35rem; padding-bottom: 0.35rem; }
-        .settings-section { padding: 0.5rem 0.6rem; }
-        .file-grid { gap: 0.4rem; }
-
-        /* --- Mobile: edge-to-edge, no wasted margins --- */
-        @media (max-width: 480px) {
-            .header { padding: 0.35rem 0.4rem; }
-            .breadcrumb { padding: 0.25rem 0.4rem; }
-            .search-container { width: 100%; order: 6; flex-basis: 100%; }
-            .header-actions { flex-wrap: wrap; width: 100%; }
-            #shortcutsBtn, #statsBtn, #settingsBtn, #themeColorBtn { flex: 1 1 auto; }
-            .tt-pagenum { display: none; }
-            .tree-panel { border-bottom: 3px solid var(--border-color); max-height: 30vh; }
-            .file-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 0.3rem; }
-            .file-card { padding: 0.45rem; }
-            .modal { border-width: 0; border-top-width: 3px; }
-        }
     </style>
 </head>
 <body>
@@ -1059,7 +745,6 @@
                 <svg viewBox="0 0 24 24" fill="currentcolor"><rect x="2" y="5" width="20" height="14"/><circle cx="8" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="16" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="8" cy="12" r="0.8"/><circle cx="16" cy="12" r="0.8"/><rect x="10" y="15.6" width="4" height="1.6" fill="var(--bg-secondary)"/></svg>
                 <span>File Viewer</span>
             </div>
-            <span class="tt-pagenum" id="ttPageNum" aria-hidden="true">P100</span>
             <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb"></nav>
             <div class="header-actions">
                 <div class="search-container">
@@ -2521,14 +2206,6 @@
             const input = document.getElementById("search");
             const btn = document.getElementById("searchClearBtn");
             if (input && btn) btn.classList.toggle("visible", input.value.length > 0);
-            updateSearchCursor();
-        }
-        function updateSearchCursor() {
-            const input = document.getElementById("search");
-            const container = input ? input.closest(".search-container") : null;
-            if (container) {
-                container.classList.toggle("tt-cursor", document.activeElement === input && input.value.length === 0);
-            }
         }
         function clearSearch() {
             const input = document.getElementById("search");
@@ -2590,8 +2267,6 @@
                 }, 150);
             });
             document.getElementById("searchClearBtn").addEventListener("click", clearSearch);
-            searchInput.addEventListener("focus", updateSearchCursor);
-            searchInput.addEventListener("blur", updateSearchCursor);
             document.getElementById("logoHome").addEventListener("click", () => navigateTo([]));
             document.getElementById("logoHome").addEventListener("keydown", (e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -3390,14 +3065,6 @@
                 currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
             }
             lastBreadcrumbPathKey = pathKey;
-            const pageNumEl = document.getElementById("ttPageNum");
-            if (pageNumEl) {
-                const pageNo = 100 + currentPath.length;
-                // Keep any existing "SUB n/n" suffix (set by render()) so this
-                // update — which only runs on navigation — doesn't clobber it.
-                const subMatch = pageNumEl.textContent.match(/SUB [\d/]+/);
-                pageNumEl.innerHTML = `P${pageNo} <span class="tt-dot">&bull;</span>${subMatch ? " " + subMatch[0] : ""}`;
-            }
         }
         function renderTree() {
             const treeEl = document.getElementById("treeContent");
@@ -3498,13 +3165,6 @@
             }
             const activeLimit = searchQuery ? searchResultLimit : folderResultLimit;
             const visibleItems = all.slice(0, activeLimit);
-
-            const pageNumEl = document.getElementById("ttPageNum");
-            if (pageNumEl) {
-                const pageMatch = pageNumEl.innerHTML.match(/P\d+ <span class="tt-dot">[^<]*<\/span>/);
-                const pagePart = pageMatch ? pageMatch[0] : `P${100 + currentPath.length} <span class="tt-dot">&bull;</span>`;
-                pageNumEl.innerHTML = `${pagePart} SUB ${visibleItems.length}/${all.length}`;
-            }
 
             if (searchQuery) {
                 announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);

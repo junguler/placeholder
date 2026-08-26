@@ -863,7 +863,6 @@
         .breadcrumb-pin-btn.pinned { color: var(--tt-2); }
 
         .header-actions { gap: 0.35rem; align-items: stretch; }
-        .search-container { width: 190px; }
         .search-input {
             background: var(--bg-primary); border: 2px solid var(--tt-3); color: var(--tt-3);
             text-transform: uppercase; letter-spacing: 0.03em; caret-color: var(--tt-3);
@@ -1034,21 +1033,44 @@
         .settings-section { padding: 0.5rem 0.6rem; }
         .file-grid { gap: 0.4rem; }
 
-        /* --- Mobile: edge-to-edge, no wasted margins --- */
+        /* --- Mobile: this re-asserts (and extends) the app's existing
+           mobile fixes — tree-panel becomes a pinned-only strip with no
+           right border, shortcuts/stats drop out, header wraps into tidy
+           rows — since those fixes live earlier in the stylesheet and the
+           unconditional rules above would otherwise silently win over them
+           by source order. Edge-to-edge, no wasted margins. --- */
+        @media (max-width: 640px) {
+            /* Shortcuts and stats aren't essential on a touchscreen, so
+               (matching the app's existing #shortcutsBtn mobile rule) both
+               drop out entirely instead of crowding Settings/Theme. */
+            #shortcutsBtn, #statsBtn { display: none !important; }
+            /* Settings/Theme shrink back to compact icon squares — the
+               labeled FASTEXT-key treatment is a desktop-width flourish
+               that doesn't fit a phone header. */
+            #settingsBtn, #themeColorBtn {
+                flex-direction: row; width: 34px; height: 34px; padding: 0;
+            }
+            #settingsBtn::after, #themeColorBtn::after { content: ""; }
+            #settingsBtn svg, #themeColorBtn svg { width: 18px; height: 18px; }
+            .header-actions { flex-wrap: wrap; gap: 0.35rem; }
+        }
         @media (max-width: 480px) {
             .header { padding: 0.35rem 0.4rem; }
             .breadcrumb { padding: 0.25rem 0.4rem; }
             .search-container { width: 100%; order: 6; flex-basis: 100%; }
-            .header-actions { flex-wrap: wrap; width: 100%; }
-            #shortcutsBtn, #statsBtn, #settingsBtn, #themeColorBtn { flex: 1 1 auto; }
+            .header-actions { width: 100%; }
             .tt-pagenum { display: none; }
-            .tree-panel { border-bottom: 3px solid var(--border-color); max-height: 30vh; }
+            /* Restore the app's own mobile tree-panel treatment (no right
+               border, bottom border instead) that the unconditional
+               .tree-panel rule above would otherwise override. */
+            .tree-panel { border-right: none; border-bottom: 3px solid var(--border-color); }
             .file-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 0.3rem; }
             .file-card { padding: 0.45rem; }
             .modal { border-width: 0; border-top-width: 3px; }
         }
     </style>
 </head>
+
 <body>
     <svg style="display:none" aria-hidden="true">
         <symbol id="icon-x" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
@@ -1974,6 +1996,24 @@
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
+            // Derive the six teletext "call-sign" colors (topbar, FASTEXT
+            // keys, file badges, now-playing bar) from this same custom hue
+            // instead of leaving them frozen at the default theme's blue/
+            // red/green/yellow/cyan/magenta — so a custom color genuinely
+            // recolors the whole teletext look, not just the accent.
+            // Offsets reproduce the default palette's relative hue spacing
+            // (blue/red/green/yellow/cyan/magenta), just anchored on the
+            // picked hue instead of a fixed blue.
+            const canvasIsDark = relLuminance(newVals["--bg-primary"]) < 0.5;
+            const ttS = canvasIsDark ? 90 : 78;
+            const ttL = canvasIsDark ? 55 : 34;
+            const ttOffsets = { 1: 0, 2: 120, 3: 260, 4: 175, 5: 300, 6: 60 };
+            for (const [n, offset] of Object.entries(ttOffsets)) {
+                const hue = (ctrlH + offset) % 360;
+                const ttHex = hslToHex(hue, ttS, ttL);
+                root.setProperty(`--tt-${n}`, ttHex);
+                root.setProperty(`--tt-${n}-fg`, contrastRatio("#ffffff", ttHex) >= contrastRatio("#000000", ttHex) ? "#ffffff" : "#000000");
+            }
             markActiveSwatch(hexToHsl(activeColor).h);
         }
         function setCustomColor(hex) {
@@ -1992,6 +2032,8 @@
                 "--accent", "--accent-hover", "--accent-text", "--on-accent", "--accent-glow",
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
+                "--tt-1", "--tt-1-fg", "--tt-2", "--tt-2-fg", "--tt-3", "--tt-3-fg",
+                "--tt-4", "--tt-4-fg", "--tt-5", "--tt-5-fg", "--tt-6", "--tt-6-fg",
             ];
             for (const key of keys) root.removeProperty(key);
         }

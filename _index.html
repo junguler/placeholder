@@ -27,46 +27,144 @@
             font-style: normal;
             font-display: block;
         }
-        /* --- Teletext / videotex theme ---
-           This is now the app's one committed look (see the big teletext
-           override pass near the end of this stylesheet), so the old
-           light/dark/HC/custom-color/corner-depth theme system has been
-           retired: a single fixed 7-color CRT palette, square corners,
-           no drop shadows. The variable names are unchanged so every
-           existing component rule below still works untouched. */
         :root {
-            --bg-primary: #000000;
-            --bg-secondary: #000000;
-            --bg-tertiary: #000000;
-            --bg-hover: #003333;
-            --border-color: #00ffff;
-            --text-primary: #ffffff;
-            --text-secondary: #00ff00;
-            --text-muted: #009999;
-            --accent: #ffff00;
-            --accent-hover: #ffff99;
-            --on-accent: #000000;
+            --bg-primary: #121212;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #242424;
+            --bg-hover: #343434;
+            --border-color: #3a3a3a;
+            --text-primary: #f0f0f0;
+            --text-secondary: #adadad;
+            --text-muted: #797979;
+            --accent: #9b5de5;
+            --accent-hover: #b280ea;
+            --on-accent: #ffffff;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
-            --on-control: #00ffff;
-            --skeleton-base: #001a1a;
-            --skeleton-shine: #004d4d;
-            --success: #00ff00;
-            --warning: #ffff00;
-            --danger: #ff3b3b;
+            --on-control: var(--text-primary);
+            --skeleton-base: var(--bg-tertiary);
+            --skeleton-shine: var(--bg-hover);
+            --success: #6bbf6b;
+            --warning: #d4a24c;
+            --danger: #d9564a;
             --radius: 0px;
             --radius-sm: 0px;
             --radius-lg: 0px;
             --radius-full: 0px;
-            --shadow: none;
-            --shadow-sm: none;
-            --shadow-lg: none;
-            --shadow-color: rgba(0, 0, 0, 0.6);
-            --shadow-color-strong: rgba(0, 0, 0, 0.75);
-            --accent-glow: rgba(255, 255, 0, 0.35);
-            --transition: 0.1s ease;
+            --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
+            /* The depth control below only ever changes corner radius
+               (--radius*); shadows always come from the base strings above
+               and never change with depth. --shadow-color/--shadow-color-strong
+               are kept as theme-aware shadow tints for any future use. */
+            --shadow-color: rgba(0, 0, 0, 0.45);
+            --shadow-color-strong: rgba(0, 0, 0, 0.6);
+            --accent-glow: rgba(155, 93, 229, 0.3);
+            --transition: 0.15s ease;
             --font-size-base: 16px;
-            --font-mono: "Courier New", "Cascadia Mono", Consolas, ui-monospace, monospace;
+            --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
+        }
+        html[data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #ececec;
+            --bg-hover: #dddddd;
+            --border-color: #d6d6d6;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4d4d4d;
+            --text-muted: #7a7a7a;
+            --accent: #5b21b6;
+            --accent-hover: #4c1a99;
+            --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+            --shadow-color: rgba(0, 0, 0, 0.15);
+            --shadow-color-strong: rgba(0, 0, 0, 0.24);
+            --accent-glow: rgba(91, 33, 182, 0.22);
+        }
+        /* High contrast dark: based on the classic Windows high-contrast black scheme
+           (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
+        html[data-theme="hc-dark"] {
+            --bg-primary: #000000;
+            --bg-secondary: #000000;
+            --bg-tertiary: #000000;
+            --bg-hover: #262626;
+            --border-color: #9370ff;
+            --text-primary: #ffffff;
+            --text-secondary: #ffffff;
+            --text-muted: #a3a3a3;
+            --accent: #00ffff;
+            --accent-hover: #33ffff;
+            --success: #00ffff;
+            --warning: #ff37cb;
+            --danger: #ff4444;
+            --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+            --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.12);
+            --shadow-lg: 0 12px 32px rgba(255, 255, 255, 0.22);
+            --shadow-color: rgba(255, 255, 255, 0.18);
+            --shadow-color-strong: rgba(255, 255, 255, 0.28);
+            --accent-glow: rgba(0, 255, 255, 0.35);
+        }
+        /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
+        html[data-theme="hc-light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #ffffff;
+            --bg-hover: #d9d9d9;
+            --border-color: #6c8f00;
+            --text-primary: #000000;
+            --text-secondary: #000000;
+            --text-muted: #5c5c5c;
+            --accent: #ff0000;
+            --accent-hover: #cc0000;
+            --success: #ff0000;
+            --warning: #00c834;
+            --danger: #00bbbb;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.22);
+            --shadow-color: rgba(0, 0, 0, 0.18);
+            --shadow-color-strong: rgba(0, 0, 0, 0.28);
+            --accent-glow: rgba(255, 0, 0, 0.25);
+        }
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme]) {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f5f5f5;
+                --bg-tertiary: #ececec;
+                --bg-hover: #dddddd;
+                --border-color: #d6d6d6;
+                --text-primary: #1a1a1a;
+                --text-secondary: #4d4d4d;
+                --text-muted: #7a7a7a;
+                --accent: #5b21b6;
+                --accent-hover: #4c1a99;
+                --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+                --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
+                --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+                --shadow-color: rgba(0, 0, 0, 0.15);
+                --shadow-color-strong: rgba(0, 0, 0, 0.24);
+                --accent-glow: rgba(91, 33, 182, 0.22);
+            }
+        }
+        /* --- Interface corner rounding: one smooth axis from the flat,
+           hard-edged default (level 1, "square", no attribute) up to a
+           comfortably rounded "round" surface (level 5). Levels 2-4 are
+           simply in-betweens. Only the corner radius changes — the base
+           shadow strings from :root (and each theme) are never altered, so
+           this axis is fully independent of light/dark/HC/custom. */
+        html[data-depth="2"] {
+            --radius: 4px; --radius-sm: 3px; --radius-lg: 7px; --radius-full: 10px;
+        }
+        html[data-depth="3"] {
+            --radius: 8px; --radius-sm: 5px; --radius-lg: 12px; --radius-full: 999px;
+        }
+        html[data-depth="4"] {
+            --radius: 12px; --radius-sm: 7px; --radius-lg: 16px; --radius-full: 999px;
+        }
+        html[data-depth="5"] {
+            --radius: 16px; --radius-sm: 10px; --radius-lg: 22px; --radius-full: 999px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { font-size: var(--font-size-base); }
@@ -635,195 +733,6 @@
 
         /* --- Empty state illustration --- */
         .empty-state-illustration { width: 96px; height: 96px; margin: 0 auto 0.75rem; }
-
-        /* ==========================================================
-           TELETEXT / VIDEOTEX VISUAL PASS
-           Everything above still drives layout, state and behaviour
-           through the CSS variables + component classes; this section
-           only recolors/reshapes those same components into the
-           teletext look (mockup-10). Nothing here touches JS.
-           Palette: black canvas, bold flat blocks in the 7 CRT colors
-           (blue / red / green / yellow / magenta / cyan / white).
-           ========================================================== */
-
-        /* Retire the old theme/color/corner customization UI — the
-           look is fixed now, so there's nothing for it to control. */
-        #themeColorDropdown { display: none !important; }
-
-        html, body {
-            font-family: var(--font-mono);
-            letter-spacing: 0.02em;
-        }
-        body { background: #000000; }
-        /* Faint CRT scanlines for atmosphere — cheap, static, and never
-           intercepts clicks. */
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 999;
-            background: repeating-linear-gradient(
-                to bottom,
-                rgba(255, 255, 255, 0.025) 0px,
-                rgba(255, 255, 255, 0.025) 1px,
-                transparent 1px,
-                transparent 3px
-            );
-            mix-blend-mode: overlay;
-        }
-
-        /* --- Header / topbar --- */
-        .header { background: #0000ff; border-bottom: 3px solid #ffffff; padding: 0.4rem 0.6rem; }
-        .header-content { max-width: none; gap: 0.5rem; row-gap: 0.35rem; }
-        .logo { color: #ffffff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; font-size: 1rem; }
-        .logo svg circle { fill: #0000ff; }
-        /* Breadcrumb becomes its own full-width "path" bar under the topbar */
-        .breadcrumb {
-            order: 5; flex-basis: 100%; width: 100%;
-            background: #ffffff; color: #000000;
-            padding: 0.3rem 0.6rem; margin-top: 0.1rem;
-            font-weight: 700; text-transform: uppercase;
-        }
-        .breadcrumb-item { color: #0000ff; text-transform: uppercase; }
-        .breadcrumb-item:hover { background: #ffff00; color: #000000; }
-        .breadcrumb-item.current { color: #000000; }
-        .breadcrumb-item.current:hover { background: none; }
-        .breadcrumb-separator { color: #0000ff; font-weight: 700; }
-        .breadcrumb-pin-btn { color: #0000ff; }
-        .breadcrumb-pin-btn:hover { background: #ffff00; color: #000000; }
-        .breadcrumb-pin-btn.pinned { color: #ff0000; }
-
-        .header-actions { gap: 0.3rem; }
-        .search-container { width: 190px; }
-        .search-input {
-            background: #000000; border: 2px solid #00ff00; color: #00ff00;
-            text-transform: uppercase; letter-spacing: 0.03em; caret-color: #00ff00;
-        }
-        .search-input::placeholder { color: #007a00; }
-        .search-icon { color: #00ff00; }
-        .search-clear { color: #00ff00; }
-        .search-clear:hover { background: #00ff00; color: #000000; }
-
-        .settings-btn { background: #000000; border: 2px solid #00ffff; }
-        .settings-btn:hover { background: #00ffff; color: #000000 !important; border-color: #00ffff; }
-        .settings-btn:hover svg { color: #000000; }
-        .view-toggle { background: #000000; border: 2px solid #ffff00; padding: 2px; gap: 2px; }
-        .view-btn { color: #ffff00; }
-        .view-btn:hover { color: #ffffff; }
-        .view-btn.active { background: #ffff00; color: #000000; }
-
-        /* --- Dropdown menus (Settings) --- */
-        .settings-menu-card { background: #000000; border: 3px solid #00ffff; }
-        .settings-menu-header { background: #0000ff; border-bottom: 2px solid #00ffff; }
-        .settings-menu-title { color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; }
-        .settings-menu-close { background: #000000; border: 2px solid #ffffff; }
-        .settings-menu-close:hover { background: #ffffff; color: #0000ff; border-color: #ffffff; }
-        .settings-section-title { color: #00ffff; }
-        .settings-label { color: #00ff00; }
-        .settings-control button { background: #000000; border: 2px solid #00ffff; }
-        .settings-control button:hover { background: #00ffff; color: #000000; border-color: #00ffff; }
-        .sort-select { background: #000000; border: 2px solid #00ff00; color: #00ff00; text-transform: uppercase; }
-        .switch-slider { background: #000000; border: 2px solid #00ffff; }
-        .switch-slider::before { background: #00ffff; }
-        .switch input:checked + .switch-slider { background: #ffff00; border-color: #ffff00; }
-        .switch input:checked + .switch-slider::before { background: #000000; }
-
-        /* --- Sidebar tree --- */
-        .tree-panel { background: #000000; border-right: 3px solid #00ffff; }
-        .tree-header { background: #000000; color: #00ffff; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid #00ffff; }
-        .tree-pinned-header { color: #ffff00; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #004d4d; }
-        .tree-item, .tree-pinned-item { color: #00ff00; }
-        .tree-item:hover, .tree-pinned-item:hover { background: #00ffff; color: #000000; }
-        .tree-item.active { background: #00ffff; color: #000000; border-left: 4px solid #ffff00; font-weight: 700; }
-        .tree-pinned-item.active { background: #ffff00; color: #000000; }
-        .tree-pinned-item { color: #ffff00; }
-        .tree-pinned-unpin { color: #ff0000; }
-        .tree-pinned-unpin:hover { background: #ff0000; color: #000000; }
-
-        /* --- File grid / list --- */
-        .main { background: #000000; }
-        .file-card { background: #000000; border: 2px solid #ffffff; }
-        .file-card:hover { border-color: #ffff00; }
-        .file-card .file-icon { filter: none !important; background: #000000; }
-        .file-card .file-name { color: #00ff00; text-transform: uppercase; }
-        .file-card.directory .file-name { color: #00ffff; }
-        .file-card.parent-dir .file-name { color: #ffffff; }
-        .file-meta, .file-size { color: #ffff00 !important; }
-        .file-list .file-card { border: 2px solid #ffffff; margin-bottom: 3px; border-radius: 0; }
-        .file-list .file-card:hover { border-color: #ffff00; }
-        .file-list-header { background: #000000; color: #00ffff; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 2px solid #00ffff; }
-        .card-star-btn.starred, .card-star-btn:hover { color: #ffff00 !important; }
-        .empty-state { color: #00ff00; }
-        .empty-state h2 { color: #ffffff; text-transform: uppercase; }
-        .load-more-btn { background: #000000; border: 2px solid #00ffff; color: #00ffff; text-transform: uppercase; }
-        .load-more-btn:hover { background: #00ffff; color: #000000; }
-        .truncation-notice { background: #000000; border-bottom: 2px solid #ffff00; color: #ffff00; }
-        mark.search-highlight { background: #ffff00; color: #000000; }
-
-        /* --- Modals --- */
-        .modal-overlay { background: rgba(0, 0, 0, 0.92); }
-        .modal { background: #000000; border: 3px solid #00ffff; border-top: 3px solid #00ffff; }
-        .modal-header { background: #0000ff; border-bottom: 2px solid #00ffff; }
-        .modal-title { color: #ffffff; text-transform: uppercase; letter-spacing: 0.04em; }
-        .modal-btn { background: #000000; border: 2px solid #00ffff; }
-        .modal-btn:hover { background: #00ffff; border-color: #00ffff; color: #000000 !important; }
-        .modal-btn:hover svg { color: #000000; }
-        .modal-btn.favorite-btn.favorited { color: #ffff00 !important; border-color: #ffff00; }
-        .modal-btn.play-playlist-btn { color: #ffff00 !important; }
-        .modal-body { background: #000000; }
-        .modal-btn.copied { color: #00ff00 !important; border-color: #00ff00; }
-
-        /* --- Playlist bar (magenta, like the mockup footer) --- */
-        .playlist-bar { background: #ff00ff; border-bottom: 2px solid #ffffff; }
-        .playlist-info, .playlist-track { color: #000000; }
-        .playlist-btn { background: #000000; border: 2px solid #000000; }
-        .playlist-btn:hover:not(:disabled) { border-color: #ffffff; }
-        .playlist-stop-btn { border-width: 2px; text-transform: uppercase; }
-        .goto-input, .goto-step-btn { background: #000000; border: 2px solid #00ffff; }
-
-        /* --- Inline audio/video player --- */
-        .player-bar { background: #000000; border: 3px solid #00ffff; }
-        .player-time, .player-vol { color: #00ff00; }
-        .player-play-btn { background: #000000 !important; border: 2px solid #00ffff !important; }
-        .player-info-btn { background: #000000; border: 2px solid #00ffff; }
-        .player-info-btn:hover { background: #00ffff; border-color: #00ffff; }
-        .player-info-btn.copied { background: #00ff00; border-color: #00ff00; }
-        .audio-icon { background: #000000; border: 2px solid #00ffff; border-radius: 0 !important; }
-        .preview-video { border-radius: 0; }
-        .preview-unavailable, .loading { color: #00ff00; }
-        .preview-unavailable h3 { color: #ffffff; text-transform: uppercase; }
-        .download-btn { text-transform: uppercase; letter-spacing: 0.04em; }
-
-        /* --- Keyboard shortcuts modal --- */
-        kbd { background: #000000; border: 2px solid #00ffff; color: #00ffff; }
-        .shortcut-row dd { color: #00ff00; }
-
-        /* --- Stats modal --- */
-        .stats-summary-item { background: #000000; border: 2px solid #00ffff; }
-        .stats-summary-value { color: #ffffff; }
-        .stats-summary-label { color: #00ffff; }
-        .stats-breakdown-title { color: #00ffff; }
-        .stats-row-label { color: #00ff00; text-transform: uppercase; }
-        .stats-row-bar-track { background: #000000; border: 1px solid #00ffff; }
-        .stats-row-count { color: #ffff00; }
-
-        /* --- Density tightening: reclaim wasted space everywhere --- */
-        .header { padding-top: 0.35rem; padding-bottom: 0.35rem; }
-        .settings-section { padding: 0.5rem 0.6rem; }
-        .file-grid { gap: 0.4rem; }
-
-        /* --- Mobile: edge-to-edge, no wasted margins --- */
-        @media (max-width: 480px) {
-            .header { padding: 0.35rem 0.4rem; }
-            .breadcrumb { padding: 0.25rem 0.4rem; }
-            .search-container { width: 100%; order: 6; flex-basis: 100%; }
-            .header-actions { flex-wrap: wrap; width: 100%; }
-            .tree-panel { border-bottom: 3px solid #00ffff; max-height: 30vh; }
-            .file-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 0.3rem; }
-            .file-card { padding: 0.45rem; }
-            .modal { border-width: 0; border-top-width: 3px; }
-        }
     </style>
 </head>
 <body>
@@ -1458,10 +1367,7 @@
             applyDepth(uiDepth, false);
             loadPinnedFolders();
             loadFavoriteFiles();
-            // Teletext is now the one fixed look — permanently clear any
-            // custom accent color saved from earlier theme experiments so
-            // it can never override the palette again.
-            resetCustomColor();
+            initThemeColor();
             updateThemeButtons();
             syncHljsTheme();
         }
@@ -1470,10 +1376,10 @@
         // own light/dark mode. Only the token colors come from hljs — the
         // background is overridden by CSS to stay consistent with the app.
         function isLightTheme() {
-            // The app is a single fixed black-canvas teletext look now, so
-            // code previews always use the dark syntax theme regardless of
-            // any leftover theme preference from before this redesign.
-            return false;
+            const t = document.documentElement.getAttribute("data-theme");
+            if (t === "light" || t === "hc-light") return true;
+            if (t === "dark" || t === "hc-dark") return false;
+            return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches);
         }
         function syncHljsTheme() {
             const link = document.getElementById("hljsTheme");

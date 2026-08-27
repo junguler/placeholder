@@ -850,7 +850,16 @@
         .breadcrumb-pin-btn:hover { background: var(--tt-4); color: var(--tt-4-fg); }
         .breadcrumb-pin-btn.pinned { color: var(--tt-2); }
 
-        .header-actions { gap: 0.35rem; align-items: stretch; }
+        .header-actions { gap: 0.35rem; align-items: center; }
+        /* Every top-bar control shares one explicit height so the search
+           box, the stacked icon+label keys, and the view switcher line up
+           on a common edge instead of each sizing to its own content
+           (which is what left the search box looking short and everything
+           vertically misaligned against the taller buttons). */
+        .search-container, .view-toggle { height: 2.75rem; }
+        .search-input { height: 100%; }
+        .view-toggle { align-items: stretch; }
+        .view-btn { height: 100%; }
         .search-input {
             background: var(--bg-primary); border: 2px solid var(--tt-3); color: var(--tt-3);
             text-transform: uppercase; letter-spacing: 0.03em; caret-color: var(--tt-3);
@@ -873,7 +882,7 @@
            theme/accent so they always read the same way. Reshaped from
            small icon squares into labeled keys. */
         #shortcutsBtn, #statsBtn, #settingsBtn, #themeColorBtn {
-            width: auto; height: auto; flex-direction: column; gap: 0.15rem;
+            width: auto; height: 2.75rem; flex-direction: column; gap: 0.15rem; justify-content: center;
             padding: 0.3rem 0.55rem; border-width: 2px; border-style: solid;
             font-size: 0.55rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em;
         }
@@ -1057,6 +1066,7 @@
             }
             #settingsBtn::after, #themeColorBtn::after { content: ""; }
             #settingsBtn svg, #themeColorBtn svg { width: 18px; height: 18px; }
+            .search-container { height: 34px; }
             .header-actions { flex-wrap: nowrap; gap: 0.35rem; }
             /* Grid/list/tree switcher is a desktop-width flourish; on a
                phone the list layout is forced on instead (see JS), so the

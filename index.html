@@ -867,7 +867,7 @@
             background: var(--bg-primary); border: 2px solid var(--tt-3); color: var(--tt-3);
             text-transform: uppercase; letter-spacing: 0.03em; caret-color: var(--tt-3);
         }
-        .search-input::placeholder { color: var(--tt-3); opacity: 0.55; }
+        .search-input::placeholder { color: var(--tt-3); }
         /* Reveal-style blinking cursor after an empty, focused search box */
         .search-container { position: relative; }
         .search-container.tt-cursor::after {
@@ -2010,7 +2010,14 @@
             const ttOffsets = { 1: 0, 2: 120, 3: 260, 4: 175, 5: 300, 6: 60 };
             for (const [n, offset] of Object.entries(ttOffsets)) {
                 const hue = (ctrlH + offset) % 360;
-                const ttHex = hslToHex(hue, ttS, ttL);
+                const ttSeed = hslToHex(hue, ttS, ttL);
+                // Guarantee legibility against the flat custom background —
+                // the seed color above is picked for hue only, and on some
+                // custom colors (e.g. a mid-lightness pink/magenta) it can
+                // land too close in lightness to the background to read as
+                // text or a thin border, the same problem --accent-text
+                // solves above for the plain accent color.
+                const ttHex = visibleVariant(ttSeed, newVals["--bg-primary"], 4.5, 100);
                 root.setProperty(`--tt-${n}`, ttHex);
                 root.setProperty(`--tt-${n}-fg`, contrastRatio("#ffffff", ttHex) >= contrastRatio("#000000", ttHex) ? "#ffffff" : "#000000");
             }

@@ -72,7 +72,7 @@
             --accent-glow: rgba(255, 230, 0, 0.3);
             --transition: 0.12s ease;
             --font-size-base: 16px;
-            --font-mono: "Courier New", "Cascadia Mono", Consolas, ui-monospace, monospace;
+            --font-mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SFMono-Regular", Menlo, "Liberation Mono", "Courier New", monospace;
             --tt-1: #1a1aff; --tt-1-fg: #ffffff;
             --tt-2: #ff2b2b; --tt-2-fg: #ffffff;
             --tt-3: #00d94f; --tt-3-fg: #000000;
@@ -789,6 +789,7 @@
 
         html, body {
             font-family: var(--font-mono);
+            font-weight: 700;
             letter-spacing: 0.02em;
         }
         /* Faint CRT scanlines for atmosphere — neutral tone so it reads
@@ -829,20 +830,7 @@
             transform-origin: left center;
             margin-right: 0.4em;
         }
-        /* Decorative page/sub-page counter — JS keeps the numbers live
-           (nav depth as the page number, visible/total items as the
-           sub-page), so it's real information, not just a static label. */
-        .tt-pagenum {
-            color: var(--tt-1-fg);
-            font-weight: 700;
-            font-size: 0.68rem;
-            letter-spacing: 0.05em;
-            border: 2px solid var(--tt-1-fg);
-            padding: 0.1rem 0.4rem;
-            white-space: nowrap;
-        }
         @keyframes tt-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-        .tt-pagenum .tt-dot { display: inline-block; animation: tt-blink 1.4s step-start infinite; }
 
         /* Breadcrumb becomes its own full-width "path" bar under the topbar */
         .breadcrumb {
@@ -850,7 +838,7 @@
             background: var(--bg-primary); color: var(--text-primary);
             border-top: 2px solid var(--border-color);
             border-bottom: 2px solid var(--border-color);
-            padding: 0.3rem 0.6rem; margin-top: 0.35rem;
+            padding: 0.2rem 0.6rem; margin-top: 0.3rem;
             font-weight: 700; text-transform: uppercase;
         }
         .breadcrumb-item { color: var(--tt-5); }
@@ -1052,14 +1040,22 @@
             }
             #settingsBtn::after, #themeColorBtn::after { content: ""; }
             #settingsBtn svg, #themeColorBtn svg { width: 18px; height: 18px; }
-            .header-actions { flex-wrap: wrap; gap: 0.35rem; }
+            .header-actions { flex-wrap: nowrap; gap: 0.35rem; }
+            /* Grid/list/tree switcher is a desktop-width flourish; on a
+               phone the list layout is forced on instead (see JS), so the
+               switcher itself is just dead chrome eating header space. */
+            .view-toggle { display: none !important; }
+            /* Search now lives in the same row as Settings/Theme instead of
+               claiming a whole row of its own — it shrinks, they don't. */
+            .search-container { flex: 1 1 auto; min-width: 0; }
         }
         @media (max-width: 480px) {
-            .header { padding: 0.35rem 0.4rem; }
-            .breadcrumb { padding: 0.25rem 0.4rem; }
-            .search-container { width: 100%; order: 6; flex-basis: 100%; }
-            .header-actions { width: 100%; }
-            .tt-pagenum { display: none; }
+            .header { padding: 0.3rem 0.4rem; }
+            .breadcrumb { padding: 0.15rem 0.5rem; margin-top: 0.25rem; }
+            .breadcrumb-pin-btn { width: 18px; height: 18px; margin-left: 0.15rem; }
+            .breadcrumb-pin-btn svg { width: 12px; height: 12px; }
+            .search-container { width: auto; order: 0; flex-basis: auto; }
+            .header-actions { width: 100%; flex-wrap: nowrap; }
             /* Restore the app's own mobile tree-panel treatment (no right
                border, bottom border instead) that the unconditional
                .tree-panel rule above would otherwise override. */
@@ -1081,7 +1077,6 @@
                 <svg viewBox="0 0 24 24" fill="currentcolor"><rect x="2" y="5" width="20" height="14"/><circle cx="8" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="16" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="8" cy="12" r="0.8"/><circle cx="16" cy="12" r="0.8"/><rect x="10" y="15.6" width="4" height="1.6" fill="var(--bg-secondary)"/></svg>
                 <span>File Viewer</span>
             </div>
-            <span class="tt-pagenum" id="ttPageNum" aria-hidden="true">P100</span>
             <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb"></nav>
             <div class="header-actions">
                 <div class="search-container">
@@ -1680,6 +1675,17 @@
                     btn.classList.toggle("active", btn.dataset.view === v);
                 });
                 document.getElementById("treePanel").classList.toggle("visible", v === "tree");
+            }
+            // The grid/list/tree switcher is hidden on phone-width screens
+            // (no room for it, and tree view doesn't suit a narrow column
+            // anyway), so mobile always renders as list regardless of any
+            // saved desktop preference.
+            if (window.matchMedia && window.matchMedia("(max-width: 640px)").matches) {
+                currentView = "list";
+                document.querySelectorAll(".view-btn").forEach((btn) => {
+                    btn.classList.toggle("active", btn.dataset.view === "list");
+                });
+                document.getElementById("treePanel").classList.toggle("visible", false);
             }
             const so = localStorage.getItem("sortBy");
             if (so) sortBy = so;

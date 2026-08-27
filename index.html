@@ -1021,6 +1021,17 @@
         .settings-section { padding: 0.5rem 0.6rem; }
         .file-grid { gap: 0.4rem; }
 
+        /* --- Desktop: header-actions grows to fill whatever width the logo
+           doesn't need, and the settings/theme/view-toggle group gets
+           pushed all the way to the right edge of the screen via its own
+           auto margin. Search/help/stats stay put near the logo — only the
+           config + display controls move, so the row reads as two loose
+           clusters (identity+search on the left, controls on the right)
+           instead of one block floating with dead space beside it. --- */
+        @media (min-width: 641px) {
+            .header-actions { flex: 1 1 auto; }
+            #settingsDropdown { margin-left: auto; }
+        }
         /* --- Mobile: this re-asserts (and extends) the app's existing
            mobile fixes — tree-panel becomes a pinned-only strip with no
            right border, shortcuts/stats drop out, header wraps into tidy
@@ -1032,6 +1043,12 @@
                (matching the app's existing #shortcutsBtn mobile rule) both
                drop out entirely instead of crowding Settings/Theme. */
             #shortcutsBtn, #statsBtn { display: none !important; }
+            /* Dropping the wordmark shrinks the logo down to just its icon,
+               which is enough for it to share the top row with search/
+               settings/theme instead of claiming a whole row (with empty
+               space beside it) for a few words of text. */
+            .logo span { display: none; }
+            .logo { padding: 0.3rem; gap: 0; flex-shrink: 0; }
             /* Settings/Theme shrink back to compact icon squares — the
                labeled FASTEXT-key treatment is a desktop-width flourish
                that doesn't fit a phone header. */

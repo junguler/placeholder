@@ -51,6 +51,7 @@
             --text-muted: #009999;
             --accent: #ffe600;
             --accent-hover: #fff066;
+            --accent-solid: var(--accent);
             --on-accent: #000000;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
@@ -546,7 +547,7 @@
         .playlist-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .playlist-btn svg { width: 14px; height: 14px; }
-        .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
+        .playlist-btn.active { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent) !important; }
         .playlist-info { flex: 1; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .playlist-track { color: var(--text-primary); font-weight: 500; }
         .playlist-stop-btn { padding: 0.25rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
@@ -595,7 +596,7 @@
         .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
-        .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
+        .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent) !important; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; word-break: break-all; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
@@ -605,7 +606,7 @@
         .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1.05rem; font-weight: 700; }
-        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
+        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent-solid, var(--accent)); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
         .download-btn:hover { background: var(--accent-hover); }
         .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
         .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: var(--radius-full); animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
@@ -1961,6 +1962,38 @@
             }
             return best;
         }
+        // Whichever of pure black/white reads better against bgHex. Used for
+        // icon/text sitting on a derived surface (control chrome, badges)
+        // where the surface itself was already nudged for visibility but the
+        // foreground still needs a plain, unambiguous pick.
+        function pickForeground(bgHex) {
+            return contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex) ? "#ffffff" : "#000000";
+        }
+        // Some flattened surfaces (control-surface, accent, teletext badges)
+        // land at a mid lightness where NEITHER black nor white text clears
+        // AA — "pick whichever is better" isn't the same as "pick one that
+        // passes". This nudges the surface's own lightness (hue/sat held,
+        // same technique as visibleVariant) toward whichever pole is already
+        // winning until one of black/white actually reaches minRatio, so a
+        // plain black/white foreground is guaranteed readable rather than
+        // just relatively-less-bad.
+        function ensureForegroundContrast(bgHex, minRatio, maxShift) {
+            const bestOf = (hex) => Math.max(contrastRatio("#ffffff", hex), contrastRatio("#000000", hex));
+            if (bestOf(bgHex) >= minRatio) return bgHex;
+            const { h, s, l } = hexToHsl(bgHex);
+            const whiteWins = contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex);
+            const dir = whiteWins ? -1 : 1; // darker helps white win harder, lighter helps black
+            let best = bgHex, bestRatio = bestOf(bgHex);
+            for (let step = 1; step <= (maxShift || 60); step++) {
+                const nl = clampNum(l + dir * step, 0, 100);
+                const candidate = hslToHex(h, s, nl);
+                const ratio = bestOf(candidate);
+                if (ratio > bestRatio) { bestRatio = ratio; best = candidate; }
+                if (ratio >= minRatio) return candidate;
+                if (nl <= 0 || nl >= 100) break;
+            }
+            return best;
+        }
         // Blends the picked color toward a calm, desaturated, settled-
         // lightness target as intensity is lowered (hue never moves).
         // intensityPct is one of 100/80/60/40/20; 100 = unchanged, 20 = mostly muted.
@@ -2002,10 +2035,15 @@
             // button matching the flat panel color would otherwise vanish.
             const { h: ctrlH, s: ctrlS, l: ctrlL } = hexToHsl(activeColor);
             const shiftedL = clampNum(ctrlL + (ctrlL < 55 ? 22 : -22), 6, 94);
-            const controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+            let controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+            // Guarantee the icon/text sitting on this surface actually
+            // clears AA (4.5:1), not just "black or white, whichever is
+            // less bad" — mid-lightness custom colors can otherwise leave
+            // both options short.
+            controlSurface = ensureForegroundContrast(controlSurface, 4.5, 60);
             newVals["--control-surface"] = controlSurface;
             newVals["--control-surface-hover"] = visibleVariant(controlSurface, controlSurface, 1.3, 25);
-            newVals["--on-control"] = contrastRatio("#ffffff", controlSurface) >= contrastRatio("#000000", controlSurface) ? "#ffffff" : "#000000";
+            newVals["--on-control"] = pickForeground(controlSurface);
             // Skeleton shimmer normally animates between --bg-tertiary and
             // --bg-hover, both flattened here, so reuse the control-surface
             // pair instead so the loading animation still reads.
@@ -2022,12 +2060,31 @@
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
-            for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 3]]) {
+            // Small safety margin above the raw WCAG floor: cards zebra-
+            // stripe by blending the flat background ±5–7% toward white/
+            // black (see .file-card:nth-child), so text computed against
+            // the exact flat color can land right on the AA line and then
+            // dip under it on a tinted row. --text-muted now targets true
+            // AA (4.5) too, not the 3.0 large-text/UI-component minimum —
+            // it's rendered as normal-size body/meta text throughout, so
+            // the looser threshold wasn't actually appropriate for it.
+            const TEXT_SAFETY_MARGIN = 0.3;
+            for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 4.5]]) {
                 if (!base[textKey]) continue;
-                newVals[textKey] = readableTextColor(base[textKey], newVals["--bg-primary"], minRatio);
+                newVals[textKey] = readableTextColor(base[textKey], newVals["--bg-primary"], minRatio + TEXT_SAFETY_MARGIN);
             }
+            // A few solid CTA fills (download button, active playlist tab,
+            // "copied" state) put text/icons directly on --accent. Since
+            // --accent here is the exact flat picked color, mid-lightness
+            // picks can leave neither black nor white text passing AA on
+            // it. --accent-solid stays visually the same hue but nudges
+            // lightness just enough to guarantee a readable pairing,
+            // without touching --accent itself (borders, focus rings, the
+            // scrubber thumb, etc. want the exact chosen hue, not a
+            // contrast-adjusted stand-in).
+            newVals["--accent-solid"] = ensureForegroundContrast(newVals["--accent"], 4.5, 60);
             for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
-            const onAccent = contrastRatio("#ffffff", newVals["--accent"]) >= contrastRatio("#000000", newVals["--accent"]) ? "#ffffff" : "#000000";
+            const onAccent = pickForeground(newVals["--accent-solid"]);
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
@@ -2052,9 +2109,16 @@
                 // land too close in lightness to the background to read as
                 // text or a thin border, the same problem --accent-text
                 // solves above for the plain accent color.
-                const ttHex = visibleVariant(ttSeed, newVals["--bg-primary"], 4.5, 100);
+                // First pass: legible as text/border against the flat page.
+                let ttHex = visibleVariant(ttSeed, newVals["--bg-primary"], 4.5, 100);
+                // Second pass: these same six colors also serve as SOLID
+                // FILL for the topbar buttons, modal header, and playlist
+                // bar, with -fg as the text/icon on top — a different
+                // contrast need (against itself, not the page) that the
+                // first pass doesn't guarantee.
+                ttHex = ensureForegroundContrast(ttHex, 4.5, 60);
                 root.setProperty(`--tt-${n}`, ttHex);
-                root.setProperty(`--tt-${n}-fg`, contrastRatio("#ffffff", ttHex) >= contrastRatio("#000000", ttHex) ? "#ffffff" : "#000000");
+                root.setProperty(`--tt-${n}-fg`, pickForeground(ttHex));
             }
             markActiveSwatch(hexToHsl(activeColor).h);
         }
@@ -2071,7 +2135,7 @@
             const keys = [
                 "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
                 "--text-primary", "--text-secondary", "--text-muted",
-                "--accent", "--accent-hover", "--accent-text", "--on-accent", "--accent-glow",
+                "--accent", "--accent-hover", "--accent-text", "--accent-solid", "--on-accent", "--accent-glow",
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
                 "--tt-1", "--tt-1-fg", "--tt-2", "--tt-2-fg", "--tt-3", "--tt-3-fg",

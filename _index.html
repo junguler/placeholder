@@ -212,21 +212,34 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .header { background: var(--bg-secondary); border-bottom: var(--line-thick) solid var(--accent-warn); padding: 0.4rem 0.6rem; flex-shrink: 0; }
+        /* Masthead stripe cranked from a single flat accent-warn line to a hard
+           three-block color bar (warm / accent / cool) — same three brand hues
+           used throughout the app, just laid out as a blunt brutalist stripe
+           instead of blended, so the header itself reads as color-blocked. */
+        .header { background: var(--bg-secondary); border-bottom: var(--line-thick) solid var(--accent-warn); border-image: linear-gradient(90deg, var(--accent-warn) 0 33%, var(--accent) 33% 66%, var(--accent-cool) 66% 100%) 1; padding: 0.4rem 0.6rem; flex-shrink: 0; }
         .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
         /* Boxed "sticker" logo — bold filled chip with a hard edge, echoing a
            brutalist masthead treatment while staying fully theme-driven
            (accent/on-accent + on-control svg background swap instead of any
            hardcoded color), so it repaints correctly across every theme
            including the HC and custom-color variants. */
-        .logo { display: flex; align-items: center; gap: 0.375rem; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; color: var(--on-accent-warn); background: var(--accent-warn); border: var(--line) solid var(--border-color); padding: 0.3rem 0.55rem; cursor: pointer; flex-shrink: 0; }
+        .logo { display: flex; align-items: center; gap: 0.375rem; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; color: var(--on-accent-warn); background: var(--accent-warn); border: var(--line) solid var(--border-color); padding: 0.3rem 0.55rem; cursor: pointer; flex-shrink: 0; box-shadow: 3px 3px 0 0 var(--accent-cool); transition: transform var(--transition), box-shadow var(--transition); }
+        .logo:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 var(--accent-cool); }
+        .logo:active { transform: translate(0, 0); box-shadow: 1px 1px 0 0 var(--accent-cool); }
         .logo svg { width: 18px; height: 18px; }
         .logo svg circle { fill: var(--accent-warn); }
         .breadcrumb { display: flex; align-items: center; gap: 0.1rem; flex-wrap: wrap; font-size: 0.82rem; font-weight: 700; flex: 1; min-width: 0; }
-        .breadcrumb-item { color: var(--accent-text, var(--accent)); padding: 0.1rem 0.3rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
+        .breadcrumb-item { color: var(--accent-text, var(--accent)); padding: 0.1rem 0.3rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; }
         .breadcrumb-item:hover { background: var(--bg-hover); }
-        .breadcrumb-item.current { color: var(--text-primary); cursor: default; }
-        .breadcrumb-item.current:hover { background: 0 0; }
+        /* Each crumb in the path cycles through the three brand hues via its
+           underline, so a deep path reads as a run of color blocks rather
+           than a wall of same-colored text — the same warm/accent/cool
+           rotation used across the header stripe and player controls. */
+        .breadcrumb-item:nth-child(6n+1) { border-bottom-color: color-mix(in srgb, var(--accent-warn) 55%, transparent); }
+        .breadcrumb-item:nth-child(6n+3) { border-bottom-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+        .breadcrumb-item:nth-child(6n+5) { border-bottom-color: color-mix(in srgb, var(--accent-cool) 55%, transparent); }
+        .breadcrumb-item.current { color: var(--on-accent); background: var(--accent); border-bottom-color: transparent; cursor: default; font-weight: 800; box-shadow: 2px 2px 0 0 var(--accent-warn); }
+        .breadcrumb-item.current:hover { background: var(--accent); }
         .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
         .breadcrumb-pin-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 0.25rem; padding: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); flex-shrink: 0; }
         .breadcrumb-pin-btn svg { width: 14px; height: 14px; }
@@ -248,7 +261,7 @@
         .settings-btn svg { width: 16px; height: 16px; }
         .settings-menu { position: absolute; top: 100%; right: 0; margin-top: 0.375rem; min-width: 230px; z-index: 100; display: none; }
         .settings-menu.active { display: block; }
-        .settings-menu-card { background: var(--bg-secondary); border: var(--line) solid var(--border-color); border-radius: var(--radius-lg); box-shadow: 4px 4px 0 0 var(--border-color); overflow: hidden; }
+        .settings-menu-card { background: var(--bg-secondary); border: var(--line) solid var(--border-color); border-radius: var(--radius-lg); box-shadow: 4px 4px 0 0 var(--accent-cool); overflow: hidden; }
         .settings-menu-header { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.7rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; }
         .settings-menu-title { font-size: 0.8rem; font-weight: 700; letter-spacing: -0.005em; }
         .settings-menu-close { padding: 0.3rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -325,7 +338,7 @@
         .view-btn.active { background: var(--accent-warn); color: var(--on-accent-warn); }
         .view-btn svg { width: 16px; height: 16px; }
         .app-container { flex: 1; display: flex; overflow: hidden; }
-        .tree-panel { width: 220px; background: var(--bg-secondary); border-right: var(--line-thick) solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
+        .tree-panel { width: 220px; background: var(--bg-secondary); border-right: var(--line-thick) solid var(--border-color); border-image: linear-gradient(180deg, var(--accent-warn) 0 33%, var(--accent) 33% 66%, var(--accent-cool) 66% 100%) 1; display: none; flex-shrink: 0; flex-direction: column; }
         .tree-panel.visible { display: flex; }
         .tree-header { padding: 0.4rem 0.6rem; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: var(--line) solid var(--border-color); flex-shrink: 0; }
         .tree-content { padding: 0.4rem; overflow-y: auto; flex: 1; min-height: 0; }
@@ -333,9 +346,17 @@
         /* Bordered "chip" rows rather than a plain left-accent bar, so each
            folder reads as a discrete boxed block (matching the brutalist
            folder-list treatment) instead of a flat hover row. */
-        .tree-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.45rem; margin-bottom: 3px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-primary); border: var(--line) solid var(--border-color); border-radius: var(--radius); }
+        .tree-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.45rem; margin-bottom: 3px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-primary); border: var(--line) solid var(--border-color); border-left: 3px solid transparent; border-radius: var(--radius); }
         .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
         .tree-item.active { background: var(--accent-warn); color: var(--on-accent-warn); border-color: var(--accent-warn); }
+        /* Unvisited folders in the tree otherwise sit fully neutral until
+           pinned or opened — a cycling left-edge stripe (same warm/accent/
+           cool rotation used for breadcrumbs) gives the whole tree some
+           color even at rest. Skipped once a row goes active, since the
+           accent-warn fill already covers it. */
+        .tree-item:not(.active):nth-child(3n+1) { border-left-color: color-mix(in srgb, var(--accent-warn) 55%, transparent); }
+        .tree-item:not(.active):nth-child(3n+2) { border-left-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+        .tree-item:not(.active):nth-child(3n) { border-left-color: color-mix(in srgb, var(--accent-cool) 55%, transparent); }
         .tree-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tree-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
         .tree-children { margin-left: 0.7rem; }
@@ -382,21 +403,27 @@
            (see .file-list .file-card below) since a shadow per row would be
            visual noise at that density. */
         .file-grid .file-card { box-shadow: 3px 3px 0 0 var(--border-color); }
-        .file-grid .file-card:hover, .file-grid .file-card:focus-within { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 0 var(--accent); }
+        .file-grid .file-card:hover, .file-grid .file-card:focus-within { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 0 var(--card-accent, var(--accent)); border-color: var(--card-accent, var(--accent)); }
         /* --- Colored card blocking ---------------------------------------
            Grid cards get a real background wash (not just a tinted icon)
            per file category, so the grid reads as color-blocked tiles
            rather than one flat panel color with small colored icons — the
            core brutalist trait from the reference mockup. Kept to grid view
-           only; list/tree rows stay flat and dense. Mix ratios are low
-           enough that text contrast is unaffected. */
-        .file-grid .file-card.directory { background: color-mix(in srgb, #4d8dff 14%, var(--bg-secondary) 86%); border-color: color-mix(in srgb, #4d8dff 55%, var(--border-color) 45%); }
-        .file-grid .file-card[data-category="audio"] { background: color-mix(in srgb, #8fc25a 17%, var(--bg-secondary) 83%); border-color: color-mix(in srgb, #8fc25a 55%, var(--border-color) 45%); }
-        .file-grid .file-card[data-category="video"] { background: color-mix(in srgb, #e2765c 15%, var(--bg-secondary) 85%); border-color: color-mix(in srgb, #e2765c 55%, var(--border-color) 45%); }
-        .file-grid .file-card[data-category="image"] { background: color-mix(in srgb, #c58ce0 15%, var(--bg-secondary) 85%); border-color: color-mix(in srgb, #c58ce0 55%, var(--border-color) 45%); }
-        .file-grid .file-card[data-category="playlist"] { background: color-mix(in srgb, #e08fb0 17%, var(--bg-secondary) 83%); border-color: color-mix(in srgb, #e08fb0 55%, var(--border-color) 45%); }
-        .file-grid .file-card[data-category="data"] { background: color-mix(in srgb, #dcae4e 15%, var(--bg-secondary) 85%); border-color: color-mix(in srgb, #dcae4e 55%, var(--border-color) 45%); }
-        .file-grid .file-card[data-category="code"], .file-grid .file-card[data-category="markup"], .file-grid .file-card[data-category="style"] { background: color-mix(in srgb, #6fa8dc 13%, var(--bg-secondary) 87%); border-color: color-mix(in srgb, #6fa8dc 50%, var(--border-color) 50%); }
+           only; list/tree rows stay flat and dense. Wash percentages pushed
+           up from the original 13-17% to 20-26% for a punchier, more
+           brutalist block of color, and each category now also stashes its
+           raw hue in --card-accent so hover/focus can shadow in that same
+           color instead of falling back to one flat accent everywhere. */
+        .file-grid .file-card.directory { background: color-mix(in srgb, #4d8dff 22%, var(--bg-secondary) 78%); border-color: color-mix(in srgb, #4d8dff 60%, var(--border-color) 40%); --card-accent: #4d8dff; }
+        .file-grid .file-card[data-category="audio"] { background: color-mix(in srgb, #8fc25a 25%, var(--bg-secondary) 75%); border-color: color-mix(in srgb, #8fc25a 60%, var(--border-color) 40%); --card-accent: #8fc25a; }
+        .file-grid .file-card[data-category="video"] { background: color-mix(in srgb, #e2765c 22%, var(--bg-secondary) 78%); border-color: color-mix(in srgb, #e2765c 60%, var(--border-color) 40%); --card-accent: #e2765c; }
+        .file-grid .file-card[data-category="image"] { background: color-mix(in srgb, #c58ce0 22%, var(--bg-secondary) 78%); border-color: color-mix(in srgb, #c58ce0 60%, var(--border-color) 40%); --card-accent: #c58ce0; }
+        .file-grid .file-card[data-category="playlist"] { background: color-mix(in srgb, #e08fb0 25%, var(--bg-secondary) 75%); border-color: color-mix(in srgb, #e08fb0 60%, var(--border-color) 40%); --card-accent: #e08fb0; }
+        .file-grid .file-card[data-category="data"] { background: color-mix(in srgb, #dcae4e 22%, var(--bg-secondary) 78%); border-color: color-mix(in srgb, #dcae4e 60%, var(--border-color) 40%); --card-accent: #dcae4e; }
+        .file-grid .file-card[data-category="code"], .file-grid .file-card[data-category="markup"], .file-grid .file-card[data-category="style"] { background: color-mix(in srgb, #6fa8dc 20%, var(--bg-secondary) 80%); border-color: color-mix(in srgb, #6fa8dc 55%, var(--border-color) 45%); --card-accent: #6fa8dc; }
+        .file-grid .file-card[data-category="document"] { background: color-mix(in srgb, #e0994f 22%, var(--bg-secondary) 78%); border-color: color-mix(in srgb, #e0994f 60%, var(--border-color) 40%); --card-accent: #e0994f; }
+        .file-grid .file-card[data-category="archive"] { background: color-mix(in srgb, #b8cfe0 22%, var(--bg-secondary) 78%); border-color: color-mix(in srgb, #b8cfe0 60%, var(--border-color) 40%); --card-accent: #b8cfe0; }
+        .file-grid .file-card[data-category="font"] { background: color-mix(in srgb, #e0a85f 22%, var(--bg-secondary) 78%); border-color: color-mix(in srgb, #e0a85f 60%, var(--border-color) 40%); --card-accent: #e0a85f; }
         .file-list .file-card { content-visibility: auto; contain-intrinsic-size: auto 46px; }
         body.compact-density .file-list .file-card { contain-intrinsic-size: auto 34px; }
         /* Star/pin toggle shown directly on each card so favoriting files and
@@ -539,7 +566,12 @@
         .empty-state p { font-size: 0.85rem; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; padding: 0.5rem; overscroll-behavior: contain; touch-action: pan-y; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: var(--line) solid var(--border-color); box-shadow: var(--shadow-lg); border-top: var(--line-thick) solid var(--accent); }
+        .modal { position: relative; background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: var(--line) solid var(--border-color); box-shadow: var(--shadow-lg); border-top: var(--line-thick) solid var(--accent); }
+        /* Tri-color stripe laid over the top border via a pseudo-element
+           (rather than border-image, which doesn't clip to border-radius
+           reliably) so it stays crisp on rounded corners at every depth
+           setting. .modal's own overflow: hidden clips it automatically. */
+        .modal::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: var(--line-thick); background: linear-gradient(90deg, var(--accent-cool) 0 33%, var(--accent) 33% 66%, var(--accent-warn) 66% 100%); z-index: 1; pointer-events: none; }
         .modal.video-modal { height: 95vh; height: 95dvh; }
         /* Audio preview content tops out at 500px (.preview-audio-container's
            own max-width), but the modal defaults to 95vw regardless of
@@ -578,12 +610,12 @@
         .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
         .goto-input { width: 3.4rem; height: 1.25rem; box-sizing: border-box; text-align: center; background: var(--control-surface); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
         .goto-input::-webkit-outer-spin-button, .goto-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .goto-input:focus { outline: none; border-color: var(--accent); }
+        .goto-input:focus { outline: none; border-color: var(--accent-cool); }
         .goto-input:disabled { opacity: 0.4; cursor: not-allowed; }
         .goto-stepper { display: flex; flex-direction: row; gap: 0.3rem; }
-        .goto-step-btn { width: 2.25rem; height: 1.25rem; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: var(--control-surface); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; padding: 0; line-height: 0; }
+        .goto-step-btn { width: 2.25rem; height: 1.25rem; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--accent-cool) 18%, var(--control-surface) 82%); border: var(--line) solid color-mix(in srgb, var(--accent-cool) 50%, var(--border-color) 50%); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; padding: 0; line-height: 0; }
         .goto-step-btn svg { width: 22px; height: 22px; }
-        .goto-step-btn:hover:not(:disabled) { background: var(--control-surface-hover); }
+        .goto-step-btn:hover:not(:disabled) { background: var(--accent-cool); border-color: var(--accent-cool); color: var(--on-accent-cool) !important; }
         .goto-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         @media (max-width: 640px) {
             .goto-input { width: 2.5rem; height: 1.5rem; font-size: 0.9rem; }
@@ -597,27 +629,78 @@
         .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
         .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
         .preview-audio-container { width: 100%; max-width: 500px; padding: 1.25rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; position: relative; }
-        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); user-select: none; overflow: hidden; }
+        /* The big glyph above the player used to be a flat monochrome tile
+           (same --control-surface as every other button) — now it's the
+           single most colorful thing on the page: a hard-edged two-hue
+           block plus an offset brutalist shadow in a third hue, all three
+           pulled from the app's own warm/accent/cool trio so it still reads
+           as "this app's colors", not a rainbow sticker. --icon-hue is a
+           plain CSS custom property that JS spins to a new value (see
+           setPlayerIcon) every time the glyph swaps — a filter: hue-rotate()
+           on the whole tile shifts fill, border and shadow together in one
+           move, exactly like the per-position file-icon drift above, just
+           driven by track changes instead of grid position. */
+        .audio-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-cool) 100%); border: var(--line) solid var(--border-color); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-accent); user-select: none; overflow: hidden; box-shadow: 4px 4px 0 0 var(--accent-warn); filter: hue-rotate(var(--icon-hue, 0deg)) saturate(1.1); transition: filter 0.4s ease, transform var(--transition), box-shadow var(--transition); }
+        .audio-icon:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 0 var(--accent-warn); }
+        .audio-icon:active { transform: translate(0, 0); box-shadow: 2px 2px 0 0 var(--accent-warn); }
         .audio-icon-svg { width: 100%; height: 100%; display: block; overflow: visible; }
         .audio-icon-glyph { font-family: "PlayerIconFont", sans-serif; font-size: 55px; fill: currentColor; }
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .preview-audio { width: 100%; height: 40px; display: none; }
         .preview-audio[controls] { display: block; }
-        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; max-width: 480px; margin: 0.15rem auto 0; background: var(--bg-tertiary); border: var(--line) solid var(--border-color); border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 3px 3px 0 0 var(--border-color); }
+        /* Stacked two-color brutalist shadow (cool block behind, warm block
+           in front) rather than one flat border-colored offset — the player
+           panel itself now carries two of the app's three brand hues even
+           before you look at the icon or controls inside it. */
+        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; max-width: 480px; margin: 0.15rem auto 0; background: var(--bg-tertiary); border: var(--line) solid var(--border-color); border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 3px 3px 0 0 var(--accent-cool), 6px 6px 0 0 var(--accent-warn); }
         .player-seek-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
         .player-seek { flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; border-radius: var(--radius-full); }
+        /* Webkit-only gradient track (warm start, cool end) layered under the
+           native thumb; Firefox/other engines fall back to the plain
+           accent-color thumb+track above, which is still fine on its own. */
+        .player-seek::-webkit-slider-runnable-track { height: 6px; border-radius: var(--radius-full); background: linear-gradient(90deg, var(--accent-warn), var(--accent) 50%, var(--accent-cool)); }
+        .player-seek::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin-top: -4px; border-radius: 50%; background: var(--on-accent); border: 2px solid var(--accent); box-shadow: 0 0 0 1px var(--border-color); }
         .player-seek:disabled { opacity: 0.4; cursor: not-allowed; }
         .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; flex-wrap: nowrap; overflow-x: auto; }
         .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); transition: transform var(--transition), background-color var(--transition), border-color var(--transition); }
         .player-controls-row .playlist-btn:hover:not(:disabled) { transform: translateY(-1px); }
-        .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-        .player-play-btn { background: var(--control-surface) !important; border-color: var(--control-surface) !important; color: var(--on-control) !important; border-radius: var(--radius-full) !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 3px 0 var(--accent); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
-        .player-play-btn:hover { background: var(--control-surface-hover) !important; border-color: var(--control-surface-hover) !important; transform: translateY(-1px); box-shadow: 0 4px 0 var(--accent); }
+        .player-divider { width: 1px; height: 1.25rem; background: linear-gradient(var(--accent-warn), var(--accent-cool)); flex-shrink: 0; }
+        /* Transport buttons split into three role-based color families
+           (cool = step through the queue, warm = shuffle, plain accent =
+           volume) instead of one flat control-surface repeated five times —
+           the same warm/accent/cool trio as everywhere else, just assigned
+           by function instead of position. */
+        .prev-btn, .next-btn {
+            background: color-mix(in srgb, var(--accent-cool) 20%, var(--control-surface) 80%) !important;
+            border-color: color-mix(in srgb, var(--accent-cool) 55%, var(--border-color) 45%) !important;
+        }
+        .prev-btn:hover:not(:disabled), .next-btn:hover:not(:disabled) {
+            background: var(--accent-cool) !important; border-color: var(--accent-cool) !important; color: var(--on-accent-cool) !important;
+        }
+        .shuffle-btn {
+            background: color-mix(in srgb, var(--accent-warn) 20%, var(--control-surface) 80%) !important;
+            border-color: color-mix(in srgb, var(--accent-warn) 55%, var(--border-color) 45%) !important;
+        }
+        .shuffle-btn:hover:not(:disabled) {
+            background: var(--accent-warn) !important; border-color: var(--accent-warn) !important; color: var(--on-accent-warn) !important;
+        }
+        .shuffle-btn.active {
+            background: var(--accent-warn) !important; border-color: var(--accent-warn) !important; color: var(--on-accent-warn) !important;
+        }
+        .player-controls-row #volDownBtn, .player-controls-row #volUpBtn {
+            background: color-mix(in srgb, var(--accent) 18%, var(--control-surface) 82%) !important;
+            border-color: color-mix(in srgb, var(--accent) 50%, var(--border-color) 50%) !important;
+        }
+        .player-controls-row #volDownBtn:hover, .player-controls-row #volUpBtn:hover {
+            background: var(--accent) !important; border-color: var(--accent) !important; color: var(--on-accent) !important;
+        }
+        .player-play-btn { background: linear-gradient(135deg, var(--accent-warn) 0%, var(--accent) 100%) !important; border-color: var(--accent-warn) !important; color: var(--on-accent-warn) !important; border-radius: var(--radius-full) !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; box-shadow: 0 3px 0 var(--accent-cool); transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition); }
+        .player-play-btn:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 4px 0 var(--accent-cool); }
         .player-play-btn:active { transform: translateY(0); }
         .player-play-btn svg { width: 20px; height: 20px; }
         .player-time, .player-vol { font-size: 0.75rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; }
-        .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
-        .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
+        .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: color-mix(in srgb, var(--accent-cool) 18%, var(--control-surface) 82%); border: 1px solid color-mix(in srgb, var(--accent-cool) 50%, var(--border-color) 50%); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
+        .player-info-btn:hover { background: var(--accent-cool); border-color: var(--accent-cool); color: var(--on-accent-cool) !important; }
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
@@ -629,10 +712,11 @@
         .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1.05rem; font-weight: 700; }
-        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
-        .download-btn:hover { background: var(--accent-hover); }
+        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warn) 100%); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; box-shadow: 3px 3px 0 0 var(--accent-cool); transition: transform var(--transition), box-shadow var(--transition); }
+        .download-btn:hover { filter: brightness(1.08); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 var(--accent-cool); }
         .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
-        .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: var(--radius-full); animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
+        .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: var(--radius-full); animation: spin 0.8s linear infinite, spin-hue 2.4s steps(3) infinite; margin-bottom: 0.5rem; }
+        @keyframes spin-hue { 0% { border-top-color: var(--accent); } 33% { border-top-color: var(--accent-warn); } 66% { border-top-color: var(--accent-cool); } 100% { border-top-color: var(--accent); } }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
         .playlist-track.buffering::after { content: " \00b7 Buffering\2026"; color: var(--text-muted); font-weight: 400; animation: pulse 1s ease-in-out infinite; }
@@ -648,7 +732,7 @@
             .file-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.4rem; }
             .file-card { padding: 0.4rem; }
             .file-grid .file-card { box-shadow: 2px 2px 0 0 var(--border-color); }
-            .file-grid .file-card:hover, .file-grid .file-card:focus-within { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 0 var(--accent); }
+            .file-grid .file-card:hover, .file-grid .file-card:focus-within { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 0 var(--card-accent, var(--accent)); }
             /* Pinned folders and Favorite files stay visible on mobile in
                all 3 view modes (grid/list/tree) as a compact strip above the
                main listing — only the full nested folder tree (redundant
@@ -761,6 +845,19 @@
         .stats-row-label { width: 88px; flex-shrink: 0; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .stats-row-bar-track { flex: 1; height: 8px; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; }
         .stats-row-bar-fill { display: block; height: 100%; min-width: 2px; background: var(--stat-fill, var(--accent)); }
+        /* Each category's bar picks up the same color used for its file-icon
+           and grid-card wash elsewhere, so the stats panel reads as a
+           color-coded breakdown instead of one accent-tinted bar chart. */
+        .stats-row[data-cat="folder"] .stats-row-bar-fill { background: #4d8dff; }
+        .stats-row[data-cat="audio"] .stats-row-bar-fill { background: #8fc25a; }
+        .stats-row[data-cat="video"] .stats-row-bar-fill { background: #e2765c; }
+        .stats-row[data-cat="image"] .stats-row-bar-fill { background: #c58ce0; }
+        .stats-row[data-cat="playlist"] .stats-row-bar-fill { background: #e08fb0; }
+        .stats-row[data-cat="data"] .stats-row-bar-fill { background: #dcae4e; }
+        .stats-row[data-cat="code"] .stats-row-bar-fill, .stats-row[data-cat="markup"] .stats-row-bar-fill, .stats-row[data-cat="style"] .stats-row-bar-fill { background: #6fa8dc; }
+        .stats-row[data-cat="document"] .stats-row-bar-fill { background: #e0994f; }
+        .stats-row[data-cat="archive"] .stats-row-bar-fill { background: #b8cfe0; }
+        .stats-row[data-cat="font"] .stats-row-bar-fill { background: #e0a85f; }
         .stats-row-count { width: 44px; flex-shrink: 0; text-align: right; font-size: 0.75rem; line-height: 1.4; color: var(--text-muted); }
         /* Compact density: tightens grid/list/tree spacing for people who'd
            rather see more rows at once than have larger touch targets. */
@@ -1318,8 +1415,14 @@
         // scales + centers it around its own measured ink bounding box so
         // every glyph in the pool reads as the same size and sits
         // dead-center, regardless of how the source font drew it.
+        // Same 135deg-per-step drift used for the file-grid icons (360/8*3,
+        // guaranteeing no two consecutive picks land near the same hue),
+        // just advanced by track/glyph change instead of grid position.
+        let _playerIconHueStep = 0;
         function setPlayerIcon(iconEl, glyph) {
             if (!iconEl) return;
+            _playerIconHueStep = (_playerIconHueStep + 1) % 8;
+            iconEl.style.setProperty("--icon-hue", (_playerIconHueStep * 135) % 360 + "deg");
             let textEl = iconEl.querySelector(".audio-icon-glyph");
             if (!textEl) {
                 // Backfill the SVG wrapper for any stale markup that still
@@ -4273,7 +4376,7 @@
                 const isPlaylistRow = cat === "playlist";
                 const label = isPlaylistRow ? "M3U / M3U8" : escapeHtml(cat);
                 return `
-          <div class="stats-row">
+          <div class="stats-row" data-cat="${escapeHtml(cat)}">
             <span class="stats-row-icon">${icons[cat] || icons.other}</span>
             <span class="stats-row-label"${isPlaylistRow ? ' style="text-transform:none"' : ""}>${label}</span>
             <span class="stats-row-bar-track"><span class="stats-row-bar-fill" style="width: ${pct}%"></span></span>

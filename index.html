@@ -39,6 +39,15 @@
             --accent: #9b5de5;
             --accent-hover: #b280ea;
             --on-accent: #ffffff;
+            /* Extra bold "brutalist block" colors, distinct from the main
+               accent, used for masthead/active-folder (warm) and pinned/
+               directory (cool) highlights so the interface reads as
+               multi-color blocking rather than a single accent sprinkled
+               around a mostly neutral surface. */
+            --accent-warn: #ffb400;
+            --on-accent-warn: #1a1200;
+            --accent-cool: #2f6fed;
+            --on-accent-cool: #ffffff;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
             --on-control: var(--text-primary);
@@ -82,6 +91,10 @@
             --text-muted: #7a7a7a;
             --accent: #5b21b6;
             --accent-hover: #4c1a99;
+            --accent-warn: #c2410c;
+            --on-accent-warn: #ffffff;
+            --accent-cool: #1d4ed8;
+            --on-accent-cool: #ffffff;
             --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
             --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
             --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
@@ -102,6 +115,10 @@
             --text-muted: #a3a3a3;
             --accent: #00ffff;
             --accent-hover: #33ffff;
+            --accent-warn: #ffe600;
+            --on-accent-warn: #000000;
+            --accent-cool: #005fff;
+            --on-accent-cool: #ffffff;
             --success: #00ffff;
             --warning: #ff37cb;
             --danger: #ff4444;
@@ -124,6 +141,10 @@
             --text-muted: #5c5c5c;
             --accent: #ff0000;
             --accent-hover: #cc0000;
+            --accent-warn: #a35a00;
+            --on-accent-warn: #ffffff;
+            --accent-cool: #0026ff;
+            --on-accent-cool: #ffffff;
             --success: #ff0000;
             --warning: #00c834;
             --danger: #00bbbb;
@@ -146,6 +167,10 @@
                 --text-muted: #7a7a7a;
                 --accent: #5b21b6;
                 --accent-hover: #4c1a99;
+                --accent-warn: #c2410c;
+                --on-accent-warn: #ffffff;
+                --accent-cool: #1d4ed8;
+                --on-accent-cool: #ffffff;
                 --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
                 --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
                 --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
@@ -187,16 +212,16 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .header { background: var(--bg-secondary); border-bottom: var(--line-thick) solid var(--accent); padding: 0.4rem 0.6rem; flex-shrink: 0; }
+        .header { background: var(--bg-secondary); border-bottom: var(--line-thick) solid var(--accent-warn); padding: 0.4rem 0.6rem; flex-shrink: 0; }
         .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
         /* Boxed "sticker" logo — bold filled chip with a hard edge, echoing a
            brutalist masthead treatment while staying fully theme-driven
            (accent/on-accent + on-control svg background swap instead of any
            hardcoded color), so it repaints correctly across every theme
            including the HC and custom-color variants. */
-        .logo { display: flex; align-items: center; gap: 0.375rem; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); border: var(--line) solid var(--border-color); padding: 0.3rem 0.55rem; cursor: pointer; flex-shrink: 0; }
+        .logo { display: flex; align-items: center; gap: 0.375rem; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; color: var(--on-accent-warn); background: var(--accent-warn); border: var(--line) solid var(--border-color); padding: 0.3rem 0.55rem; cursor: pointer; flex-shrink: 0; }
         .logo svg { width: 18px; height: 18px; }
-        .logo svg circle { fill: var(--accent); }
+        .logo svg circle { fill: var(--accent-warn); }
         .breadcrumb { display: flex; align-items: center; gap: 0.1rem; flex-wrap: wrap; font-size: 0.82rem; font-weight: 700; flex: 1; min-width: 0; }
         .breadcrumb-item { color: var(--accent-text, var(--accent)); padding: 0.1rem 0.3rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
         .breadcrumb-item:hover { background: var(--bg-hover); }
@@ -205,8 +230,8 @@
         .breadcrumb-separator { color: var(--text-muted); font-size: 0.75rem; }
         .breadcrumb-pin-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 0.25rem; padding: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); flex-shrink: 0; }
         .breadcrumb-pin-btn svg { width: 14px; height: 14px; }
-        .breadcrumb-pin-btn:hover { color: var(--accent-text, var(--accent)); background: var(--bg-hover); }
-        .breadcrumb-pin-btn.pinned { color: var(--accent-text, var(--accent)); }
+        .breadcrumb-pin-btn:hover { color: var(--accent-cool); background: var(--bg-hover); }
+        .breadcrumb-pin-btn.pinned { color: var(--accent-cool); }
         .header-actions { display: flex; gap: 0.3rem; align-items: center; }
         .search-container { position: relative; width: 190px; }
         .search-input { width: 100%; padding: 0.35rem 1.75rem 0.35rem 1.75rem; background: var(--bg-tertiary); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; font-weight: 600; }
@@ -297,7 +322,7 @@
         .view-btn { padding: 0.3rem 0.45rem; background: 0 0; border: none; border-right: var(--line) solid var(--border-color); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .view-btn:last-child { border-right: none; }
         .view-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
-        .view-btn.active { background: var(--accent); color: var(--on-accent); }
+        .view-btn.active { background: var(--accent-warn); color: var(--on-accent-warn); }
         .view-btn svg { width: 16px; height: 16px; }
         .app-container { flex: 1; display: flex; overflow: hidden; }
         .tree-panel { width: 220px; background: var(--bg-secondary); border-right: var(--line-thick) solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
@@ -310,7 +335,7 @@
            folder-list treatment) instead of a flat hover row. */
         .tree-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.45rem; margin-bottom: 3px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-primary); border: var(--line) solid var(--border-color); border-radius: var(--radius); }
         .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .tree-item.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+        .tree-item.active { background: var(--accent-warn); color: var(--on-accent-warn); border-color: var(--accent-warn); }
         .tree-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tree-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
         .tree-children { margin-left: 0.7rem; }
@@ -321,9 +346,9 @@
         .tree-pinned:empty { display: none; }
         .tree-pinned { border-bottom: var(--line) solid var(--border-color); padding: 0.4rem 0.4rem 0.15rem; flex-shrink: 0; }
         .tree-pinned-header { padding: 0.1rem 0.1rem 0.3rem; font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-        .tree-pinned-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.45rem; margin-bottom: 3px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-primary); border: var(--line) solid var(--border-color); border-radius: var(--radius); }
-        .tree-pinned-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .tree-pinned-item.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+        .tree-pinned-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.45rem; margin-bottom: 3px; cursor: pointer; font-size: 0.82rem; font-weight: 700; color: var(--on-accent-cool); background: var(--accent-cool); border: var(--line) solid var(--accent-cool); border-radius: var(--radius); }
+        .tree-pinned-item:hover { filter: brightness(1.08); color: var(--on-accent-cool); }
+        .tree-pinned-item.active { border-color: var(--accent-warn); box-shadow: inset 0 0 0 2px var(--accent-warn); }
         .tree-pinned-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tree-pinned-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; }
         /* Single-line label for pinned/favorite entries. Truncates from the
@@ -331,10 +356,9 @@
            via the direction:rtl + text-align:left trick, since the end of
            a path is usually more distinguishing than the start. */
         .tree-pinned-name-stack { display: block; overflow: hidden; flex: 1; min-width: 0; line-height: 1.3; white-space: nowrap; }
-        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--accent-text, var(--accent)); cursor: pointer; }
+        .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--on-accent-cool); cursor: pointer; }
         .tree-pinned-unpin svg { width: 12px; height: 12px; }
         .tree-pinned-unpin:hover, .tree-pinned-unpin:focus-visible { color: var(--danger); }
-        .tree-pinned-item.active .tree-pinned-unpin { color: var(--on-accent); }
         .main { flex: 1; overflow: auto; padding: 0.5rem; display: flex; flex-direction: column; }
         .main-content { flex: 1; }
         .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.4rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
@@ -359,6 +383,20 @@
            visual noise at that density. */
         .file-grid .file-card { box-shadow: 3px 3px 0 0 var(--border-color); }
         .file-grid .file-card:hover, .file-grid .file-card:focus-within { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 0 var(--accent); }
+        /* --- Colored card blocking ---------------------------------------
+           Grid cards get a real background wash (not just a tinted icon)
+           per file category, so the grid reads as color-blocked tiles
+           rather than one flat panel color with small colored icons — the
+           core brutalist trait from the reference mockup. Kept to grid view
+           only; list/tree rows stay flat and dense. Mix ratios are low
+           enough that text contrast is unaffected. */
+        .file-grid .file-card.directory { background: color-mix(in srgb, #4d8dff 14%, var(--bg-secondary) 86%); border-color: color-mix(in srgb, #4d8dff 55%, var(--border-color) 45%); }
+        .file-grid .file-card[data-category="audio"] { background: color-mix(in srgb, #8fc25a 17%, var(--bg-secondary) 83%); border-color: color-mix(in srgb, #8fc25a 55%, var(--border-color) 45%); }
+        .file-grid .file-card[data-category="video"] { background: color-mix(in srgb, #e2765c 15%, var(--bg-secondary) 85%); border-color: color-mix(in srgb, #e2765c 55%, var(--border-color) 45%); }
+        .file-grid .file-card[data-category="image"] { background: color-mix(in srgb, #c58ce0 15%, var(--bg-secondary) 85%); border-color: color-mix(in srgb, #c58ce0 55%, var(--border-color) 45%); }
+        .file-grid .file-card[data-category="playlist"] { background: color-mix(in srgb, #e08fb0 17%, var(--bg-secondary) 83%); border-color: color-mix(in srgb, #e08fb0 55%, var(--border-color) 45%); }
+        .file-grid .file-card[data-category="data"] { background: color-mix(in srgb, #dcae4e 15%, var(--bg-secondary) 85%); border-color: color-mix(in srgb, #dcae4e 55%, var(--border-color) 45%); }
+        .file-grid .file-card[data-category="code"], .file-grid .file-card[data-category="markup"], .file-grid .file-card[data-category="style"] { background: color-mix(in srgb, #6fa8dc 13%, var(--bg-secondary) 87%); border-color: color-mix(in srgb, #6fa8dc 50%, var(--border-color) 50%); }
         .file-list .file-card { content-visibility: auto; contain-intrinsic-size: auto 46px; }
         body.compact-density .file-list .file-card { contain-intrinsic-size: auto 34px; }
         /* Star/pin toggle shown directly on each card so favoriting files and
@@ -372,8 +410,8 @@
            fires). Starred cards stay fully visible regardless (see .starred rule below). */
         .file-card:hover .card-star-btn, .file-card:focus-within .card-star-btn { opacity: 0.85; }
         .card-star-btn svg { width: 13px; height: 13px; }
-        .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
-        .card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+        .card-star-btn:hover, .card-star-btn:focus-visible { opacity: 1; color: var(--accent-cool); border-color: var(--accent-cool); }
+        .card-star-btn.starred { opacity: 1; color: var(--accent-cool); border-color: var(--accent-cool); background: color-mix(in srgb, var(--accent-cool) 16%, var(--bg-secondary) 84%); }
         .card-star-spacer { width: 22px; flex-shrink: 0; }
         .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
         .file-card.directory { background: var(--bg-secondary); }
@@ -400,7 +438,7 @@
         html.no-zebra .file-card:nth-child(even) { --card-bg: var(--bg-secondary); background: var(--bg-secondary); }
         .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); border: 1px solid currentColor; }
         .file-icon svg { width: 20px; height: 20px; }
-        .file-icon.folder { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
+        .file-icon.folder { color: #4d8dff; background: rgba(77, 141, 255, 0.18); }
         .file-icon.image { color: #c58ce0; background: rgba(197, 140, 224, 0.16); }
         .file-icon.video { color: #e2765c; background: rgba(226, 118, 92, 0.16); }
         .file-icon.audio { color: #8fc25a; background: rgba(143, 194, 90, 0.2); }
@@ -450,7 +488,7 @@
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
         .list-columns { --list-cols: 22px 24px 1fr 70px 90px 100px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.35rem 0.5rem; margin-bottom: 3px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-text, var(--accent)); border-bottom: var(--line-thick) solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); box-shadow: var(--shadow-sm); z-index: 5; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.35rem 0.5rem; margin-bottom: 3px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-text, var(--accent)); border-bottom: var(--line-thick) solid var(--accent-warn); position: sticky; top: 0; background: var(--bg-secondary); box-shadow: var(--shadow-sm); z-index: 5; }
         .file-list-header.stuck { margin-top: -0.75rem; padding-top: calc(0.4rem + 0.75rem); top: -0.75rem; }
         .file-list-header .col-star-spacer { width: 22px; }
         .file-list-header .col-icon-spacer { width: 24px; }
@@ -695,7 +733,7 @@
         .load-more-btn:hover { border-color: var(--accent); }
         .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
         .modal-btn.copied { color: var(--success) !important; border-color: var(--success); }
-        .modal-btn.favorite-btn.favorited { color: var(--accent-text, var(--accent)) !important; border-color: var(--accent-text, var(--accent)); }
+        .modal-btn.favorite-btn.favorited { color: var(--accent-cool) !important; border-color: var(--accent-cool); }
         .shortcuts-modal { max-width: 440px; }
         .shortcuts-body { padding: 0.75rem 1rem 1rem; }
         .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -1683,6 +1721,17 @@
             // Accent-as-text variant (e.g. breadcrumb links), since the flat
             // --accent equals the panel background it would sit on.
             newVals["--accent-text"] = visibleVariant(activeColor, activeColor, 4.5, 100);
+            // --- Brutalist secondary block colors ---------------------------
+            // A flattened single-hue theme reads as monochrome no matter how
+            // vivid the one picked color is, so two extra bold colors are
+            // split off it (roughly triadic) for masthead/active-folder
+            // (warm) and pinned/directory (cool) highlights. These are
+            // pinned to a bold, legible saturation/lightness band regardless
+            // of the color-intensity setting — they're meant to stay punchy
+            // as accent blocks even when the base accent has been muted down.
+            const { h: baseHue } = hexToHsl(activeColor);
+            newVals["--accent-warn"] = hslToHex((baseHue + 40) % 360, 88, 54);
+            newVals["--accent-cool"] = hslToHex((baseHue + 200) % 360, 82, 50);
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
@@ -1693,6 +1742,10 @@
             for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
             const onAccent = contrastRatio("#ffffff", newVals["--accent"]) >= contrastRatio("#000000", newVals["--accent"]) ? "#ffffff" : "#000000";
             root.setProperty("--on-accent", onAccent);
+            const onAccentWarn = contrastRatio("#ffffff", newVals["--accent-warn"]) >= contrastRatio("#000000", newVals["--accent-warn"]) ? "#ffffff" : "#000000";
+            root.setProperty("--on-accent-warn", onAccentWarn);
+            const onAccentCool = contrastRatio("#ffffff", newVals["--accent-cool"]) >= contrastRatio("#000000", newVals["--accent-cool"]) ? "#ffffff" : "#000000";
+            root.setProperty("--on-accent-cool", onAccentCool);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
             markActiveSwatch(hexToHsl(activeColor).h);
@@ -1711,6 +1764,7 @@
                 "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
                 "--text-primary", "--text-secondary", "--text-muted",
                 "--accent", "--accent-hover", "--accent-text", "--on-accent", "--accent-glow",
+                "--accent-warn", "--on-accent-warn", "--accent-cool", "--on-accent-cool",
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
             ];

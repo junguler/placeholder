@@ -27,139 +27,173 @@
             font-style: normal;
             font-display: block;
         }
+        /* --- Teletext / videotex theme system ---
+           All four original themes (dark/default, light, hc-dark, hc-light)
+           plus the custom accent-color picker and corner-depth control are
+           kept fully intact and functional — switching them still changes
+           the whole app. Each theme has been re-tuned to be a genuine
+           teletext/videotex palette instead of the old plain dark/light UI
+           colors. --tt-1..--tt-6 are new "call-sign" variables for the six
+           classic CRT teletext colors (blue/red/green/yellow/cyan/magenta)
+           used by the structural chrome below (topbar, FASTEXT keys, file
+           category badges, now-playing bar); they're re-tuned per theme too
+           so contrast stays right on both black and white canvases. Plain
+           --accent is left alone for the custom color picker to drive, so
+           personalization still works on top of all of this. */
         :root {
-            --bg-primary: #121212;
-            --bg-secondary: #1a1a1a;
-            --bg-tertiary: #242424;
-            --bg-hover: #343434;
-            --border-color: #3a3a3a;
-            --text-primary: #f0f0f0;
-            --text-secondary: #adadad;
-            --text-muted: #797979;
-            --accent: #9b5de5;
-            --accent-hover: #b280ea;
-            --on-accent: #ffffff;
+            --bg-primary: #000000;
+            --bg-secondary: #000000;
+            --bg-tertiary: #000000;
+            --bg-hover: #003333;
+            --border-color: #00e5e5;
+            --text-primary: #ffffff;
+            --text-secondary: #00ff66;
+            --text-muted: #009999;
+            --accent: #ffe600;
+            --accent-hover: #fff066;
+            --accent-solid: var(--accent);
+            --on-accent: #000000;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
-            --on-control: var(--text-primary);
-            --skeleton-base: var(--bg-tertiary);
-            --skeleton-shine: var(--bg-hover);
-            --success: #6bbf6b;
-            --warning: #d4a24c;
-            --danger: #d9564a;
+            --on-control: #00e5e5;
+            --skeleton-base: #001a1a;
+            --skeleton-shine: #004d4d;
+            --success: #00ff66;
+            --warning: #ffe600;
+            --danger: #ff2b2b;
             --radius: 0px;
             --radius-sm: 0px;
             --radius-lg: 0px;
             --radius-full: 0px;
-            /* Brutalist structural border weight — thicker, flatter, more
-               confident edges than a typical 1px hairline UI. Independent of
-               the corner-rounding (depth) axis so it applies at every
-               roundness level; only the radius softens as depth increases. */
-            --line: 2px;
-            --line-thick: 3px;
-            --shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
-            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.55);
-            /* The depth control below only ever changes corner radius
-               (--radius*); shadows always come from the base strings above
-               and never change with depth. --shadow-color/--shadow-color-strong
-               are kept as theme-aware shadow tints for any future use. */
-            --shadow-color: rgba(0, 0, 0, 0.45);
-            --shadow-color-strong: rgba(0, 0, 0, 0.6);
-            --accent-glow: rgba(155, 93, 229, 0.3);
-            --transition: 0.15s ease;
+            --shadow: none;
+            --shadow-sm: none;
+            --shadow-lg: none;
+            --shadow-color: rgba(0, 0, 0, 0.6);
+            --shadow-color-strong: rgba(0, 0, 0, 0.75);
+            --accent-glow: rgba(255, 230, 0, 0.3);
+            --transition: 0.12s ease;
             --font-size-base: 16px;
-            --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
+            --font-mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SFMono-Regular", Menlo, "Liberation Mono", "Courier New", monospace;
+            --tt-1: #1a1aff; --tt-1-fg: #ffffff;
+            --tt-2: #ff2b2b; --tt-2-fg: #ffffff;
+            --tt-3: #00d94f; --tt-3-fg: #000000;
+            --tt-4: #ffe600; --tt-4-fg: #000000;
+            --tt-5: #00e5e5; --tt-5-fg: #000000;
+            --tt-6: #ff33ff; --tt-6-fg: #000000;
         }
+        /* Light / "paper videotex": a Prestel-style light index page —
+           deep, saturated call-sign colors so blocks stay legible on white
+           instead of washing out like pastel UI colors would. */
         html[data-theme="light"] {
             --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --bg-tertiary: #ececec;
-            --bg-hover: #dddddd;
-            --border-color: #d6d6d6;
-            --text-primary: #1a1a1a;
-            --text-secondary: #4d4d4d;
-            --text-muted: #7a7a7a;
-            --accent: #5b21b6;
-            --accent-hover: #4c1a99;
-            --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
-            --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
-            --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+            --bg-secondary: #f0f0f0;
+            --bg-tertiary: #e4e4e4;
+            --bg-hover: #ffe600;
+            --border-color: #0000aa;
+            --text-primary: #000000;
+            --text-secondary: #005c1f;
+            --text-muted: #555555;
+            --accent: #0000aa;
+            --accent-hover: #2222cc;
+            --shadow: none;
+            --shadow-sm: none;
+            --shadow-lg: none;
             --shadow-color: rgba(0, 0, 0, 0.15);
             --shadow-color-strong: rgba(0, 0, 0, 0.24);
-            --accent-glow: rgba(91, 33, 182, 0.22);
+            --accent-glow: rgba(0, 0, 170, 0.2);
+            --tt-1: #0000aa; --tt-1-fg: #ffffff;
+            --tt-2: #b30000; --tt-2-fg: #ffffff;
+            --tt-3: #006622; --tt-3-fg: #ffffff;
+            --tt-4: #cc9900; --tt-4-fg: #000000;
+            --tt-5: #00707d; --tt-5-fg: #ffffff;
+            --tt-6: #990099; --tt-6-fg: #ffffff;
         }
-        /* High contrast dark: based on the classic Windows high-contrast black scheme
-           (black background, white text, cyan title accent, magenta hyperlinks, purple buttons) */
+        /* High contrast dark: pushed even further from the base dark theme —
+           pure primaries, max saturation, for maximum legibility. */
         html[data-theme="hc-dark"] {
             --bg-primary: #000000;
             --bg-secondary: #000000;
             --bg-tertiary: #000000;
             --bg-hover: #262626;
-            --border-color: #9370ff;
+            --border-color: #ffffff;
             --text-primary: #ffffff;
             --text-secondary: #ffffff;
-            --text-muted: #a3a3a3;
+            --text-muted: #b3b3b3;
             --accent: #00ffff;
-            --accent-hover: #33ffff;
-            --success: #00ffff;
-            --warning: #ff37cb;
-            --danger: #ff4444;
-            --shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
-            --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.12);
-            --shadow-lg: 0 12px 32px rgba(255, 255, 255, 0.22);
+            --accent-hover: #66ffff;
+            --success: #00ff00;
+            --warning: #ffff00;
+            --danger: #ff5050;
+            --shadow: none;
+            --shadow-sm: none;
+            --shadow-lg: none;
             --shadow-color: rgba(255, 255, 255, 0.18);
             --shadow-color-strong: rgba(255, 255, 255, 0.28);
             --accent-glow: rgba(0, 255, 255, 0.35);
+            --tt-1: #5555ff; --tt-1-fg: #ffffff;
+            --tt-2: #ff0000; --tt-2-fg: #ffffff;
+            --tt-3: #00ff00; --tt-3-fg: #000000;
+            --tt-4: #ffff00; --tt-4-fg: #000000;
+            --tt-5: #00ffff; --tt-5-fg: #000000;
+            --tt-6: #ff00ff; --tt-6-fg: #000000;
         }
-        /* High contrast light: the hc-dark palette with every color inverted (per RGB channel) */
+        /* High contrast light: the hc-dark palette inverted, same idea. */
         html[data-theme="hc-light"] {
             --bg-primary: #ffffff;
             --bg-secondary: #ffffff;
             --bg-tertiary: #ffffff;
-            --bg-hover: #d9d9d9;
-            --border-color: #6c8f00;
+            --bg-hover: #e0e0e0;
+            --border-color: #000000;
             --text-primary: #000000;
             --text-secondary: #000000;
-            --text-muted: #5c5c5c;
-            --accent: #ff0000;
-            --accent-hover: #cc0000;
-            --success: #ff0000;
-            --warning: #00c834;
-            --danger: #00bbbb;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.22);
+            --text-muted: #4d4d4d;
+            --accent: #0000ff;
+            --accent-hover: #3333ff;
+            --success: #007a00;
+            --warning: #997a00;
+            --danger: #cc0000;
+            --shadow: none;
+            --shadow-sm: none;
+            --shadow-lg: none;
             --shadow-color: rgba(0, 0, 0, 0.18);
             --shadow-color-strong: rgba(0, 0, 0, 0.28);
-            --accent-glow: rgba(255, 0, 0, 0.25);
+            --accent-glow: rgba(0, 0, 255, 0.25);
+            --tt-1: #0000ff; --tt-1-fg: #ffffff;
+            --tt-2: #cc0000; --tt-2-fg: #ffffff;
+            --tt-3: #008000; --tt-3-fg: #ffffff;
+            --tt-4: #cc9900; --tt-4-fg: #000000;
+            --tt-5: #006680; --tt-5-fg: #ffffff;
+            --tt-6: #990099; --tt-6-fg: #ffffff;
         }
         @media (prefers-color-scheme: light) {
             :root:not([data-theme]) {
                 --bg-primary: #ffffff;
-                --bg-secondary: #f5f5f5;
-                --bg-tertiary: #ececec;
-                --bg-hover: #dddddd;
-                --border-color: #d6d6d6;
-                --text-primary: #1a1a1a;
-                --text-secondary: #4d4d4d;
-                --text-muted: #7a7a7a;
-                --accent: #5b21b6;
-                --accent-hover: #4c1a99;
-                --shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
-                --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.12);
-                --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.18);
+                --bg-secondary: #f0f0f0;
+                --bg-tertiary: #e4e4e4;
+                --bg-hover: #ffe600;
+                --border-color: #0000aa;
+                --text-primary: #000000;
+                --text-secondary: #005c1f;
+                --text-muted: #555555;
+                --accent: #0000aa;
+                --accent-hover: #2222cc;
+                --shadow: none;
+                --shadow-sm: none;
+                --shadow-lg: none;
                 --shadow-color: rgba(0, 0, 0, 0.15);
                 --shadow-color-strong: rgba(0, 0, 0, 0.24);
-                --accent-glow: rgba(91, 33, 182, 0.22);
+                --accent-glow: rgba(0, 0, 170, 0.2);
+                --tt-1: #0000aa; --tt-1-fg: #ffffff;
+                --tt-2: #b30000; --tt-2-fg: #ffffff;
+                --tt-3: #006622; --tt-3-fg: #ffffff;
+                --tt-4: #cc9900; --tt-4-fg: #000000;
+                --tt-5: #00707d; --tt-5-fg: #ffffff;
+                --tt-6: #990099; --tt-6-fg: #ffffff;
             }
         }
-        /* --- Interface corner rounding: one smooth axis from the flat,
-           hard-edged default (level 1, "square", no attribute) up to a
-           comfortably rounded "round" surface (level 5). Levels 2-4 are
-           simply in-betweens. Only the corner radius changes — the base
-           shadow strings from :root (and each theme) are never altered, so
-           this axis is fully independent of light/dark/HC/custom. */
+        /* --- Interface corner rounding: unchanged from before — level 1
+           (no attribute) is the authentic square-cornered teletext default;
+           levels 2-5 are still available for anyone who wants to soften it. */
         html[data-depth="2"] {
             --radius: 4px; --radius-sm: 3px; --radius-lg: 7px; --radius-full: 10px;
         }
@@ -187,18 +221,12 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .header { background: var(--bg-secondary); border-bottom: var(--line-thick) solid var(--accent); padding: 0.4rem 0.6rem; flex-shrink: 0; }
-        .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-        /* Boxed "sticker" logo — bold filled chip with a hard edge, echoing a
-           brutalist masthead treatment while staying fully theme-driven
-           (accent/on-accent + on-control svg background swap instead of any
-           hardcoded color), so it repaints correctly across every theme
-           including the HC and custom-color variants. */
-        .logo { display: flex; align-items: center; gap: 0.375rem; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); border: var(--line) solid var(--border-color); padding: 0.3rem 0.55rem; cursor: pointer; flex-shrink: 0; }
-        .logo svg { width: 18px; height: 18px; }
-        .logo svg circle { fill: var(--accent); }
-        .breadcrumb { display: flex; align-items: center; gap: 0.1rem; flex-wrap: wrap; font-size: 0.82rem; font-weight: 700; flex: 1; min-width: 0; }
-        .breadcrumb-item { color: var(--accent-text, var(--accent)); padding: 0.1rem 0.3rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
+        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 0.35rem 0.75rem; flex-shrink: 0; }
+        .header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.6rem; row-gap: 0.3rem; flex-wrap: wrap; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); cursor: pointer; flex-shrink: 0; }
+        .logo svg { width: 20px; height: 20px; }
+        .breadcrumb { display: flex; align-items: center; gap: 0.125rem; flex-wrap: wrap; font-size: 0.85rem; flex: 1; min-width: 0; }
+        .breadcrumb-item { color: var(--accent-text, var(--accent)); padding: 0.125rem 0.375rem; border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
         .breadcrumb-item:hover { background: var(--bg-hover); }
         .breadcrumb-item.current { color: var(--text-primary); cursor: default; }
         .breadcrumb-item.current:hover { background: 0 0; }
@@ -207,9 +235,9 @@
         .breadcrumb-pin-btn svg { width: 14px; height: 14px; }
         .breadcrumb-pin-btn:hover { color: var(--accent-text, var(--accent)); background: var(--bg-hover); }
         .breadcrumb-pin-btn.pinned { color: var(--accent-text, var(--accent)); }
-        .header-actions { display: flex; gap: 0.3rem; align-items: center; }
-        .search-container { position: relative; width: 190px; }
-        .search-input { width: 100%; padding: 0.35rem 1.75rem 0.35rem 1.75rem; background: var(--bg-tertiary); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; font-weight: 600; }
+        .header-actions { display: flex; gap: 0.375rem; align-items: center; }
+        .search-container { position: relative; width: 200px; }
+        .search-input { width: 100%; padding: 0.375rem 1.75rem 0.375rem 1.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
         .search-input:focus { outline: none; border-color: var(--accent); }
         .search-input::placeholder { color: var(--text-muted); }
         .search-icon { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; height: 14px; }
@@ -218,12 +246,12 @@
         .search-clear:hover { color: var(--text-primary); background: var(--bg-hover); }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
         .settings-dropdown { position: relative; }
-        .settings-btn { padding: 0.35rem; background: var(--control-surface); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .settings-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
+        .settings-btn { padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .settings-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .settings-btn svg { width: 16px; height: 16px; }
         .settings-menu { position: absolute; top: 100%; right: 0; margin-top: 0.375rem; min-width: 230px; z-index: 100; display: none; }
         .settings-menu.active { display: block; }
-        .settings-menu-card { background: var(--bg-secondary); border: var(--line) solid var(--border-color); border-radius: var(--radius-lg); box-shadow: 4px 4px 0 0 var(--border-color); overflow: hidden; }
+        .settings-menu-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; }
         .settings-menu-header { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.7rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; }
         .settings-menu-title { font-size: 0.8rem; font-weight: 700; letter-spacing: -0.005em; }
         .settings-menu-close { padding: 0.3rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -293,37 +321,33 @@
         .theme-custom-row input[type="color"] { width: 32px; height: 28px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: 0 0; padding: 0; cursor: pointer; }
         .theme-reset-btn { flex: 1; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); border-radius: var(--radius); padding: 0.3rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
         .theme-reset-btn:hover { color: var(--text-primary); border-color: var(--accent); }
-        .view-toggle { display: flex; background: var(--bg-tertiary); border: var(--line) solid var(--border-color); border-radius: var(--radius); overflow: hidden; }
-        .view-btn { padding: 0.3rem 0.45rem; background: 0 0; border: none; border-right: var(--line) solid var(--border-color); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .view-btn:last-child { border-right: none; }
-        .view-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
-        .view-btn.active { background: var(--accent); color: var(--on-accent); }
+        .view-toggle { display: flex; background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; }
+        .view-btn { padding: 0.25rem 0.375rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
+        .view-btn:hover { color: var(--text-primary); }
+        .view-btn.active { background: var(--bg-primary); color: var(--text-primary); }
         .view-btn svg { width: 16px; height: 16px; }
         .app-container { flex: 1; display: flex; overflow: hidden; }
-        .tree-panel { width: 220px; background: var(--bg-secondary); border-right: var(--line-thick) solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
+        .tree-panel { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
         .tree-panel.visible { display: flex; }
-        .tree-header { padding: 0.4rem 0.6rem; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: var(--line) solid var(--border-color); flex-shrink: 0; }
-        .tree-content { padding: 0.4rem; overflow-y: auto; flex: 1; min-height: 0; }
+        .tree-header { padding: 0.5rem 0.75rem; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .tree-content { padding: 0.25rem 0; overflow-y: auto; flex: 1; min-height: 0; }
         .tree-content:not(.needs-scroll) { overflow-y: visible; }
-        /* Bordered "chip" rows rather than a plain left-accent bar, so each
-           folder reads as a discrete boxed block (matching the brutalist
-           folder-list treatment) instead of a flat hover row. */
-        .tree-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.45rem; margin-bottom: 3px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-primary); border: var(--line) solid var(--border-color); border-radius: var(--radius); }
+        .tree-item { display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); border-left: 2px solid transparent; }
         .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .tree-item.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+        .tree-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
         .tree-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tree-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
-        .tree-children { margin-left: 0.7rem; }
+        .tree-children { margin-left: 0.75rem; }
         .tree-toggle { width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .tree-toggle svg { width: 10px; height: 10px; transition: transform var(--transition); }
         .tree-toggle.expanded svg { transform: rotate(90deg); }
         .tree-toggle.empty { visibility: hidden; }
         .tree-pinned:empty { display: none; }
-        .tree-pinned { border-bottom: var(--line) solid var(--border-color); padding: 0.4rem 0.4rem 0.15rem; flex-shrink: 0; }
-        .tree-pinned-header { padding: 0.1rem 0.1rem 0.3rem; font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-        .tree-pinned-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.45rem; margin-bottom: 3px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-primary); border: var(--line) solid var(--border-color); border-radius: var(--radius); }
+        .tree-pinned { border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; flex-shrink: 0; }
+        .tree-pinned-header { padding: 0.5rem 0.75rem 0.25rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .tree-pinned-item { display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); border-left: 2px solid transparent; }
         .tree-pinned-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .tree-pinned-item.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+        .tree-pinned-item.active { background: var(--bg-tertiary); color: var(--text-primary); border-left-color: var(--accent); }
         .tree-pinned-item svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tree-pinned-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; }
         /* Single-line label for pinned/favorite entries. Truncates from the
@@ -334,13 +358,12 @@
         .tree-pinned-unpin { flex-shrink: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; opacity: 1; color: var(--accent-text, var(--accent)); cursor: pointer; }
         .tree-pinned-unpin svg { width: 12px; height: 12px; }
         .tree-pinned-unpin:hover, .tree-pinned-unpin:focus-visible { color: var(--danger); }
-        .tree-pinned-item.active .tree-pinned-unpin { color: var(--on-accent); }
-        .main { flex: 1; overflow: auto; padding: 0.5rem; display: flex; flex-direction: column; }
+        .main { flex: 1; overflow: auto; padding: 0.75rem; display: flex; flex-direction: column; }
         .main-content { flex: 1; }
-        .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.4rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
+        .stats-bar { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
         .stat { display: flex; align-items: center; gap: 0.25rem; }
         .stat svg { width: 12px; height: 12px; color: var(--accent-text, var(--accent)); }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 0.5rem; contain: layout style; padding: 2px 3px 3px 2px; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; contain: layout style; }
         .file-list { display: flex; flex-direction: column; gap: 1px; contain: layout style; }
         /* content-visibility lets the browser skip layout/paint/style work for
            off-screen cards entirely (similar benefit to list virtualization,
@@ -350,22 +373,14 @@
            the real size after each card's first layout ("auto"), so this is
            just a one-time fallback, not a fixed height. Big win for scroll
            smoothness on mobile once folders have a few hundred entries. */
-        .file-card { position: relative; background: var(--bg-secondary); border: var(--line) solid var(--border-color); border-radius: var(--radius); padding: 0.55rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; content-visibility: auto; contain-intrinsic-size: auto 160px; }
-        /* Grid cards get a permanent hard offset "sticker" shadow (no blur,
-           color-mixed from the border so it works on any theme) rather than
-           a shadow that only appears on hover — this is the signature
-           brutalist card treatment from the mockup. List/tree rows skip it
-           (see .file-list .file-card below) since a shadow per row would be
-           visual noise at that density. */
-        .file-grid .file-card { box-shadow: 3px 3px 0 0 var(--border-color); }
-        .file-grid .file-card:hover, .file-grid .file-card:focus-within { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 0 var(--accent); }
+        .file-card { position: relative; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.625rem; cursor: pointer; transition: border-color var(--transition), box-shadow var(--transition); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem; content-visibility: auto; contain-intrinsic-size: auto 160px; }
         .file-list .file-card { content-visibility: auto; contain-intrinsic-size: auto 46px; }
         body.compact-density .file-list .file-card { contain-intrinsic-size: auto 34px; }
         /* Star/pin toggle shown directly on each card so favoriting files and
            pinning folders doesn't require opening the preview modal or
            navigating in first. Always visible (not hover-only) so it's
            reachable on touch/mobile as well as desktop. */
-        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: var(--line) solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.28; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
+        .card-star-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; opacity: 0.28; transition: opacity var(--transition), color var(--transition), border-color var(--transition); z-index: 2; flex-shrink: 0; }
         /* Calmer resting state: unstarred cards only hint at the star until the
            card itself is hovered/focused (kept a low base opacity rather than 0
            so the affordance is still discoverable on touch, where :hover never
@@ -398,7 +413,7 @@
            behind. */
         html.no-zebra .file-card:nth-child(odd),
         html.no-zebra .file-card:nth-child(even) { --card-bg: var(--bg-secondary); background: var(--bg-secondary); }
-        .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); border: 1px solid currentColor; }
+        .file-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
         .file-icon svg { width: 20px; height: 20px; }
         .file-icon.folder { color: #9a9a9a; background: rgba(154, 154, 154, 0.14); }
         .file-icon.image { color: #c58ce0; background: rgba(197, 140, 224, 0.16); }
@@ -434,13 +449,13 @@
         .file-card:nth-child(8n+6) .file-icon { filter: hue-rotate(315deg) saturate(1.15); }
         .file-card:nth-child(8n+7) .file-icon { filter: hue-rotate(90deg) saturate(1.1); }
         .file-card:nth-child(8n) .file-icon { filter: hue-rotate(225deg) saturate(1.15); }
-        .file-name { font-weight: 700; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
-        .file-meta { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
+        .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
+        .file-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
         .file-path { display: block; font-size: 0.65rem; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
         .file-thumbnail { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius-sm); background: var(--bg-tertiary); }
         .file-thumbnail.lazy { opacity: 0; transition: opacity 0.2s; }
         .file-thumbnail.loaded { opacity: 1; }
-        .file-list .file-card { flex-direction: row; text-align: left; padding: 0.4rem 0.6rem; gap: 0.5rem; border-radius: var(--radius); border-width: 1px; }
+        .file-list .file-card { flex-direction: row; text-align: left; padding: 0.5rem 0.75rem; gap: 0.5rem; border-radius: var(--radius); }
         .file-list .file-card:hover { box-shadow: var(--shadow-sm); border-color: var(--accent); }
         .file-list .file-icon { width: 24px; height: 24px; }
         .file-list .file-icon svg { width: 14px; height: 14px; }
@@ -450,7 +465,7 @@
         .file-list .file-size { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
         .file-list .file-thumbnail { display: none; }
         .list-columns { --list-cols: 22px 24px 1fr 70px 90px 100px 80px; }
-        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.35rem 0.5rem; margin-bottom: 3px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-text, var(--accent)); border-bottom: var(--line-thick) solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); box-shadow: var(--shadow-sm); z-index: 5; }
+        .file-list-header { display: grid; grid-template-columns: var(--list-cols); gap: 0.5rem; padding: 0.4rem 0.5rem; margin-bottom: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-text, var(--accent)); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); box-shadow: var(--shadow-sm); z-index: 5; }
         .file-list-header.stuck { margin-top: -0.75rem; padding-top: calc(0.4rem + 0.75rem); top: -0.75rem; }
         .file-list-header .col-star-spacer { width: 22px; }
         .file-list-header .col-icon-spacer { width: 24px; }
@@ -501,7 +516,7 @@
         .empty-state p { font-size: 0.85rem; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; padding: 0.5rem; overscroll-behavior: contain; touch-action: pan-y; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: var(--line) solid var(--border-color); box-shadow: var(--shadow-lg); border-top: var(--line-thick) solid var(--accent); }
+        .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); border-top: 2px solid var(--accent); }
         .modal.video-modal { height: 95vh; height: 95dvh; }
         /* Audio preview content tops out at 500px (.preview-audio-container's
            own max-width), but the modal defaults to 95vw regardless of
@@ -512,7 +527,7 @@
         .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
         .modal-title { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
         .modal-actions { display: flex; gap: 0.25rem; }
-        .modal-btn { padding: 0.375rem; background: var(--control-surface); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
+        .modal-btn { padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
         .modal-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .modal-btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
@@ -528,22 +543,22 @@
         .playlist-controls { display: flex; gap: 0.25rem; align-items: center; }
         .playlist-btn.top-native-btn { display: none; }
         body.native-player-mode .playlist-btn.top-native-btn { display: inline-flex; }
-        .playlist-btn { padding: 0.375rem 0.5rem; background: var(--control-surface); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.75rem; }
+        .playlist-btn { padding: 0.375rem 0.5rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.75rem; }
         .playlist-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .playlist-btn svg { width: 14px; height: 14px; }
-        .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
+        .playlist-btn.active { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent) !important; }
         .playlist-info { flex: 1; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .playlist-track { color: var(--text-primary); font-weight: 500; }
         .playlist-stop-btn { padding: 0.25rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
         .playlist-stop-btn:hover { opacity: 0.9; }
         .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
-        .goto-input { width: 3.4rem; height: 1.25rem; box-sizing: border-box; text-align: center; background: var(--control-surface); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
+        .goto-input { width: 3.4rem; height: 1.25rem; box-sizing: border-box; text-align: center; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
         .goto-input::-webkit-outer-spin-button, .goto-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .goto-input:focus { outline: none; border-color: var(--accent); }
         .goto-input:disabled { opacity: 0.4; cursor: not-allowed; }
         .goto-stepper { display: flex; flex-direction: row; gap: 0.3rem; }
-        .goto-step-btn { width: 2.25rem; height: 1.25rem; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: var(--control-surface); border: var(--line) solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; padding: 0; line-height: 0; }
+        .goto-step-btn { width: 2.25rem; height: 1.25rem; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; padding: 0; line-height: 0; }
         .goto-step-btn svg { width: 22px; height: 22px; }
         .goto-step-btn:hover:not(:disabled) { background: var(--control-surface-hover); }
         .goto-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -565,7 +580,7 @@
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .preview-audio { width: 100%; height: 40px; display: none; }
         .preview-audio[controls] { display: block; }
-        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; max-width: 480px; margin: 0.15rem auto 0; background: var(--bg-tertiary); border: var(--line) solid var(--border-color); border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 3px 3px 0 0 var(--border-color); }
+        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; max-width: 480px; margin: 0.15rem auto 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm); }
         .player-seek-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
         .player-seek { flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; border-radius: var(--radius-full); }
         .player-seek:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -581,7 +596,7 @@
         .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
-        .player-info-btn.copied { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
+        .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent) !important; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; word-break: break-all; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
@@ -591,7 +606,7 @@
         .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1.05rem; font-weight: 700; }
-        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
+        .download-btn { display: inline-flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent-solid, var(--accent)); color: var(--on-accent); text-decoration: none; border-radius: var(--radius); font-weight: 500; font-size: 0.85rem; }
         .download-btn:hover { background: var(--accent-hover); }
         .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
         .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: var(--radius-full); animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
@@ -601,17 +616,6 @@
         .preview-audio.buffering, .preview-video.buffering { opacity: 0.6; transition: opacity 0.15s ease; }
         @media (max-width: 480px) {
             .app-container { flex-direction: column; }
-            /* Logo shrinks to an icon-only chip on small screens — the
-               wordmark is redundant weight next to the breadcrumb, and
-               reclaiming that width keeps the search box usable. */
-            .header { padding: 0.35rem 0.4rem; }
-            .logo span { display: none; }
-            .logo { padding: 0.3rem 0.4rem; }
-            .main { padding: 0.4rem; }
-            .file-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.4rem; }
-            .file-card { padding: 0.4rem; }
-            .file-grid .file-card { box-shadow: 2px 2px 0 0 var(--border-color); }
-            .file-grid .file-card:hover, .file-grid .file-card:focus-within { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 0 var(--accent); }
             /* Pinned folders and Favorite files stay visible on mobile in
                all 3 view modes (grid/list/tree) as a compact strip above the
                main listing — only the full nested folder tree (redundant
@@ -628,11 +632,11 @@
             .tree-panel .tree-header, .tree-panel .tree-content { display: none; }
             .search-container { width: 120px; }
             /* header-content's gap applies to both axes; once the search+icons
-               group wraps to its own row below the logo, that same gap reads
-               as too much dead space between the two rows. Tighten just the
-               row gap so the wrap looks like a deliberate two-row layout
-               rather than an overflow accident. */
-            .header-content { row-gap: 0.375rem; }
+               group wraps to its own row, that same gap reads as too much
+               dead space between rows. Tighten it down further now that the
+               logo (hidden from 640px down) no longer forces an extra row. */
+            .header-content { row-gap: 0.25rem; }
+            .header { padding-top: 0.3rem; padding-bottom: 0.3rem; }
             /* The pinned/favorites strip previously stacked each entry's
                filename and parent folder on two lines, wasting vertical
                space on small screens. Both are now a single truncated line,
@@ -645,6 +649,11 @@
             #shortcutsBtn { display: none; }
         }
         @media (max-width: 640px) {
+            /* The logo's home-navigation role is fully covered by the
+               "HOME" breadcrumb crumb, so it's dropped entirely on mobile
+               rather than shrunk to an icon — that reclaims a whole row's
+               worth of vertical space instead of just the wordmark's width. */
+            .logo { display: none !important; }
             .breadcrumb { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
             .breadcrumb::-webkit-scrollbar { display: none; }
             .breadcrumb-item, .breadcrumb-separator { flex-shrink: 0; }
@@ -769,8 +778,325 @@
 
         /* --- Empty state illustration --- */
         .empty-state-illustration { width: 96px; height: 96px; margin: 0 auto 0.75rem; }
+
+        /* ==========================================================
+           TELETEXT / VIDEOTEX STRUCTURAL REDESIGN
+           This is a real component redesign, not a recolor pass: header
+           chrome, function keys, file-type badges and navigation markers
+           are rebuilt as actual teletext page furniture. Everything still
+           reads its colors from the CSS variables above (including the
+           new --tt-1..--tt-6 "call-sign" colors), so the full theme system
+           — dark / light / hc-dark / hc-light / custom accent / corner
+           depth — still works exactly as before and reshapes this look
+           instead of being replaced by it. Nothing here touches JS logic;
+           file-type badges below key off classes/attributes the app
+           already renders (data-category, .directory, .expanded, etc).
+           ========================================================== */
+
+        html, body {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        /* Faint CRT scanlines for atmosphere — neutral tone so it reads
+           right on both black and white canvases; never intercepts clicks. */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.035) 0px,
+                rgba(0, 0, 0, 0.035) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+        }
+        button, input, select, .settings-label, .settings-section-title { font-family: var(--font-mono); }
+
+        /* --- Header / topbar: page number + title, FASTEXT-style function
+           keys, and a separate full-width "path" bar for the breadcrumb —
+           real teletext page furniture instead of a generic toolbar. --- */
+        .header {
+            background: var(--tt-1);
+            border-bottom: 3px solid var(--border-color);
+            padding: 0.25rem 0.5rem;
+        }
+        .header-content { max-width: none; gap: 0.4rem; row-gap: 0.25rem; align-items: center; }
+        .logo { color: var(--tt-1-fg); font-weight: 800; letter-spacing: 0.08em; gap: 0.5rem; }
+        .logo svg { color: var(--tt-1-fg); }
+        .logo svg circle { fill: var(--tt-1); }
+        .logo span {
+            display: inline-block;
+            text-transform: uppercase;
+            font-size: 0.95rem;
+            transform: scaleY(1.6);
+            transform-origin: left center;
+            margin-right: 0.4em;
+        }
+        @keyframes tt-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+        /* Breadcrumb becomes its own full-width "path" bar under the topbar */
+        .breadcrumb {
+            order: 5; flex-basis: 100%; width: 100%;
+            background: var(--bg-primary); color: var(--text-primary);
+            border-top: 2px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0.1rem 0.6rem; margin-top: 0.2rem;
+            font-weight: 700; text-transform: uppercase;
+        }
+        .breadcrumb-item { color: var(--tt-5); }
+        .breadcrumb-item:hover { background: var(--tt-5); color: var(--tt-5-fg); }
+        .breadcrumb-item.current { color: var(--text-primary); }
+        .breadcrumb-item.current:hover { background: none; color: var(--text-primary); }
+        .breadcrumb-separator { color: var(--tt-5); font-weight: 700; }
+        .breadcrumb-pin-btn { color: var(--tt-4); }
+        .breadcrumb-pin-btn:hover { background: var(--tt-4); color: var(--tt-4-fg); }
+        .breadcrumb-pin-btn.pinned { color: var(--tt-2); }
+
+        .header-actions { gap: 0.35rem; align-items: center; }
+        /* Every top-bar control shares one explicit height so the search
+           box, the stacked icon+label keys, and the view switcher line up
+           on a common edge instead of each sizing to its own content
+           (which is what left the search box looking short and everything
+           vertically misaligned against the taller buttons). */
+        .search-container, .view-toggle { height: 2.1rem; }
+        .search-input { height: 100%; }
+        .view-toggle { align-items: stretch; }
+        .view-btn { height: 100%; }
+        .search-input {
+            background: var(--bg-primary); border: 2px solid var(--tt-3); color: var(--tt-3);
+            text-transform: uppercase; letter-spacing: 0.03em; caret-color: var(--tt-3);
+        }
+        .search-input::placeholder { color: var(--tt-3); }
+        /* Reveal-style blinking cursor after an empty, focused search box */
+        .search-container { position: relative; }
+        .search-container.tt-cursor::after {
+            content: "_";
+            position: absolute; left: 2.1rem; top: 50%; transform: translateY(-55%);
+            color: var(--tt-3); font-weight: 800; pointer-events: none;
+            animation: tt-blink 1s step-start infinite;
+        }
+        .search-icon { color: var(--tt-3); }
+        .search-clear { color: var(--tt-3); }
+        .search-clear:hover { background: var(--tt-3); color: var(--bg-primary); }
+
+        /* FASTEXT-style function keys — fixed red/green/yellow/blue like a
+           real teletext remote control legend, deliberately independent of
+           theme/accent so they always read the same way. Reshaped from
+           small icon squares into labeled keys. */
+        #shortcutsBtn, #statsBtn, #settingsBtn, #themeColorBtn {
+            width: auto; height: 2.1rem; flex-direction: row; gap: 0.3rem; justify-content: center;
+            padding: 0.2rem 0.5rem; border-width: 2px; border-style: solid;
+            font-size: 0.55rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em;
+        }
+        #shortcutsBtn svg, #statsBtn svg, #settingsBtn svg, #themeColorBtn svg { width: 14px; height: 14px; }
+        #shortcutsBtn::after { content: "Help"; }
+        #statsBtn::after { content: "Stats"; }
+        #settingsBtn::after { content: "Set"; }
+        #themeColorBtn::after { content: "Theme"; }
+        #shortcutsBtn { background: var(--tt-2); border-color: var(--tt-2); color: var(--tt-2-fg) !important; }
+        #statsBtn { background: var(--tt-3); border-color: var(--tt-3); color: var(--tt-3-fg) !important; }
+        #settingsBtn { background: var(--tt-4); border-color: var(--tt-4); color: var(--tt-4-fg) !important; }
+        #themeColorBtn { background: var(--tt-1); border-color: var(--tt-1); color: var(--tt-1-fg) !important; }
+        #shortcutsBtn:hover, #statsBtn:hover, #settingsBtn:hover, #themeColorBtn:hover { filter: brightness(1.2); }
+
+        .view-toggle { background: var(--bg-primary); border: 2px solid var(--tt-4); padding: 2px; gap: 2px; }
+        .view-btn { color: var(--tt-4); }
+        .view-btn:hover { color: var(--text-primary); }
+        .view-btn.active { background: var(--tt-3); color: var(--tt-3-fg); }
+
+        /* --- Dropdown menus (Settings + Theme & Color) --- */
+        .settings-menu-card { background: var(--bg-primary); border: 3px solid var(--border-color); }
+        .settings-menu-header { background: var(--tt-1); color: var(--tt-1-fg); border-bottom: 2px solid var(--border-color); }
+        .settings-menu-close { color: var(--tt-1-fg); }
+        .settings-menu-title { text-transform: uppercase; letter-spacing: 0.05em; }
+        .settings-section-title { color: var(--tt-5); text-transform: uppercase; letter-spacing: 0.04em; }
+        .settings-label { color: var(--text-secondary); }
+        .settings-control button { border-width: 2px; }
+        .sort-select { border: 2px solid var(--tt-3); color: var(--tt-3); text-transform: uppercase; }
+        .switch-slider { border-width: 2px; }
+        .theme-btn, .intensity-seg, .depth-seg { border-width: 2px !important; }
+        .theme-btn.active, .intensity-seg.active, .depth-seg.active { outline: 2px solid var(--tt-4); outline-offset: 1px; }
+
+        /* --- Sidebar tree --- */
+        .tree-panel { background: var(--bg-primary); border-right: 3px solid var(--border-color); }
+        .tree-header { background: var(--bg-primary); color: var(--tt-5); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid var(--border-color); }
+        .tree-pinned-header { color: var(--tt-4); text-transform: uppercase; letter-spacing: 0.06em; }
+        .tree-item, .tree-pinned-item { color: var(--text-secondary); }
+        .tree-item:hover, .tree-pinned-item:hover { background: var(--tt-5); color: var(--tt-5-fg); }
+        .tree-item.active { background: var(--tt-5); color: var(--tt-5-fg); border-left: 4px solid var(--tt-4); font-weight: 700; }
+        .tree-pinned-item.active { background: var(--tt-4); color: var(--tt-4-fg); }
+        .tree-pinned-item { color: var(--tt-4); }
+        .tree-pinned-unpin { color: var(--tt-2); }
+        .tree-pinned-unpin:hover { background: var(--tt-2); color: var(--tt-2-fg); }
+        /* Expand/collapse arrows as real teletext-style characters, not a
+           rotated icon glyph */
+        .tree-toggle svg { display: none; }
+        .tree-toggle::before { content: "+"; font-weight: 800; color: var(--tt-4); }
+        .tree-toggle.expanded::before { content: "\2212"; }
+        .tree-toggle.empty::before { content: ""; }
+        .tree-item.active .tree-toggle::before { color: inherit; }
+
+        /* --- File grid / list: type icons become bracket-coded teletext
+           badges (a real content/structure change, not a recolor) --- */
+        .main { background: var(--bg-primary); }
+        .file-card { border: 2px solid var(--border-color); }
+        .file-card:hover { border-color: var(--tt-4); }
+        .file-card .file-name { color: var(--text-secondary); text-transform: uppercase; }
+        .file-card.directory .file-name { color: var(--tt-5); }
+        .file-card.parent-dir .file-name { color: var(--text-primary); }
+        .file-meta, .file-size { color: var(--tt-4) !important; }
+        .file-list .file-card { border: 2px solid var(--border-color); margin-bottom: 3px; border-radius: 0; }
+        .file-list .file-card:hover { border-color: var(--tt-4); }
+        .file-list-header { background: var(--bg-primary); color: var(--tt-5); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 2px solid var(--border-color); }
+        .card-star-btn.starred, .card-star-btn:hover { color: var(--tt-4) !important; }
+        .empty-state { color: var(--text-secondary); }
+        .empty-state h2 { color: var(--text-primary); text-transform: uppercase; }
+        .load-more-btn { border: 2px solid var(--tt-5); color: var(--tt-5); text-transform: uppercase; }
+        .load-more-btn:hover { background: var(--tt-5); color: var(--tt-5-fg); }
+        .truncation-notice { border-bottom: 2px solid var(--tt-4); color: var(--tt-4); }
+        mark.search-highlight { background: var(--tt-4); color: var(--tt-4-fg); }
+
+        .file-card:nth-child(n) .file-icon, .file-icon { filter: none !important; background: transparent !important; }
+        .file-icon {
+            border: 2px solid currentColor;
+            font-weight: 800; font-size: 0.55rem; letter-spacing: 0.01em;
+        }
+        .file-icon svg { display: none; }
+        .file-icon.folder { color: var(--tt-5); }
+        .file-icon.folder::before { content: "DIR"; }
+        .file-icon.audio { color: var(--tt-3); }
+        .file-icon.audio::before { content: "AUD"; }
+        .file-icon.playlist { color: var(--tt-3); }
+        .file-icon.playlist::before { content: "M3U"; }
+        .file-icon.video { color: var(--tt-6); }
+        .file-icon.video::before { content: "VID"; }
+        .file-icon.image { color: var(--tt-4); }
+        .file-icon.image::before { content: "IMG"; }
+        .file-icon.archive { color: var(--tt-2); }
+        .file-icon.archive::before { content: "ZIP"; }
+        .file-icon.code { color: var(--tt-5); }
+        .file-icon.code::before { content: "COD"; }
+        .file-icon.markup { color: var(--tt-5); }
+        .file-icon.markup::before { content: "TAG"; }
+        .file-icon.style { color: var(--tt-5); }
+        .file-icon.style::before { content: "CSS"; }
+        .file-icon.document { color: var(--text-secondary); }
+        .file-icon.document::before { content: "DOC"; }
+        .file-icon.text { color: var(--text-secondary); }
+        .file-icon.text::before { content: "TXT"; }
+        .file-icon.data { color: var(--text-secondary); }
+        .file-icon.data::before { content: "DAT"; }
+        .file-icon.font { color: var(--text-secondary); }
+        .file-icon.font::before { content: "FNT"; }
+        .file-icon.other { color: var(--text-secondary); }
+        .file-icon.other::before { content: "---"; }
+
+        /* --- Modals --- */
+        .modal-overlay { background: rgba(0, 0, 0, 0.85); }
+        .modal { background: var(--bg-primary); border: 3px solid var(--border-color); }
+        .modal-header { background: var(--tt-1); color: var(--tt-1-fg); border-bottom: 2px solid var(--border-color); }
+        .modal-title { text-transform: uppercase; letter-spacing: 0.04em; }
+        .modal-btn { border-width: 2px; }
+        .modal-btn.favorite-btn.favorited { color: var(--tt-4) !important; border-color: var(--tt-4); }
+        .modal-btn.play-playlist-btn { color: var(--tt-3) !important; }
+        .modal-btn.copied { color: var(--tt-3) !important; border-color: var(--tt-3); }
+
+        /* --- Playlist bar: fixed magenta "now playing" marquee --- */
+        .playlist-bar { background: var(--tt-6); color: var(--tt-6-fg); border-bottom: 2px solid var(--border-color); }
+        .playlist-info, .playlist-track { color: var(--tt-6-fg); }
+        .playlist-btn { border-width: 2px; }
+        .goto-input, .goto-step-btn { border-width: 2px; }
+
+        /* --- Inline audio/video player --- */
+        .player-bar { border: 3px solid var(--border-color); }
+        .player-play-btn { border-width: 2px !important; }
+        .player-info-btn { border-width: 2px; }
+        .audio-icon { border: 2px solid var(--border-color); border-radius: 0 !important; }
+        .preview-video { border-radius: 0; }
+        .preview-unavailable h3 { text-transform: uppercase; }
+        .download-btn { text-transform: uppercase; letter-spacing: 0.04em; }
+
+        /* --- Keyboard shortcuts modal --- */
+        kbd { border: 2px solid var(--tt-5); color: var(--tt-5); background: var(--bg-primary); }
+
+        /* --- Stats modal --- */
+        .stats-summary-item { border: 2px solid var(--border-color); }
+        .stats-summary-label { color: var(--tt-5); }
+        .stats-breakdown-title { color: var(--tt-5); }
+        .stats-row-label { text-transform: uppercase; }
+        .stats-row-bar-track { border: 1px solid var(--border-color); }
+        .stats-row-count { color: var(--tt-4); }
+
+        /* --- Density tightening: reclaim wasted space everywhere --- */
+        .header { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .settings-section { padding: 0.5rem 0.6rem; }
+        .file-grid { gap: 0.4rem; }
+
+        /* --- Desktop: header-actions grows to fill whatever width the logo
+           doesn't need, and the settings/theme/view-toggle group gets
+           pushed all the way to the right edge of the screen via its own
+           auto margin. Search/help/stats stay put near the logo — only the
+           config + display controls move, so the row reads as two loose
+           clusters (identity+search on the left, controls on the right)
+           instead of one block floating with dead space beside it. --- */
+        @media (min-width: 641px) {
+            .header-actions { flex: 1 1 auto; }
+            #settingsDropdown { margin-left: auto; }
+        }
+        /* --- Mobile: this re-asserts (and extends) the app's existing
+           mobile fixes — tree-panel becomes a pinned-only strip with no
+           right border, shortcuts/stats drop out, header wraps into tidy
+           rows — since those fixes live earlier in the stylesheet and the
+           unconditional rules above would otherwise silently win over them
+           by source order. Edge-to-edge, no wasted margins. --- */
+        @media (max-width: 640px) {
+            /* Shortcuts and stats aren't essential on a touchscreen, so
+               (matching the app's existing #shortcutsBtn mobile rule) both
+               drop out entirely instead of crowding Settings/Theme. */
+            #shortcutsBtn, #statsBtn { display: none !important; }
+            /* Logo is fully hidden on mobile (see the general mobile rule
+               above) rather than just shrunk, so nothing here needs to
+               reserve space for it. */
+            /* Settings/Theme shrink back to compact icon squares — the
+               labeled FASTEXT-key treatment is a desktop-width flourish
+               that doesn't fit a phone header. */
+            #settingsBtn, #themeColorBtn {
+                flex-direction: row; width: 30px; height: 30px; padding: 0;
+            }
+            #settingsBtn::after, #themeColorBtn::after { content: ""; }
+            #settingsBtn svg, #themeColorBtn svg { width: 16px; height: 16px; }
+            .search-container { height: 30px; }
+            .header-actions { flex-wrap: nowrap; gap: 0.3rem; }
+            /* Grid/list/tree switcher is a desktop-width flourish; on a
+               phone the list layout is forced on instead (see JS), so the
+               switcher itself is just dead chrome eating header space. */
+            .view-toggle { display: none !important; }
+            /* Search now lives in the same row as Settings/Theme instead of
+               claiming a whole row of its own — it shrinks, they don't. */
+            .search-container { flex: 1 1 auto; min-width: 0; }
+        }
+        @media (max-width: 480px) {
+            .header { padding: 0.2rem 0.35rem; }
+            .breadcrumb { padding: 0.1rem 0.5rem; margin-top: 0.15rem; }
+            .breadcrumb-pin-btn { width: 18px; height: 18px; margin-left: 0.15rem; }
+            .breadcrumb-pin-btn svg { width: 12px; height: 12px; }
+            .search-container { width: auto; order: 0; flex-basis: auto; }
+            .header-actions { flex: 1 1 auto; flex-wrap: nowrap; min-width: 0; }
+            /* Restore the app's own mobile tree-panel treatment (no right
+               border, bottom border instead) that the unconditional
+               .tree-panel rule above would otherwise override. */
+            .tree-panel { border-right: none; border-bottom: 3px solid var(--border-color); }
+            .file-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 0.3rem; }
+            .file-card { padding: 0.45rem; }
+            .modal { border-width: 0; border-top-width: 3px; }
+        }
     </style>
 </head>
+
 <body>
     <svg style="display:none" aria-hidden="true">
         <symbol id="icon-x" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
@@ -1380,6 +1706,17 @@
                 });
                 document.getElementById("treePanel").classList.toggle("visible", v === "tree");
             }
+            // The grid/list/tree switcher is hidden on phone-width screens
+            // (no room for it, and tree view doesn't suit a narrow column
+            // anyway), so mobile always renders as list regardless of any
+            // saved desktop preference.
+            if (window.matchMedia && window.matchMedia("(max-width: 640px)").matches) {
+                currentView = "list";
+                document.querySelectorAll(".view-btn").forEach((btn) => {
+                    btn.classList.toggle("active", btn.dataset.view === "list");
+                });
+                document.getElementById("treePanel").classList.toggle("visible", false);
+            }
             const so = localStorage.getItem("sortBy");
             if (so) sortBy = so;
             const sortSel = document.getElementById("sortSelect");
@@ -1625,6 +1962,38 @@
             }
             return best;
         }
+        // Whichever of pure black/white reads better against bgHex. Used for
+        // icon/text sitting on a derived surface (control chrome, badges)
+        // where the surface itself was already nudged for visibility but the
+        // foreground still needs a plain, unambiguous pick.
+        function pickForeground(bgHex) {
+            return contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex) ? "#ffffff" : "#000000";
+        }
+        // Some flattened surfaces (control-surface, accent, teletext badges)
+        // land at a mid lightness where NEITHER black nor white text clears
+        // AA — "pick whichever is better" isn't the same as "pick one that
+        // passes". This nudges the surface's own lightness (hue/sat held,
+        // same technique as visibleVariant) toward whichever pole is already
+        // winning until one of black/white actually reaches minRatio, so a
+        // plain black/white foreground is guaranteed readable rather than
+        // just relatively-less-bad.
+        function ensureForegroundContrast(bgHex, minRatio, maxShift) {
+            const bestOf = (hex) => Math.max(contrastRatio("#ffffff", hex), contrastRatio("#000000", hex));
+            if (bestOf(bgHex) >= minRatio) return bgHex;
+            const { h, s, l } = hexToHsl(bgHex);
+            const whiteWins = contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex);
+            const dir = whiteWins ? -1 : 1; // darker helps white win harder, lighter helps black
+            let best = bgHex, bestRatio = bestOf(bgHex);
+            for (let step = 1; step <= (maxShift || 60); step++) {
+                const nl = clampNum(l + dir * step, 0, 100);
+                const candidate = hslToHex(h, s, nl);
+                const ratio = bestOf(candidate);
+                if (ratio > bestRatio) { bestRatio = ratio; best = candidate; }
+                if (ratio >= minRatio) return candidate;
+                if (nl <= 0 || nl >= 100) break;
+            }
+            return best;
+        }
         // Blends the picked color toward a calm, desaturated, settled-
         // lightness target as intensity is lowered (hue never moves).
         // intensityPct is one of 100/80/60/40/20; 100 = unchanged, 20 = mostly muted.
@@ -1666,10 +2035,15 @@
             // button matching the flat panel color would otherwise vanish.
             const { h: ctrlH, s: ctrlS, l: ctrlL } = hexToHsl(activeColor);
             const shiftedL = clampNum(ctrlL + (ctrlL < 55 ? 22 : -22), 6, 94);
-            const controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+            let controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+            // Guarantee the icon/text sitting on this surface actually
+            // clears AA (4.5:1), not just "black or white, whichever is
+            // less bad" — mid-lightness custom colors can otherwise leave
+            // both options short.
+            controlSurface = ensureForegroundContrast(controlSurface, 4.5, 60);
             newVals["--control-surface"] = controlSurface;
             newVals["--control-surface-hover"] = visibleVariant(controlSurface, controlSurface, 1.3, 25);
-            newVals["--on-control"] = contrastRatio("#ffffff", controlSurface) >= contrastRatio("#000000", controlSurface) ? "#ffffff" : "#000000";
+            newVals["--on-control"] = pickForeground(controlSurface);
             // Skeleton shimmer normally animates between --bg-tertiary and
             // --bg-hover, both flattened here, so reuse the control-surface
             // pair instead so the loading animation still reads.
@@ -1686,15 +2060,66 @@
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
-            for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 3]]) {
+            // Small safety margin above the raw WCAG floor: cards zebra-
+            // stripe by blending the flat background ±5–7% toward white/
+            // black (see .file-card:nth-child), so text computed against
+            // the exact flat color can land right on the AA line and then
+            // dip under it on a tinted row. --text-muted now targets true
+            // AA (4.5) too, not the 3.0 large-text/UI-component minimum —
+            // it's rendered as normal-size body/meta text throughout, so
+            // the looser threshold wasn't actually appropriate for it.
+            const TEXT_SAFETY_MARGIN = 0.3;
+            for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 4.5]]) {
                 if (!base[textKey]) continue;
-                newVals[textKey] = readableTextColor(base[textKey], newVals["--bg-primary"], minRatio);
+                newVals[textKey] = readableTextColor(base[textKey], newVals["--bg-primary"], minRatio + TEXT_SAFETY_MARGIN);
             }
+            // A few solid CTA fills (download button, active playlist tab,
+            // "copied" state) put text/icons directly on --accent. Since
+            // --accent here is the exact flat picked color, mid-lightness
+            // picks can leave neither black nor white text passing AA on
+            // it. --accent-solid stays visually the same hue but nudges
+            // lightness just enough to guarantee a readable pairing,
+            // without touching --accent itself (borders, focus rings, the
+            // scrubber thumb, etc. want the exact chosen hue, not a
+            // contrast-adjusted stand-in).
+            newVals["--accent-solid"] = ensureForegroundContrast(newVals["--accent"], 4.5, 60);
             for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
-            const onAccent = contrastRatio("#ffffff", newVals["--accent"]) >= contrastRatio("#000000", newVals["--accent"]) ? "#ffffff" : "#000000";
+            const onAccent = pickForeground(newVals["--accent-solid"]);
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
+            // Derive the six teletext "call-sign" colors (topbar, FASTEXT
+            // keys, file badges, now-playing bar) from this same custom hue
+            // instead of leaving them frozen at the default theme's blue/
+            // red/green/yellow/cyan/magenta — so a custom color genuinely
+            // recolors the whole teletext look, not just the accent.
+            // Offsets reproduce the default palette's relative hue spacing
+            // (blue/red/green/yellow/cyan/magenta), just anchored on the
+            // picked hue instead of a fixed blue.
+            const canvasIsDark = relLuminance(newVals["--bg-primary"]) < 0.5;
+            const ttS = canvasIsDark ? 90 : 78;
+            const ttL = canvasIsDark ? 55 : 34;
+            const ttOffsets = { 1: 0, 2: 120, 3: 260, 4: 175, 5: 300, 6: 60 };
+            for (const [n, offset] of Object.entries(ttOffsets)) {
+                const hue = (ctrlH + offset) % 360;
+                const ttSeed = hslToHex(hue, ttS, ttL);
+                // Guarantee legibility against the flat custom background —
+                // the seed color above is picked for hue only, and on some
+                // custom colors (e.g. a mid-lightness pink/magenta) it can
+                // land too close in lightness to the background to read as
+                // text or a thin border, the same problem --accent-text
+                // solves above for the plain accent color.
+                // First pass: legible as text/border against the flat page.
+                let ttHex = visibleVariant(ttSeed, newVals["--bg-primary"], 4.5, 100);
+                // Second pass: these same six colors also serve as SOLID
+                // FILL for the topbar buttons, modal header, and playlist
+                // bar, with -fg as the text/icon on top — a different
+                // contrast need (against itself, not the page) that the
+                // first pass doesn't guarantee.
+                ttHex = ensureForegroundContrast(ttHex, 4.5, 60);
+                root.setProperty(`--tt-${n}`, ttHex);
+                root.setProperty(`--tt-${n}-fg`, pickForeground(ttHex));
+            }
             markActiveSwatch(hexToHsl(activeColor).h);
         }
         function setCustomColor(hex) {
@@ -1710,9 +2135,11 @@
             const keys = [
                 "--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover", "--border-color",
                 "--text-primary", "--text-secondary", "--text-muted",
-                "--accent", "--accent-hover", "--accent-text", "--on-accent", "--accent-glow",
+                "--accent", "--accent-hover", "--accent-text", "--accent-solid", "--on-accent", "--accent-glow",
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
+                "--tt-1", "--tt-1-fg", "--tt-2", "--tt-2-fg", "--tt-3", "--tt-3-fg",
+                "--tt-4", "--tt-4-fg", "--tt-5", "--tt-5-fg", "--tt-6", "--tt-6-fg",
             ];
             for (const key of keys) root.removeProperty(key);
         }
@@ -2242,6 +2669,14 @@
             const input = document.getElementById("search");
             const btn = document.getElementById("searchClearBtn");
             if (input && btn) btn.classList.toggle("visible", input.value.length > 0);
+            updateSearchCursor();
+        }
+        function updateSearchCursor() {
+            const input = document.getElementById("search");
+            const container = input ? input.closest(".search-container") : null;
+            if (container) {
+                container.classList.toggle("tt-cursor", document.activeElement === input && input.value.length === 0);
+            }
         }
         function clearSearch() {
             const input = document.getElementById("search");
@@ -2303,6 +2738,8 @@
                 }, 150);
             });
             document.getElementById("searchClearBtn").addEventListener("click", clearSearch);
+            searchInput.addEventListener("focus", updateSearchCursor);
+            searchInput.addEventListener("blur", updateSearchCursor);
             document.getElementById("logoHome").addEventListener("click", () => navigateTo([]));
             document.getElementById("logoHome").addEventListener("keydown", (e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -3101,6 +3538,14 @@
                 currentCrumb.scrollIntoView({ block: "nearest", inline: "nearest" });
             }
             lastBreadcrumbPathKey = pathKey;
+            const pageNumEl = document.getElementById("ttPageNum");
+            if (pageNumEl) {
+                const pageNo = 100 + currentPath.length;
+                // Keep any existing "SUB n/n" suffix (set by render()) so this
+                // update — which only runs on navigation — doesn't clobber it.
+                const subMatch = pageNumEl.textContent.match(/SUB [\d/]+/);
+                pageNumEl.innerHTML = `P${pageNo} <span class="tt-dot">&bull;</span>${subMatch ? " " + subMatch[0] : ""}`;
+            }
         }
         function renderTree() {
             const treeEl = document.getElementById("treeContent");
@@ -3201,6 +3646,13 @@
             }
             const activeLimit = searchQuery ? searchResultLimit : folderResultLimit;
             const visibleItems = all.slice(0, activeLimit);
+
+            const pageNumEl = document.getElementById("ttPageNum");
+            if (pageNumEl) {
+                const pageMatch = pageNumEl.innerHTML.match(/P\d+ <span class="tt-dot">[^<]*<\/span>/);
+                const pagePart = pageMatch ? pageMatch[0] : `P${100 + currentPath.length} <span class="tt-dot">&bull;</span>`;
+                pageNumEl.innerHTML = `${pagePart} SUB ${visibleItems.length}/${all.length}`;
+            }
 
             if (searchQuery) {
                 announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);

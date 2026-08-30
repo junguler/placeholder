@@ -639,12 +639,11 @@
         .preview-audio.buffering, .preview-video.buffering { opacity: 0.6; transition: opacity 0.15s ease; }
         @media (max-width: 480px) {
             .app-container { flex-direction: column; }
-            /* Logo shrinks to an icon-only chip on small screens — the
-               wordmark is redundant weight next to the breadcrumb, and
-               reclaiming that width keeps the search box usable. */
             .header { padding: 0.35rem 0.4rem; }
-            .logo span { display: none; }
-            .logo { padding: 0.3rem 0.4rem; }
+            /* Logo is dead weight on mobile — it's a home-navigation shortcut
+               that duplicates the first breadcrumb crumb, so it's dropped
+               entirely rather than just trimming its label. */
+            .logo { display: none; }
             .main { padding: 0.4rem; }
             .file-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.4rem; }
             .file-card { padding: 0.4rem; }
@@ -664,13 +663,20 @@
                 flex-shrink: 0;
             }
             .tree-panel .tree-header, .tree-panel .tree-content { display: none; }
-            .search-container { width: 120px; }
-            /* header-content's gap applies to both axes; once the search+icons
-               group wraps to its own row below the logo, that same gap reads
-               as too much dead space between the two rows. Tighten just the
-               row gap so the wrap looks like a deliberate two-row layout
-               rather than an overflow accident. */
+            /* With the logo, shortcuts/stats buttons, and view-toggle all
+               gone (below), the top row is just search + settings/theme —
+               let the search box actually use the freed-up width instead of
+               staying pinned to a cramped fixed size. */
+            .search-container { width: auto; flex: 1; min-width: 0; }
+            /* Breadcrumbs drop to their own full-width row underneath the
+               search/settings row rather than competing for space in it —
+               path segments can run long and don't need to share a line
+               with controls. Reordered after .header-actions (which keeps
+               its natural position) via flex order + a forced 100% basis,
+               so it always wraps onto a fresh line. */
             .header-content { row-gap: 0.375rem; }
+            .header-actions { order: 1; }
+            .breadcrumb { order: 2; flex-basis: 100%; width: 100%; }
             /* The pinned/favorites strip previously stacked each entry's
                filename and parent folder on two lines, wasting vertical
                space on small screens. Both are now a single truncated line,
@@ -678,9 +684,11 @@
             .tree-pinned { padding-bottom: 0.15rem; }
             .tree-pinned-header { padding: 0.3rem 0.5rem 0.1rem; font-size: 0.65rem; }
             .tree-pinned-item { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
-            /* Keyboard shortcuts don't apply on a touchscreen, so the button
-               that surfaces them is dead weight in mobile view. */
-            #shortcutsBtn { display: none; }
+            /* Keyboard shortcuts don't apply on a touchscreen, library stats
+               are a desktop-curation tool, and the grid/list/tree switch
+               eats horizontal space that search and settings need more —
+               all three are hidden on mobile rather than fighting for room. */
+            #shortcutsBtn, #statsBtn, .view-toggle { display: none; }
         }
         @media (max-width: 640px) {
             .breadcrumb { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }

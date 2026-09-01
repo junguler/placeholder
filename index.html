@@ -2007,15 +2007,19 @@
             }
         }
 
-        // Song/singer discovery for internet radio: most Icecast/Shoutcast
-        // streams interleave "StreamTitle=...;" metadata directly into the
-        // byte stream itself, at an interval given by the icy-metaint
-        // response header. We open a throwaway fetch alongside the real
-        // <audio> element (which keeps playing normally, untouched) purely
-        // to read one metadata block, then cancel — a small periodic
-        // sip of bandwidth rather than a second full audio stream.
-        // Silently does nothing for stations that don't send ICY metadata,
-        // don't allow CORS on the stream URL, or block cross-origin fetch.
+        // Song/singer discovery for internet radio. The "correct" source is
+        // the StreamTitle metadata Icecast/Shoutcast interleave into the raw
+        // audio stream itself (what mpv reads), but a browser can't get at
+        // that: requesting it means sending an Icy-MetaData header, which
+        // turns the fetch into a CORS-preflighted request, and essentially
+        // no radio server allows that header through. No backend here to
+        // route around it either, so this is a best-effort fallback: most
+        // Icecast/Shoutcast panels also expose a separate "now playing"
+        // status page (JSON or plain text) meant for embeddable widgets, and
+        // some of *those* do set permissive CORS even though the stream
+        // itself never does. We try the handful of standard paths for that,
+        // first one that answers wins. Works for a real subset of stations,
+        // silently shows nothing for the rest.
         let trackInfoAbortCtrl = null;
         let trackInfoPollTimer = null;
 
@@ -2031,72 +2035,87 @@
             if (trackInfoAbortCtrl) { trackInfoAbortCtrl.abort(); trackInfoAbortCtrl = null; }
             setTrackInfoText("");
         }
-        // (Re)starts periodic probing of `url` for ICY StreamTitle metadata.
+
+        // Pulls a plausible "now playing" string out of an Icecast
+        // status-json.xsl payload. Icecast reports either a single `source`
+        // object or an array of them (one per mount on that server), so we
+        // match on the mount path when we can and fall back to the first.
+        function extractIcecastTitle(data, mountPath) {
+            const stats = data && data.icestats;
+            if (!stats) return null;
+            let sources = stats.source;
+            if (!sources) return null;
+            if (!Array.isArray(sources)) sources = [sources];
+            let src = sources.find(s => s && typeof s.listenurl === "string" && s.listenurl.includes(mountPath));
+            if (!src) src = sources[0];
+            if (!src) return null;
+            return src.title || src.yp_currently_playing || null;
+        }
+
+        // Candidate "now playing" endpoints to try for a given stream URL,
+        // in rough order of how common each server software is.
+        function trackInfoCandidates(streamUrl) {
+            let origin, mountPath;
+            try {
+                const u = new URL(streamUrl);
+                origin = u.origin;
+                mountPath = u.pathname;
+            } catch (e) {
+                return [];
+            }
+            return [
+                { url: `${origin}/status-json.xsl`, kind: "icecast-json" },
+                { url: `${origin}/stats?json=1`, kind: "shoutcast2-json" },
+                { url: `${origin}/7.html`, kind: "shoutcast1-text" },
+            ].map(c => ({ ...c, mountPath }));
+        }
+
+        async function fetchTrackInfoCandidate(candidate, signal) {
+            const res = await fetch(candidate.url, { signal });
+            if (!res.ok) return null;
+            if (candidate.kind === "icecast-json") {
+                const data = await res.json();
+                return extractIcecastTitle(data, candidate.mountPath);
+            }
+            if (candidate.kind === "shoutcast2-json") {
+                const data = await res.json();
+                return data && (data.songtitle || data.servertitle) || null;
+            }
+            if (candidate.kind === "shoutcast1-text") {
+                const text = await res.text();
+                // Shoutcast v1's 7.html is a single-line comma-separated
+                // stat dump; the song title is always the last field.
+                const parts = text.replace(/<[^>]*>/g, "").trim().split(",");
+                const title = parts[parts.length - 1];
+                return title && title.trim() ? title.trim() : null;
+            }
+            return null;
+        }
+
+        // (Re)starts periodic probing of `url` for "now playing" info.
         // Always tears down any prior probe first, so calling this on every
         // track change is enough to keep things in sync.
         function startTrackInfoProbe(url) {
             stopTrackInfoProbe();
             if (!url || !/^https?:/i.test(url)) return;
-            const probeUrl = url;
+            const candidates = trackInfoCandidates(url);
+            if (!candidates.length) return;
             const poll = async () => {
                 trackInfoAbortCtrl = new AbortController();
-                try {
-                    const res = await fetch(probeUrl, {
-                        headers: { "Icy-MetaData": "1" },
-                        signal: trackInfoAbortCtrl.signal,
-                    });
-                    const metaint = parseInt(res.headers.get("icy-metaint"), 10);
-                    if (!metaint || !res.body) return; // station doesn't advertise ICY metadata
-                    const reader = res.body.getReader();
-                    let audioLeft = metaint; // bytes of audio still to skip before the length byte
-                    let lenByte = null; // metadata length byte (in units of 16), once read
-                    let metaLeft = 0; // metadata bytes still to collect
-                    const metaChunks = [];
-                    readLoop: while (true) {
-                        const { value, done } = await reader.read();
-                        if (done || !value) break;
-                        let i = 0;
-                        while (i < value.length) {
-                            if (audioLeft > 0) {
-                                const skip = Math.min(audioLeft, value.length - i);
-                                audioLeft -= skip;
-                                i += skip;
-                                continue;
-                            }
-                            if (lenByte === null) {
-                                lenByte = value[i++];
-                                metaLeft = lenByte * 16;
-                                if (metaLeft === 0) {
-                                    // No title change this cycle — reset and wait for the next block.
-                                    audioLeft = metaint;
-                                    lenByte = null;
-                                }
-                                continue;
-                            }
-                            const take = Math.min(metaLeft, value.length - i);
-                            metaChunks.push(value.slice(i, i + take));
-                            metaLeft -= take;
-                            i += take;
-                            if (metaLeft === 0) break readLoop;
-                        }
+                let found = null;
+                for (const candidate of candidates) {
+                    if (trackInfoAbortCtrl.signal.aborted) break;
+                    try {
+                        found = await fetchTrackInfoCandidate(candidate, trackInfoAbortCtrl.signal);
+                        if (found) break;
+                    } catch (e) {
+                        // CORS-blocked, 404, unsupported by this server, or
+                        // aborted on track change — just try the next one.
                     }
-                    reader.cancel().catch(() => {});
-                    if (metaChunks.length) {
-                        const total = metaChunks.reduce((n, c) => n + c.length, 0);
-                        const buf = new Uint8Array(total);
-                        let off = 0;
-                        for (const c of metaChunks) { buf.set(c, off); off += c.length; }
-                        const text = new TextDecoder("utf-8").decode(buf);
-                        const match = text.match(/StreamTitle=['"](.*?)['"];/);
-                        setTrackInfoText(match ? match[1].trim() : "");
-                    }
-                } catch (e) {
-                    // CORS-blocked, unsupported, aborted on track change, or a
-                    // network hiccup — the line just stays hidden.
-                } finally {
-                    trackInfoAbortCtrl = null;
-                    trackInfoPollTimer = setTimeout(poll, 20000);
                 }
+                setTrackInfoText(found ? String(found).trim() : "");
+                trackInfoAbortCtrl = null;
+                trackInfoPollTimer = setTimeout(poll, 20000);
             };
             poll();
         }

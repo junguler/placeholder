@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>M3U Metadata Embeder</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #121212;
+    color: #ffffff;
+    border-radius: 0px;
+}
+h1 {
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+.container {
+    background: #1e1e1e;
+    padding: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    width: 620px; /* This width still centers the main container */
+    margin: auto; /* Keeps the main container centered */
+    position: relative;
+}
+.input-group {
+    display: flex;
+    align-items: center;
+}
+textarea, input {
+    flex-grow: 1;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #333;
+    background-color: #333;
+    color: #ffffff;
+    box-sizing: border-box;
+}
+button {
+    width: 120px;
+    margin-left: 10px;
+    border: 1px solid #888;
+    background-color: #888;
+    color: white;
+    cursor: pointer;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    text-align: center;
+}
+button:hover {
+    background-color: #aaa;
+}
+.cancel-button {
+    display: none;
+    background-color: #d9534f;
+}
+.cancel-button:hover {
+    background-color: #c9302c;
+}
+#downloadButton {
+    display: none;
+    width: 200px;
+    margin: 10px auto;
+    height: 40px;
+    color: white;
+    background-color: #4CAF50;
+    border: 1px solid #4CAF50;
+}
+#downloadButton:hover {
+    background-color: #45a049;
+}
+.output-wrapper {
+    position: relative;
+    width: 100%;
+    height: 110px;
+    margin: 5px 0 10px 0;
+    border: 1px solid #333;
+    box-sizing: border-box;
+    background-color: #333;
+    resize: both;
+    overflow: auto;
+    min-width: 300px;
+    min-height: 80px;
+    max-width: none;
+    max-height: 80vh;
+}
+.output-wrapper textarea#output {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0 10px;
+    border: none;
+    background-color: transparent;
+    color: #ffffff;
+    box-sizing: border-box;
+    resize: none;
+    overflow: auto;
+    display: block;
+    min-width: 100%;
+    min-height: 100%;
+}
+.output-wrapper p#currentChecking {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 10px;
+    border: none;
+    background-color: #333;
+    box-sizing: border-box;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow: auto;
+    display: none;
+    min-width: 100%;
+    min-height: 100%;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>M3U Metadata Embeder</h1>
+    <div class="input-group">
+        <input type="file" id="fileInput" accept=".m3u,.m3u8">
+        <button id="fileCheckButton" onclick="processM3U()">Embed local file</button>
+        <button id="fileCancelButton" class="cancel-button" onclick="cancelProcess('file')">Cancel</button>
+    </div>
+    <div class="input-group">
+        <input type="text" id="urlInput" placeholder="Enter online M3U URL...">
+        <button id="urlCheckButton" onclick="processOnlineM3U()">Embed Online Link</button>
+        <button id="urlCancelButton" class="cancel-button" onclick="cancelProcess('url')">Cancel</button>
+    </div>
+    <div class="input-group">
+        <textarea id="textInput" rows="3" placeholder="Paste M3U content here..."></textarea>
+        <button id="textCheckButton" onclick="processTextM3U()">Embed Pasted streams</button>
+        <button id="textCancelButton" class="cancel-button" onclick="cancelProcess('text')">Cancel</button>
+    </div>
+    <div class="output-wrapper">
+        <textarea id="output" rows="10" readonly></textarea>
+        <p id="currentChecking"></p>
+    </div>
+    <button id="downloadButton" onclick="document.getElementById('downloadLink').click();">Download Embedded Playlist</button>
+    <a id="downloadLink" style="display:none"></a>
+</div>
+<script>
+let controllers = {};
+let isCancelled = {};
+let totalLinksToProcess = 0;
+let linksProcessedCount = 0;
+const concurrencyLimit = 6;
+const linkTimeout = 12000;
+const tempMetadata = new Map();
+
+const CONTENT_TYPE_TO_EXT = {
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/aac': 'aac',
+    'audio/aacp': 'aac',
+    'audio/x-aac': 'aac',
+    'audio/ogg': 'ogg',
+    'application/ogg': 'ogg',
+    'audio/opus': 'opus',
+    'audio/flac': 'flac',
+    'audio/x-flac': 'flac',
+    'audio/wav': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/wave': 'wav',
+    'audio/webm': 'webm',
+    'video/mp2t': 'ts',
+    'application/vnd.apple.mpegurl': 'm3u8',
+    'audio/x-mpegurl': 'm3u8',
+    'audio/mpegurl': 'm3u8',
+    'audio/mp4': 'm4a',
+    'audio/x-m4a': 'm4a'
+};
+
+function extFromContentType(ct) {
+    if (!ct) return null;
+    const clean = ct.toLowerCase().split(';')[0].trim();
+    return CONTENT_TYPE_TO_EXT[clean] || null;
+}
+
+function bitrateFromHeaders(headers) {
+    // Custom icy-* headers are only visible to JS if the server explicitly sends
+    // Access-Control-Expose-Headers for them, which almost none do. Still worth
+    // trying first since it's free (no extra bytes to read).
+    const icyBr = headers.get('icy-br');
+    if (icyBr) {
+        const n = parseInt(icyBr, 10);
+        if (!isNaN(n) && n > 0) return n;
+    }
+    const audioInfo = headers.get('ice-audio-info');
+    if (audioInfo) {
+        const match = audioInfo.match(/bitrate=(\d+)/i);
+        if (match) {
+            const n = parseInt(match[1], 10);
+            if (!isNaN(n) && n > 0) return n;
+        }
+    }
+    return null;
+}
+
+// --- Bitrate (and, where needed, a more accurate extension) by reading actual audio data ---
+// This works regardless of which custom headers a server does or doesn't expose via CORS.
+
+const MPEG_BITRATE_TABLES = {
+    '3_3': [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448],   // MPEG1 Layer I
+    '3_2': [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],      // MPEG1 Layer II
+    '3_1': [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],       // MPEG1 Layer III
+    '2_3': [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256],      // MPEG2/2.5 Layer I
+    '2_2': [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],           // MPEG2/2.5 Layer II
+    '2_1': [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160]            // MPEG2/2.5 Layer III
+};
+
+function findMp3Bitrate(bytes) {
+    for (let i = 0; i < bytes.length - 4; i++) {
+        if (bytes[i] === 0xFF && (bytes[i + 1] & 0xE0) === 0xE0) {
+            const versionBits = (bytes[i + 1] >> 3) & 0x3; // 0=MPEG2.5, 1=reserved, 2=MPEG2, 3=MPEG1
+            const layerBits = (bytes[i + 1] >> 1) & 0x3;   // 0=reserved, 1=Layer III, 2=Layer II, 3=Layer I
+            if (versionBits === 1 || layerBits === 0) continue;
+            const bitrateIndex = (bytes[i + 2] >> 4) & 0xF;
+            const sampleRateIndex = (bytes[i + 2] >> 2) & 0x3;
+            if (bitrateIndex === 0 || bitrateIndex === 15 || sampleRateIndex === 3) continue;
+            const versionGroup = versionBits === 3 ? '3' : '2';
+            const table = MPEG_BITRATE_TABLES[`${versionGroup}_${layerBits}`];
+            if (!table) continue;
+            const bitrate = table[bitrateIndex];
+            if (bitrate) return bitrate;
+        }
+    }
+    return null;
+}
+
+const AAC_SAMPLE_RATES = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+
+function findAacBitrate(bytes) {
+    for (let i = 0; i < bytes.length - 6; i++) {
+        if (bytes[i] === 0xFF && (bytes[i + 1] & 0xF0) === 0xF0) {
+            const sampleRateIndex = (bytes[i + 2] >> 2) & 0xF;
+            if (sampleRateIndex >= AAC_SAMPLE_RATES.length) continue;
+            const sampleRate = AAC_SAMPLE_RATES[sampleRateIndex];
+            const frameLength = ((bytes[i + 3] & 0x3) << 11) | (bytes[i + 4] << 3) | ((bytes[i + 5] >> 5) & 0x7);
+            if (frameLength < 7 || frameLength > 4096) continue;
+            // ADTS has no explicit bitrate field - derive it from frame size (1024 samples/frame is standard for AAC-LC)
+            const bitrate = Math.round((frameLength * 8 * sampleRate) / 1024 / 1000);
+            if (bitrate > 0 && bitrate < 1000) return bitrate;
+        }
+    }
+    return null;
+}
+
+// Ogg container: finds the first page and reads its identification packet.
+// Vorbis stores an exact nominal bitrate in the header. Opus stores none at all
+// (it's inherently variable and undeclared), so we can identify it but not size it.
+function findOggInfo(bytes) {
+    for (let i = 0; i < bytes.length - 27; i++) {
+        if (bytes[i] === 0x4F && bytes[i + 1] === 0x67 && bytes[i + 2] === 0x67 && bytes[i + 3] === 0x53) { // 'OggS'
+            const pageSegments = bytes[i + 26];
+            const segStart = i + 27;
+            if (segStart + pageSegments > bytes.length) return null; // wait for more data
+            let firstPacketLen = 0;
+            for (let s = 0; s < pageSegments; s++) {
+                firstPacketLen += bytes[segStart + s];
+                if (bytes[segStart + s] < 255) break;
+            }
+            const dataStart = segStart + pageSegments;
+            if (dataStart + firstPacketLen > bytes.length) return null; // wait for more data
+            const packet = bytes.subarray(dataStart, dataStart + firstPacketLen);
+
+            if (packet.length >= 30 && packet[0] === 0x01 &&
+                packet[1] === 0x76 && packet[2] === 0x6F && packet[3] === 0x72 &&
+                packet[4] === 0x62 && packet[5] === 0x69 && packet[6] === 0x73) { // 0x01 + 'vorbis'
+                const view = new DataView(packet.buffer, packet.byteOffset, packet.byteLength);
+                const bitrateMax = view.getInt32(16, true);
+                const bitrateNominal = view.getInt32(20, true);
+                const bitrateMin = view.getInt32(24, true);
+                let kbps = null;
+                if (bitrateNominal > 0) kbps = Math.round(bitrateNominal / 1000);
+                else if (bitrateMax > 0) kbps = Math.round(bitrateMax / 1000);
+                else if (bitrateMin > 0) kbps = Math.round(bitrateMin / 1000);
+                return { ext: 'ogg', bitrate: kbps };
+            }
+            if (packet.length >= 8 && packet[0] === 0x4F && packet[1] === 0x70 && packet[2] === 0x75 &&
+                packet[3] === 0x73 && packet[4] === 0x48 && packet[5] === 0x65 && packet[6] === 0x61 && packet[7] === 0x64) { // 'OpusHead'
+                return { ext: 'opus', bitrate: null }; // codec identified, but Opus doesn't declare a bitrate
+            }
+            return { ext: 'ogg', bitrate: null }; // some other codec in an Ogg wrapper
+        }
+    }
+    return null; // no complete page yet
+}
+
+// WAV/PCM: byte rate is stored explicitly in the 'fmt ' chunk - exact, no guessing needed.
+function findWavBitrate(bytes) {
+    if (bytes.length < 12) return null;
+    if (!(bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46)) return null; // 'RIFF'
+    if (!(bytes[8] === 0x57 && bytes[9] === 0x41 && bytes[10] === 0x56 && bytes[11] === 0x45)) return null; // 'WAVE'
+    let pos = 12;
+    while (pos + 8 <= bytes.length) {
+        const id = String.fromCharCode(bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3]);
+        const size = bytes[pos + 4] | (bytes[pos + 5] << 8) | (bytes[pos + 6] << 16) | (bytes[pos + 7] << 24);
+        if (id === 'fmt ') {
+            if (pos + 8 + 16 > bytes.length) return null; // wait for more data
+            const byteRate = bytes[pos + 16] | (bytes[pos + 17] << 8) | (bytes[pos + 18] << 16) | (bytes[pos + 19] << 24);
+            return byteRate > 0 ? Math.round((byteRate * 8) / 1000) : null;
+        }
+        pos += 8 + size + (size % 2); // chunks are padded to even length
+    }
+    return null; // fmt chunk not in what we've read yet
+}
+
+// FLAC: STREAMINFO has no bitrate field (it's lossless/variable), but most encoders use a
+// fixed block size, so frame-size / block-size / sample-rate gives a solid estimate.
+function findFlacBitrate(bytes) {
+    if (bytes.length < 42) return null;
+    if (!(bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43)) return null; // 'fLaC'
+    const blockType = bytes[4] & 0x7F;
+    if (blockType !== 0) return null; // STREAMINFO should be the first metadata block
+    const d = 8; // STREAMINFO data starts after 4-byte magic + 4-byte block header
+    const minBlock = (bytes[d] << 8) | bytes[d + 1];
+    const maxBlock = (bytes[d + 2] << 8) | bytes[d + 3];
+    const minFrame = (bytes[d + 4] << 16) | (bytes[d + 5] << 8) | bytes[d + 6];
+    const maxFrame = (bytes[d + 7] << 16) | (bytes[d + 8] << 8) | bytes[d + 9];
+    const sampleRate = (bytes[d + 10] << 12) | (bytes[d + 11] << 4) | (bytes[d + 12] >> 4);
+    const blockSize = maxBlock || minBlock;
+    const frameSize = maxFrame || minFrame;
+    if (blockSize && frameSize && sampleRate) {
+        const kbps = Math.round((frameSize * 8 * sampleRate) / blockSize / 1000);
+        if (kbps > 0 && kbps < 8000) return kbps;
+    }
+    return null;
+}
+
+function readMp4DescriptorLength(bytes, pos) {
+    let length = 0, bytesRead = 0, b;
+    do {
+        b = bytes[pos + bytesRead];
+        length = (length << 7) | (b & 0x7F);
+        bytesRead++;
+    } while ((b & 0x80) !== 0 && bytesRead < 4);
+    return { length, bytesRead };
+}
+
+// MP4/M4A: AAC-in-MP4 declares its bitrate inside the 'esds' box's DecoderConfigDescriptor.
+// We search for the box by its tag rather than walking the full moov/trak/.../stsd hierarchy,
+// since live-stream buffers rarely contain a complete, well-formed box tree from byte zero.
+function findEsdsBitrate(bytes) {
+    try {
+        for (let i = 0; i < bytes.length - 4; i++) {
+            if (bytes[i] === 0x65 && bytes[i + 1] === 0x73 && bytes[i + 2] === 0x64 && bytes[i + 3] === 0x73) { // 'esds'
+                let pos = i + 4 + 4; // skip tag + FullBox version/flags
+                if (bytes[pos] !== 0x03) continue; // ES_DescrTag
+                pos += 1;
+                let len = readMp4DescriptorLength(bytes, pos);
+                pos += len.bytesRead + 2; // + ES_ID
+                const flags = bytes[pos]; pos += 1;
+                if (flags & 0x80) pos += 2;
+                if (flags & 0x40) { const urlLen = bytes[pos]; pos += 1 + urlLen; }
+                if (flags & 0x20) pos += 2;
+                if (bytes[pos] !== 0x04) continue; // DecoderConfigDescrTag
+                pos += 1;
+                len = readMp4DescriptorLength(bytes, pos);
+                pos += len.bytesRead;
+                pos += 1 + 1 + 3; // objectTypeIndication + streamType/flags + bufferSizeDB
+                if (pos + 8 > bytes.length) return null;
+                const maxBitrate = ((bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3]) >>> 0;
+                const avgBitrate = ((bytes[pos + 4] << 24) | (bytes[pos + 5] << 16) | (bytes[pos + 6] << 8) | bytes[pos + 7]) >>> 0;
+                const kbps = avgBitrate ? Math.round(avgBitrate / 1000) : (maxBitrate ? Math.round(maxBitrate / 1000) : null);
+                if (kbps > 0 && kbps < 2000) return kbps;
+            }
+        }
+    } catch (e) { /* malformed/partial box tree - give up quietly */ }
+    return null;
+}
+
+// Identifies the real container/codec from magic bytes, for when Content-Type is missing,
+// generic (application/octet-stream), or simply wrong (which happens often with radio servers).
+function sniffFormatFromBytes(bytes) {
+    if (bytes.length < 4) return null;
+    if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return 'ogg'; // 'OggS'
+    if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+        bytes[8] === 0x57 && bytes[9] === 0x41 && bytes[10] === 0x56 && bytes[11] === 0x45) return 'wav';
+    if (bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43) return 'flac'; // 'fLaC'
+    if (bytes[0] === 0xFF && (bytes[1] & 0xE0) === 0xE0) return 'mp3';
+    if (bytes[0] === 0xFF && (bytes[1] & 0xF0) === 0xF0) return 'aac';
+    if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) return 'webm'; // EBML
+    if (bytes.length >= 8) {
+        const boxType = String.fromCharCode(bytes[4], bytes[5], bytes[6], bytes[7]);
+        if (['ftyp', 'moov', 'free', 'moof', 'mdat', 'styp', 'skip', 'wide'].includes(boxType)) return 'm4a';
+    }
+    return null;
+}
+
+// Reads the stream progressively, refining the format guess and re-trying the matching
+// parser as more bytes arrive, until it finds an answer or gives up at the byte cap.
+async function sniffAudioStream(reader, knownExt) {
+    const maxBytes = 131072; // ~128KB - generous enough for mp4 boxes, cheap enough per stream
+    let buf = new Uint8Array(0);
+    let ext = knownExt || null;
+    let bitrate = null;
+    try {
+        while (buf.length < maxBytes) {
+            const { done, value } = await reader.read();
+            if (done || !value) break;
+            const combined = new Uint8Array(buf.length + value.length);
+            combined.set(buf, 0);
+            combined.set(value, buf.length);
+            buf = combined;
+
+            if (!ext) ext = sniffFormatFromBytes(buf);
+
+            switch (ext) {
+                case 'mp3': bitrate = findMp3Bitrate(buf); break;
+                case 'aac': bitrate = findAacBitrate(buf); break;
+                case 'wav': bitrate = findWavBitrate(buf); break;
+                case 'flac': bitrate = findFlacBitrate(buf); break;
+                case 'm4a': bitrate = findEsdsBitrate(buf); break;
+                case 'ogg': {
+                    const info = findOggInfo(buf);
+                    if (info) { ext = info.ext; bitrate = info.bitrate; }
+                    break;
+                }
+                default: break;
+            }
+
+            // Stop early once we have an answer, or once we know further bytes won't help
+            // (webm bitrate parsing isn't implemented; opus never declares one in-header).
+            if (bitrate || ext === 'webm' || ext === 'opus' || ext === 'ts' || ext === 'm3u8') break;
+        }
+    } catch (e) {
+        // aborted or network hiccup mid-read - just return whatever was determined so far
+    }
+    return { ext, bitrate };
+}
+
+function setDisplayStates(checkingInProgress) {
+    const outputElement = document.getElementById('output');
+    const currentCheckingElement = document.getElementById('currentChecking');
+    const downloadButton = document.getElementById('downloadButton');
+    if (checkingInProgress) {
+        outputElement.style.display = 'none';
+        currentCheckingElement.style.display = 'block';
+        downloadButton.style.display = 'none';
+    } else {
+        outputElement.style.display = 'block';
+        currentCheckingElement.style.display = 'none';
+    }
+}
+
+function toggleButtons(type, checking) {
+    document.getElementById(`${type}CheckButton`).style.display = checking ? 'none' : 'flex';
+    document.getElementById(`${type}CancelButton`).style.display = checking ? 'flex' : 'none';
+    setDisplayStates(checking);
+
+    const otherTypes = ['file', 'url', 'text'].filter(t => t !== type);
+    otherTypes.forEach(otherType => {
+        const checkButton = document.getElementById(`${otherType}CheckButton`);
+        if (checkButton) checkButton.disabled = checking;
+    });
+
+    document.getElementById('fileInput').disabled = checking;
+    document.getElementById('urlInput').disabled = checking;
+    document.getElementById('textInput').disabled = checking;
+}
+
+function resetOutput() {
+    document.getElementById('output').value = '';
+    document.getElementById('downloadButton').style.display = 'none';
+    document.getElementById('currentChecking').textContent = '';
+    setDisplayStates(false);
+    totalLinksToProcess = 0;
+    linksProcessedCount = 0;
+    tempMetadata.clear();
+}
+
+function updateCheckingStatus(currentItemTitle, currentItemUrl) {
+    linksProcessedCount++;
+    const currentCheckingElement = document.getElementById('currentChecking');
+    let message = `Checking link ${linksProcessedCount} of ${totalLinksToProcess}:`;
+    if (currentItemTitle && currentItemTitle.trim() !== '') {
+        const match = currentItemTitle.match(/,(.*?)$/);
+        message += `\n${match ? match[1].trim() : currentItemTitle.replace(/^#EXTINF.*?,/, '').trim()}`;
+    }
+    message += `\n${currentItemUrl}`;
+    currentCheckingElement.textContent = message;
+    currentCheckingElement.scrollTop = currentCheckingElement.scrollHeight;
+}
+
+async function checkSingleLink(item, type) {
+    if (isCancelled[type]) {
+        return { url: item.url, ok: false };
+    }
+    const controller = new AbortController();
+    controllers[item.url] = controller;
+
+    const timeoutPromise = new Promise((resolve) =>
+        setTimeout(() => {
+            controller.abort();
+            resolve({ url: item.url, ok: false });
+        }, linkTimeout)
+    );
+
+    const fetchPromise = (async () => {
+        const response = await fetch(item.url, { method: 'GET', signal: controller.signal });
+        let ext = extFromContentType(response.headers.get('content-type'));
+        let bitrate = bitrateFromHeaders(response.headers);
+        if (!bitrate && response.body) {
+            const sniffed = await sniffAudioStream(response.body.getReader(), ext);
+            if (!ext) ext = sniffed.ext;
+            if (!bitrate) bitrate = sniffed.bitrate;
+        }
+        try { controller.abort(); } catch (e) { /* connection already done */ }
+        return { url: item.url, ok: true, ext, bitrate };
+    })().catch(() => {
+        return { url: item.url, ok: false };
+    });
+
+    try {
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        if (isCancelled[type]) return { url: item.url, ok: false };
+        return result;
+    } finally {
+        delete controllers[item.url];
+        updateCheckingStatus(item.title, item.url);
+    }
+}
+
+function embedMetadata(titleLine, ext, bitrate) {
+    let suffix = '';
+    if (ext && bitrate) suffix = ` - ${ext} - ${bitrate}kb`;
+    else if (ext) suffix = ` - ${ext}`;
+    else if (bitrate) suffix = ` - ${bitrate}kb`;
+    if (!suffix) return titleLine;
+    return titleLine + suffix;
+}
+
+async function processLinks(m3uContent, type, originalFileName = 'embedded_playlist.m3u') {
+    resetOutput();
+    toggleButtons(type, true);
+    isCancelled[type] = false;
+    document.getElementById('currentChecking').textContent = 'Starting metadata embed...';
+
+    const originalLines = m3uContent.split('\n');
+    const linksToProcess = [];
+    let currentTitle = '';
+    let currentTitleLineIndex = -1;
+
+    for (let i = 0; i < originalLines.length; i++) {
+        const line = originalLines[i].trim();
+        if (line.startsWith('#EXTINF')) {
+            currentTitle = line;
+            currentTitleLineIndex = i;
+        } else if (line.startsWith('http')) {
+            linksToProcess.push({
+                title: currentTitle,
+                url: line,
+                originalIndex: i,
+                originalTitleLineIndex: currentTitleLineIndex
+            });
+            currentTitle = '';
+            currentTitleLineIndex = -1;
+        }
+    }
+
+    totalLinksToProcess = linksToProcess.length;
+    linksProcessedCount = 0;
+
+    if (totalLinksToProcess === 0) {
+        document.getElementById('currentChecking').textContent = 'No stream links found in the M3U content.';
+        let outputContent = originalLines.filter(line => line.trim() !== '').join('\n');
+        if (outputContent.trim() === '' || !outputContent.trim().startsWith('#EXTM3U')) {
+            outputContent = '#EXTM3U\n' + outputContent;
+        }
+        document.getElementById('output').value = outputContent;
+        toggleButtons(type, false);
+        return;
+    }
+
+    const activePromises = new Set();
+    for (let i = 0; i < linksToProcess.length; i++) {
+        if (isCancelled[type]) break;
+        const item = linksToProcess[i];
+        const promise = checkSingleLink(item, type).then(result => {
+            if (!isCancelled[type] && result && result.ok) {
+                tempMetadata.set(item.originalTitleLineIndex, {
+                    ext: result.ext,
+                    bitrate: result.bitrate
+                });
+            }
+            activePromises.delete(promise);
+            return result;
+        });
+        activePromises.add(promise);
+        if (activePromises.size >= concurrencyLimit) {
+            await Promise.race(Array.from(activePromises));
+        }
+    }
+    await Promise.allSettled(Array.from(activePromises));
+
+    const finalOutputLines = [];
+    let updatedCount = 0;
+    for (let i = 0; i < originalLines.length; i++) {
+        const rawLine = originalLines[i];
+        const line = rawLine.trim();
+        if (line === '') continue;
+        if (line.startsWith('#EXTINF') && tempMetadata.has(i)) {
+            const { ext, bitrate } = tempMetadata.get(i);
+            const newLine = embedMetadata(line, ext, bitrate);
+            if (newLine !== line) updatedCount++;
+            finalOutputLines.push(newLine);
+        } else {
+            finalOutputLines.push(line);
+        }
+    }
+    if (!finalOutputLines.length || !finalOutputLines[0].startsWith('#EXTM3U')) {
+        finalOutputLines.unshift('#EXTM3U');
+    }
+
+    document.getElementById('output').value = finalOutputLines.join('\n');
+    toggleButtons(type, false);
+
+    document.getElementById('currentChecking').textContent = isCancelled[type]
+        ? 'Embedding cancelled. Showing partial results.'
+        : `Done. Embedded metadata for ${updatedCount} of ${totalLinksToProcess} streams.`;
+
+    const blob = new Blob([finalOutputLines.join('\n')], { type: 'audio/x-mpegurl' });
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.getElementById('downloadLink');
+    downloadLink.href = url;
+    downloadLink.download = getOutputFileName(type, originalFileName);
+    document.getElementById('downloadButton').style.display = 'block';
+}
+
+function getOutputFileName(type, originalName) {
+    let baseName = originalName;
+    if (type === 'file') {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length > 0) {
+            baseName = fileInput.files[0].name;
+        }
+    } else if (type === 'url') {
+        const urlInput = document.getElementById('urlInput').value.trim();
+        try {
+            const url = new URL(urlInput);
+            const pathParts = url.pathname.split('/');
+            baseName = pathParts[pathParts.length - 1] || 'playlist.m3u';
+            baseName = baseName.split('?')[0];
+        } catch (e) {
+            baseName = 'playlist.m3u';
+        }
+    } else {
+        baseName = 'pasted_streams.m3u';
+    }
+    if (!baseName.endsWith('.m3u') && !baseName.endsWith('.m3u8')) {
+        baseName += '.m3u';
+    }
+    const lastDotIndex = baseName.lastIndexOf('.');
+    if (lastDotIndex !== -1) {
+        return `${baseName.substring(0, lastDotIndex)}_embedded${baseName.substring(lastDotIndex)}`;
+    }
+    return `${baseName}_embedded.m3u`;
+}
+
+async function processM3U() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files.length) return alert('Please upload an M3U file.');
+    const fileName = fileInput.files[0].name;
+    const text = await fileInput.files[0].text();
+    await processLinks(text, 'file', fileName);
+}
+
+async function processOnlineM3U() {
+    const urlInput = document.getElementById('urlInput').value.trim();
+    if (!urlInput) return alert('Please enter an online M3U URL.');
+    try {
+        const controller = new AbortController();
+        controllers['urlFetch'] = controller;
+        document.getElementById('currentChecking').textContent = 'Fetching online M3U file...';
+        setDisplayStates(true);
+        const response = await fetch(urlInput, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Failed to fetch M3U file: ${response.status} ${response.statusText}`);
+        const text = await response.text();
+        await processLinks(text, 'url', urlInput);
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            document.getElementById('currentChecking').textContent = 'Online M3U fetch cancelled.';
+        } else {
+            alert(`Error fetching online M3U file: ${error.message}`);
+            document.getElementById('currentChecking').textContent = `Error fetching online M3U file: ${error.message}`;
+        }
+        toggleButtons('url', false);
+        resetOutput();
+    } finally {
+        delete controllers['urlFetch'];
+    }
+}
+
+async function processTextM3U() {
+    const textInput = document.getElementById('textInput').value;
+    if (!textInput.trim()) return alert('Please paste M3U content.');
+    await processLinks(textInput, 'text', 'pasted_streams.m3u');
+}
+
+function cancelProcess(type) {
+    isCancelled[type] = true;
+    if (type === 'url' && controllers['urlFetch']) {
+        controllers['urlFetch'].abort();
+    }
+    for (const url in controllers) {
+        if (controllers.hasOwnProperty(url)) {
+            controllers[url].abort();
+        }
+    }
+}
+</script>
+</body>
+</html>

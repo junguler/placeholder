@@ -677,25 +677,122 @@ async function processM3U() {
     await processLinks(text, 'file', fileName);
 }
 
+// Convert GitHub's browser-facing /raw/ URL to raw.githubusercontent.com.
+// This avoids the redirect/CORS problem caused by fetching github.com directly.
+function normalizeOnlineM3UUrl(inputUrl) {
+    let url;
+    try {
+        url = new URL(inputUrl);
+    } catch (error) {
+        throw new Error('Invalid URL.');
+    }
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error('Only HTTP and HTTPS URLs are supported.');
+    }
+
+    // https://github.com/OWNER/REPO/raw/BRANCH_OR_REF/PATH
+    // Also handles: /raw/refs/heads/BRANCH/PATH
+    if (url.hostname.toLowerCase() === 'github.com') {
+        const parts = url.pathname.split('/').filter(Boolean);
+
+        if (parts.length >= 5 && parts[2].toLowerCase() === 'raw') {
+            const owner = parts[0];
+            const repo = parts[1];
+            const rest = parts.slice(3);
+
+            return `https://raw.githubusercontent.com/${owner}/${repo}/${rest.join('/')}${url.search}${url.hash}`;
+        }
+    }
+
+    return url.href;
+}
+
+// Fetch the playlist body. GitHub raw URLs are normalized first.
+// For ordinary URLs, the remote server must still permit browser CORS.
+async function fetchOnlineM3U(inputUrl, signal) {
+    const normalizedUrl = normalizeOnlineM3UUrl(inputUrl);
+    const urlsToTry = [normalizedUrl];
+
+    // Keep the original as a fallback if this was a GitHub URL.
+    if (normalizedUrl !== inputUrl) {
+        urlsToTry.push(inputUrl);
+    }
+
+    let lastError = null;
+
+    for (const url of urlsToTry) {
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                signal,
+                cache: 'no-store',
+                redirect: 'follow'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+
+            const text = await response.text();
+
+            if (!text.trim()) {
+                throw new Error('The fetched playlist is empty.');
+            }
+
+            return { text, fetchedUrl: url };
+        } catch (error) {
+            if (error.name === 'AbortError') throw error;
+            lastError = error;
+        }
+    }
+
+    if (lastError) {
+        throw new Error(
+            `Unable to fetch the playlist. ${lastError.message} ` +
+            `The remote server may block browser CORS requests.`
+        );
+    }
+
+    throw new Error('Unable to fetch the playlist.');
+}
+
 async function processOnlineM3U() {
     const urlInput = document.getElementById('urlInput').value.trim();
     if (!urlInput) return alert('Please enter an online M3U URL.');
+
+    let normalizedUrl;
+    try {
+        normalizedUrl = normalizeOnlineM3UUrl(urlInput);
+    } catch (error) {
+        alert(`Error fetching online M3U file: ${error.message}`);
+        return;
+    }
+
     try {
         const controller = new AbortController();
         controllers['urlFetch'] = controller;
-        document.getElementById('currentChecking').textContent = 'Fetching online M3U file...';
+
+        document.getElementById('currentChecking').textContent =
+            normalizedUrl !== urlInput
+                ? `Fetching GitHub raw playlist...\n${normalizedUrl}`
+                : 'Fetching online M3U file...';
+
         setDisplayStates(true);
-        const response = await fetch(urlInput, { signal: controller.signal });
-        if (!response.ok) throw new Error(`Failed to fetch M3U file: ${response.status} ${response.statusText}`);
-        const text = await response.text();
-        await processLinks(text, 'url', urlInput);
+
+        const result = await fetchOnlineM3U(urlInput, controller.signal);
+
+        // Keep the original URL for output filename generation.
+        await processLinks(result.text, 'url', urlInput);
     } catch (error) {
         if (error.name === 'AbortError') {
             document.getElementById('currentChecking').textContent = 'Online M3U fetch cancelled.';
         } else {
             alert(`Error fetching online M3U file: ${error.message}`);
-            document.getElementById('currentChecking').textContent = `Error fetching online M3U file: ${error.message}`;
+            document.getElementById('currentChecking').textContent =
+                `Error fetching online M3U file: ${error.message}`;
         }
+
         toggleButtons('url', false);
         resetOutput();
     } finally {

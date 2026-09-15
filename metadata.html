@@ -1,0 +1,3450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>M3U Metadata Embedder</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #121212;
+    color: #ffffff;
+    border-radius: 0px;
+}
+
+h1 {
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.container {
+    background: #1e1e1e;
+    padding: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    width: 620px;
+    margin: auto;
+    position: relative;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+}
+
+textarea,
+input {
+    flex-grow: 1;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #333;
+    background-color: #333;
+    color: #ffffff;
+    box-sizing: border-box;
+}
+
+button {
+    width: 120px;
+    margin-left: 10px;
+    border: 1px solid #888;
+    background-color: #888;
+    color: white;
+    cursor: pointer;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+button:hover {
+    background-color: #aaa;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancel-button {
+    display: none;
+    background-color: #d9534f;
+}
+
+.cancel-button:hover {
+    background-color: #c9302c;
+}
+
+.pause-button {
+    display: none;
+    background-color: #5b7a99;
+}
+
+.pause-button:hover {
+    background-color: #6f93b8;
+}
+
+#downloadButton {
+    display: none;
+    width: 200px;
+    margin: 10px auto;
+    height: 40px;
+    color: white;
+    background-color: #4CAF50;
+    border: 1px solid #4CAF50;
+}
+
+#downloadButton:hover {
+    background-color: #45a049;
+}
+
+#downloadReportButton {
+    display: none;
+    width: 120px;
+    margin: 0 auto 10px auto;
+    height: auto;
+    min-height: 20px;
+    padding: 4px 2px;
+    line-height: 1.15;
+    font-size: 0.7em;
+    color: white;
+    background-color: #a35c00;
+    border: 1px solid #a35c00;
+}
+
+#downloadReportButton:hover {
+    background-color: #c26e00;
+}
+
+.download-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.output-wrapper {
+    position: relative;
+    width: 100%;
+    height: 110px;
+    margin: 5px 0 10px 0;
+    border: 1px solid #333;
+    box-sizing: border-box;
+    background-color: #333;
+    resize: both;
+    overflow: auto;
+    min-width: 300px;
+    min-height: 80px;
+    max-width: none;
+    max-height: 80vh;
+}
+
+.output-wrapper textarea#output {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0 10px;
+    border: none;
+    background-color: transparent;
+    color: #ffffff;
+    box-sizing: border-box;
+    resize: none;
+    overflow: auto;
+    display: block;
+    min-width: 100%;
+    min-height: 100%;
+}
+
+.output-wrapper p#currentChecking {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 10px;
+    border: none;
+    background-color: #333;
+    box-sizing: border-box;
+    text-align: left;
+    white-space: normal;
+    overflow: hidden;
+    display: none;
+    min-width: 100%;
+    min-height: 100%;
+}
+
+.output-wrapper p#currentChecking .checking-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.advanced-settings {
+    text-align: left;
+    margin: 5px 0 10px 0;
+    border: 1px solid #333;
+    background-color: #333;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.advanced-settings summary {
+    cursor: pointer;
+    padding: 10px;
+    color: #ffffff;
+    font-size: 1em;
+    user-select: none;
+}
+
+.advanced-settings summary:hover {
+    background-color: #3d3d3d;
+}
+
+.advanced-settings .settings-grid {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    padding: 10px;
+    border-top: 1px solid #444;
+    background-color: #1e1e1e;
+}
+
+.settings-column {
+    display: flex;
+}
+
+.numeric-column {
+    gap: 10px;
+}
+
+.checkbox-column {
+    flex-direction: column;
+    gap: 8px;
+}
+
+.advanced-settings .setting-item {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9em;
+    color: #ffffff;
+}
+
+.advanced-settings .setting-item.checkbox-item {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.advanced-settings input[type="number"] {
+    width: 80px;
+    flex-grow: 0;
+    margin: 3px 0 0 0;
+    padding: 6px;
+}
+
+.advanced-settings input[type="checkbox"] {
+    flex-grow: 0;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    accent-color: #888;
+}
+
+#summaryLine {
+    text-align: left;
+    font-size: 0.85em;
+    color: #bbbbbb;
+    margin: 5px 0 10px 0;
+    min-height: 1em;
+}
+
+@media (max-width: 660px) {
+    .container {
+        width: 95%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>M3U Metadata Embedder</h1>
+
+    <div class="input-group">
+        <input type="file" id="fileInput" accept=".m3u,.m3u8">
+
+        <button id="fileCheckButton"
+                onclick="processM3U()">
+            Embed local file
+        </button>
+
+        <button id="filePauseButton"
+                class="pause-button"
+                onclick="togglePause('file')">
+            Pause
+        </button>
+
+        <button id="fileCancelButton"
+                class="cancel-button"
+                onclick="cancelProcess('file')">
+            Cancel
+        </button>
+    </div>
+
+    <div class="input-group">
+        <input type="text"
+               id="urlInput"
+               placeholder="Enter online M3U URL...">
+
+        <button id="urlCheckButton"
+                onclick="processOnlineM3U()">
+            Embed Online Link
+        </button>
+
+        <button id="urlPauseButton"
+                class="pause-button"
+                onclick="togglePause('url')">
+            Pause
+        </button>
+
+        <button id="urlCancelButton"
+                class="cancel-button"
+                onclick="cancelProcess('url')">
+            Cancel
+        </button>
+    </div>
+
+    <div class="input-group">
+        <textarea id="textInput"
+                  rows="3"
+                  placeholder="Paste M3U content here..."></textarea>
+
+        <button id="textCheckButton"
+                onclick="processTextM3U()">
+            Embed Pasted streams
+        </button>
+
+        <button id="textPauseButton"
+                class="pause-button"
+                onclick="togglePause('text')">
+            Pause
+        </button>
+
+        <button id="textCancelButton"
+                class="cancel-button"
+                onclick="cancelProcess('text')">
+            Cancel
+        </button>
+    </div>
+
+    <details class="advanced-settings">
+        <summary>Advanced settings (concurrency, timeout, retries)</summary>
+
+        <div class="settings-grid">
+
+            <div class="settings-column numeric-column">
+
+                <div class="setting-item">
+                    <label for="concurrencyInput">
+                        Concurrency
+                    </label>
+
+                    <input type="number"
+                           id="concurrencyInput"
+                           min="1"
+                           max="50"
+                           value="10">
+                </div>
+
+                <div class="setting-item">
+                    <label for="timeoutInput">
+                        Timeout (ms)
+                    </label>
+
+                    <input type="number"
+                           id="timeoutInput"
+                           min="1000"
+                           max="120000"
+                           step="500"
+                           value="24000">
+                </div>
+
+            </div>
+
+            <div class="settings-column checkbox-column">
+
+                <div class="setting-item checkbox-item">
+                    <input type="checkbox"
+                           id="retryCheckbox"
+                           checked>
+
+                    <label for="retryCheckbox">
+                        Retry a failed link once
+                    </label>
+                </div>
+
+                <div class="setting-item checkbox-item">
+                    <input type="checkbox"
+                           id="corsFallbackCheckbox"
+                           checked>
+
+                    <label for="corsFallbackCheckbox">
+                        Assume CORS-blocked streams are reachable
+                    </label>
+                </div>
+
+                <div class="setting-item checkbox-item">
+                    <input type="checkbox"
+                           id="dedupeCheckbox"
+                           checked>
+
+                    <label for="dedupeCheckbox">
+                        Skip re-checking duplicate URLs
+                    </label>
+                </div>
+
+            </div>
+
+        </div>
+    </details>
+
+    <div class="output-wrapper">
+        <textarea id="output"
+                  rows="10"
+                  readonly></textarea>
+
+        <p id="currentChecking"></p>
+    </div>
+
+    <p id="summaryLine"></p>
+
+    <div class="download-row">
+
+        <button id="downloadButton"
+                onclick="document.getElementById('downloadLink').click();">
+            Download Embedded Playlist
+        </button>
+
+        <button id="downloadReportButton"
+                onclick="document.getElementById('downloadReportLink').click();">
+            Download Metadata Report
+        </button>
+
+    </div>
+
+    <a id="downloadLink" style="display:none"></a>
+    <a id="downloadReportLink" style="display:none"></a>
+
+</div>
+
+<script>
+
+let controllers = {};
+let isCancelled = {};
+let isPaused = {};
+
+let totalLinksToProcess = 0;
+let linksProcessedCount = 0;
+
+const tempMetadata = new Map();
+
+const urlResultCache = new Map();
+
+/*
+ * Tracks which playlist stream entries have actually finished
+ * processing.
+ *
+ * This is deliberately separate from linksProcessedCount because
+ * concurrent requests can finish out of order.
+ */
+const completedStreamIndices = new Set();
+
+
+/* ============================================================
+   CONTENT TYPE / FORMAT HELPERS
+   ============================================================ */
+
+const CONTENT_TYPE_TO_EXT = {
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/aac': 'aac',
+    'audio/aacp': 'aac',
+    'audio/x-aac': 'aac',
+    'audio/ogg': 'ogg',
+    'application/ogg': 'ogg',
+    'audio/opus': 'opus',
+    'audio/flac': 'flac',
+    'audio/x-flac': 'flac',
+    'audio/wav': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/wave': 'wav',
+    'audio/webm': 'webm',
+    'video/mp2t': 'ts',
+    'application/vnd.apple.mpegurl': 'm3u8',
+    'audio/x-mpegurl': 'm3u8',
+    'audio/mpegurl': 'm3u8',
+    'audio/mp4': 'm4a',
+    'audio/x-m4a': 'm4a'
+};
+
+
+function extFromContentType(ct) {
+
+    if (!ct) return null;
+
+    const clean =
+        ct
+            .toLowerCase()
+            .split(';')[0]
+            .trim();
+
+    return CONTENT_TYPE_TO_EXT[clean] || null;
+}
+
+
+function bitrateFromHeaders(headers) {
+
+    const icyBr =
+        headers.get('icy-br');
+
+    if (icyBr) {
+
+        const n =
+            parseInt(icyBr, 10);
+
+        if (!isNaN(n) && n > 0) {
+            return n;
+        }
+    }
+
+    const audioInfo =
+        headers.get('ice-audio-info');
+
+    if (audioInfo) {
+
+        const match =
+            audioInfo.match(
+                /bitrate=(\d+)/i
+            );
+
+        if (match) {
+
+            const n =
+                parseInt(match[1], 10);
+
+            if (!isNaN(n) && n > 0) {
+                return n;
+            }
+        }
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   MP3
+   ============================================================ */
+
+const MPEG_BITRATE_TABLES = {
+
+    '3_3':
+        [0, 32, 64, 96, 128, 160, 192, 224,
+         256, 288, 320, 352, 384, 416, 448],
+
+    '3_2':
+        [0, 32, 48, 56, 64, 80, 96, 112,
+         128, 160, 192, 224, 256, 320, 384],
+
+    '3_1':
+        [0, 32, 40, 48, 56, 64, 80, 96, 112,
+         128, 160, 192, 224, 256, 320],
+
+    '2_3':
+        [0, 32, 48, 56, 64, 80, 96, 112,
+         128, 144, 160, 176, 192, 224, 256],
+
+    '2_2':
+        [0, 8, 16, 24, 32, 40, 48, 56,
+         64, 80, 96, 112, 128, 144, 160],
+
+    '2_1':
+        [0, 8, 16, 24, 32, 40, 48, 56,
+         64, 80, 96, 112, 128, 144, 160]
+};
+
+
+function findMp3Bitrate(bytes) {
+
+    for (let i = 0; i < bytes.length - 4; i++) {
+
+        if (
+            bytes[i] === 0xFF &&
+            (bytes[i + 1] & 0xE0) === 0xE0
+        ) {
+
+            const versionBits =
+                (bytes[i + 1] >> 3) & 0x3;
+
+            const layerBits =
+                (bytes[i + 1] >> 1) & 0x3;
+
+            if (
+                versionBits === 1 ||
+                layerBits === 0
+            ) {
+                continue;
+            }
+
+            const bitrateIndex =
+                (bytes[i + 2] >> 4) & 0xF;
+
+            const sampleRateIndex =
+                (bytes[i + 2] >> 2) & 0x3;
+
+            if (
+                bitrateIndex === 0 ||
+                bitrateIndex === 15 ||
+                sampleRateIndex === 3
+            ) {
+                continue;
+            }
+
+            const versionGroup =
+                versionBits === 3 ? '3' : '2';
+
+            const table =
+                MPEG_BITRATE_TABLES[
+                    `${versionGroup}_${layerBits}`
+                ];
+
+            if (!table) continue;
+
+            const bitrate =
+                table[bitrateIndex];
+
+            if (bitrate) {
+                return bitrate;
+            }
+        }
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   AAC
+   ============================================================ */
+
+const AAC_SAMPLE_RATES = [
+    96000,
+    88200,
+    64000,
+    48000,
+    44100,
+    32000,
+    24000,
+    22050,
+    16000,
+    12000,
+    11025,
+    8000,
+    7350
+];
+
+
+function findAacBitrate(bytes) {
+
+    for (let i = 0; i < bytes.length - 6; i++) {
+
+        if (
+            bytes[i] === 0xFF &&
+            (bytes[i + 1] & 0xF0) === 0xF0
+        ) {
+
+            const sampleRateIndex =
+                (bytes[i + 2] >> 2) & 0xF;
+
+            if (
+                sampleRateIndex >=
+                AAC_SAMPLE_RATES.length
+            ) {
+                continue;
+            }
+
+            const sampleRate =
+                AAC_SAMPLE_RATES[sampleRateIndex];
+
+            const frameLength =
+                ((bytes[i + 3] & 0x3) << 11) |
+                (bytes[i + 4] << 3) |
+                ((bytes[i + 5] >> 5) & 0x7);
+
+            if (
+                frameLength < 7 ||
+                frameLength > 4096
+            ) {
+                continue;
+            }
+
+            const bitrate =
+                Math.round(
+                    (frameLength * 8 * sampleRate) /
+                    1024 /
+                    1000
+                );
+
+            if (
+                bitrate > 0 &&
+                bitrate < 1000
+            ) {
+                return bitrate;
+            }
+        }
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   OGG / VORBIS / OPUS
+   ============================================================ */
+
+function findOggInfo(bytes) {
+
+    for (let i = 0; i < bytes.length - 27; i++) {
+
+        if (
+            bytes[i] === 0x4F &&
+            bytes[i + 1] === 0x67 &&
+            bytes[i + 2] === 0x67 &&
+            bytes[i + 3] === 0x53
+        ) {
+
+            const pageSegments =
+                bytes[i + 26];
+
+            const segStart =
+                i + 27;
+
+            if (
+                segStart + pageSegments >
+                bytes.length
+            ) {
+                return null;
+            }
+
+            let firstPacketLen = 0;
+
+            for (
+                let s = 0;
+                s < pageSegments;
+                s++
+            ) {
+
+                firstPacketLen +=
+                    bytes[segStart + s];
+
+                if (
+                    bytes[segStart + s] < 255
+                ) {
+                    break;
+                }
+            }
+
+            const dataStart =
+                segStart + pageSegments;
+
+            if (
+                dataStart + firstPacketLen >
+                bytes.length
+            ) {
+                return null;
+            }
+
+            const packet =
+                bytes.subarray(
+                    dataStart,
+                    dataStart + firstPacketLen
+                );
+
+            if (
+                packet.length >= 30 &&
+                packet[0] === 0x01 &&
+                packet[1] === 0x76 &&
+                packet[2] === 0x6F &&
+                packet[3] === 0x72 &&
+                packet[4] === 0x62 &&
+                packet[5] === 0x69 &&
+                packet[6] === 0x73
+            ) {
+
+                const view =
+                    new DataView(
+                        packet.buffer,
+                        packet.byteOffset,
+                        packet.byteLength
+                    );
+
+                const bitrateMax =
+                    view.getInt32(16, true);
+
+                const bitrateNominal =
+                    view.getInt32(20, true);
+
+                const bitrateMin =
+                    view.getInt32(24, true);
+
+                let kbps = null;
+
+                if (bitrateNominal > 0) {
+
+                    kbps =
+                        Math.round(
+                            bitrateNominal / 1000
+                        );
+
+                } else if (bitrateMax > 0) {
+
+                    kbps =
+                        Math.round(
+                            bitrateMax / 1000
+                        );
+
+                } else if (bitrateMin > 0) {
+
+                    kbps =
+                        Math.round(
+                            bitrateMin / 1000
+                        );
+                }
+
+                return {
+                    ext: 'ogg',
+                    bitrate: kbps
+                };
+            }
+
+            if (
+                packet.length >= 8 &&
+                packet[0] === 0x4F &&
+                packet[1] === 0x70 &&
+                packet[2] === 0x75 &&
+                packet[3] === 0x73 &&
+                packet[4] === 0x48 &&
+                packet[5] === 0x65 &&
+                packet[6] === 0x61 &&
+                packet[7] === 0x64
+            ) {
+
+                return {
+                    ext: 'opus',
+                    bitrate: null
+                };
+            }
+
+            return {
+                ext: 'ogg',
+                bitrate: null
+            };
+        }
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   WAV
+   ============================================================ */
+
+function findWavBitrate(bytes) {
+
+    if (bytes.length < 12) {
+        return null;
+    }
+
+    if (
+        !(
+            bytes[0] === 0x52 &&
+            bytes[1] === 0x49 &&
+            bytes[2] === 0x46 &&
+            bytes[3] === 0x46
+        )
+    ) {
+        return null;
+    }
+
+    if (
+        !(
+            bytes[8] === 0x57 &&
+            bytes[9] === 0x41 &&
+            bytes[10] === 0x56 &&
+            bytes[11] === 0x45
+        )
+    ) {
+        return null;
+    }
+
+    let pos = 12;
+
+    while (pos + 8 <= bytes.length) {
+
+        const id =
+            String.fromCharCode(
+                bytes[pos],
+                bytes[pos + 1],
+                bytes[pos + 2],
+                bytes[pos + 3]
+            );
+
+        const size =
+            bytes[pos + 4] |
+            (bytes[pos + 5] << 8) |
+            (bytes[pos + 6] << 16) |
+            (bytes[pos + 7] << 24);
+
+        if (id === 'fmt ') {
+
+            if (
+                pos + 8 + 16 >
+                bytes.length
+            ) {
+                return null;
+            }
+
+            const byteRate =
+                bytes[pos + 16] |
+                (bytes[pos + 17] << 8) |
+                (bytes[pos + 18] << 16) |
+                (bytes[pos + 19] << 24);
+
+            return byteRate > 0
+                ? Math.round((byteRate * 8) / 1000)
+                : null;
+        }
+
+        pos +=
+            8 +
+            size +
+            (size % 2);
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   FLAC
+   ============================================================ */
+
+function findFlacBitrate(bytes) {
+
+    if (bytes.length < 42) {
+        return null;
+    }
+
+    if (
+        !(
+            bytes[0] === 0x66 &&
+            bytes[1] === 0x4C &&
+            bytes[2] === 0x61 &&
+            bytes[3] === 0x43
+        )
+    ) {
+        return null;
+    }
+
+    const blockType =
+        bytes[4] & 0x7F;
+
+    if (blockType !== 0) {
+        return null;
+    }
+
+    const d = 8;
+
+    const minBlock =
+        (bytes[d] << 8) |
+        bytes[d + 1];
+
+    const maxBlock =
+        (bytes[d + 2] << 8) |
+        bytes[d + 3];
+
+    const minFrame =
+        (bytes[d + 4] << 16) |
+        (bytes[d + 5] << 8) |
+        bytes[d + 6];
+
+    const maxFrame =
+        (bytes[d + 7] << 16) |
+        (bytes[d + 8] << 8) |
+        bytes[d + 9];
+
+    const sampleRate =
+        (bytes[d + 10] << 12) |
+        (bytes[d + 11] << 4) |
+        (bytes[d + 12] >> 4);
+
+    const blockSize =
+        maxBlock || minBlock;
+
+    const frameSize =
+        maxFrame || minFrame;
+
+    if (
+        blockSize &&
+        frameSize &&
+        sampleRate
+    ) {
+
+        const kbps =
+            Math.round(
+                (frameSize *
+                 8 *
+                 sampleRate) /
+                blockSize /
+                1000
+            );
+
+        if (
+            kbps > 0 &&
+            kbps < 8000
+        ) {
+            return kbps;
+        }
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   MP4 / M4A
+   ============================================================ */
+
+function readMp4DescriptorLength(bytes, pos) {
+
+    let length = 0;
+    let bytesRead = 0;
+    let b;
+
+    do {
+
+        b = bytes[pos + bytesRead];
+
+        length =
+            (length << 7) |
+            (b & 0x7F);
+
+        bytesRead++;
+
+    } while (
+        (b & 0x80) !== 0 &&
+        bytesRead < 4
+    );
+
+    return {
+        length,
+        bytesRead
+    };
+}
+
+
+function findEsdsBitrate(bytes) {
+
+    try {
+
+        for (
+            let i = 0;
+            i < bytes.length - 4;
+            i++
+        ) {
+
+            if (
+                bytes[i] === 0x65 &&
+                bytes[i + 1] === 0x73 &&
+                bytes[i + 2] === 0x64 &&
+                bytes[i + 3] === 0x73
+            ) {
+
+                let pos =
+                    i + 4 + 4;
+
+                if (
+                    bytes[pos] !== 0x03
+                ) {
+                    continue;
+                }
+
+                pos++;
+
+                let len =
+                    readMp4DescriptorLength(
+                        bytes,
+                        pos
+                    );
+
+                pos +=
+                    len.bytesRead + 2;
+
+                const flags =
+                    bytes[pos];
+
+                pos++;
+
+                if (flags & 0x80) {
+                    pos += 2;
+                }
+
+                if (flags & 0x40) {
+
+                    const urlLen =
+                        bytes[pos];
+
+                    pos +=
+                        1 + urlLen;
+                }
+
+                if (flags & 0x20) {
+                    pos += 2;
+                }
+
+                if (
+                    bytes[pos] !== 0x04
+                ) {
+                    continue;
+                }
+
+                pos++;
+
+                len =
+                    readMp4DescriptorLength(
+                        bytes,
+                        pos
+                    );
+
+                pos +=
+                    len.bytesRead;
+
+                pos +=
+                    1 + 1 + 3;
+
+                if (
+                    pos + 8 >
+                    bytes.length
+                ) {
+                    return null;
+                }
+
+                const maxBitrate =
+                    (
+                        (bytes[pos] << 24) |
+                        (bytes[pos + 1] << 16) |
+                        (bytes[pos + 2] << 8) |
+                        bytes[pos + 3]
+                    ) >>> 0;
+
+                const avgBitrate =
+                    (
+                        (bytes[pos + 4] << 24) |
+                        (bytes[pos + 5] << 16) |
+                        (bytes[pos + 6] << 8) |
+                        bytes[pos + 7]
+                    ) >>> 0;
+
+                const kbps =
+                    avgBitrate
+                        ? Math.round(avgBitrate / 1000)
+                        : (
+                            maxBitrate
+                                ? Math.round(maxBitrate / 1000)
+                                : null
+                        );
+
+                if (
+                    kbps > 0 &&
+                    kbps < 2000
+                ) {
+                    return kbps;
+                }
+            }
+        }
+
+    } catch (e) {
+        /* Partial/malformed MP4 data. */
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   FORMAT SNIFFING
+   ============================================================ */
+
+function sniffFormatFromBytes(bytes) {
+
+    if (bytes.length < 4) {
+        return null;
+    }
+
+    if (
+        bytes[0] === 0x4F &&
+        bytes[1] === 0x67 &&
+        bytes[2] === 0x67 &&
+        bytes[3] === 0x53
+    ) {
+        return 'ogg';
+    }
+
+    if (
+        bytes.length >= 12 &&
+        bytes[0] === 0x52 &&
+        bytes[1] === 0x49 &&
+        bytes[2] === 0x46 &&
+        bytes[3] === 0x46 &&
+        bytes[8] === 0x57 &&
+        bytes[9] === 0x41 &&
+        bytes[10] === 0x56 &&
+        bytes[11] === 0x45
+    ) {
+        return 'wav';
+    }
+
+    if (
+        bytes[0] === 0x66 &&
+        bytes[1] === 0x4C &&
+        bytes[2] === 0x61 &&
+        bytes[3] === 0x43
+    ) {
+        return 'flac';
+    }
+
+    if (
+        bytes[0] === 0xFF &&
+        (bytes[1] & 0xE0) === 0xE0
+    ) {
+        return 'mp3';
+    }
+
+    if (
+        bytes[0] === 0xFF &&
+        (bytes[1] & 0xF0) === 0xF0
+    ) {
+        return 'aac';
+    }
+
+    if (
+        bytes[0] === 0x1A &&
+        bytes[1] === 0x45 &&
+        bytes[2] === 0xDF &&
+        bytes[3] === 0xA3
+    ) {
+        return 'webm';
+    }
+
+    if (bytes.length >= 8) {
+
+        const boxType =
+            String.fromCharCode(
+                bytes[4],
+                bytes[5],
+                bytes[6],
+                bytes[7]
+            );
+
+        if (
+            [
+                'ftyp',
+                'moov',
+                'free',
+                'moof',
+                'mdat',
+                'styp',
+                'skip',
+                'wide'
+            ].includes(boxType)
+        ) {
+            return 'm4a';
+        }
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   STREAM SNIFFING
+   ============================================================ */
+
+async function sniffAudioStream(
+    reader,
+    knownExt
+) {
+
+    const maxBytes = 131072;
+
+    let buf =
+        new Uint8Array(0);
+
+    let ext =
+        knownExt || null;
+
+    let bitrate = null;
+
+    try {
+
+        while (
+            buf.length < maxBytes
+        ) {
+
+            const {
+                done,
+                value
+            } = await reader.read();
+
+            if (
+                done ||
+                !value
+            ) {
+                break;
+            }
+
+            const combined =
+                new Uint8Array(
+                    buf.length +
+                    value.length
+                );
+
+            combined.set(buf, 0);
+            combined.set(value, buf.length);
+
+            buf = combined;
+
+            if (!ext) {
+                ext =
+                    sniffFormatFromBytes(buf);
+            }
+
+            switch (ext) {
+
+                case 'mp3':
+                    bitrate =
+                        findMp3Bitrate(buf);
+                    break;
+
+                case 'aac':
+                    bitrate =
+                        findAacBitrate(buf);
+                    break;
+
+                case 'wav':
+                    bitrate =
+                        findWavBitrate(buf);
+                    break;
+
+                case 'flac':
+                    bitrate =
+                        findFlacBitrate(buf);
+                    break;
+
+                case 'm4a':
+                    bitrate =
+                        findEsdsBitrate(buf);
+                    break;
+
+                case 'ogg': {
+
+                    const info =
+                        findOggInfo(buf);
+
+                    if (info) {
+
+                        ext =
+                            info.ext;
+
+                        bitrate =
+                            info.bitrate;
+                    }
+
+                    break;
+                }
+
+                default:
+                    break;
+            }
+
+            if (
+                bitrate ||
+                ext === 'webm' ||
+                ext === 'opus' ||
+                ext === 'ts' ||
+                ext === 'm3u8'
+            ) {
+                break;
+            }
+        }
+
+    } catch (e) {
+        /*
+         * Abort/network failure.
+         * Return whatever metadata was already detected.
+         */
+    }
+
+    return {
+        ext,
+        bitrate
+    };
+}
+
+
+/* ============================================================
+   UI SETTINGS
+   ============================================================ */
+
+function getSettings() {
+
+    const concurrency =
+        Math.max(
+            1,
+            Math.min(
+                50,
+                parseInt(
+                    document.getElementById(
+                        'concurrencyInput'
+                    ).value,
+                    10
+                ) || 10
+            )
+        );
+
+    const timeout =
+        Math.max(
+            1000,
+            Math.min(
+                120000,
+                parseInt(
+                    document.getElementById(
+                        'timeoutInput'
+                    ).value,
+                    10
+                ) || 24000
+            )
+        );
+
+    const retry =
+        document.getElementById(
+            'retryCheckbox'
+        ).checked;
+
+    const corsFallback =
+        document.getElementById(
+            'corsFallbackCheckbox'
+        ).checked;
+
+    const dedupe =
+        document.getElementById(
+            'dedupeCheckbox'
+        ).checked;
+
+    return {
+        concurrency,
+        timeout,
+        retry,
+        corsFallback,
+        dedupe
+    };
+}
+
+
+function setCurrentChecking(message) {
+
+    const el =
+        document.getElementById(
+            'currentChecking'
+        );
+
+    el.textContent = '';
+
+    String(message)
+        .split('\n')
+        .forEach(line => {
+
+            const lineEl =
+                document.createElement(
+                    'div'
+                );
+
+            lineEl.className =
+                'checking-line';
+
+            lineEl.textContent =
+                line;
+
+            lineEl.title =
+                line;
+
+            el.appendChild(lineEl);
+        });
+}
+
+
+function setDisplayStates(checkingInProgress) {
+
+    const outputElement =
+        document.getElementById('output');
+
+    const currentCheckingElement =
+        document.getElementById(
+            'currentChecking'
+        );
+
+    if (checkingInProgress) {
+
+        outputElement.style.display =
+            'none';
+
+        currentCheckingElement.style.display =
+            'block';
+
+    } else {
+
+        outputElement.style.display =
+            'block';
+
+        currentCheckingElement.style.display =
+            'none';
+    }
+}
+
+
+function toggleButtons(type, checking) {
+
+    document.getElementById(
+        `${type}CheckButton`
+    ).style.display =
+        checking ? 'none' : 'flex';
+
+    document.getElementById(
+        `${type}CancelButton`
+    ).style.display =
+        checking ? 'flex' : 'none';
+
+    const pauseButton =
+        document.getElementById(
+            `${type}PauseButton`
+        );
+
+    if (pauseButton) {
+
+        pauseButton.style.display =
+            checking ? 'flex' : 'none';
+
+        if (checking) {
+            pauseButton.textContent =
+                'Pause';
+        }
+    }
+
+    setDisplayStates(checking);
+
+    const otherTypes =
+        ['file', 'url', 'text']
+            .filter(
+                t => t !== type
+            );
+
+    otherTypes.forEach(otherType => {
+
+        const checkButton =
+            document.getElementById(
+                `${otherType}CheckButton`
+            );
+
+        if (checkButton) {
+            checkButton.disabled =
+                checking;
+        }
+    });
+
+    document.getElementById(
+        'fileInput'
+    ).disabled = checking;
+
+    document.getElementById(
+        'urlInput'
+    ).disabled = checking;
+
+    document.getElementById(
+        'textInput'
+    ).disabled = checking;
+
+    document.getElementById(
+        'concurrencyInput'
+    ).disabled = checking;
+
+    document.getElementById(
+        'timeoutInput'
+    ).disabled = checking;
+
+    document.getElementById(
+        'retryCheckbox'
+    ).disabled = checking;
+
+    document.getElementById(
+        'corsFallbackCheckbox'
+    ).disabled = checking;
+
+    document.getElementById(
+        'dedupeCheckbox'
+    ).disabled = checking;
+}
+
+
+function resetOutput() {
+
+    document.getElementById(
+        'output'
+    ).value = '';
+
+    document.getElementById(
+        'downloadButton'
+    ).style.display = 'none';
+
+    document.getElementById(
+        'downloadReportButton'
+    ).style.display = 'none';
+
+    setCurrentChecking('');
+
+    document.getElementById(
+        'summaryLine'
+    ).textContent = '';
+
+    setDisplayStates(false);
+
+    totalLinksToProcess = 0;
+    linksProcessedCount = 0;
+
+    tempMetadata.clear();
+    urlResultCache.clear();
+
+    completedStreamIndices.clear();
+}
+
+
+/* ============================================================
+   PROGRESS
+   ============================================================ */
+
+function updateCheckingStatus(
+    currentItemTitle,
+    currentItemUrl,
+    embeddedCount,
+    failedCount
+) {
+
+    linksProcessedCount++;
+
+    let message =
+        `Processing link ${linksProcessedCount} of ${totalLinksToProcess}:`;
+
+    if (
+        currentItemTitle &&
+        currentItemTitle.trim() !== ''
+    ) {
+
+        const match =
+            currentItemTitle.match(
+                /,(.*?)$/
+            );
+
+        message +=
+            `\n${
+                match
+                    ? match[1].trim()
+                    : currentItemTitle
+                        .replace(
+                            /^#EXTINF.*?,/,
+                            ''
+                        )
+                        .trim()
+            }`;
+    }
+
+    message +=
+        `\n${currentItemUrl}`;
+
+    setCurrentChecking(message);
+
+    document.getElementById(
+        'summaryLine'
+    ).textContent =
+        `Processed ${linksProcessedCount}/${totalLinksToProcess} — ` +
+        `${embeddedCount} metadata found, ` +
+        `${failedCount} failed`;
+}
+
+
+/* ============================================================
+   SINGLE METADATA ATTEMPT
+   ============================================================ */
+
+async function attemptMetadata(
+    url,
+    timeoutMs
+) {
+
+    const controller =
+        new AbortController();
+
+    controllers[url] =
+        controller;
+
+    const timeoutId =
+        setTimeout(
+            () => controller.abort(),
+            timeoutMs
+        );
+
+    try {
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: 'GET',
+                    signal: controller.signal,
+                    cache: 'no-store',
+                    redirect: 'follow'
+                }
+            );
+
+        if (!response.ok) {
+
+            return {
+                ok: false,
+                status: response.status,
+                ext: null,
+                bitrate: null
+            };
+        }
+
+        let ext =
+            extFromContentType(
+                response.headers.get(
+                    'content-type'
+                )
+            );
+
+        let bitrate =
+            bitrateFromHeaders(
+                response.headers
+            );
+
+        if (
+            !bitrate &&
+            response.body
+        ) {
+
+            const sniffed =
+                await sniffAudioStream(
+                    response.body.getReader(),
+                    ext
+                );
+
+            if (!ext) {
+                ext =
+                    sniffed.ext;
+            }
+
+            if (!bitrate) {
+                bitrate =
+                    sniffed.bitrate;
+            }
+        }
+
+        return {
+            ok: true,
+            status: response.status,
+            ext,
+            bitrate
+        };
+
+    } catch (error) {
+
+        if (
+            error.name === 'AbortError'
+        ) {
+
+            return {
+                ok: false,
+                status: 'timeout',
+                ext: null,
+                bitrate: null
+            };
+        }
+
+        return {
+            ok: false,
+            status: 'network-error',
+            ext: null,
+            bitrate: null
+        };
+
+    } finally {
+
+        clearTimeout(timeoutId);
+
+        delete controllers[url];
+    }
+}
+
+
+/* ============================================================
+   CORS FALLBACK
+   ============================================================ */
+
+async function attemptCorsFallback(
+    url,
+    timeoutMs
+) {
+
+    const controller =
+        new AbortController();
+
+    controllers[url] =
+        controller;
+
+    const timeoutId =
+        setTimeout(
+            () => controller.abort(),
+            timeoutMs
+        );
+
+    try {
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    signal: controller.signal,
+                    cache: 'no-store'
+                }
+            );
+
+        if (
+            response.type === 'opaque'
+        ) {
+
+            return {
+                ok: true,
+                corsBlocked: true,
+                status: 'reachable-cors-blocked',
+                ext: null,
+                bitrate: null
+            };
+        }
+
+        return {
+            ok: true,
+            corsBlocked: false,
+            status: response.status,
+            ext: null,
+            bitrate: null
+        };
+
+    } catch (error) {
+
+        if (
+            error.name === 'AbortError'
+        ) {
+
+            return {
+                ok: false,
+                status: 'timeout',
+                ext: null,
+                bitrate: null
+            };
+        }
+
+        return {
+            ok: false,
+            status: 'network-error',
+            ext: null,
+            bitrate: null
+        };
+
+    } finally {
+
+        clearTimeout(timeoutId);
+
+        delete controllers[url];
+    }
+}
+
+
+/* ============================================================
+   FULL METADATA CHECK
+   ============================================================ */
+
+async function checkUrl(
+    url,
+    type,
+    settings
+) {
+
+    if (isCancelled[type]) {
+
+        return {
+            ok: false,
+            status: 'cancelled'
+        };
+    }
+
+    let result =
+        await attemptMetadata(
+            url,
+            settings.timeout
+        );
+
+    if (
+        result.ok &&
+        (result.ext || result.bitrate)
+    ) {
+        return result;
+    }
+
+    if (
+        result.ok &&
+        !result.ext &&
+        !result.bitrate
+    ) {
+
+        if (
+            settings.retry &&
+            !isCancelled[type]
+        ) {
+
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        400
+                    )
+            );
+
+            const retryResult =
+                await attemptMetadata(
+                    url,
+                    settings.timeout
+                );
+
+            if (
+                retryResult.ok &&
+                (
+                    retryResult.ext ||
+                    retryResult.bitrate
+                )
+            ) {
+                return retryResult;
+            }
+
+            if (retryResult.ok) {
+                return retryResult;
+            }
+        }
+
+        return result;
+    }
+
+    if (
+        settings.corsFallback &&
+        !isCancelled[type]
+    ) {
+
+        const corsResult =
+            await attemptCorsFallback(
+                url,
+                settings.timeout
+            );
+
+        if (
+            corsResult.ok &&
+            corsResult.corsBlocked
+        ) {
+
+            return corsResult;
+        }
+    }
+
+    if (
+        settings.retry &&
+        !isCancelled[type]
+    ) {
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    400
+                )
+        );
+
+        result =
+            await attemptMetadata(
+                url,
+                settings.timeout
+            );
+    }
+
+    return result;
+}
+
+
+/* ============================================================
+   SINGLE LINK
+   ============================================================ */
+
+async function checkSingleLink(
+    item,
+    type,
+    settings
+) {
+
+    if (isCancelled[type]) {
+
+        return {
+            url: item.url,
+            ok: false,
+            status: 'cancelled'
+        };
+    }
+
+    while (
+        isPaused[type] &&
+        !isCancelled[type]
+    ) {
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    200
+                )
+        );
+    }
+
+    if (isCancelled[type]) {
+
+        return {
+            url: item.url,
+            ok: false,
+            status: 'cancelled'
+        };
+    }
+
+    let result;
+
+    if (
+        settings.dedupe &&
+        urlResultCache.has(item.url)
+    ) {
+
+        result =
+            urlResultCache.get(
+                item.url
+            );
+
+    } else {
+
+        result =
+            await checkUrl(
+                item.url,
+                type,
+                settings
+            );
+
+        if (settings.dedupe) {
+
+            urlResultCache.set(
+                item.url,
+                result
+            );
+        }
+    }
+
+    return {
+        url: item.url,
+        ...result
+    };
+}
+
+
+/* ============================================================
+   EMBED METADATA
+   ============================================================ */
+
+function embedMetadata(
+    titleLine,
+    ext,
+    bitrate
+) {
+
+    let cleanTitle =
+        titleLine.replace(
+            /\s+-\s+(?:mp3|aac|ogg|opus|wav|flac|webm|ts|m3u8|m4a)(?:\s+-\s+\d+kb)?$/i,
+            ''
+        );
+
+    cleanTitle =
+        cleanTitle.replace(
+            /\s+-\s+\d+kb$/i,
+            ''
+        );
+
+    let suffix = '';
+
+    if (
+        ext &&
+        bitrate
+    ) {
+
+        suffix =
+            ` - ${ext} - ${bitrate}kb`;
+
+    } else if (ext) {
+
+        suffix =
+            ` - ${ext}`;
+
+    } else if (bitrate) {
+
+        suffix =
+            ` - ${bitrate}kb`;
+    }
+
+    return cleanTitle + suffix;
+}
+
+
+/* ============================================================
+   REASON
+   ============================================================ */
+
+function describeReason(result) {
+
+    if (!result) {
+        return 'unknown';
+    }
+
+    if (
+        result.status ===
+        'timeout'
+    ) {
+        return 'timed out';
+    }
+
+    if (
+        result.status ===
+        'network-error'
+    ) {
+        return 'network error / dead';
+    }
+
+    if (
+        result.status ===
+        'cancelled'
+    ) {
+        return 'cancelled';
+    }
+
+    if (
+        result.status ===
+        'reachable-cors-blocked'
+    ) {
+        return 'reachable but CORS-blocked; metadata unavailable';
+    }
+
+    if (
+        typeof result.status ===
+        'number'
+    ) {
+        return `HTTP ${result.status}`;
+    }
+
+    if (
+        result.ok &&
+        !result.ext &&
+        !result.bitrate
+    ) {
+        return 'reachable, but no recognizable metadata found';
+    }
+
+    return String(
+        result.status || 'unknown'
+    );
+}
+
+
+/* ============================================================
+   FIND PARTIAL PLAYLIST CUTOFF
+   ============================================================ */
+
+/*
+ * When cancelled, only include the playlist through the last
+ * stream whose check has actually completed in playlist order.
+ *
+ * Example:
+ *
+ *   stream 1  checked
+ *   stream 2  checked
+ *   stream 3  checked
+ *   stream 4  currently running
+ *   stream 5  not started
+ *
+ * Output contains streams 1-3 only.
+ *
+ * With concurrency, a later stream may finish before an earlier
+ * one. We deliberately do NOT include that later stream because
+ * doing so would make the partial playlist jump over an unchecked
+ * stream.
+ */
+function getCompletedPlaylistCutoff(
+    originalLines,
+    linksToProcess
+) {
+
+    if (
+        !linksToProcess.length
+    ) {
+        return originalLines.length - 1;
+    }
+
+    let lastCompletedLineIndex = -1;
+
+    for (
+        let i = 0;
+        i < linksToProcess.length;
+        i++
+    ) {
+
+        const item =
+            linksToProcess[i];
+
+        if (
+            !completedStreamIndices.has(
+                item.originalIndex
+            )
+        ) {
+            break;
+        }
+
+        lastCompletedLineIndex =
+            item.originalIndex;
+    }
+
+    return lastCompletedLineIndex;
+}
+
+
+/* ============================================================
+   BUILD PLAYLIST
+   ============================================================ */
+
+function buildOutputPlaylist(
+    originalLines,
+    linksToProcess,
+    wasCancelled
+) {
+
+    let cutoffIndex =
+        originalLines.length - 1;
+
+    if (wasCancelled) {
+
+        cutoffIndex =
+            getCompletedPlaylistCutoff(
+                originalLines,
+                linksToProcess
+            );
+    }
+
+    /*
+     * If cancellation happened before even the first stream
+     * completed, there is no checked stream to include.
+     *
+     * Keep only lines before the first stream. This preserves
+     * #EXTM3U and any playlist-level metadata.
+     */
+    if (
+        wasCancelled &&
+        cutoffIndex < 0 &&
+        linksToProcess.length > 0
+    ) {
+
+        cutoffIndex =
+            linksToProcess[0].originalIndex - 1;
+    }
+
+    const finalOutputLines = [];
+
+    let updatedCount = 0;
+
+    for (
+        let i = 0;
+        i < originalLines.length;
+        i++
+    ) {
+
+        if (
+            i > cutoffIndex
+        ) {
+            break;
+        }
+
+        const rawLine =
+            originalLines[i];
+
+        const line =
+            rawLine.trim();
+
+        if (
+            line === ''
+        ) {
+            continue;
+        }
+
+        if (
+            line.startsWith('#EXTINF') &&
+            tempMetadata.has(i)
+        ) {
+
+            const {
+                ext,
+                bitrate
+            } =
+                tempMetadata.get(i);
+
+            const newLine =
+                embedMetadata(
+                    line,
+                    ext,
+                    bitrate
+                );
+
+            if (
+                newLine !== line
+            ) {
+                updatedCount++;
+            }
+
+            finalOutputLines.push(
+                newLine
+            );
+
+        } else {
+
+            finalOutputLines.push(
+                line
+            );
+        }
+    }
+
+    if (
+        !finalOutputLines.length ||
+        !finalOutputLines[0]
+            .startsWith('#EXTM3U')
+    ) {
+
+        finalOutputLines.unshift(
+            '#EXTM3U'
+        );
+    }
+
+    return {
+        text:
+            finalOutputLines.join('\n'),
+
+        updatedCount,
+
+        cutoffIndex
+    };
+}
+
+
+/* ============================================================
+   MAIN PROCESSOR
+   ============================================================ */
+
+async function processLinks(
+    m3uContent,
+    type,
+    originalFileName =
+        'embedded_playlist.m3u'
+) {
+
+    resetOutput();
+
+    toggleButtons(
+        type,
+        true
+    );
+
+    isCancelled[type] =
+        false;
+
+    isPaused[type] =
+        false;
+
+    const settings =
+        getSettings();
+
+    setCurrentChecking(
+        'Starting metadata embed...'
+    );
+
+    const originalLines =
+        m3uContent.split('\n');
+
+    const linksToProcess = [];
+
+    let currentTitle = '';
+    let currentTitleLineIndex = -1;
+
+    for (
+        let i = 0;
+        i < originalLines.length;
+        i++
+    ) {
+
+        const line =
+            originalLines[i].trim();
+
+        if (
+            line.startsWith('#EXTINF')
+        ) {
+
+            currentTitle =
+                line;
+
+            currentTitleLineIndex =
+                i;
+
+        } else if (
+            line.startsWith('http')
+        ) {
+
+            linksToProcess.push({
+
+                title:
+                    currentTitle,
+
+                url:
+                    line,
+
+                originalIndex:
+                    i,
+
+                originalTitleLineIndex:
+                    currentTitleLineIndex
+            });
+
+            currentTitle = '';
+            currentTitleLineIndex = -1;
+        }
+    }
+
+    totalLinksToProcess =
+        linksToProcess.length;
+
+    linksProcessedCount = 0;
+
+    if (
+        totalLinksToProcess === 0
+    ) {
+
+        setCurrentChecking(
+            'No stream links found in the M3U content.'
+        );
+
+        let outputContent =
+            originalLines
+                .filter(
+                    line =>
+                        line.trim() !== ''
+                )
+                .join('\n');
+
+        if (
+            outputContent.trim() === '' ||
+            !outputContent
+                .trim()
+                .startsWith('#EXTM3U')
+        ) {
+
+            outputContent =
+                '#EXTM3U\n' +
+                outputContent;
+        }
+
+        document.getElementById(
+            'output'
+        ).value =
+            outputContent;
+
+        toggleButtons(
+            type,
+            false
+        );
+
+        return;
+    }
+
+
+    let embeddedCount = 0;
+    let failedCount = 0;
+
+    const failedMetadata = [];
+
+    const activePromises =
+        new Set();
+
+
+    for (
+        let i = 0;
+        i < linksToProcess.length;
+        i++
+    ) {
+
+        if (
+            isCancelled[type]
+        ) {
+            break;
+        }
+
+        const item =
+            linksToProcess[i];
+
+        const promise =
+            checkSingleLink(
+                item,
+                type,
+                settings
+            )
+            .then(result => {
+
+                /*
+                 * This stream has finished checking.
+                 *
+                 * It is recorded even when it failed, because
+                 * "checked" means the operation actually reached
+                 * a final result, not necessarily that metadata
+                 * was found.
+                 */
+                if (
+                    result &&
+                    result.status !== 'cancelled'
+                ) {
+
+                    completedStreamIndices.add(
+                        item.originalIndex
+                    );
+                }
+
+                if (
+                    isCancelled[type]
+                ) {
+                    /*
+                     * Do not add cancellation itself to the
+                     * failure report.
+                     */
+                }
+
+                else if (
+                    result &&
+                    result.ok &&
+                    (
+                        result.ext ||
+                        result.bitrate
+                    )
+                ) {
+
+                    embeddedCount++;
+
+                    tempMetadata.set(
+                        item.originalTitleLineIndex,
+                        {
+                            ext:
+                                result.ext,
+
+                            bitrate:
+                                result.bitrate
+                        }
+                    );
+
+                }
+
+                else {
+
+                    failedCount++;
+
+                    failedMetadata.push({
+
+                        title:
+                            item.title
+                                ? item.title
+                                    .replace(
+                                        /^#EXTINF.*?,/,
+                                        ''
+                                    )
+                                    .trim()
+                                : '',
+
+                        url:
+                            item.url,
+
+                        reason:
+                            describeReason(
+                                result
+                            )
+                    });
+                }
+
+                activePromises.delete(
+                    promise
+                );
+
+                updateCheckingStatus(
+                    item.title,
+                    item.url,
+                    embeddedCount,
+                    failedCount
+                );
+
+                return result;
+            });
+
+        activePromises.add(
+            promise
+        );
+
+        if (
+            activePromises.size >=
+            settings.concurrency
+        ) {
+
+            await Promise.race(
+                Array.from(
+                    activePromises
+                )
+            );
+        }
+    }
+
+    /*
+     * Let requests that were already started finish.
+     *
+     * Cancellation prevents new requests from starting, but
+     * already-running requests may still produce a completed
+     * result. Those results are considered checked.
+     */
+    await Promise.allSettled(
+        Array.from(
+            activePromises
+        )
+    );
+
+
+    /* ========================================================
+       BUILD OUTPUT
+       ======================================================== */
+
+    const wasCancelled =
+        !!isCancelled[type];
+
+    const playlist =
+        buildOutputPlaylist(
+            originalLines,
+            linksToProcess,
+            wasCancelled
+        );
+
+    const finalText =
+        playlist.text;
+
+    document.getElementById(
+        'output'
+    ).value =
+        finalText;
+
+    toggleButtons(
+        type,
+        false
+    );
+
+
+    /* ========================================================
+       SUMMARY
+       ======================================================== */
+
+    if (wasCancelled) {
+
+        const checkedCount =
+            completedStreamIndices.size;
+
+        const includedCount =
+            linksToProcess.reduce(
+                (count, item, index) => {
+
+                    let included = true;
+
+                    for (
+                        let j = 0;
+                        j <= index;
+                        j++
+                    ) {
+
+                        if (
+                            !completedStreamIndices.has(
+                                linksToProcess[j]
+                                    .originalIndex
+                            )
+                        ) {
+                            included = false;
+                            break;
+                        }
+                    }
+
+                    if (included) {
+                        return count + 1;
+                    }
+
+                    return count;
+                },
+                0
+            );
+
+        setCurrentChecking(
+            `Embedding cancelled. ` +
+            `Showing ${includedCount} checked ` +
+            `stream${includedCount === 1 ? '' : 's'} ` +
+            `in the partial playlist.`
+        );
+
+        document.getElementById(
+            'summaryLine'
+        ).textContent =
+            `Cancelled: ${includedCount}/${totalLinksToProcess} ` +
+            `streams included — ` +
+            `${playlist.updatedCount} metadata embedded.`;
+
+    } else {
+
+        setCurrentChecking(
+            `Done. Embedded metadata for ` +
+            `${playlist.updatedCount} of ` +
+            `${totalLinksToProcess} streams.`
+        );
+
+        document.getElementById(
+            'summaryLine'
+        ).textContent =
+            `Done: ${playlist.updatedCount} metadata embedded, ` +
+            `${failedMetadata.length} failed, ` +
+            `${totalLinksToProcess} total.`;
+    }
+
+
+    /* ========================================================
+       PLAYLIST DOWNLOAD
+       ======================================================== */
+
+    const blob =
+        new Blob(
+            [finalText],
+            {
+                type:
+                    'audio/x-mpegurl'
+            }
+        );
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+    const downloadLink =
+        document.getElementById(
+            'downloadLink'
+        );
+
+    downloadLink.href =
+        url;
+
+    downloadLink.download =
+        getOutputFileName(
+            type,
+            originalFileName
+        );
+
+    document.getElementById(
+        'downloadButton'
+    ).style.display =
+        'block';
+
+
+    /* ========================================================
+       REPORT DOWNLOAD
+       ======================================================== */
+
+    if (
+        failedMetadata.length > 0
+    ) {
+
+        const reportLines =
+            failedMetadata.map(
+                item => {
+
+                    const name =
+                        item.title
+                            ? item.title
+                            : '(no title)';
+
+                    return (
+                        `${name}\n` +
+                        `${item.url}\n` +
+                        `reason: ${item.reason}\n`
+                    );
+                }
+            );
+
+        const reportBlob =
+            new Blob(
+                [
+                    reportLines.join('\n')
+                ],
+                {
+                    type:
+                        'text/plain'
+                }
+            );
+
+        const reportUrl =
+            URL.createObjectURL(
+                reportBlob
+            );
+
+        const reportLink =
+            document.getElementById(
+                'downloadReportLink'
+            );
+
+        reportLink.href =
+            reportUrl;
+
+        reportLink.download =
+            getOutputFileName(
+                type,
+                originalFileName
+            )
+            .replace(
+                /\.m3u8?$/,
+                ''
+            ) +
+            '_metadata_report.txt';
+
+        document.getElementById(
+            'downloadReportButton'
+        ).style.display =
+            'block';
+
+    } else {
+
+        document.getElementById(
+            'downloadReportButton'
+        ).style.display =
+            'none';
+    }
+}
+
+
+/* ============================================================
+   OUTPUT FILENAME
+   ============================================================ */
+
+function getOutputFileName(
+    type,
+    originalName
+) {
+
+    let baseName =
+        originalName;
+
+    if (
+        type === 'file'
+    ) {
+
+        const fileInput =
+            document.getElementById(
+                'fileInput'
+            );
+
+        if (
+            fileInput.files.length > 0
+        ) {
+
+            baseName =
+                fileInput.files[0].name;
+        }
+
+    } else if (
+        type === 'url'
+    ) {
+
+        const urlInput =
+            document.getElementById(
+                'urlInput'
+            ).value.trim();
+
+        try {
+
+            const url =
+                new URL(
+                    urlInput
+                );
+
+            const pathParts =
+                url.pathname.split('/');
+
+            baseName =
+                pathParts[
+                    pathParts.length - 1
+                ] ||
+                'playlist.m3u';
+
+            baseName =
+                baseName.split('?')[0];
+
+        } catch (e) {
+
+            baseName =
+                'playlist.m3u';
+        }
+
+    } else {
+
+        baseName =
+            'pasted_streams.m3u';
+    }
+
+
+    if (
+        !baseName.endsWith('.m3u') &&
+        !baseName.endsWith('.m3u8')
+    ) {
+
+        baseName += '.m3u';
+    }
+
+
+    const lastDotIndex =
+        baseName.lastIndexOf('.');
+
+    if (
+        lastDotIndex !== -1
+    ) {
+
+        return (
+            baseName.substring(
+                0,
+                lastDotIndex
+            ) +
+            '_embedded' +
+            baseName.substring(
+                lastDotIndex
+            )
+        );
+    }
+
+    return (
+        baseName +
+        '_embedded.m3u'
+    );
+}
+
+
+/* ============================================================
+   LOCAL FILE
+   ============================================================ */
+
+async function processM3U() {
+
+    const fileInput =
+        document.getElementById(
+            'fileInput'
+        );
+
+    if (
+        !fileInput.files.length
+    ) {
+
+        return alert(
+            'Please upload an M3U file.'
+        );
+    }
+
+    const fileName =
+        fileInput.files[0].name;
+
+    const text =
+        await fileInput.files[0].text();
+
+    await processLinks(
+        text,
+        'file',
+        fileName
+    );
+}
+
+
+/* ============================================================
+   GITHUB URL NORMALIZATION
+   ============================================================ */
+
+function normalizeOnlineM3UUrl(
+    inputUrl
+) {
+
+    let url;
+
+    try {
+
+        url =
+            new URL(
+                inputUrl
+            );
+
+    } catch (error) {
+
+        throw new Error(
+            'Invalid URL.'
+        );
+    }
+
+
+    if (
+        url.protocol !== 'http:' &&
+        url.protocol !== 'https:'
+    ) {
+
+        throw new Error(
+            'Only HTTP and HTTPS URLs are supported.'
+        );
+    }
+
+
+    if (
+        url.hostname.toLowerCase() ===
+        'github.com'
+    ) {
+
+        const parts =
+            url.pathname
+                .split('/')
+                .filter(Boolean);
+
+        if (
+            parts.length >= 5 &&
+            parts[2].toLowerCase() ===
+            'raw'
+        ) {
+
+            const owner =
+                parts[0];
+
+            const repo =
+                parts[1];
+
+            const rest =
+                parts.slice(3);
+
+            return (
+                `https://raw.githubusercontent.com/` +
+                `${owner}/${repo}/` +
+                `${rest.join('/')}` +
+                `${url.search}` +
+                `${url.hash}`
+            );
+        }
+    }
+
+    return url.href;
+}
+
+
+/* ============================================================
+   ONLINE PLAYLIST FETCH
+   ============================================================ */
+
+async function fetchOnlineM3U(
+    inputUrl,
+    signal
+) {
+
+    const normalizedUrl =
+        normalizeOnlineM3UUrl(
+            inputUrl
+        );
+
+    const urlsToTry =
+        [normalizedUrl];
+
+
+    if (
+        normalizedUrl !== inputUrl
+    ) {
+
+        urlsToTry.push(
+            inputUrl
+        );
+    }
+
+
+    let lastError =
+        null;
+
+
+    for (
+        const url of urlsToTry
+    ) {
+
+        try {
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: 'GET',
+                        signal,
+                        cache: 'no-store',
+                        redirect: 'follow'
+                    }
+                );
+
+            if (
+                !response.ok
+            ) {
+
+                throw new Error(
+                    `HTTP ${response.status} ${response.statusText}`
+                );
+            }
+
+            const text =
+                await response.text();
+
+            if (
+                !text.trim()
+            ) {
+
+                throw new Error(
+                    'The fetched playlist is empty.'
+                );
+            }
+
+            const trimmed =
+                text.trim();
+
+            if (
+                !trimmed.startsWith('#EXTM3U') &&
+                !trimmed.includes('\nhttp') &&
+                !trimmed.includes('\r\nhttp')
+            ) {
+
+                throw new Error(
+                    'The fetched content does not appear to be an M3U playlist.'
+                );
+            }
+
+            return {
+                text,
+                fetchedUrl: url
+            };
+
+        } catch (error) {
+
+            if (
+                error.name ===
+                'AbortError'
+            ) {
+
+                throw error;
+            }
+
+            lastError =
+                error;
+        }
+    }
+
+
+    if (lastError) {
+
+        throw new Error(
+            `Unable to fetch the playlist. ` +
+            `${lastError.message} ` +
+            `The remote server may block browser CORS requests.`
+        );
+    }
+
+    throw new Error(
+        'Unable to fetch the playlist.'
+    );
+}
+
+
+/* ============================================================
+   ONLINE PLAYLIST
+   ============================================================ */
+
+async function processOnlineM3U() {
+
+    const urlInput =
+        document.getElementById(
+            'urlInput'
+        ).value.trim();
+
+    if (!urlInput) {
+
+        return alert(
+            'Please enter an online M3U URL.'
+        );
+    }
+
+
+    let normalizedUrl;
+
+    try {
+
+        normalizedUrl =
+            normalizeOnlineM3UUrl(
+                urlInput
+            );
+
+    } catch (error) {
+
+        alert(
+            `Error fetching online M3U file: ${error.message}`
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const controller =
+            new AbortController();
+
+        controllers['urlFetch'] =
+            controller;
+
+
+        setCurrentChecking(
+
+            normalizedUrl !== urlInput
+
+                ? `Fetching GitHub raw playlist...\n${normalizedUrl}`
+
+                : 'Fetching online M3U file...'
+        );
+
+
+        setDisplayStates(true);
+
+
+        const result =
+            await fetchOnlineM3U(
+                urlInput,
+                controller.signal
+            );
+
+
+        await processLinks(
+            result.text,
+            'url',
+            urlInput
+        );
+
+    } catch (error) {
+
+        if (
+            error.name ===
+            'AbortError'
+        ) {
+
+            setCurrentChecking(
+                'Online M3U fetch cancelled.'
+            );
+
+        } else {
+
+            alert(
+                `Error fetching online M3U file: ${error.message}`
+            );
+
+            setCurrentChecking(
+                `Error fetching online M3U file: ${error.message}`
+            );
+        }
+
+        toggleButtons(
+            'url',
+            false
+        );
+
+        resetOutput();
+
+    } finally {
+
+        delete controllers[
+            'urlFetch'
+        ];
+    }
+}
+
+
+/* ============================================================
+   PASTED TEXT
+   ============================================================ */
+
+async function processTextM3U() {
+
+    const textInput =
+        document.getElementById(
+            'textInput'
+        ).value;
+
+    if (
+        !textInput.trim()
+    ) {
+
+        return alert(
+            'Please paste M3U content.'
+        );
+    }
+
+    await processLinks(
+        textInput,
+        'text',
+        'pasted_streams.m3u'
+    );
+}
+
+
+/* ============================================================
+   PAUSE / RESUME
+   ============================================================ */
+
+function togglePause(type) {
+
+    isPaused[type] =
+        !isPaused[type];
+
+    const pauseButton =
+        document.getElementById(
+            `${type}PauseButton`
+        );
+
+    if (pauseButton) {
+
+        pauseButton.textContent =
+            isPaused[type]
+                ? 'Resume'
+                : 'Pause';
+    }
+
+
+    const summaryLine =
+        document.getElementById(
+            'summaryLine'
+        );
+
+
+    if (
+        isPaused[type]
+    ) {
+
+        summaryLine.textContent =
+            'Paused — click Resume to continue. ' +
+            summaryLine.textContent;
+
+    } else {
+
+        summaryLine.textContent =
+            summaryLine.textContent.replace(
+                /^Paused — click Resume to continue\.\s*/,
+                ''
+            );
+    }
+}
+
+
+/* ============================================================
+   CANCEL
+   ============================================================ */
+
+function cancelProcess(type) {
+
+    isCancelled[type] =
+        true;
+
+    isPaused[type] =
+        false;
+
+
+    if (
+        type === 'url' &&
+        controllers['urlFetch']
+    ) {
+
+        controllers[
+            'urlFetch'
+        ].abort();
+    }
+
+
+    for (
+        const url in controllers
+    ) {
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                controllers,
+                url
+            )
+        ) {
+
+            controllers[url].abort();
+        }
+    }
+}
+
+</script>
+
+</body>
+</html>

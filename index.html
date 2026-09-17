@@ -1495,6 +1495,46 @@
             { name: "Yellow", hue: 48 }, { name: "Green", hue: 142 }, { name: "Teal", hue: 174 },
             { name: "Cyan", hue: 191 }, { name: "Sky", hue: 199 }, { name: "Rose", hue: 350 }
         ];
+        // File-type (ls-*) and status (success/warning/danger) colors for each
+        // stock palette, straight from that palette's CSS block. "accent" is
+        // each palette's own reference hue: when a custom color is active, every
+        // color below gets rotated by (pickedHue - this hue) and re-lightened for
+        // contrast, so the whole categorical set moves together with the one
+        // picked color instead of staying frozen at its preset hues.
+        const CATEGORICAL_BASE = {
+            dark: {
+                accent: "#39ff6a",
+                "--success": "#6bffb0", "--warning": "#ffd23f", "--danger": "#ff5f56",
+                "--ls-dir": "#5fafff", "--ls-img": "#ff87d7", "--ls-vid": "#ff5f5f", "--ls-aud": "#5fff87",
+                "--ls-code": "#5fd7ff", "--ls-doc": "#ffd75f", "--ls-txt": "#b7cabd", "--ls-data": "#ffaf5f",
+                "--ls-arc": "#e08080", "--ls-mkp": "#af87ff", "--ls-css": "#5fd7d7", "--ls-font": "#d7af87",
+                "--ls-m3u": "#ff87ff", "--ls-other": "#8fa397"
+            },
+            light: {
+                accent: "#14140c",
+                "--success": "#2f6b2f", "--warning": "#8a6a12", "--danger": "#9c2b1f",
+                "--ls-dir": "#1d4ed8", "--ls-img": "#a3146a", "--ls-vid": "#b91c1c", "--ls-aud": "#15803d",
+                "--ls-code": "#0e7490", "--ls-doc": "#92640a", "--ls-txt": "#57554a", "--ls-data": "#b45309",
+                "--ls-arc": "#7f1d1d", "--ls-mkp": "#6d28d9", "--ls-css": "#0f766e", "--ls-font": "#92703a",
+                "--ls-m3u": "#a3146a", "--ls-other": "#6b6b60"
+            },
+            "hc-dark": {
+                accent: "#ffb000",
+                "--success": "#ffb000", "--warning": "#ff8c00", "--danger": "#ff5a4d",
+                "--ls-dir": "#ffd166", "--ls-img": "#ffcc66", "--ls-vid": "#ffb000", "--ls-aud": "#ffcc66",
+                "--ls-code": "#ffd166", "--ls-doc": "#ffb000", "--ls-txt": "#e0a951", "--ls-data": "#ffcc66",
+                "--ls-arc": "#cc8400", "--ls-mkp": "#ffd166", "--ls-css": "#ffb000", "--ls-font": "#e0a951",
+                "--ls-m3u": "#ffcc66", "--ls-other": "#b38327"
+            },
+            "hc-light": {
+                accent: "#d0021b",
+                "--success": "#0a7a2f", "--warning": "#a35a00", "--danger": "#b3001b",
+                "--ls-dir": "#b3001b", "--ls-img": "#b3001b", "--ls-vid": "#b3001b", "--ls-aud": "#000000",
+                "--ls-code": "#000000", "--ls-doc": "#000000", "--ls-txt": "#4d4d4d", "--ls-data": "#000000",
+                "--ls-arc": "#b3001b", "--ls-mkp": "#000000", "--ls-css": "#000000", "--ls-font": "#4d4d4d",
+                "--ls-m3u": "#b3001b", "--ls-other": "#4d4d4d"
+            }
+        };
         function clampNum(v, min, max) {
             return Math.max(min, Math.min(max, v));
         }
@@ -1647,6 +1687,20 @@
             // Accent-as-text variant (e.g. breadcrumb links), since the flat
             // --accent equals the panel background it would sit on.
             newVals["--accent-text"] = visibleVariant(activeColor, activeColor, 4.5, 100);
+            // Rotate every file-type (ls-*) and status color by the same hue
+            // delta as the picked color vs. this palette's own reference hue,
+            // keeping their preset saturation/lightness, then nudge lightness
+            // only as needed so each still reads against the flattened bg.
+            const categorical = CATEGORICAL_BASE[getActivePaletteKey()] || CATEGORICAL_BASE.dark;
+            const pickedHue = hexToHsl(vividColor).h;
+            const refHue = hexToHsl(categorical.accent).h;
+            const hueDelta = pickedHue - refHue;
+            for (const [varName, presetHex] of Object.entries(categorical)) {
+                if (varName === "accent") continue;
+                const { h, s, l } = hexToHsl(presetHex);
+                const rotated = hslToHex((h + hueDelta + 360) % 360, s, l);
+                newVals[varName] = visibleVariant(rotated, activeColor, 3, 45);
+            }
             for (const key of Object.keys(base)) {
                 if (!(key in newVals)) newVals[key] = base[key];
             }
@@ -1677,6 +1731,9 @@
                 "--accent", "--accent-hover", "--accent-text", "--on-accent", "--accent-glow",
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
+                "--success", "--warning", "--danger",
+                "--ls-dir", "--ls-img", "--ls-vid", "--ls-aud", "--ls-code", "--ls-doc", "--ls-txt",
+                "--ls-data", "--ls-arc", "--ls-mkp", "--ls-css", "--ls-font", "--ls-m3u", "--ls-other",
             ];
             for (const key of keys) root.removeProperty(key);
         }

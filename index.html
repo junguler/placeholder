@@ -29,26 +29,26 @@
                 a real terminal listing, not by decorative choice.
            ============================================================ */
         :root {
-            --bg-primary: #05100a;
-            --bg-secondary: #081a10;
-            --bg-tertiary: #0c2717;
-            --bg-hover: #12351f;
-            --border-color: rgba(93, 255, 156, 0.28);
-            --text-primary: #79ffb0;
-            --text-secondary: #4fcf87;
-            --text-muted: #2f8a5c;
-            --accent: #39ff6a;
-            --accent-hover: #6bffa0;
-            --on-accent: #04120a;
+            --bg-primary: #150015;
+            --bg-secondary: #220022;
+            --bg-tertiary: #330033;
+            --bg-hover: #470047;
+            --border-color: rgba(255, 93, 255, 0.28);
+            --text-primary: #ff79ff;
+            --text-secondary: #ff1fff;
+            --text-muted: #b900b9;
+            --accent: #ff39ff;
+            --accent-hover: #ff9fff;
+            --on-accent: #000000;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
             --on-control: var(--text-primary);
             --skeleton-base: var(--bg-tertiary);
             --skeleton-shine: var(--bg-hover);
-            --success: #6bffb0;
-            --warning: #ffd23f;
-            --danger: #ff5f56;
-            --on-danger: #04120a;
+            --success: #ff6bdf;
+            --warning: #3f9cff;
+            --danger: #56ffde;
+            --on-danger: #000000;
             /* Corner axis. Level 1 (default) is a real terminal: zero
                radius, full stop. */
             --radius: 0px;
@@ -60,118 +60,118 @@
             --shadow-lg: 0 0 0 1px var(--border-color);
             --shadow-color: transparent;
             --shadow-color-strong: transparent;
-            --accent-glow: rgba(57, 255, 106, 0.3);
-            --scanline: rgba(57, 255, 106, 0.035);
-            --glow: 0 0 6px rgba(57, 255, 106, 0.35);
+            --accent-glow: rgba(255, 57, 255, 0.35);
+            --scanline: rgba(255, 57, 255, 0.035);
+            --glow: 0 0 6px rgba(255, 57, 255, 0.35);
             --transition: 0.08s linear;
             --font-size-base: 16px;
             --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", "Consolas", "Roboto Mono", "Courier New", monospace;
             --font-ui: var(--font-mono);
-            /* ANSI ls-style file-type colors (dark/CRT) */
-            --ls-dir: #5fafff; --ls-img: #ff87d7; --ls-vid: #ff5f5f; --ls-aud: #5fff87;
-            --ls-code: #5fd7ff; --ls-doc: #ffd75f; --ls-txt: #b7cabd; --ls-data: #ffaf5f;
-            --ls-arc: #e08080; --ls-mkp: #af87ff; --ls-css: #5fd7d7; --ls-font: #d7af87;
-            --ls-m3u: #ff87ff; --ls-other: #8fa397;
+            /* ANSI ls-style file-type colors (dark/CRT, magenta phosphor) */
+            --ls-dir: #ff875f; --ls-img: #87ff91; --ls-vid: #5fffd7; --ls-aud: #ff5fff;
+            --ls-code: #ff5f5f; --ls-doc: #5fafff; --ls-txt: #cab7c9; --ls-data: #5fd7ff;
+            --ls-arc: #80e0c8; --ls-mkp: #f5ff87; --ls-css: #d75f7d; --ls-font: #87c3d7;
+            --ls-m3u: #a5ff87; --ls-other: #a38fa0;
         }
         html[data-theme="light"] {
-            --bg-primary: #f2f0e6;
-            --bg-secondary: #e9e6d8;
-            --bg-tertiary: #dedac6;
-            --bg-hover: #cfc9ab;
-            --border-color: rgba(20, 20, 12, 0.32);
-            --text-primary: #14140c;
-            --text-secondary: #3f3d2e;
-            --text-muted: #6e6b54;
-            --accent: #14140c;
-            --accent-hover: #33311f;
-            --on-accent: #f2f0e6;
-            --success: #2f6b2f;
-            --warning: #8a6a12;
-            --danger: #9c2b1f;
-            --on-danger: #f2f0e6;
+            --bg-primary: #ecdff9;
+            --bg-secondary: #e0cbf6;
+            --bg-tertiary: #d2b3f1;
+            --bg-hover: #bd8feb;
+            --border-color: rgba(16, 5, 27, 0.32);
+            --text-primary: #10051b;
+            --text-secondary: #36105d;
+            --text-muted: #611da5;
+            --accent: #7a25d0;
+            --accent-hover: #9b56e1;
+            --on-accent: #ffffff;
+            --success: #6b2f4d;
+            --warning: #2e128a;
+            --danger: #1f529c;
+            --on-danger: #ffffff;
             --shadow-lg: 0 0 0 1px var(--border-color);
-            --accent-glow: rgba(20, 20, 12, 0.18);
-            --scanline: rgba(20, 20, 12, 0);
+            --accent-glow: rgba(122, 37, 208, 0.35);
+            --scanline: rgba(122, 37, 208, 0);
             --glow: none;
-            --ls-dir: #1d4ed8; --ls-img: #a3146a; --ls-vid: #b91c1c; --ls-aud: #15803d;
-            --ls-code: #0e7490; --ls-doc: #92640a; --ls-txt: #57554a; --ls-data: #b45309;
-            --ls-arc: #7f1d1d; --ls-mkp: #6d28d9; --ls-css: #0f766e; --ls-font: #92703a;
-            --ls-m3u: #a3146a; --ls-other: #6b6b60;
+            --ls-dir: #6f8c13; --ls-img: #129184; --ls-vid: #1c6bb9; --ls-aud: #801523;
+            --ls-code: #906b0e; --ls-doc: #200a92; --ls-txt: #4e4a57; --ls-data: #0915b4;
+            --ls-arc: #1d4e7f; --ls-mkp: #28951a; --ls-css: #763a0f; --ls-font: #443a92;
+            --ls-m3u: #129184; --ls-other: #65606b;
         }
-        /* HC-dark: amber CRT — a genuinely different phosphor, not just
+        /* HC-dark: cyan CRT — a genuinely different phosphor, not just
            a brighter green, so it reads as its own variant. */
         html[data-theme="hc-dark"] {
             --bg-primary: #000000;
             --bg-secondary: #000000;
             --bg-tertiary: #000000;
-            --bg-hover: #241a00;
-            --border-color: #ffb000;
-            --text-primary: #ffcc66;
-            --text-secondary: #ffcc66;
-            --text-muted: #b38327;
-            --accent: #ffb000;
-            --accent-hover: #ffd166;
+            --bg-hover: #002424;
+            --border-color: #00ffff;
+            --text-primary: #66ffff;
+            --text-secondary: #66ffff;
+            --text-muted: #00dada;
+            --accent: #00ffff;
+            --accent-hover: #00c7c7;
             --on-accent: #000000;
-            --success: #ffb000;
-            --warning: #ff8c00;
-            --danger: #ff5a4d;
+            --success: #00ffff;
+            --warning: #00ffdb;
+            --danger: #4dff91;
             --on-danger: #000000;
             --shadow-lg: 0 0 0 1px var(--border-color);
-            --accent-glow: rgba(255, 176, 0, 0.4);
-            --scanline: rgba(255, 176, 0, 0.05);
-            --glow: 0 0 6px rgba(255, 176, 0, 0.45);
-            --ls-dir: #ffd166; --ls-img: #ffcc66; --ls-vid: #ffb000; --ls-aud: #ffcc66;
-            --ls-code: #ffd166; --ls-doc: #ffb000; --ls-txt: #e0a951; --ls-data: #ffcc66;
-            --ls-arc: #cc8400; --ls-mkp: #ffd166; --ls-css: #ffb000; --ls-font: #e0a951;
-            --ls-m3u: #ffcc66; --ls-other: #b38327;
+            --accent-glow: rgba(0, 255, 255, 0.35);
+            --scanline: rgba(0, 255, 255, 0.05);
+            --glow: 0 0 6px rgba(0, 255, 255, 0.45);
+            --ls-dir: #66feff; --ls-img: #66fffb; --ls-vid: #00ffff; --ls-aud: #66fffb;
+            --ls-code: #66feff; --ls-doc: #00ffff; --ls-txt: #51e0d5; --ls-data: #66fffb;
+            --ls-arc: #00ccc3; --ls-mkp: #66feff; --ls-css: #00ffff; --ls-font: #51e0d5;
+            --ls-m3u: #66fffb; --ls-other: #27b3ae;
         }
-        /* HC-light: stark printed-page, accent stamped in red like an
+        /* HC-light: stark printed-page, accent stamped in pink like an
            official mark. */
         html[data-theme="hc-light"] {
             --bg-primary: #ffffff;
             --bg-secondary: #ffffff;
             --bg-tertiary: #ffffff;
-            --bg-hover: #d9d9d9;
-            --border-color: #d0021b;
+            --bg-hover: #feb4d9;
+            --border-color: #d00269;
             --text-primary: #000000;
             --text-secondary: #000000;
-            --text-muted: #4d4d4d;
-            --accent: #d0021b;
-            --accent-hover: #a90116;
+            --text-muted: #99014d;
+            --accent: #d00269;
+            --accent-hover: #fd3b9c;
             --on-accent: #ffffff;
-            --success: #0a7a2f;
-            --warning: #a35a00;
-            --danger: #b3001b;
+            --success: #0f7a0a;
+            --warning: #a31c00;
+            --danger: #b3005f;
             --on-danger: #ffffff;
             --shadow-lg: 0 0 0 1px var(--border-color);
-            --accent-glow: rgba(208, 2, 27, 0.3);
-            --scanline: rgba(0, 0, 0, 0);
+            --accent-glow: rgba(208, 2, 105, 0.35);
+            --scanline: rgba(208, 2, 105, 0);
             --glow: none;
-            --ls-dir: #b3001b; --ls-img: #b3001b; --ls-vid: #b3001b; --ls-aud: #000000;
+            --ls-dir: #b3005f; --ls-img: #b3005f; --ls-vid: #b3005f; --ls-aud: #000000;
             --ls-code: #000000; --ls-doc: #000000; --ls-txt: #4d4d4d; --ls-data: #000000;
-            --ls-arc: #b3001b; --ls-mkp: #000000; --ls-css: #000000; --ls-font: #4d4d4d;
-            --ls-m3u: #b3001b; --ls-other: #4d4d4d;
+            --ls-arc: #b3005f; --ls-mkp: #000000; --ls-css: #000000; --ls-font: #4d4d4d;
+            --ls-m3u: #b3005f; --ls-other: #4d4d4d;
         }
         @media (prefers-color-scheme: light) {
             :root:not([data-theme]) {
-                --bg-primary: #f2f0e6;
-                --bg-secondary: #e9e6d8;
-                --bg-tertiary: #dedac6;
-                --bg-hover: #cfc9ab;
-                --border-color: rgba(20, 20, 12, 0.32);
-                --text-primary: #14140c;
-                --text-secondary: #3f3d2e;
-                --text-muted: #6e6b54;
-                --accent: #14140c;
-                --accent-hover: #33311f;
-                --on-accent: #f2f0e6;
-                --accent-glow: rgba(20, 20, 12, 0.18);
-                --scanline: rgba(20, 20, 12, 0);
+                --bg-primary: #ecdff9;
+                --bg-secondary: #e0cbf6;
+                --bg-tertiary: #d2b3f1;
+                --bg-hover: #bd8feb;
+                --border-color: rgba(16, 5, 27, 0.32);
+                --text-primary: #10051b;
+                --text-secondary: #36105d;
+                --text-muted: #611da5;
+                --accent: #7a25d0;
+                --accent-hover: #9b56e1;
+                --on-accent: #ffffff;
+                --accent-glow: rgba(122, 37, 208, 0.35);
+                --scanline: rgba(122, 37, 208, 0);
                 --glow: none;
-                --ls-dir: #1d4ed8; --ls-img: #a3146a; --ls-vid: #b91c1c; --ls-aud: #15803d;
-                --ls-code: #0e7490; --ls-doc: #92640a; --ls-txt: #57554a; --ls-data: #b45309;
-                --ls-arc: #7f1d1d; --ls-mkp: #6d28d9; --ls-css: #0f766e; --ls-font: #92703a;
-                --ls-m3u: #a3146a; --ls-other: #6b6b60;
+                --ls-dir: #6f8c13; --ls-img: #129184; --ls-vid: #1c6bb9; --ls-aud: #801523;
+                --ls-code: #906b0e; --ls-doc: #200a92; --ls-txt: #4e4a57; --ls-data: #0915b4;
+                --ls-arc: #1d4e7f; --ls-mkp: #28951a; --ls-css: #763a0f; --ls-font: #443a92;
+                --ls-m3u: #129184; --ls-other: #65606b;
             }
         }
         html[data-depth="2"] { --radius: 3px; --radius-sm: 2px; --radius-lg: 5px; --radius-full: 6px; }
@@ -292,12 +292,12 @@
         .theme-btn.active svg { color: var(--on-accent) !important; }
         .theme-btn svg { width: 12px; height: 12px; }
         .theme-btn .theme-btn-label { color: inherit !important; }
-        .theme-btn[data-theme="light"] svg { color: #b48a00; }
-        .theme-btn[data-theme="dark"] svg { color: #39ff6a; }
+        .theme-btn[data-theme="light"] svg { color: #7a25d0; }
+        .theme-btn[data-theme="dark"] svg { color: #ff39ff; }
         .theme-btn[data-theme="auto"] svg { color: #5fd7ff; }
-        .theme-btn[data-theme="hc-dark"] svg { color: #ffb000; }
-        .theme-btn[data-theme="hc-light"] svg { color: #d0021b; }
-        .theme-btn[data-theme="custom"] svg { color: var(--custom-theme-swatch, #39ff6a); }
+        .theme-btn[data-theme="hc-dark"] svg { color: #00ffff; }
+        .theme-btn[data-theme="hc-light"] svg { color: #d00269; }
+        .theme-btn[data-theme="custom"] svg { color: var(--custom-theme-swatch, #ff851a); }
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom) { opacity: 0.4; }
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom):hover { opacity: 0.8; }
         .theme-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; width: 100%; padding: 0.15rem 0; }
@@ -831,7 +831,7 @@
                                         <div class="theme-swatches" id="themeSwatches"></div>
                                     </div>
                                     <div class="theme-custom-row">
-                                        <input type="color" id="themeColorInput" value="#8080ff" title="Pick a custom color" />
+                                        <input type="color" id="themeColorInput" value="#ff851a" title="Pick a custom color" />
                                         <button id="themeResetBtn" class="theme-reset-btn">Reset</button>
                                     </div>
                                 </div>
@@ -1496,36 +1496,36 @@
         // picked color instead of staying frozen at its preset hues.
         const CATEGORICAL_BASE = {
             dark: {
-                accent: "#39ff6a",
-                "--success": "#6bffb0", "--warning": "#ffd23f", "--danger": "#ff5f56",
-                "--ls-dir": "#5fafff", "--ls-img": "#ff87d7", "--ls-vid": "#ff5f5f", "--ls-aud": "#5fff87",
-                "--ls-code": "#5fd7ff", "--ls-doc": "#ffd75f", "--ls-txt": "#b7cabd", "--ls-data": "#ffaf5f",
-                "--ls-arc": "#e08080", "--ls-mkp": "#af87ff", "--ls-css": "#5fd7d7", "--ls-font": "#d7af87",
-                "--ls-m3u": "#ff87ff", "--ls-other": "#8fa397"
+                accent: "#ff39ff",
+                "--success": "#ff6bdf", "--warning": "#3f9cff", "--danger": "#56ffde",
+                "--ls-dir": "#ff875f", "--ls-img": "#87ff91", "--ls-vid": "#5fffd7", "--ls-aud": "#ff5fff",
+                "--ls-code": "#ff5f5f", "--ls-doc": "#5fafff", "--ls-txt": "#cab7c9", "--ls-data": "#5fd7ff",
+                "--ls-arc": "#80e0c8", "--ls-mkp": "#f5ff87", "--ls-css": "#d75f7d", "--ls-font": "#87c3d7",
+                "--ls-m3u": "#a5ff87", "--ls-other": "#a38fa0"
             },
             light: {
-                accent: "#14140c",
-                "--success": "#2f6b2f", "--warning": "#8a6a12", "--danger": "#9c2b1f",
-                "--ls-dir": "#1d4ed8", "--ls-img": "#a3146a", "--ls-vid": "#b91c1c", "--ls-aud": "#15803d",
-                "--ls-code": "#0e7490", "--ls-doc": "#92640a", "--ls-txt": "#57554a", "--ls-data": "#b45309",
-                "--ls-arc": "#7f1d1d", "--ls-mkp": "#6d28d9", "--ls-css": "#0f766e", "--ls-font": "#92703a",
-                "--ls-m3u": "#a3146a", "--ls-other": "#6b6b60"
+                accent: "#7a25d0",
+                "--success": "#6b2f4d", "--warning": "#2e128a", "--danger": "#1f529c",
+                "--ls-dir": "#6f8c13", "--ls-img": "#129184", "--ls-vid": "#1c6bb9", "--ls-aud": "#801523",
+                "--ls-code": "#906b0e", "--ls-doc": "#200a92", "--ls-txt": "#4e4a57", "--ls-data": "#0915b4",
+                "--ls-arc": "#1d4e7f", "--ls-mkp": "#28951a", "--ls-css": "#763a0f", "--ls-font": "#443a92",
+                "--ls-m3u": "#129184", "--ls-other": "#65606b"
             },
             "hc-dark": {
-                accent: "#ffb000",
-                "--success": "#ffb000", "--warning": "#ff8c00", "--danger": "#ff5a4d",
-                "--ls-dir": "#ffd166", "--ls-img": "#ffcc66", "--ls-vid": "#ffb000", "--ls-aud": "#ffcc66",
-                "--ls-code": "#ffd166", "--ls-doc": "#ffb000", "--ls-txt": "#e0a951", "--ls-data": "#ffcc66",
-                "--ls-arc": "#cc8400", "--ls-mkp": "#ffd166", "--ls-css": "#ffb000", "--ls-font": "#e0a951",
-                "--ls-m3u": "#ffcc66", "--ls-other": "#b38327"
+                accent: "#00ffff",
+                "--success": "#00ffff", "--warning": "#00ffdb", "--danger": "#4dff91",
+                "--ls-dir": "#66feff", "--ls-img": "#66fffb", "--ls-vid": "#00ffff", "--ls-aud": "#66fffb",
+                "--ls-code": "#66feff", "--ls-doc": "#00ffff", "--ls-txt": "#51e0d5", "--ls-data": "#66fffb",
+                "--ls-arc": "#00ccc3", "--ls-mkp": "#66feff", "--ls-css": "#00ffff", "--ls-font": "#51e0d5",
+                "--ls-m3u": "#66fffb", "--ls-other": "#27b3ae"
             },
             "hc-light": {
-                accent: "#d0021b",
-                "--success": "#0a7a2f", "--warning": "#a35a00", "--danger": "#b3001b",
-                "--ls-dir": "#b3001b", "--ls-img": "#b3001b", "--ls-vid": "#b3001b", "--ls-aud": "#000000",
+                accent: "#d00269",
+                "--success": "#0f7a0a", "--warning": "#a31c00", "--danger": "#b3005f",
+                "--ls-dir": "#b3005f", "--ls-img": "#b3005f", "--ls-vid": "#b3005f", "--ls-aud": "#000000",
                 "--ls-code": "#000000", "--ls-doc": "#000000", "--ls-txt": "#4d4d4d", "--ls-data": "#000000",
-                "--ls-arc": "#b3001b", "--ls-mkp": "#000000", "--ls-css": "#000000", "--ls-font": "#4d4d4d",
-                "--ls-m3u": "#b3001b", "--ls-other": "#4d4d4d"
+                "--ls-arc": "#b3005f", "--ls-mkp": "#000000", "--ls-css": "#000000", "--ls-font": "#4d4d4d",
+                "--ls-m3u": "#b3005f", "--ls-other": "#4d4d4d"
             }
         };
         function clampNum(v, min, max) {
@@ -2491,7 +2491,7 @@
                     if (btn.dataset.theme === "custom") {
                         if (vividColor) return; // already the active look, nothing to do
                         const input = document.getElementById("themeColorInput");
-                        setCustomColor((input && input.value) || "#8080ff");
+                        setCustomColor((input && input.value) || "#ff851a");
                     } else {
                         if (vividColor) resetCustomColor(); // switching to a stock theme drops the custom color
                         saveTheme(btn.dataset.theme);

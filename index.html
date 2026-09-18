@@ -1457,14 +1457,18 @@
            reference hue, so folders/images/video/etc. keep their relative
            identity instead of merging into a single tone.
 
-           The only intervention is on TEXT, and only when it's reactive:
-           a theme's own text color is left alone unless it would actually
-           fail contrast against the new background, in which case it's
-           inverted; if inverting still isn't enough, it falls back to
-           plain black/white so text is never actually unreadable. The Stop
-           button's on-danger text gets the same reactive black/white pick,
-           since it sits directly on a solid --danger fill rather than the
-           page background.
+           Text (primary/secondary/muted) is re-hued the same way as every
+           other surface: each keeps its OWN original lightness -- so the
+           three stay as distinct from each other as they are in the stock
+           theme -- but its hue/saturation move to the picked color too,
+           so text reads as part of the same color family as the
+           background instead of staying stuck at the old theme's hue.
+           It's only nudged further (lightness only) if that re-hued
+           version doesn't actually clear contrast against the new
+           background. The Stop button's on-danger text is the one
+           exception: it sits directly on a solid --danger fill rather
+           than the page background, so it just picks whichever of plain
+           black/white contrasts against the rotated danger color.
 
            "Color intensity" is a 5-step bar (100/80/60/40/20%) for people
            who find fully-saturated colors hard to look at. 100% is your
@@ -1626,19 +1630,6 @@
             const lighter = Math.max(l1, l2), darker = Math.min(l1, l2);
             return (lighter + 0.05) / (darker + 0.05);
         }
-        function invertHex(hex) {
-            const { r, g, b } = hexToRgb(hex);
-            const inv = (n) => clampNum(255 - n, 0, 255).toString(16).padStart(2, "0");
-            return `#${inv(r)}${inv(g)}${inv(b)}`;
-        }
-        // Leaves baseHex alone unless it fails contrast against bgHex, then
-        // tries inverting it, then falls back to pure black/white.
-        function readableTextColor(baseHex, bgHex, minRatio) {
-            if (contrastRatio(baseHex, bgHex) >= minRatio) return baseHex;
-            const inverted = invertHex(baseHex);
-            if (contrastRatio(inverted, bgHex) >= minRatio) return inverted;
-            return contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex) ? "#ffffff" : "#000000";
-        }
         // Nudges hex's lightness only (hue/saturation untouched) just far
         // enough to be visible against bgHex. Used for borders/hover states.
         function visibleVariant(hex, bgHex, targetRatio, maxShift) {
@@ -1753,13 +1744,19 @@
             // page-background contrast check above doesn't cover that case.
             newVals["--on-danger"] = contrastRatio("#ffffff", newVals["--danger"]) >= contrastRatio("#000000", newVals["--danger"]) ? "#ffffff" : "#000000";
 
-            // Text: left alone unless it would actually fail contrast against
-            // its surface's new (re-hued) background -- anchored to each
-            // theme's own natural text color, not a hardcoded fallback table.
+            // Text: re-hued the same way as every other surface -- each of
+            // primary/secondary/muted keeps its OWN original lightness (so
+            // the three stay visually distinct, same as the stock theme),
+            // but its hue/saturation move to the picked color too, so text
+            // belongs to the same color family as the background instead of
+            // staying stuck at the old theme's hue. Only nudged further
+            // (lightness only, hue/saturation untouched) if that re-hued
+            // version doesn't actually clear contrast against the new bg.
             for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 3]]) {
-                const natural = parseCssColorToHexAlpha(naturalOf(textKey));
+                const natural = naturalOf(textKey);
                 if (!natural) continue;
-                newVals[textKey] = readableTextColor(natural.hex, newVals["--bg-primary"], minRatio);
+                const rehued = recolorPreservingLightness(natural, pickedH, pickedS);
+                newVals[textKey] = visibleVariant(rehued, newVals["--bg-primary"], minRatio, 60);
             }
 
             for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);

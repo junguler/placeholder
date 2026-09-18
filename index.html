@@ -36,10 +36,12 @@
             --border-color: rgba(255, 93, 255, 0.28);
             --text-primary: #ff79ff;
             --text-secondary: #ff1fff;
-            --text-muted: #b900b9;
+            --text-muted: #c300c3;
             --accent: #ff39ff;
             --accent-hover: #ff9fff;
+            --accent-text: #ff39ff;
             --on-accent: #000000;
+            --on-accent-hover: #000000;
             --control-surface: var(--bg-tertiary);
             --control-surface-hover: var(--bg-hover);
             --on-control: var(--text-primary);
@@ -49,6 +51,7 @@
             --warning: #3f9cff;
             --danger: #56ffde;
             --on-danger: #000000;
+            --on-success: #000000;
             /* Corner axis. Level 1 (default) is a real terminal: zero
                radius, full stop. */
             --radius: 0px;
@@ -84,11 +87,14 @@
             --text-muted: #611da5;
             --accent: #7a25d0;
             --accent-hover: #9b56e1;
+            --accent-text: #6b20b6;
             --on-accent: #ffffff;
+            --on-accent-hover: #000000;
             --success: #6b2f4d;
             --warning: #2e128a;
             --danger: #1f529c;
             --on-danger: #ffffff;
+            --on-success: #ffffff;
             --shadow-lg: 0 0 0 1px var(--border-color);
             --accent-glow: rgba(122, 37, 208, 0.35);
             --scanline: rgba(122, 37, 208, 0);
@@ -111,11 +117,14 @@
             --text-muted: #00dada;
             --accent: #00ffff;
             --accent-hover: #00c7c7;
+            --accent-text: #00ffff;
             --on-accent: #000000;
+            --on-accent-hover: #000000;
             --success: #00ffff;
             --warning: #00ffdb;
             --danger: #4dff91;
             --on-danger: #000000;
+            --on-success: #000000;
             --shadow-lg: 0 0 0 1px var(--border-color);
             --accent-glow: rgba(0, 255, 255, 0.35);
             --scanline: rgba(0, 255, 255, 0.05);
@@ -138,11 +147,14 @@
             --text-muted: #99014d;
             --accent: #d00269;
             --accent-hover: #fd3b9c;
+            --accent-text: #d00269;
             --on-accent: #ffffff;
+            --on-accent-hover: #000000;
             --success: #0f7a0a;
             --warning: #a31c00;
             --danger: #b3005f;
             --on-danger: #ffffff;
+            --on-success: #ffffff;
             --shadow-lg: 0 0 0 1px var(--border-color);
             --accent-glow: rgba(208, 2, 105, 0.35);
             --scanline: rgba(208, 2, 105, 0);
@@ -164,7 +176,9 @@
                 --text-muted: #611da5;
                 --accent: #7a25d0;
                 --accent-hover: #9b56e1;
+                --accent-text: #6b20b6;
                 --on-accent: #ffffff;
+                --on-accent-hover: #000000;
                 --accent-glow: rgba(122, 37, 208, 0.35);
                 --scanline: rgba(122, 37, 208, 0);
                 --glow: none;
@@ -323,8 +337,8 @@
         .tree-content:not(.needs-scroll) { overflow-y: visible; }
         .tree-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.6rem; cursor: pointer; font-size: 0.83rem; color: var(--text-secondary); }
         .tree-item:hover { background: var(--accent); color: var(--on-accent); }
-        .tree-item.active { background: var(--bg-tertiary); color: var(--accent); font-weight: 700; }
-        .tree-item.active::before { content: "> "; color: var(--accent); }
+        .tree-item.active { background: var(--bg-tertiary); color: var(--accent-text, var(--accent)); font-weight: 700; }
+        .tree-item.active::before { content: "> "; color: var(--accent-text, var(--accent)); }
         .tree-item svg { width: 13px; height: 13px; flex-shrink: 0; }
         .tree-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
         .tree-children { margin-left: 0.85rem; border-left: 1px dashed var(--border-color); padding-left: 0.15rem; }
@@ -338,7 +352,7 @@
         .tree-pinned-header::before { content: "# "; }
         .tree-pinned-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.55rem; cursor: pointer; font-size: 0.83rem; color: var(--text-secondary); }
         .tree-pinned-item:hover { background: var(--accent); color: var(--on-accent); }
-        .tree-pinned-item.active { background: var(--bg-tertiary); color: var(--accent); }
+        .tree-pinned-item.active { background: var(--bg-tertiary); color: var(--accent-text, var(--accent)); }
         .tree-pinned-item svg { width: 13px; height: 13px; flex-shrink: 0; }
         .tree-pinned-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; }
         .tree-pinned-name-stack { display: block; overflow: hidden; flex: 1; min-width: 0; line-height: 1.3; white-space: nowrap; }
@@ -543,13 +557,13 @@
         .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius); transition: background-color var(--transition), border-color var(--transition); }
         .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
         .player-play-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--on-accent) !important; border-radius: var(--radius-full) !important; width: 2.8rem; height: 2.8rem; padding: 0 !important; transition: background-color var(--transition); }
-        .player-play-btn:hover { background: var(--accent-hover) !important; border-color: var(--accent-hover) !important; }
+        .player-play-btn:hover { background: var(--accent-hover) !important; border-color: var(--accent-hover) !important; color: var(--on-accent-hover) !important; }
         .player-play-btn svg { width: 19px; height: 19px; }
         .player-time, .player-vol { font-size: 0.72rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; font-variant-numeric: tabular-nums; }
         .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.4rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-control) !important; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         .player-info-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
         .player-info-btn svg { width: 16px; height: 16px; }
-        .player-info-btn.copied { background: var(--success); border-color: var(--success); color: var(--on-accent) !important; }
+        .player-info-btn.copied { background: var(--success); border-color: var(--success); color: var(--on-success) !important; }
         .preview-code { width: 100%; min-height: 100%; padding: 0.6rem; background: var(--bg-primary); }
         .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; word-break: break-all; font-family: var(--font-mono); }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
@@ -561,7 +575,7 @@
         .preview-unavailable h3 { margin-bottom: 0.3rem; color: var(--text-primary); font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
         .download-btn { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.8rem; padding: 0.55rem 1.1rem; background: var(--accent); color: var(--on-accent); text-decoration: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
         .download-btn::before { content: "> "; }
-        .download-btn:hover { background: var(--accent-hover); }
+        .download-btn:hover { background: var(--accent-hover); color: var(--on-accent-hover); }
         .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; color: var(--text-secondary); }
         .spinner { width: 22px; height: 22px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -673,6 +687,8 @@
         .file-thumbnail-inline { width: 20px; height: 20px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 1px var(--border-color); }
         .file-list .file-card:has(.file-thumbnail-inline.loaded) .file-icon { display: none; }
         .file-card:active { background: var(--accent-hover); }
+        .file-card:active .file-name, .file-card:active .file-meta, .file-card:active .file-path { color: var(--on-accent-hover) !important; }
+        .file-card:active .file-icon, .file-card:active .file-icon::after { color: var(--on-accent-hover) !important; }
         .file-card:focus-visible, .playlist-btn:focus-visible, .modal-btn:focus-visible, .view-btn:focus-visible, .settings-btn:focus-visible {
             outline: 2px solid var(--accent);
             outline-offset: -2px;
@@ -1470,6 +1486,16 @@
            than the page background, so it just picks whichever of plain
            black/white contrasts against the rotated danger color.
 
+           Every one of the contrast nudges above goes through
+           visibleVariant, which now makes a HARD guarantee, not a best
+           effort: it first tries nudging lightness alone (keeps hue/sat,
+           the common case); if that alone can't clear the target ratio
+           within its step budget, it escalates to inverting the color
+           outright and nudging that; if even inverted still isn't enough,
+           it falls back to plain black/white. So no color this engine
+           produces can end up silently unreadable, no matter how extreme
+           the picked hue or background.
+
            "Color intensity" is a 5-step bar (100/80/60/40/20%) for people
            who find fully-saturated colors hard to look at. 100% is your
            picked color exactly, byte-for-byte. Each step down blends more
@@ -1630,22 +1656,42 @@
             const lighter = Math.max(l1, l2), darker = Math.min(l1, l2);
             return (lighter + 0.05) / (darker + 0.05);
         }
-        // Nudges hex's lightness only (hue/saturation untouched) just far
-        // enough to be visible against bgHex. Used for borders/hover states.
-        function visibleVariant(hex, bgHex, targetRatio, maxShift) {
+        function invertHex(hex) {
+            const { r, g, b } = hexToRgb(hex);
+            const inv = (n) => clampNum(255 - n, 0, 255).toString(16).padStart(2, "0");
+            return `#${inv(r)}${inv(g)}${inv(b)}`;
+        }
+        // Nudges hex's lightness only (hue/saturation untouched) toward
+        // bgHex's opposite end, just far enough to clear targetRatio. Returns
+        // null if lightness alone (within maxShift steps) can't get there --
+        // the caller then knows to escalate.
+        function nudgeLightnessFor(hex, bgHex, targetRatio, maxShift) {
             if (contrastRatio(hex, bgHex) >= targetRatio) return hex;
             const { h, s, l } = hexToHsl(hex);
             const dir = relLuminance(bgHex) < 0.5 ? 1 : -1;
-            let best = hex, bestRatio = contrastRatio(hex, bgHex);
             for (let step = 1; step <= (maxShift || 40); step++) {
                 const nl = clampNum(l + dir * step, 0, 100);
                 const candidate = hslToHex(h, s, nl);
-                const ratio = contrastRatio(candidate, bgHex);
-                if (ratio > bestRatio) { bestRatio = ratio; best = candidate; }
-                if (ratio >= targetRatio) return candidate;
+                if (contrastRatio(candidate, bgHex) >= targetRatio) return candidate;
                 if (nl <= 0 || nl >= 100) break;
             }
-            return best;
+            return null;
+        }
+        // Always returns a color that clears targetRatio against bgHex --
+        // never a silent best-effort. First tries nudging hex's own
+        // lightness (keeps its hue/saturation, used for the common case:
+        // borders, hover states, most of the theme engine). If that alone
+        // can't reach the target within maxShift steps, escalates to
+        // inverting the color outright (same rescue normal.html uses for
+        // text) and nudges THAT toward contrast. If even inverted still
+        // isn't enough, falls back to plain black/white -- so nothing this
+        // touches can ever end up unreadable.
+        function visibleVariant(hex, bgHex, targetRatio, maxShift) {
+            const direct = nudgeLightnessFor(hex, bgHex, targetRatio, maxShift);
+            if (direct !== null) return direct;
+            const inverted = nudgeLightnessFor(invertHex(hex), bgHex, targetRatio, maxShift);
+            if (inverted !== null) return inverted;
+            return contrastRatio("#ffffff", bgHex) >= contrastRatio("#000000", bgHex) ? "#ffffff" : "#000000";
         }
         // Blends the picked color toward a calm, desaturated, settled-
         // lightness target as intensity is lowered (hue never moves).
@@ -1707,7 +1753,20 @@
             // chosen intensity) -- no lightness borrowing here.
             newVals["--accent"] = activeColor;
             newVals["--accent-hover"] = visibleVariant(activeColor, activeColor, 1.6, 30);
-            newVals["--accent-text"] = visibleVariant(activeColor, newVals["--bg-secondary"], 4.5, 100);
+            // A handful of hover/active states paint accent-hover as a solid
+            // fill with text on top (Play button hover, Download button
+            // hover, a file card's active/pressed state). accent-hover is a
+            // different lightness than --accent, so --on-accent (tuned for
+            // --accent) isn't guaranteed to still contrast -- this is its
+            // own black/white pick against the actual hover fill.
+            newVals["--on-accent-hover"] = contrastRatio("#ffffff", newVals["--accent-hover"]) >= contrastRatio("#000000", newVals["--accent-hover"]) ? "#ffffff" : "#000000";
+            // accent-as-text (breadcrumb pin, tree active-item, library
+            // stats icons, list header) shows up on both bg-secondary and
+            // bg-tertiary depending on context, so it's checked against
+            // whichever of those two is harder to read against.
+            const accentTextBg = contrastRatio(activeColor, newVals["--bg-secondary"]) <= contrastRatio(activeColor, newVals["--bg-tertiary"])
+                ? newVals["--bg-secondary"] : newVals["--bg-tertiary"];
+            newVals["--accent-text"] = visibleVariant(activeColor, accentTextBg, 4.5, 100);
             // Vivid, contrast-guaranteed fill for proportional bars (e.g.
             // Library Stats), checked against the real (now re-hued) tertiary
             // surface that --control-surface resolves to.
@@ -1743,6 +1802,10 @@
             // actually contrasts against the rotated danger color -- the
             // page-background contrast check above doesn't cover that case.
             newVals["--on-danger"] = contrastRatio("#ffffff", newVals["--danger"]) >= contrastRatio("#000000", newVals["--danger"]) ? "#ffffff" : "#000000";
+            // Same idea for the "Copied" button state, which paints
+            // --success as a solid fill (it was previously reusing
+            // --on-accent here, which is tuned for a different color).
+            newVals["--on-success"] = contrastRatio("#ffffff", newVals["--success"]) >= contrastRatio("#000000", newVals["--success"]) ? "#ffffff" : "#000000";
 
             // Text: re-hued the same way as every other surface -- each of
             // primary/secondary/muted keeps its OWN original lightness (so
@@ -1751,12 +1814,22 @@
             // belongs to the same color family as the background instead of
             // staying stuck at the old theme's hue. Only nudged further
             // (lightness only, hue/saturation untouched) if that re-hued
-            // version doesn't actually clear contrast against the new bg.
+            // version doesn't actually clear contrast -- checked against
+            // whichever of the four background tiers is HARDEST to read
+            // against, since the same text color ends up on all of them
+            // (a card's bg-secondary, a hovered row's bg-hover, a nested
+            // panel's bg-tertiary), not just the page's own bg-primary.
+            const bgTiers = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover"].map((k) => newVals[k]);
             for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 3]]) {
                 const natural = naturalOf(textKey);
                 if (!natural) continue;
                 const rehued = recolorPreservingLightness(natural, pickedH, pickedS);
-                newVals[textKey] = visibleVariant(rehued, newVals["--bg-primary"], minRatio, 60);
+                let worstBg = bgTiers[0], worstRatio = contrastRatio(rehued, bgTiers[0]);
+                for (const bg of bgTiers) {
+                    const r = contrastRatio(rehued, bg);
+                    if (r < worstRatio) { worstRatio = r; worstBg = bg; }
+                }
+                newVals[textKey] = visibleVariant(rehued, worstBg, minRatio, 60);
             }
 
             for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
@@ -1791,7 +1864,7 @@
                 "--success", "--warning", "--danger",
                 "--ls-dir", "--ls-img", "--ls-vid", "--ls-aud", "--ls-code", "--ls-doc", "--ls-txt",
                 "--ls-data", "--ls-arc", "--ls-mkp", "--ls-css", "--ls-font", "--ls-m3u", "--ls-other",
-                "--glow", "--scanline", "--on-danger",
+                "--glow", "--scanline", "--on-danger", "--on-accent-hover", "--on-success",
             ];
             for (const key of keys) root.removeProperty(key);
         }

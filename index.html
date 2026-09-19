@@ -1459,13 +1459,15 @@
 
         /* ---------------------------------------------------------------
            Base Color engine
-           Whatever color you pick, its exact hue and saturation are used
-           everywhere — untouched, no clamping, no reshaping. Each surface
-           (main panel, secondary panel, hover state, border) keeps its own
-           original lightness so the app still has visible depth/layering;
-           the accent itself is your picked color exactly, byte-for-byte.
-           Decorative accents (the CRT glow text-shadow, the scanline
-           overlay) are re-hued the same way, keeping their own alpha.
+           Whatever color you pick, its exact hex is used everywhere,
+           byte-for-byte, at 100% intensity: every background panel
+           (primary/secondary/tertiary/hover), and the accent itself, all
+           flatten to that one exact color -- matching normal.html. A
+           synthetic --control-surface (a lightness-shifted, contrast-
+           guaranteed variant) exists purely so icon-only controls don't
+           vanish against the now-identical flat panels. Decorative accents
+           (the CRT glow text-shadow, the scanline overlay) are re-hued the
+           same way, keeping their own alpha.
 
            File-type (ls-*) and status (success/warning/danger) colors stay
            categorical rather than all becoming one color: each rotates by
@@ -1473,28 +1475,25 @@
            reference hue, so folders/images/video/etc. keep their relative
            identity instead of merging into a single tone.
 
-           Text (primary/secondary/muted) is re-hued the same way as every
-           other surface: each keeps its OWN original lightness -- so the
-           three stay as distinct from each other as they are in the stock
-           theme -- but its hue/saturation move to the picked color too,
-           so text reads as part of the same color family as the
-           background instead of staying stuck at the old theme's hue.
-           It's only nudged further (lightness only) if that re-hued
-           version doesn't actually clear contrast against the new
-           background. The Stop button's on-danger text is the one
-           exception: it sits directly on a solid --danger fill rather
-           than the page background, so it just picks whichever of plain
-           black/white contrasts against the rotated danger color.
+           Text (primary/secondary/muted) is left at its own original color
+           entirely untouched UNLESS it would actually fail contrast
+           against the new flat background -- normal.html's rule. The Stop
+           button's on-danger text (and the analogous on-accent,
+           on-accent-hover, on-success) are the exception: they sit
+           directly on a solid fill rather than the page background, so
+           each just picks whichever of plain black/white contrasts
+           against that fill.
 
            Every one of the contrast nudges above goes through
-           visibleVariant, which now makes a HARD guarantee, not a best
+           visibleVariant, which makes a HARD guarantee, not a best
            effort: it first tries nudging lightness alone (keeps hue/sat,
-           the common case); if that alone can't clear the target ratio
-           within its step budget, it escalates to inverting the color
-           outright and nudging that; if even inverted still isn't enough,
-           it falls back to plain black/white. So no color this engine
-           produces can end up silently unreadable, no matter how extreme
-           the picked hue or background.
+           the common case -- this covers "left alone unless it fails");
+           if that alone can't clear the target ratio within its step
+           budget, it escalates to inverting the color outright (the same
+           rescue normal.html uses) and nudging that; if even inverted
+           still isn't enough, it falls back to plain black/white. So no
+           color this engine produces can end up silently unreadable, no
+           matter how extreme the picked hue or background.
 
            "Color intensity" is a 5-step bar (100/80/60/40/20%) for people
            who find fully-saturated colors hard to look at. 100% is your
@@ -1616,32 +1615,6 @@
                 (match, alpha) => `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, ${alpha !== undefined ? alpha : 1})`
             );
         }
-        // Parses either "#rgb"/"#rrggbb" or a computed "rgb(a)(...)" string
-        // (what getComputedStyle always returns, regardless of how the color
-        // was originally written) into a hex color plus its alpha.
-        function parseCssColorToHexAlpha(str) {
-            str = (str || "").trim();
-            if (!str) return null;
-            if (str[0] === "#") {
-                const hex = str.length === 4 ? "#" + [...str.slice(1)].map((c) => c + c).join("") : str;
-                return { hex, a: 1 };
-            }
-            const m = str.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/i);
-            if (!m) return null;
-            const toHex = (n) => clampNum(Math.round(parseFloat(n)), 0, 255).toString(16).padStart(2, "0");
-            return { hex: `#${toHex(m[1])}${toHex(m[2])}${toHex(m[3])}`, a: m[4] !== undefined ? parseFloat(m[4]) : 1 };
-        }
-        // Re-hues a surface's own natural (stock-theme) color to the picked
-        // color's hue/saturation while keeping that exact surface's own
-        // lightness -- this is what lets every theme's own depth/layering
-        // (bg-primary vs. bg-secondary vs. bg-tertiary, etc.) survive a
-        // custom color instead of every surface collapsing to one flat tone.
-        function recolorPreservingLightness(naturalCssValue, pickedH, pickedS) {
-            const parsed = parseCssColorToHexAlpha(naturalCssValue);
-            if (!parsed) return naturalCssValue;
-            const { l } = hexToHsl(parsed.hex);
-            return hslToHex(pickedH, pickedS, l);
-        }
         // WCAG 2.x relative luminance: https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
         function relLuminance(hex) {
             const { r, g, b } = hexToRgb(hex);
@@ -1724,34 +1697,21 @@
             const naturalOf = (name) => computed.getPropertyValue(name).trim();
 
             // Below 100% intensity the picked color is muted toward a calmer
-            // version of itself first; its hue/saturation (not its exact hex)
-            // are what get applied to every surface below.
+            // version of itself first; every surface below then uses that
+            // EXACT same hex (background, hover fill, accent) -- at 100% this
+            // is your picked color, byte-for-byte, with nothing recolored or
+            // reshaped, matching normal.html.
             const activeColor = muteColorAtIntensity(vividColor, colorIntensity);
-            const { h: pickedH, s: pickedS } = hexToHsl(activeColor);
+            const { h: pickedH } = hexToHsl(activeColor);
             const newVals = {};
-
-            // Every layered surface keeps ITS OWN original lightness -- only
-            // hue/saturation move to the picked color -- so each theme's own
-            // depth (primary vs. secondary vs. tertiary vs. hover) survives.
-            for (const name of ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover"]) {
-                newVals[name] = recolorPreservingLightness(naturalOf(name), pickedH, pickedS);
-            }
-            // Border: re-hued the same way, then nudged only if it isn't
-            // actually visible against the new (re-hued) primary background.
-            // The dark/light themes use a soft translucent border (rgba with
-            // alpha < 1); that translucency is part of their look, so it's
-            // preserved rather than collapsed to a flat opaque color.
-            const borderNatural = naturalOf("--border-color");
-            const borderAlpha = (parseCssColorToHexAlpha(borderNatural) || { a: 1 }).a;
-            const rehuedBorder = recolorPreservingLightness(borderNatural, pickedH, pickedS);
-            const contrastedBorderHex = visibleVariant(rehuedBorder, newVals["--bg-primary"], 1.6, 40);
-            newVals["--border-color"] = borderAlpha < 1
-                ? (() => { const rgb = hexToRgb(contrastedBorderHex); return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${borderAlpha})`; })()
-                : contrastedBorderHex;
-
-            // The accent itself is the picked color, exactly (muted to the
-            // chosen intensity) -- no lightness borrowing here.
+            newVals["--bg-primary"] = activeColor;
+            newVals["--bg-secondary"] = activeColor;
+            newVals["--bg-tertiary"] = activeColor;
+            newVals["--bg-hover"] = activeColor;
             newVals["--accent"] = activeColor;
+            // Borders/hover need a lightness nudge or they'd be invisible
+            // against an identical flat fill color.
+            newVals["--border-color"] = visibleVariant(activeColor, activeColor, 2.2, 50);
             newVals["--accent-hover"] = visibleVariant(activeColor, activeColor, 1.6, 30);
             // A handful of hover/active states paint accent-hover as a solid
             // fill with text on top (Play button hover, Download button
@@ -1760,18 +1720,29 @@
             // --accent) isn't guaranteed to still contrast -- this is its
             // own black/white pick against the actual hover fill.
             newVals["--on-accent-hover"] = contrastRatio("#ffffff", newVals["--accent-hover"]) >= contrastRatio("#000000", newVals["--accent-hover"]) ? "#ffffff" : "#000000";
-            // accent-as-text (breadcrumb pin, tree active-item, library
-            // stats icons, list header) shows up on both bg-secondary and
-            // bg-tertiary depending on context, so it's checked against
-            // whichever of those two is harder to read against.
-            const accentTextBg = contrastRatio(activeColor, newVals["--bg-secondary"]) <= contrastRatio(activeColor, newVals["--bg-tertiary"])
-                ? newVals["--bg-secondary"] : newVals["--bg-tertiary"];
-            newVals["--accent-text"] = visibleVariant(activeColor, accentTextBg, 4.5, 100);
+            // Guaranteed-visible surface for icon-only controls, since a
+            // button matching the flat panel color would otherwise vanish.
+            const { h: ctrlH, s: ctrlS, l: ctrlL } = hexToHsl(activeColor);
+            const shiftedL = clampNum(ctrlL + (ctrlL < 55 ? 22 : -22), 6, 94);
+            const controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+            newVals["--control-surface"] = controlSurface;
+            newVals["--control-surface-hover"] = visibleVariant(controlSurface, controlSurface, 1.3, 25);
+            newVals["--on-control"] = contrastRatio("#ffffff", controlSurface) >= contrastRatio("#000000", controlSurface) ? "#ffffff" : "#000000";
+            // Skeleton shimmer normally animates between --bg-tertiary and
+            // --bg-hover, both flattened here, so reuse the control-surface
+            // pair instead so the loading animation still reads.
+            newVals["--skeleton-base"] = controlSurface;
+            newVals["--skeleton-shine"] = newVals["--control-surface-hover"];
+            // Accent-as-text variant (breadcrumb pin, tree active-item,
+            // library stats icons, list header), since the flat --accent
+            // equals the panel background it would otherwise sit on.
+            newVals["--accent-text"] = visibleVariant(activeColor, activeColor, 4.5, 100);
             // Vivid, contrast-guaranteed fill for proportional bars (e.g.
-            // Library Stats), checked against the real (now re-hued) tertiary
-            // surface that --control-surface resolves to.
+            // Library Stats), checked against the control surface rather
+            // than the (now flat) background, since a subtle lightness
+            // variant of the flat color wouldn't read as distinct in a bar.
             const vividFill = hslToHex(pickedH, 85, 55);
-            newVals["--stat-fill"] = visibleVariant(vividFill, newVals["--bg-tertiary"], 3, 80);
+            newVals["--stat-fill"] = visibleVariant(vividFill, controlSurface, 3, 80);
             // --glow (logo/breadcrumb text-shadow) and --scanline (the CRT
             // overlay) are hardcoded per-theme rgba tints in CSS, not derived
             // from --accent, so without this they'd stay frozen at the stock
@@ -1786,7 +1757,7 @@
             // keeping each one's own preset saturation/lightness so folders
             // stay blue-ish, images pink-ish, etc. relative to each other --
             // then nudge lightness only as needed to still read against the
-            // new (re-hued) primary background.
+            // new flat background.
             const categorical = CATEGORICAL_BASE[getActivePaletteKey()] || CATEGORICAL_BASE.dark;
             const pickedHueRaw = hexToHsl(vividColor).h;
             const refHue = hexToHsl(categorical.accent).h;
@@ -1795,7 +1766,7 @@
                 if (varName === "accent") continue;
                 const { h, s, l } = hexToHsl(presetHex);
                 const rotated = hslToHex((h + hueDelta + 360) % 360, s, l);
-                newVals[varName] = visibleVariant(rotated, newVals["--bg-primary"], 3, 45);
+                newVals[varName] = visibleVariant(rotated, activeColor, 3, 45);
             }
             // The Stop button paints --danger as a solid fill with text on
             // top, so its text needs to pick whichever of black/white
@@ -1807,38 +1778,18 @@
             // --on-accent here, which is tuned for a different color).
             newVals["--on-success"] = contrastRatio("#ffffff", newVals["--success"]) >= contrastRatio("#000000", newVals["--success"]) ? "#ffffff" : "#000000";
 
-            // Text: re-hued the same way as every other surface -- each of
-            // primary/secondary/muted keeps its OWN original lightness (so
-            // the three stay visually distinct, same as the stock theme),
-            // but its hue/saturation move to the picked color too, so text
-            // belongs to the same color family as the background instead of
-            // staying stuck at the old theme's hue. Only nudged further
-            // (lightness only, hue/saturation untouched) if that re-hued
-            // version doesn't actually clear contrast -- checked against
-            // whichever of the four background tiers is HARDEST to read
-            // against, since the same text color ends up on all of them
-            // (a card's bg-secondary, a hovered row's bg-hover, a nested
-            // panel's bg-tertiary), not just the page's own bg-primary.
-            const bgTiers = ["--bg-primary", "--bg-secondary", "--bg-tertiary", "--bg-hover"].map((k) => newVals[k]);
+            // Text: left at its own original color -- unchanged -- unless it
+            // would actually fail contrast against the new flat background,
+            // in which case visibleVariant nudges its lightness, then (its
+            // hard guarantee) escalates to inverting it outright, then to
+            // plain black/white, so text is never left unreadable.
             for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 3]]) {
                 const natural = naturalOf(textKey);
                 if (!natural) continue;
-                const rehued = recolorPreservingLightness(natural, pickedH, pickedS);
-                let worstBg = bgTiers[0], worstRatio = contrastRatio(rehued, bgTiers[0]);
-                for (const bg of bgTiers) {
-                    const r = contrastRatio(rehued, bg);
-                    if (r < worstRatio) { worstRatio = r; worstBg = bg; }
-                }
-                newVals[textKey] = visibleVariant(rehued, worstBg, minRatio, 60);
+                newVals[textKey] = visibleVariant(natural, activeColor, minRatio, 60);
             }
 
             for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
-            // --control-surface, --control-surface-hover, --on-control,
-            // --skeleton-base and --skeleton-shine are left unset here: they're
-            // defined in CSS as var(--bg-tertiary)/var(--bg-hover)/var(--text-primary),
-            // so they pick up the re-hued values above automatically and keep
-            // their own distinctness from bg-primary instead of needing a
-            // separately-synthesized surface.
             const onAccent = contrastRatio("#ffffff", newVals["--accent"]) >= contrastRatio("#000000", newVals["--accent"]) ? "#ffffff" : "#000000";
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);

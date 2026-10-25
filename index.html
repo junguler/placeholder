@@ -499,6 +499,12 @@
         .playlist-track { color: var(--text-primary); font-weight: 500; }
         .playlist-stop-btn { padding: 0.25rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
         .playlist-stop-btn:hover { opacity: 0.9; }
+        /* Test / Songs / Stop share one fixed height (the Stop button's) so they line up in the bar */
+        .playlist-bar #playlistTest, .playlist-bar #playlistSongs, .playlist-bar #playlistStop {
+            box-sizing: border-box; height: 1.5rem; padding-top: 0; padding-bottom: 0; line-height: 1;
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; white-space: nowrap;
+        }
+        .playlist-bar #playlistStop { padding-left: 0.4rem; padding-right: 0.4rem; }
         .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
         .goto-input { width: 3.4rem; height: 1.25rem; box-sizing: border-box; text-align: center; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
         .goto-input::-webkit-outer-spin-button, .goto-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

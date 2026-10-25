@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <meta name="referrer" content="no-referrer" />
     <title>File Viewer</title>
     <meta name="description" content="Browse and preview files from this repository directly in your browser — code, images, audio, video, and playlists." />
     <meta property="og:title" content="File Viewer" />
@@ -653,6 +654,27 @@
         .shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; }
         .stats-modal { max-width: 420px; }
         .stats-body { padding: 0.85rem 1rem 1rem; overflow-y: auto; }
+        .playlist-health { color: var(--text-muted); font-weight: 400; }
+        .np-song { max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
+        .np-song:empty { display: none; }
+        .np-status { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); text-align: center; line-height: 1.4; min-height: 1em; }
+        .hs-dot { color: var(--text-muted); }
+        .hs-dot.hs-good { color: var(--success); }
+        .hs-dot.hs-weak { color: var(--warning); }
+        .hs-dot.hs-bad, .hs-dot.hs-blocked { color: var(--danger); }
+        .modal-btn.text-btn { padding: 0.375rem 0.6rem; font-size: 0.75rem; }
+        .songs-modal { max-width: 560px; }
+        .songs-body { padding: 0.75rem 1rem 1rem; overflow-y: auto; }
+        .songs-body > * { flex-shrink: 0; }
+        .songs-search { width: 100%; box-sizing: border-box; padding: 0.4rem 0.6rem; margin-bottom: 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-size: 0.85rem; }
+        .songs-search:focus { outline: none; border-color: var(--accent); }
+        .song-row { padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); }
+        .song-title { font-size: 0.88rem; color: var(--text-primary); word-break: break-word; }
+        .song-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); margin-top: 0.1rem; }
+        .song-links { margin-top: 0.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .song-links a { font-size: 0.72rem; color: var(--accent); text-decoration: none; }
+        .song-links a:hover { text-decoration: underline; }
+        .songs-empty { padding: 1rem 0; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
         .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
         .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.65rem 0.5rem; text-align: center; }
         .stats-summary-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
@@ -811,6 +833,13 @@
                                             <span class="switch-slider"></span>
                                         </label>
                                     </div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Skip off-air streams</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="skipDeadToggle" checked aria-label="Skip streams that tested or played as off air when moving between playlist tracks" />
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -938,7 +967,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span></div>
+                <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
+                <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist">Test</button>
+                <button class="playlist-btn" id="playlistSongs" title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
                 <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist">Stop</button>
             </div>
             <div class="modal-body" id="modalBody"></div>
@@ -979,6 +1010,23 @@
                 </div>
             </div>
             <div class="modal-body stats-body" id="statsBody"></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="songsModal" role="dialog" aria-modal="true" aria-labelledby="songsTitle">
+        <div class="modal songs-modal" id="songsModalContent">
+            <div class="modal-header">
+                <span class="modal-title" id="songsTitle">Songs heard</span>
+                <div class="modal-actions">
+                    <button class="modal-btn text-btn" id="songsClearBtn" title="Clear the list" aria-label="Clear the songs list">Clear</button>
+                    <button class="modal-btn" id="songsCloseBtn" title="Close" aria-label="Close songs heard">
+                        <svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body songs-body">
+                <input type="search" class="songs-search" id="songsSearch" placeholder="Search songs or stations…" aria-label="Search songs" autocomplete="off" />
+                <div id="songsList"></div>
+            </div>
         </div>
     </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
@@ -1388,6 +1436,9 @@
             useNativePlayer = localStorage.getItem("useNativePlayer") === "1";
             const nativeToggle = document.getElementById("nativePlayerToggle");
             if (nativeToggle) nativeToggle.checked = useNativePlayer;
+            skipDeadStreams = localStorage.getItem(SKIPDEAD_KEY) !== "0";
+            const skipDeadToggle = document.getElementById("skipDeadToggle");
+            if (skipDeadToggle) skipDeadToggle.checked = skipDeadStreams;
             document.body.classList.toggle("native-player-mode", useNativePlayer);
             const compactDensity = localStorage.getItem("compactDensity") === "1";
             document.body.classList.toggle("compact-density", compactDensity);
@@ -2338,6 +2389,7 @@
             document.addEventListener("keydown", (e) => {
                 const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
                 const statsOpen = document.getElementById("statsModal").classList.contains("active");
+                const songsOpen = document.getElementById("songsModal").classList.contains("active");
                 if (e.key === "Escape") {
                     const settingsMenuEl = document.getElementById("settingsMenu");
                     const themeMenuEl = document.getElementById("themeColorMenu");
@@ -2351,11 +2403,13 @@
                         document.getElementById("themeColorBtn").setAttribute("aria-expanded", "false");
                         return;
                     }
-                    if (statsOpen) closeStatsModal();
+                    if (songsOpen) closeSongsModal();
+                    else if (statsOpen) closeStatsModal();
                     else if (shortcutsOpen) closeShortcutsModal();
                     else closeModal();
                     return;
                 }
+                if (songsOpen) return; // typing / arrows belong to the songs list while it is open
                 if (e.key === "?" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !shortcutsOpen && !statsOpen) {
                     e.preventDefault();
                     openShortcutsModal();
@@ -2426,6 +2480,10 @@
                 localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0");
                 document.body.classList.toggle("native-player-mode", useNativePlayer);
             });
+            document.getElementById("skipDeadToggle").addEventListener("change", (e) => {
+                skipDeadStreams = e.target.checked;
+                localStorage.setItem(SKIPDEAD_KEY, skipDeadStreams ? "1" : "0");
+            });
             document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
                 document.body.classList.toggle("compact-density", e.target.checked);
                 localStorage.setItem("compactDensity", e.target.checked ? "1" : "0");
@@ -2447,6 +2505,15 @@
             document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink);
             document.getElementById("favoriteBtn").addEventListener("click", () => toggleFavoriteFile(currentFilePath));
             document.getElementById("playlistStop").addEventListener("click", stopPlaylist);
+            document.getElementById("playlistTest").addEventListener("click", runPlaylistTest);
+            document.getElementById("playlistSongs").addEventListener("click", openSongsModal);
+            document.getElementById("songsCloseBtn").addEventListener("click", closeSongsModal);
+            document.getElementById("songsClearBtn").addEventListener("click", clearSongs);
+            document.getElementById("songsSearch").addEventListener("input", renderSongsList);
+            document.getElementById("songsModal").addEventListener("click", (e) => {
+                if (e.target === e.currentTarget) closeSongsModal();
+            });
+            document.getElementById("songsModal").addEventListener("keydown", (e) => trapModalFocus(e, "songsModalContent"));
             document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
             setupGotoStepper();
         }
@@ -3446,8 +3513,14 @@
             }
         }
         function getNextShuffleIndex() {
-            if (shuffleBag.length === 0) refillShuffleBag();
-            return shuffleBag.length > 0 ? shuffleBag.pop() : currentPlaylistIndex;
+            let idx = currentPlaylistIndex;
+            // draw again while the pick is a stream already known to be off air
+            for (let tries = 0; tries < 40; tries++) {
+                if (shuffleBag.length === 0) refillShuffleBag();
+                idx = shuffleBag.length > 0 ? shuffleBag.pop() : currentPlaylistIndex;
+                if (idx === currentPlaylistIndex || !isKnownDead(idx)) break;
+            }
+            return idx;
         }
         function toggleShuffle() {
             isShuffle = !isShuffle;
@@ -3470,7 +3543,8 @@
                 shuffleHistory.push(nextIdx);
                 playPlaylistTrack(nextIdx);
             } else {
-                playPlaylistTrack(currentPlaylistIndex + 1);
+                const idx = nextLiveIndex(currentPlaylistIndex + 1, 1);
+                if (idx >= 0) playPlaylistTrack(idx);
             }
         }
         function goToPrevTrack() {
@@ -3481,7 +3555,8 @@
                     playPlaylistTrack(shuffleHistory[shuffleHistory.length - 1]);
                 }
             } else {
-                playPlaylistTrack(currentPlaylistIndex - 1);
+                const idx = nextLiveIndex(currentPlaylistIndex - 1, -1);
+                if (idx >= 0) playPlaylistTrack(idx);
             }
         }
         function closeGotoPopover() {
@@ -3556,12 +3631,16 @@
             if (!isPlaylistFile || !currentFilePath) return;
             const e = `./${encodePathForUrl(currentFilePath)}`,
                 t = await parsePlaylist(e, e);
+            failStreak = 0;
+            await Promise.race([streamHealth.open(), new Promise((r) => setTimeout(r, 1200))]);
+            if (!currentFilePath) return; // closed while loading
             t.length > 0
                 ? ((currentPlaylist = t),
                   (currentPlaylistIndex = 0),
                   isShuffle && ((shuffleHistory = [0]), refillShuffleBag()),
                   document.getElementById("playPlaylistBtn").classList.add("hidden"),
                   updatePlaylistUI(),
+                  syncTestUI(true),
                   playPlaylistTrack(0))
                 : (document.getElementById("modalBody").innerHTML = `
       <div class="preview-unavailable">
@@ -3574,8 +3653,8 @@
     `);
         }
         function stopPlaylist() {
-            destroyHls();
-            clearStreamTimeout();
+            endPlaySession();
+            cancelHealthTest();
             const activeMedia = document.getElementById("audioPlayer") || document.getElementById("videoPlayer");
             if (activeMedia) {
                 activeMedia.pause();
@@ -3688,60 +3767,1047 @@
             }
         }
 
-        async function resolveStreamUrl(url, depth = 0) {
-            const MAX_REDIRECT_DEPTH = 5;
-            if (depth >= MAX_REDIRECT_DEPTH) {
+        // ======================================================================
+        // Stream toolkit: playlist-wrapper parsing, format sniffing, a stream
+        // health store + tester, now-playing titles and a songs-heard history.
+        // Everything here is plain browser APIs; no dependencies.
+        // ======================================================================
+
+        // A stream that needs longer than this to start is shown as "Weak".
+        // Like STREAM_TIMEOUT_MS above, raise it on a slow connection.
+        const SLOW_START_MS = 6000;
+        const HEALTH_TTL_MS = 6 * 60 * 60 * 1000; // test results are re-checked after 6 hours
+        const HEALTH_KEEP_MS = 7 * 24 * 60 * 60 * 1000; // ...and forgotten after a week
+        const TEST_SAMPLE_BYTES = 320 * 1024; // a test reads ~320 KB...
+        const TEST_SAMPLE_MS = 3000; // ...or 3 seconds, whichever comes first
+        const TEST_MAX_TOTAL = 6; // at most 6 tests at once, 2 per server
+        const TEST_MAX_PER_HOST = 2;
+        const RECONNECT_MAX = 3;
+        const RECONNECT_DELAYS_MS = [400, 1500, 3500];
+        const STALL_RECONNECT_MS = 10000; // buffering this long while playing = a drop
+        const LIVE_RESUME_RECONNECT_MS = 60000; // paused longer than this: resume at the live point
+        const NP_POLL_MS = 15000;
+        const SONGS_KEY = "songsHeard";
+        const SONGS_MAX = 500;
+        const NOCORS_KEY = "noCorsHosts";
+        const SKIPDEAD_KEY = "skipDeadStreams";
+        const HEALTH_LABEL = { good: "On air", weak: "Weak", bad: "Off air", blocked: "Blocked" };
+
+        let skipDeadStreams = true;
+        let playSession = null; // state of the track that is playing right now
+        let playSeq = 0;
+        let failStreak = 0; // consecutive tracks that failed to start
+        let npJob = null; // now-playing poller for the current track
+        let healthTest = null; // the running "test playlist" job, if any
+        let testUiAt = 0;
+        let songsHeard = [];
+        const noCorsHosts = new Set(); // servers that only play without crossOrigin
+        const npBad = new Set(); // "source|origin" pairs that never worked (this page load)
+
+        // ---- small URL / fetch helpers ------------------------------------
+        function urlPathExt(url) {
+            try {
+                const p = new URL(url, location.href).pathname.toLowerCase();
+                const m = /\.([a-z0-9]{1,5})$/.exec(p);
+                return m ? m[1] : "";
+            } catch (e) {
+                return "";
+            }
+        }
+        function hostKey(url) {
+            try {
+                return new URL(url, location.href).host.toLowerCase();
+            } catch (e) {
+                return "";
+            }
+        }
+        function fetchWithTimeout(url, opts, ms, outerSignal) {
+            const ctl = new AbortController();
+            const timer = setTimeout(() => ctl.abort(), ms || 8000);
+            if (outerSignal) {
+                if (outerSignal.aborted) ctl.abort();
+                else outerSignal.addEventListener("abort", () => ctl.abort(), { once: true });
+            }
+            return fetch(url, Object.assign({}, opts || {}, { signal: ctl.signal })).finally(() => clearTimeout(timer));
+        }
+        async function readTextLimited(res, max) {
+            max = max || 512 * 1024;
+            if (!res.body || !res.body.getReader) return (await res.text()).slice(0, max);
+            const reader = res.body.getReader();
+            const parts = [];
+            let n = 0;
+            try {
+                for (;;) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    parts.push(value);
+                    n += value.length;
+                    if (n >= max) break;
+                }
+            } finally {
+                try {
+                    const c = reader.cancel();
+                    if (c && c.catch) c.catch(() => {});
+                } catch (e) {}
+            }
+            const buf = new Uint8Array(n);
+            let o = 0;
+            for (const p of parts) {
+                buf.set(p, o);
+                o += p.length;
+            }
+            return new TextDecoder("utf-8").decode(buf);
+        }
+        function concatChunks(chunks, max) {
+            let n = 0;
+            for (const c of chunks) n += c.length;
+            n = Math.min(n, max);
+            const out = new Uint8Array(n);
+            let o = 0;
+            for (const c of chunks) {
+                if (o >= n) break;
+                const part = c.length > n - o ? c.subarray(0, n - o) : c;
+                out.set(part, o);
+                o += part.length;
+            }
+            return out;
+        }
+
+        // ---- playlist wrappers: .m3u / .m3u8 / .pls / .asx / .xspf ----------
+        function decodeXmlEntities(s) {
+            return s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+        }
+        // Looks at the text itself (not the file extension) and returns
+        // { kind: "hls-master" | "hls-media" | "list" | "unknown", urls, variants? }
+        function parseStreamPlaylist(text, base) {
+            const t = String(text).replace(/^\uFEFF/, "").trim();
+            const abs = (u) => {
+                try {
+                    const href = new URL(decodeXmlEntities(u.trim()), base).href;
+                    return /^https?:/i.test(href) ? href : null;
+                } catch (e) {
+                    return null;
+                }
+            };
+            if (/^#EXTM3U/i.test(t) || /^#EXT-X-/m.test(t)) {
+                const lines = t.split(/\r?\n/).map((l) => l.trim());
+                if (/#EXT-X-STREAM-INF/i.test(t)) {
+                    const variants = [];
+                    for (let i = 0; i < lines.length; i++) {
+                        if (!/^#EXT-X-STREAM-INF/i.test(lines[i])) continue;
+                        const bw = /BANDWIDTH=(\d+)/i.exec(lines[i]);
+                        const next = lines.slice(i + 1).find((l) => l && !l.startsWith("#"));
+                        const u = next && abs(next);
+                        if (u) variants.push({ url: u, bw: bw ? parseInt(bw[1], 10) : 0 });
+                    }
+                    return { kind: "hls-master", variants, urls: variants.map((v) => v.url) };
+                }
+                if (/#EXT-X-(TARGETDURATION|MEDIA-SEQUENCE|ENDLIST)/i.test(t)) return { kind: "hls-media", urls: [] };
+                return { kind: "list", urls: lines.filter((l) => l && !l.startsWith("#")).map(abs).filter(Boolean) };
+            }
+            if (/^\s*\[playlist\]/im.test(t)) {
+                const urls = [];
+                const re = /^\s*File\d+\s*=\s*(.+)$/gim;
+                let m;
+                while ((m = re.exec(t))) {
+                    const u = abs(m[1]);
+                    if (u) urls.push(u);
+                }
+                return { kind: "list", urls };
+            }
+            if (/<asx[\s>]/i.test(t)) {
+                const urls = [];
+                const re = /<ref\s[^>]*href\s*=\s*["']([^"']+)["']/gi;
+                let m;
+                while ((m = re.exec(t))) {
+                    const u = abs(m[1]);
+                    if (u) urls.push(u);
+                }
+                return { kind: "list", urls };
+            }
+            if (/<playlist[\s>]/i.test(t) || /<trackList/i.test(t)) {
+                const urls = [];
+                const re = /<location>\s*([^<]+?)\s*<\/location>/gi;
+                let m;
+                while ((m = re.exec(t))) {
+                    const u = abs(m[1]);
+                    if (u) urls.push(u);
+                }
+                return { kind: "list", urls };
+            }
+            return { kind: "unknown", urls: [] };
+        }
+        const PLAYLIST_WRAPPER_EXTS = ["m3u", "m3u8", "pls", "asx", "xspf"];
+        // Follows playlist wrappers (up to 5 deep) down to the real stream URL.
+        // HLS master playlists resolve to their best variant; HLS media
+        // playlists are left alone for hls.js. Anything that can't be read
+        // (usually a server without CORS) is returned as-is.
+        async function resolveStreamUrl(url, depth) {
+            depth = depth || 0;
+            if (depth >= 5) {
                 console.warn("Playlist redirect chain too deep, using URL as-is:", url);
                 return url;
             }
-            const lowerUrl = url.toLowerCase();
-            const isM3u = lowerUrl.endsWith('.m3u') || lowerUrl.endsWith('.m3u8');
-            if (!isM3u) return url;
-
+            if (!PLAYLIST_WRAPPER_EXTS.includes(urlPathExt(url))) return url;
             try {
-                const response = await fetch(url);
-                const contentType = response.headers.get("content-type");
+                const response = await fetchWithTimeout(url, {}, 8000);
+                const ctype = (response.headers.get("content-type") || "").toLowerCase();
+                const looksLikeMedia = /^(audio|video)\//.test(ctype) && !/mpegurl|x-scpls|x-ms-asx|xspf/.test(ctype);
+                if (!response.ok || looksLikeMedia) return url;
+                const info = parseStreamPlaylist(await readTextLimited(response, 512 * 1024), url);
+                if (info.kind === "hls-master" && info.variants.length) {
+                    const best = info.variants.slice().sort((a, b) => b.bw - a.bw)[0];
+                    return resolveStreamUrl(best.url, depth + 1);
+                }
+                if (info.kind === "list" && info.urls.length) return resolveStreamUrl(info.urls[0], depth + 1);
+            } catch (e) {}
+            return url;
+        }
 
-                if (response.ok && (lowerUrl.endsWith('.m3u') || (contentType && (contentType.includes('mpegurl') || contentType.includes('text'))))) {
-                    const text = await response.text();
-                    if (text.includes("#EXTM3U")) {
-                        const lines = text.split('\n').map((l) => l.trim());
+        // ---- format sniffing (MP3 / AAC frame headers, ID3 tags) ------------
+        function readMp3Header(b, p) {
+            if (b[p] !== 0xff || (b[p + 1] & 0xe0) !== 0xe0) return null;
+            const ver = (b[p + 1] >> 3) & 3; // 3 = MPEG1, 2 = MPEG2, 0 = MPEG2.5
+            const lay = (b[p + 1] >> 1) & 3; // 1 = layer III, 2 = II, 3 = I
+            if (ver === 1 || lay === 0) return null;
+            const brIdx = (b[p + 2] >> 4) & 15;
+            const srIdx = (b[p + 2] >> 2) & 3;
+            const pad = (b[p + 2] >> 1) & 1;
+            if (brIdx === 0 || brIdx === 15 || srIdx === 3) return null;
+            const mpeg1 = ver === 3;
+            const layer = 4 - lay;
+            const table = mpeg1
+                ? layer === 1
+                    ? [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448]
+                    : layer === 2
+                      ? [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384]
+                      : [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
+                : layer === 1
+                  ? [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256]
+                  : [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
+            const kbps = table[brIdx];
+            const rate = (ver === 3 ? [44100, 48000, 32000] : ver === 2 ? [22050, 24000, 16000] : [11025, 12000, 8000])[srIdx];
+            const len = layer === 1 ? (Math.floor((12 * kbps * 1000) / rate) + pad) * 4 : Math.floor(((layer === 3 && !mpeg1 ? 72 : 144) * kbps * 1000) / rate) + pad;
+            return { kbps, rate, len };
+        }
+        function readAdtsHeader(b, p) {
+            if (b[p] !== 0xff || (b[p + 1] & 0xf6) !== 0xf0) return null;
+            const srIdx = (b[p + 2] >> 2) & 15;
+            const rates = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000];
+            if (srIdx >= 12) return null;
+            const len = ((b[p + 3] & 3) << 11) | (b[p + 4] << 3) | (b[p + 5] >> 5);
+            if (len < 7) return null;
+            const rate = rates[srIdx];
+            return { rate, len, kbps: Math.round((len * 8 * rate) / 1024 / 1000) };
+        }
+        function syncsafe(b, p) {
+            return ((b[p] & 0x7f) << 21) | ((b[p + 1] & 0x7f) << 14) | ((b[p + 2] & 0x7f) << 7) | (b[p + 3] & 0x7f);
+        }
+        // b: the first few KB of a stream. Returns { fmt, kbps?, rate? }.
+        // fmt is "" when nothing is recognised, "HTML" for an error page.
+        function sniffAudio(b) {
+            const n = b.length;
+            if (n < 16) return { fmt: "" };
+            const head = String.fromCharCode.apply(null, b.subarray(0, 16));
+            if (head.startsWith("OggS")) return { fmt: "OGG" };
+            if (head.startsWith("fLaC")) return { fmt: "FLAC" };
+            if (/^\s*<(!doctype|html|\?xml|head|body)/i.test(head)) return { fmt: "HTML" };
+            if (/^(#EXTM3U|\[playlist\])/i.test(head)) return { fmt: "LIST" };
+            let start = 0;
+            if (head.startsWith("ID3") && n > 10) start = Math.min(10 + syncsafe(b, 6), n);
+            const readers = [
+                ["MP3", readMp3Header],
+                ["AAC", readAdtsHeader],
+            ];
+            for (const [fmt, read] of readers) {
+                const stop = Math.min(n - 6, start + 16384);
+                for (let p = start; p < stop; p++) {
+                    if (!read(b, p)) continue;
+                    // a real stream has several frames in a row
+                    let q = p;
+                    let count = 0;
+                    let bytes = 0;
+                    let kbpsSum = 0;
+                    let rate = 0;
+                    while (q + 6 < n && count < 32) {
+                        const f = read(b, q);
+                        if (!f) break;
+                        bytes += f.len;
+                        kbpsSum += f.kbps;
+                        rate = f.rate;
+                        q += f.len;
+                        count++;
+                    }
+                    if (count >= 3) {
+                        const kbps = fmt === "MP3" ? Math.round(kbpsSum / count) : Math.round(((bytes / count) * 8 * rate) / 1024 / 1000);
+                        return { fmt, kbps, rate };
+                    }
+                }
+            }
+            return { fmt: "" };
+        }
+        function fmtFromContentType(ctype) {
+            if (/mpeg/.test(ctype)) return "MP3";
+            if (/aac/.test(ctype)) return "AAC";
+            if (/ogg|opus/.test(ctype)) return "OGG";
+            if (/flac/.test(ctype)) return "FLAC";
+            return "";
+        }
+        function id3Decode(body) {
+            if (!body.length) return "";
+            const enc = body[0];
+            const d = body.subarray(1);
+            let label = "iso-8859-1";
+            if (enc === 1) label = d[0] === 0xfe && d[1] === 0xff ? "utf-16be" : "utf-16le";
+            else if (enc === 2) label = "utf-16be";
+            else if (enc === 3) label = "utf-8";
+            try {
+                return new TextDecoder(label).decode(d).replace(/\0+$/, "");
+            } catch (e) {
+                return "";
+            }
+        }
+        // Reads the text frames of an ID3v2 tag (HLS timed metadata).
+        function parseId3Text(b) {
+            if (!b || b.length < 10 || b[0] !== 0x49 || b[1] !== 0x44 || b[2] !== 0x33) return null;
+            const ver = b[3];
+            const end = Math.min(b.length, 10 + syncsafe(b, 6));
+            const out = {};
+            let p = 10;
+            while (p + 10 <= end) {
+                const id = String.fromCharCode(b[p], b[p + 1], b[p + 2], b[p + 3]);
+                if (!/^[A-Z0-9]{4}$/.test(id)) break;
+                const size = ver === 4 ? syncsafe(b, p + 4) : ((b[p + 4] << 24) | (b[p + 5] << 16) | (b[p + 6] << 8) | b[p + 7]) >>> 0;
+                const body = b.subarray(p + 10, p + 10 + size);
+                p += 10 + size;
+                if (id === "TIT2") out.title = id3Decode(body);
+                else if (id === "TPE1") out.artist = id3Decode(body);
+                else if (id === "TXXX") {
+                    const parts = id3Decode(body).split("\0");
+                    if (parts.length >= 2 && /^(streamtitle|title)$/i.test(parts[0])) out.streamTitle = parts[parts.length - 1];
+                }
+            }
+            return out.title || out.artist || out.streamTitle ? out : null;
+        }
 
-                        // HLS master playlists list multiple quality variants via
-                        // #EXT-X-STREAM-INF; pick the highest-bandwidth one instead
-                        // of whichever line happens to appear first.
-                        let bestUrl = null,
-                            bestBandwidth = -1;
-                        for (let i = 0; i < lines.length; i++) {
-                            const line = lines[i];
-                            if (line.startsWith('#EXT-X-STREAM-INF')) {
-                                const bwMatch = /BANDWIDTH=(\d+)/i.exec(line);
-                                const bandwidth = bwMatch ? parseInt(bwMatch[1], 10) : 0;
-                                const variantLine = lines[i + 1];
-                                if (variantLine && !variantLine.startsWith('#') && bandwidth > bestBandwidth) {
-                                    (bestBandwidth = bandwidth), (bestUrl = variantLine);
-                                }
+        // ---- health store: remembers what each stream did, IndexedDB-backed --
+        const streamHealth = {
+            map: new Map(),
+            db: null,
+            ready: null,
+            pending: new Map(),
+            timer: null,
+            open() {
+                if (this.ready) return this.ready;
+                this.ready = new Promise((resolve) => {
+                    try {
+                        if (typeof indexedDB === "undefined") return resolve();
+                        const req = indexedDB.open("streamHealth", 1);
+                        req.onupgradeneeded = () => {
+                            req.result.createObjectStore("h", { keyPath: "u" });
+                        };
+                        req.onerror = () => resolve();
+                        req.onblocked = () => resolve();
+                        req.onsuccess = () => {
+                            this.db = req.result;
+                            try {
+                                const all = this.db.transaction("h", "readonly").objectStore("h").getAll();
+                                all.onsuccess = () => {
+                                    const cutoff = Date.now() - HEALTH_KEEP_MS;
+                                    const stale = [];
+                                    for (const r of all.result || []) {
+                                        if (r.t < cutoff) stale.push(r.u);
+                                        else if (!this.map.has(r.u)) this.map.set(r.u, r);
+                                    }
+                                    if (stale.length) this.remove(stale);
+                                    resolve();
+                                };
+                                all.onerror = () => resolve();
+                            } catch (e) {
+                                resolve();
                             }
-                        }
-                        if (bestUrl) {
-                            const resolved = new URL(bestUrl, url).href;
-                            return resolveStreamUrl(resolved, depth + 1);
-                        }
+                        };
+                    } catch (e) {
+                        resolve();
+                    }
+                });
+                return this.ready;
+            },
+            get(url) {
+                return this.map.get(url);
+            },
+            fresh(url) {
+                const r = this.map.get(url);
+                return !!r && Date.now() - r.t < HEALTH_TTL_MS;
+            },
+            set(rec) {
+                this.map.set(rec.u, rec);
+                this.pending.set(rec.u, rec);
+                if (!this.timer) this.timer = setTimeout(() => this.flush(), 1000);
+            },
+            merge(url, patch) {
+                const prev = this.map.get(url) || {};
+                this.set(Object.assign({}, prev, patch, { u: url, t: Date.now() }));
+                return this.map.get(url);
+            },
+            flush() {
+                this.timer = null;
+                if (!this.db || !this.pending.size) {
+                    this.pending.clear();
+                    return;
+                }
+                const recs = Array.from(this.pending.values());
+                this.pending.clear();
+                try {
+                    const st = this.db.transaction("h", "readwrite").objectStore("h");
+                    recs.forEach((r) => st.put(r));
+                } catch (e) {}
+            },
+            remove(urls) {
+                if (!this.db) return;
+                try {
+                    const st = this.db.transaction("h", "readwrite").objectStore("h");
+                    urls.forEach((u) => st.delete(u));
+                } catch (e) {}
+            },
+        };
+        window.addEventListener("pagehide", () => streamHealth.flush());
 
-                        // Otherwise this is a simple redirector list: take the
-                        // first playable entry.
-                        for (const line of lines) {
-                            if (line && !line.startsWith('#')) {
-                                const resolved = new URL(line, url).href;
-                                return resolveStreamUrl(resolved, depth + 1);
-                            }
+        function isKnownDead(i) {
+            if (!skipDeadStreams) return false;
+            const item = currentPlaylist[i];
+            const r = item && streamHealth.get(item.url);
+            return !!r && (r.s === "bad" || r.s === "blocked") && Date.now() - r.t < HEALTH_TTL_MS;
+        }
+        // First playable track from `start`, stepping by `dir`; -1 if none.
+        function nextLiveIndex(start, dir) {
+            for (let i = start; i >= 0 && i < currentPlaylist.length; i += dir) {
+                if (!isKnownDead(i)) return i;
+            }
+            return -1;
+        }
+
+        // ---- the tester: reads a short sample of a stream -------------------
+        const testSlots = {
+            total: 0,
+            hosts: new Map(),
+            waiters: [],
+            acquire(host) {
+                return new Promise((resolve) => {
+                    const tryNow = () => {
+                        if (this.total < TEST_MAX_TOTAL && (this.hosts.get(host) || 0) < TEST_MAX_PER_HOST) {
+                            this.total++;
+                            this.hosts.set(host, (this.hosts.get(host) || 0) + 1);
+                            resolve();
+                            return true;
+                        }
+                        return false;
+                    };
+                    if (!tryNow()) this.waiters.push(tryNow);
+                });
+            },
+            release(host) {
+                this.total--;
+                const n = (this.hosts.get(host) || 1) - 1;
+                if (n > 0) this.hosts.set(host, n);
+                else this.hosts.delete(host);
+                for (let i = 0; i < this.waiters.length; ) {
+                    if (this.waiters[i]()) this.waiters.splice(i, 1);
+                    else i++;
+                }
+            },
+        };
+
+        // Plays the stream muted in a throwaway <audio> to see whether audio
+        // actually starts. Used when fetch() can't read the server (no CORS).
+        function probeAudioElement(u, signal) {
+            return new Promise((resolve) => {
+                const a = new Audio();
+                a.muted = true;
+                a.volume = 0;
+                a.preload = "auto";
+                const t0 = performance.now();
+                let done = false;
+                let timer = null;
+                const finish = (r) => {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(timer);
+                    if (signal) signal.removeEventListener("abort", onAbort);
+                    a.onplaying = a.onerror = a.ontimeupdate = null;
+                    try {
+                        a.pause();
+                        a.removeAttribute("src");
+                        a.load();
+                    } catch (e) {}
+                    resolve(r);
+                };
+                const onAbort = () => finish({ aborted: true });
+                if (signal) {
+                    if (signal.aborted) return finish({ aborted: true });
+                    signal.addEventListener("abort", onAbort, { once: true });
+                }
+                timer = setTimeout(() => finish({ s: "bad" }), STREAM_TIMEOUT_MS);
+                a.onerror = () => finish({ s: "bad" });
+                a.ontimeupdate = () => {
+                    if (a.currentTime > 0.2) {
+                        const ms = Math.round(performance.now() - t0);
+                        finish({ s: ms > SLOW_START_MS ? "weak" : "good", ms, probe: true });
+                    }
+                };
+                a.src = u;
+                const p = a.play();
+                if (p && p.catch) p.catch(() => {});
+            });
+        }
+        // Looks at an HLS playlist and downloads its newest segment, comparing
+        // the download time with the segment's length.
+        async function probeHls(u, signal) {
+            try {
+                const t0 = performance.now();
+                let res = await fetchWithTimeout(u, { cache: "no-store" }, STREAM_TIMEOUT_MS, signal);
+                if (!res.ok) return { s: "bad" };
+                let text = await readTextLimited(res, 512 * 1024);
+                let info = parseStreamPlaylist(text, u);
+                let mediaUrl = u;
+                if (info.kind === "hls-master" && info.variants.length) {
+                    mediaUrl = info.variants.slice().sort((a, b) => b.bw - a.bw)[0].url;
+                    res = await fetchWithTimeout(mediaUrl, { cache: "no-store" }, STREAM_TIMEOUT_MS, signal);
+                    if (!res.ok) return { s: "bad" };
+                    text = await readTextLimited(res, 512 * 1024);
+                    info = parseStreamPlaylist(text, mediaUrl);
+                }
+                if (info.kind !== "hls-media") return { s: "bad" };
+                const lines = text.split(/\r?\n/).map((l) => l.trim());
+                const segs = [];
+                for (let i = 0; i < lines.length; i++) {
+                    const m = /^#EXTINF:([\d.]+)/.exec(lines[i]);
+                    if (!m) continue;
+                    const next = lines.slice(i + 1).find((l) => l && !l.startsWith("#"));
+                    if (next) segs.push({ url: new URL(next, mediaUrl).href, dur: parseFloat(m[1]) || 1 });
+                }
+                if (!segs.length) return { s: "bad" };
+                const seg = segs[segs.length - 1];
+                const t1 = performance.now();
+                const sres = await fetchWithTimeout(seg.url, { cache: "no-store" }, STREAM_TIMEOUT_MS, signal);
+                if (!sres.ok) return { s: "bad" };
+                const bytes = (await sres.arrayBuffer()).byteLength;
+                const took = (performance.now() - t1) / 1000;
+                const ms = Math.round(performance.now() - t0);
+                return { s: took > seg.dur * 0.8 || ms > SLOW_START_MS ? "weak" : "good", ms, kbps: Math.round((bytes * 8) / 1000 / seg.dur), fmt: "HLS" };
+            } catch (e) {
+                if (signal && signal.aborted) return { aborted: true };
+                return { s: "bad" };
+            }
+        }
+        // Reads ~320 KB / 3 s of the stream. Returns null when fetch() itself
+        // fails (network error, no CORS, mixed content) so the caller can try
+        // the audio-element probe instead.
+        async function probeFetch(u, signal, depth) {
+            depth = depth || 0;
+            const ctl = new AbortController();
+            let timedOut = false;
+            let cancelled = false;
+            const onAbort = () => {
+                cancelled = true;
+                ctl.abort();
+            };
+            if (signal) {
+                if (signal.aborted) return { aborted: true };
+                signal.addEventListener("abort", onAbort, { once: true });
+            }
+            const hdrTimer = setTimeout(() => {
+                timedOut = true;
+                ctl.abort();
+            }, STREAM_TIMEOUT_MS);
+            let sampleTimer = null;
+            const t0 = performance.now();
+            try {
+                let res;
+                try {
+                    res = await fetch(u, { signal: ctl.signal, cache: "no-store", credentials: "omit" });
+                } catch (e) {
+                    if (cancelled) return { aborted: true };
+                    if (timedOut) return { s: "bad" };
+                    return null;
+                }
+                if (!res.ok) return { s: "bad" };
+                const ctype = (res.headers.get("content-type") || "").toLowerCase();
+                if (/text\/html/.test(ctype)) return { s: "bad" };
+                if (/mpegurl|x-scpls|x-ms-asx|xspf/.test(ctype) && depth < 3) {
+                    const info = parseStreamPlaylist(await readTextLimited(res, 256 * 1024), u);
+                    if (info.kind === "list" && info.urls.length) return probeOne(info.urls[0], signal, depth + 1);
+                    if (info.kind === "hls-master" || info.kind === "hls-media") return probeHls(u, signal);
+                    return { s: "bad" };
+                }
+                const reader = res.body.getReader();
+                const chunks = [];
+                let got = 0;
+                let firstAt = null;
+                let endedEarly = false;
+                try {
+                    for (;;) {
+                        const { value, done } = await reader.read();
+                        if (done) {
+                            endedEarly = true;
+                            break;
+                        }
+                        if (firstAt === null) {
+                            firstAt = performance.now();
+                            clearTimeout(hdrTimer);
+                            sampleTimer = setTimeout(() => ctl.abort(), TEST_SAMPLE_MS);
+                        }
+                        chunks.push(value);
+                        got += value.length;
+                        if (got >= TEST_SAMPLE_BYTES) break;
+                    }
+                } catch (e) {
+                    if (cancelled) return { aborted: true };
+                }
+                const now = performance.now();
+                try {
+                    ctl.abort();
+                } catch (e) {}
+                if (got === 0) return { s: "bad" };
+                const info = sniffAudio(concatChunks(chunks, 32768));
+                if (info.fmt === "HTML") return { s: "bad" };
+                let kbps = info.kbps || 0;
+                const hdrBr = parseInt(res.headers.get("icy-br"), 10);
+                if (!kbps && hdrBr > 0) kbps = hdrBr;
+                const elapsed = firstAt === null ? 0 : now - firstAt;
+                const ms = Math.round((firstAt === null ? now : firstAt) - t0);
+                if (endedEarly && got < 16 * 1024) return { s: "bad" };
+                let weak = ms > SLOW_START_MS;
+                // Audio that arrives slower than it plays will drop out.
+                if (!endedEarly && got < TEST_SAMPLE_BYTES && elapsed >= TEST_SAMPLE_MS - 250) {
+                    const needed = (kbps || 128) * 125 * (elapsed / 1000);
+                    if (got < needed * 0.9) weak = true;
+                }
+                return { s: weak ? "weak" : "good", ms, kbps: kbps || null, fmt: info.fmt || fmtFromContentType(ctype) };
+            } finally {
+                clearTimeout(hdrTimer);
+                clearTimeout(sampleTimer);
+                if (signal) signal.removeEventListener("abort", onAbort);
+            }
+        }
+        async function probeOne(u, signal, depth) {
+            if (urlPathExt(u) === "m3u8") return probeHls(u, signal);
+            let r = null;
+            try {
+                r = await probeFetch(u, signal, depth || 0);
+            } catch (e) {
+                r = null;
+            }
+            if (r) return r;
+            return probeAudioElement(u, signal);
+        }
+        async function probeStream(url, signal) {
+            let target = url;
+            try {
+                target = await resolveStreamUrl(url, 0);
+            } catch (e) {}
+            const upgraded = location.protocol === "https:" && /^http:\/\//i.test(target);
+            const u = upgraded ? target.replace(/^http:/i, "https:") : target;
+            const r = await probeOne(u, signal, 0);
+            if (r && r.s === "bad" && upgraded) return { s: "blocked" };
+            return r || { s: "bad" };
+        }
+        // Tests one stream and stores the result. Resolves to the record, or
+        // null if the test was cancelled.
+        async function testStream(url, opts) {
+            opts = opts || {};
+            const host = hostKey(url);
+            await testSlots.acquire(host);
+            try {
+                if (opts.signal && opts.signal.aborted) return null;
+                const r = await probeStream(url, opts.signal);
+                if (!r || r.aborted) return null;
+                return streamHealth.merge(url, { s: r.s, ms: r.ms == null ? null : r.ms, kbps: r.kbps == null ? null : r.kbps, fmt: r.fmt || "", src: "test" });
+            } finally {
+                testSlots.release(host);
+            }
+        }
+        // Several hosts at a time instead of hammering one server in a row.
+        function interleaveByHost(idxs, items, chunk) {
+            chunk = chunk || 240;
+            const out = [];
+            for (let c = 0; c < idxs.length; c += chunk) {
+                const groups = new Map();
+                for (const i of idxs.slice(c, c + chunk)) {
+                    const h = hostKey(items[i].url);
+                    if (!groups.has(h)) groups.set(h, []);
+                    groups.get(h).push(i);
+                }
+                const lists = Array.from(groups.values());
+                for (let r = 0, more = true; more; r++) {
+                    more = false;
+                    for (const l of lists) {
+                        if (r < l.length) {
+                            out.push(l[r]);
+                            more = true;
                         }
                     }
                 }
-            } catch (e) {
             }
-            return url;
+            return out;
         }
+        function cancelHealthTest() {
+            if (!healthTest) return;
+            healthTest.cancelled = true;
+            healthTest.ctl.abort();
+        }
+        async function runPlaylistTest() {
+            if (healthTest) {
+                cancelHealthTest();
+                return;
+            }
+            const items = currentPlaylist;
+            if (!items.length) return;
+            await streamHealth.open();
+            const n = items.length;
+            const startAt = (currentPlaylistIndex + 1) % n;
+            const seen = new Set();
+            const order = [];
+            for (let k = 0; k < n; k++) {
+                const i = (startAt + k) % n;
+                const u = items[i].url;
+                if (seen.has(u) || streamHealth.fresh(u)) continue;
+                seen.add(u);
+                order.push(i);
+            }
+            const todo = interleaveByHost(order, items);
+            if (!todo.length) {
+                syncTestUI(true);
+                announce("Every stream in this playlist was already checked recently.");
+                return;
+            }
+            const t = { cancelled: false, ctl: new AbortController(), done: 0, total: todo.length };
+            healthTest = t;
+            syncTestUI(true);
+            let next = 0;
+            const worker = async () => {
+                while (!t.cancelled) {
+                    const k = next++;
+                    if (k >= todo.length) return;
+                    await testStream(items[todo[k]].url, { signal: t.ctl.signal }).catch(() => null);
+                    if (t.cancelled) return;
+                    t.done++;
+                    syncTestUI(false);
+                }
+            };
+            await Promise.all(Array.from({ length: TEST_MAX_TOTAL }, worker));
+            const wasCancelled = t.cancelled;
+            if (healthTest === t) healthTest = null;
+            syncTestUI(true);
+            announce(wasCancelled ? "Stream test stopped." : "Stream test finished. " + healthSummaryText().replace(/^ · /, ""));
+        }
+        function healthSummaryText() {
+            let good = 0;
+            let weak = 0;
+            let off = 0;
+            for (const it of currentPlaylist) {
+                const r = streamHealth.map.get(it.url);
+                if (!r || Date.now() - r.t >= HEALTH_TTL_MS) continue;
+                if (r.s === "good") good++;
+                else if (r.s === "weak") weak++;
+                else off++;
+            }
+            const parts = [];
+            if (good) parts.push(good + " on air");
+            if (weak) parts.push(weak + " weak");
+            if (off) parts.push(off + " off air");
+            return parts.length ? " · " + parts.join(" · ") : "";
+        }
+        function syncTestUI(force) {
+            const now = Date.now();
+            if (!force && now - testUiAt < 250) return;
+            testUiAt = now;
+            const btn = document.getElementById("playlistTest");
+            const out = document.getElementById("playlistHealth");
+            if (btn) {
+                btn.textContent = healthTest ? `Stop ${healthTest.done}/${healthTest.total}` : "Test";
+                btn.classList.toggle("active", !!healthTest);
+                btn.title = healthTest ? "Stop testing" : "Test the streams in this playlist";
+            }
+            if (out) out.textContent = healthSummaryText();
+            renderNpStatus();
+        }
+        // One line under the station name: state, format, start time.
+        function renderNpStatus() {
+            const el = document.getElementById("npStatus");
+            if (!el) return;
+            const s = playSession;
+            if (!s) {
+                el.textContent = "";
+                return;
+            }
+            const rec = streamHealth.get(s.item.url);
+            let label;
+            let cls = "";
+            if (s.reconnecting) label = `Reconnecting ${s.retries}/${RECONNECT_MAX}…`;
+            else if (!s.everPlayed) label = "Connecting…";
+            else {
+                label = rec ? HEALTH_LABEL[rec.s] || "Playing" : "Playing";
+                cls = rec ? " hs-" + rec.s : "";
+            }
+            const bits = [];
+            if (rec && rec.fmt) bits.push(rec.fmt + (rec.kbps ? " " + rec.kbps + " kbps" : ""));
+            else if (rec && rec.kbps) bits.push(rec.kbps + " kbps");
+            if (s.everPlayed && s.startMs) bits.push("started in " + (s.startMs / 1000).toFixed(1) + " s");
+            el.innerHTML = `<span class="hs-dot${cls}">●</span> ${escapeHtml(label)}${bits.length ? " · " + escapeHtml(bits.join(" · ")) : ""}`;
+        }
+
+        // ---- now playing: song titles from the station ---------------------
+        function cleanSongTitle(raw, station) {
+            if (raw == null) return "";
+            const t = String(raw).replace(/\0/g, "").replace(/\s+/g, " ").trim();
+            if (t.length < 2 || t.length > 200) return "";
+            if (/^(unknown|n\/a|null|undefined|no title|untitled|-+|\.+)$/i.test(t)) return "";
+            if (station && t.toLowerCase() === String(station).trim().toLowerCase()) return "";
+            return t;
+        }
+        function icecastTitleFromJson(json, pathname) {
+            const src = json && json.icestats && json.icestats.source;
+            if (!src) return null;
+            const list = Array.isArray(src) ? src : [src];
+            const byPath = list.find((s) => {
+                try {
+                    return new URL(s.listenurl).pathname === pathname;
+                } catch (e) {
+                    return false;
+                }
+            });
+            const m = byPath || (list.length === 1 ? list[0] : null);
+            if (!m) return null;
+            const t = m.title || m.yp_currently_playing || "";
+            if (m.artist && t && !String(t).includes(m.artist)) return m.artist + " - " + t;
+            return t || null;
+        }
+        function decodeIcyBytes(bytes) {
+            let s;
+            try {
+                s = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+            } catch (e) {
+                s = new TextDecoder("windows-1252").decode(bytes);
+            }
+            return s.replace(/\0+$/, "");
+        }
+        function streamTitleFromIcy(meta) {
+            const m = /StreamTitle='([\s\S]*?)';/.exec(meta);
+            return m ? m[1] : null;
+        }
+        let somaCache = { at: 0, data: null };
+        async function somaNowPlaying(streamUrl, signal) {
+            const first = new URL(streamUrl).pathname.split("/").filter(Boolean)[0] || "";
+            const id = first.replace(/\.[a-z0-9]+$/i, "").split("-")[0].toLowerCase();
+            if (!id) throw new Error("no channel");
+            if (!somaCache.data || Date.now() - somaCache.at > 10000) {
+                const res = await fetchWithTimeout("https://somafm.com/channels.json", { cache: "no-store" }, 6000, signal);
+                if (!res.ok) throw new Error("http");
+                somaCache = { at: Date.now(), data: await res.json() };
+            }
+            const ch = (somaCache.data.channels || []).find((c) => String(c.id).toLowerCase() === id);
+            if (!ch) throw new Error("unknown channel");
+            return ch.lastPlaying || null;
+        }
+        async function icecastNowPlaying(streamUrl, signal) {
+            const u = new URL(streamUrl);
+            const res = await fetchWithTimeout(u.origin + "/status-json.xsl", { cache: "no-store" }, 6000, signal);
+            if (!res.ok) throw new Error("http");
+            return icecastTitleFromJson(await res.json(), u.pathname);
+        }
+        async function shoutcastNowPlaying(streamUrl, signal) {
+            const u = new URL(streamUrl);
+            const res = await fetchWithTimeout(u.origin + "/currentsong?sid=1", { cache: "no-store" }, 6000, signal);
+            if (!res.ok) throw new Error("http");
+            const t = (await readTextLimited(res, 2048)).trim();
+            if (/[<>]/.test(t)) throw new Error("not text");
+            return t || null;
+        }
+        // Reads the first in-stream ICY metadata block. Only works when the
+        // server allows the Icy-MetaData header and exposes icy-metaint.
+        async function icyNowPlaying(streamUrl, signal) {
+            const ctl = new AbortController();
+            const onAbort = () => ctl.abort();
+            if (signal) signal.addEventListener("abort", onAbort, { once: true });
+            const timer = setTimeout(() => ctl.abort(), 8000);
+            try {
+                const res = await fetch(streamUrl, { headers: { "Icy-MetaData": "1" }, signal: ctl.signal, cache: "no-store", credentials: "omit" });
+                const mi = parseInt(res.headers.get("icy-metaint"), 10);
+                if (!res.ok || !mi || mi < 256 || mi > 65536) throw new Error("no icy-metaint");
+                const reader = res.body.getReader();
+                let buf = new Uint8Array(0);
+                const fill = async (len) => {
+                    while (buf.length < len) {
+                        const { value, done } = await reader.read();
+                        if (done) throw new Error("eof");
+                        const nb = new Uint8Array(buf.length + value.length);
+                        nb.set(buf);
+                        nb.set(value, buf.length);
+                        buf = nb;
+                    }
+                };
+                let pos = 0;
+                for (let block = 0; block < 3; block++) {
+                    await fill(pos + mi + 1);
+                    const len = buf[pos + mi] * 16;
+                    if (len > 0) {
+                        await fill(pos + mi + 1 + len);
+                        return streamTitleFromIcy(decodeIcyBytes(buf.subarray(pos + mi + 1, pos + mi + 1 + len)));
+                    }
+                    pos += mi + 1;
+                }
+                return null;
+            } finally {
+                clearTimeout(timer);
+                ctl.abort();
+                if (signal) signal.removeEventListener("abort", onAbort);
+            }
+        }
+        function npSourceList(url, usesHls) {
+            const out = [];
+            let host = "";
+            try {
+                host = new URL(url).hostname;
+            } catch (e) {}
+            if (/(^|\.)somafm\.com$/i.test(host)) out.push(["soma", somaNowPlaying]);
+            if (!usesHls) out.push(["icecast", icecastNowPlaying], ["shoutcast", shoutcastNowPlaying], ["icy", icyNowPlaying]);
+            return out;
+        }
+        function stopNowPlaying() {
+            if (!npJob) return;
+            npJob.stopped = true;
+            clearTimeout(npJob.timer);
+            if (npJob.ctl) npJob.ctl.abort();
+            npJob = null;
+        }
+        // Polls the first source that works for this station's server.
+        function startNowPlaying(session) {
+            stopNowPlaying();
+            const job = { session, stopped: false, timer: null, ctl: new AbortController() };
+            npJob = job;
+            const url = session.cands[session.candIdx];
+            let origin = "";
+            try {
+                origin = new URL(url).origin;
+            } catch (e) {}
+            const tick = async () => {
+                if (job.stopped || playSession !== session) return;
+                if (!document.hidden) {
+                    for (const [id, fn] of npSourceList(url, session.usesHls)) {
+                        const key = id + "|" + origin;
+                        if (npBad.has(key)) continue;
+                        try {
+                            const title = await fn(url, job.ctl.signal);
+                            if (job.stopped) return;
+                            if (title) npSetTitle(session, title);
+                            break; // this source works; don't bother the others
+                        } catch (e) {
+                            if (job.stopped) return;
+                            npBad.add(key);
+                        }
+                    }
+                }
+                if (!npSourceList(url, session.usesHls).some(([id]) => !npBad.has(id + "|" + origin))) return;
+                job.timer = setTimeout(tick, NP_POLL_MS);
+            };
+            tick();
+        }
+        function npSetTitle(session, raw) {
+            if (playSession !== session) return;
+            const title = cleanSongTitle(raw, session.item.title);
+            if (!title || title === session.song) return;
+            session.song = title;
+            const el = document.getElementById("npSong");
+            if (el) {
+                el.textContent = title;
+                el.title = title;
+            }
+            updateMediaSessionSong(title, session.item.title);
+            recordSong(title, session.item.title);
+        }
+        function updateMediaSessionSong(song, station) {
+            if (!("mediaSession" in navigator) || typeof MediaMetadata === "undefined") return;
+            const i = song.indexOf(" - ");
+            const meta = i > 0 ? { artist: song.slice(0, i), title: song.slice(i + 3) } : { title: song, artist: station };
+            meta.album = station;
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata(meta);
+            } catch (e) {}
+        }
+
+        // ---- songs heard ---------------------------------------------------
+        function loadSongs() {
+            try {
+                const a = JSON.parse(localStorage.getItem(SONGS_KEY) || "[]");
+                songsHeard = Array.isArray(a) ? a : [];
+            } catch (e) {
+                songsHeard = [];
+            }
+        }
+        function saveSongs() {
+            try {
+                localStorage.setItem(SONGS_KEY, JSON.stringify(songsHeard));
+            } catch (e) {}
+        }
+        function recordSong(title, station) {
+            const last = songsHeard[0];
+            if (last && last.t === title && last.s === station) return;
+            songsHeard.unshift({ t: title, s: station, a: Date.now() });
+            if (songsHeard.length > SONGS_MAX) songsHeard.length = SONGS_MAX;
+            saveSongs();
+        }
+        function renderSongsList() {
+            const list = document.getElementById("songsList");
+            if (!list) return;
+            const q = (document.getElementById("songsSearch").value || "").trim().toLowerCase();
+            const rows = songsHeard.filter((s) => !q || (s.t + " " + s.s).toLowerCase().includes(q));
+            if (!rows.length) {
+                list.innerHTML = `<div class="songs-empty">${songsHeard.length ? "No matches." : "Nothing yet. Titles show up here while a station sends them."}</div>`;
+                return;
+            }
+            list.innerHTML =
+                rows
+                    .slice(0, 200)
+                    .map((s) => {
+                        const enc = encodeURIComponent(s.t);
+                        const when = new Date(s.a).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+                        return `<div class="song-row"><div class="song-title">${escapeHtml(s.t)}</div><div class="song-meta">${escapeHtml(s.s)} · ${escapeHtml(when)}</div><div class="song-links"><a href="https://www.youtube.com/results?search_query=${enc}" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://open.spotify.com/search/${enc}" target="_blank" rel="noopener noreferrer">Spotify</a><a href="https://music.apple.com/search?term=${enc}" target="_blank" rel="noopener noreferrer">Apple Music</a></div></div>`;
+                    })
+                    .join("") + (rows.length > 200 ? `<div class="songs-empty">Showing the newest 200 of ${rows.length}.</div>` : "");
+        }
+        function openSongsModal() {
+            rememberModalFocus("songsModal");
+            renderSongsList();
+            document.getElementById("songsModal").classList.add("active");
+            document.getElementById("songsCloseBtn").focus();
+        }
+        function closeSongsModal() {
+            document.getElementById("songsModal").classList.remove("active");
+            restoreModalFocus("songsModal");
+        }
+        function clearSongs() {
+            if (!songsHeard.length) return;
+            if (!confirm("Clear the list of songs you heard?")) return;
+            songsHeard = [];
+            saveSongs();
+            renderSongsList();
+        }
+        function loadNoCorsHosts() {
+            try {
+                const a = JSON.parse(localStorage.getItem(NOCORS_KEY) || "[]");
+                if (Array.isArray(a)) a.forEach((h) => noCorsHosts.add(h));
+            } catch (e) {}
+        }
+        function rememberNoCors(host) {
+            if (!host || noCorsHosts.has(host)) return;
+            noCorsHosts.add(host);
+            try {
+                localStorage.setItem(NOCORS_KEY, JSON.stringify(Array.from(noCorsHosts).slice(-500)));
+            } catch (e) {}
+        }
+        loadSongs();
+        loadNoCorsHosts();
 
         // Shared teardown helpers for the HLS instance / stream-timeout timer,
         // used across playlist stop/close/skip/retry paths so cleanup logic
@@ -3767,141 +4833,403 @@
                 const nextIdx = getNextShuffleIndex();
                 shuffleHistory.push(nextIdx);
                 playPlaylistTrack(nextIdx);
-            } else if (currentPlaylistIndex < currentPlaylist.length - 1) {
-                playPlaylistTrack(currentPlaylistIndex + 1);
             } else {
-                console.debug("End of playlist reached.");
-                stopPlaylist();
+                const idx = nextLiveIndex(currentPlaylistIndex + 1, 1);
+                if (idx >= 0) {
+                    playPlaylistTrack(idx);
+                } else {
+                    console.debug("End of playlist reached.");
+                    stopPlaylist();
+                }
             }
         }
 
-        // Shared by both the video and audio branches of playPlaylistTrack:
-        // wires the "loaded/error/ended" handlers and picks HLS vs a plain
-        // src, so future playlist features only need to be written once.
-        function attachPlaylistStream(mediaEl, finalUrl, urlLower) {
-            mediaEl.onloadeddata = () => {
-                clearStreamTimeout();
-                setPlaylistBuffering(false);
-            };
-            mediaEl.onerror = () => skipToNext();
-            mediaEl.onended = () => {
-                clearStreamTimeout();
-                goToNextTrack();
-            };
-
-            if (Hls.isSupported() && (urlLower.includes(".m3u8") || urlLower.includes("application/x-mpegurl"))) {
-                currentHls = new Hls();
-                currentHls.loadSource(finalUrl);
-                currentHls.attachMedia(mediaEl);
-                currentHls.on(Hls.Events.FRAG_LOADED, function () {
-                    clearStreamTimeout();
-                    setPlaylistBuffering(false);
-                });
-                currentHls.on(Hls.Events.ERROR, function (event, data) {
-                    if (data.fatal) skipToNext();
-                });
-            } else {
-                mediaEl.src = finalUrl;
-                mediaEl.load();
-                mediaEl.play().catch(() => {});
+        // ---- playback of one playlist track ------------------------------
+        // Each track gets a "session" object. It walks a ladder:
+        //   1. play the stream with crossOrigin (so the volume leveler works)
+        //   2. if that fails before any sound, retry on a fresh element
+        //      WITHOUT crossOrigin (most radio servers send no CORS headers)
+        //   3. on an https page, an http:// stream is tried as https:// first
+        //   4. once playing, a drop or long stall reconnects quietly up to
+        //      RECONNECT_MAX times before the track is skipped
+        function isVideoStreamUrl(url) {
+            return ["mp4", "webm", "mkv", "avi", "mov", "ts"].includes(urlPathExt(url)) || url.toLowerCase().includes("type=video");
+        }
+        function buildCandidates(url) {
+            if (location.protocol === "https:" && /^http:\/\//i.test(url)) return [url.replace(/^http:/i, "https:"), url];
+            return [url];
+        }
+        function clearStall(session) {
+            if (session.stallTimer) {
+                clearTimeout(session.stallTimer);
+                session.stallTimer = null;
             }
         }
-        async function playPlaylistTrack(e) {
-            if (e < 0 || e >= currentPlaylist.length) return;
-
+        function endPlaySession() {
+            const s = playSession;
+            playSession = null;
+            if (s) {
+                clearStall(s);
+                clearTimeout(s.reloadTimer);
+                clearTimeout(s.stableTimer);
+            }
+            stopNowPlaying();
+            destroyHls();
             clearStreamTimeout();
-            streamTimeout = setTimeout(() => {
-                skipToNext();
-            }, STREAM_TIMEOUT_MS);
-
-            (currentPlaylistIndex = e), updatePlaylistUI();
-
-            const item = currentPlaylist[currentPlaylistIndex];
-            const s = item.title;
-            document.getElementById("modalTitle").textContent = s;
-            announce(`Loading: ${s}`);
-            // New track: drop any in-flight metadata listener and clear
-            // last track's live rows so nothing stale lingers in the panel.
-
+        }
+        function releaseMediaElement(el) {
+            try {
+                el.onplaying = el.onwaiting = el.onerror = el.onended = el.onpause = el.onplay = el.ontimeupdate = el.onloadeddata = null;
+                el.pause();
+                el.removeAttribute("src");
+                el.load();
+            } catch (e) {}
+        }
+        function isLiveStream(session) {
+            const el = session.el;
+            if (!el) return false;
+            if (currentHls) {
+                const lv = currentHls.levels && currentHls.levels[currentHls.currentLevel];
+                return !(lv && lv.details && lv.details.live === false);
+            }
+            return !isFinite(el.duration);
+        }
+        // Finds or builds the <audio>/<video> for this track. The element is
+        // rebuilt when the crossOrigin mode has to change, because an element
+        // can only be wired into Web Audio once.
+        function ensurePlaylistMedia(kind, session, cors, reset) {
             const n = document.getElementById("modalBody");
-            // Show a buffering hint right away instead of a silent wait while the
-            // stream URL resolves — the still-visible player makes the track
-            // change feel instant rather than sluggish.
-            setPlaylistBuffering(true);
-
-            const rawUrl = item.url;
-            const finalUrl = await resolveStreamUrl(rawUrl);
-            const o = finalUrl.toLowerCase();
-
-            const isSpecificVideo = o.match(/\.(mp4|webm|mkv|avi|mov|ts)$/) || o.includes("type=video");
-
-            if (isSpecificVideo) {
-                let video = n.querySelector("#videoPlayer");
-                if (!video) {
-                    destroyHls();
+            const title = session.item.title;
+            const id = kind === "video" ? "videoPlayer" : "audioPlayer";
+            const flag = cors ? "1" : "0";
+            const crossAttr = cors ? 'crossOrigin="anonymous"' : "";
+            let el = n.querySelector("#" + id);
+            if (el && el.dataset.cors !== flag) {
+                releaseMediaElement(el);
+                el = null;
+            }
+            if (!el) {
+                const other = n.querySelector("#audioPlayer, #videoPlayer");
+                if (other) releaseMediaElement(other);
+                destroyHls();
+                if (kind === "video") {
                     document.getElementById("modalContent").classList.add("video-modal");
                     n.innerHTML = `
                       <div class="preview-media-container">
                         <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link &amp; header" aria-label="Copy stream link and header">${icons.info}</button>
-                        <video id="videoPlayer" class="preview-video" autoplay playsinline muted crossOrigin="anonymous" ${mediaTagAttrs()}>
+                        <video id="videoPlayer" class="preview-video" autoplay playsinline muted ${crossAttr} data-cors="${flag}" ${mediaTagAttrs()}>
                           Your browser does not support video playback.
                         </video>
                         ${mediaControlsMarkup()}
                       </div>
                     `;
-                    video = document.getElementById("videoPlayer");
-                    video.volume = currentVolume;
-                    video.onvolumechange = (e) => { currentVolume = e.target.volume; localStorage.setItem("playerVolume", currentVolume); };
-                    setupAudioNormalization(video);
-                    setupMediaSession(video, s);
-                    maybeWireMediaControls(video);
-                    document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
-                } else if (currentHls) {
-                    // Same element, but the previous track had its own HLS instance attached.
-                    destroyHls();
-                    updateMediaSessionTitle(s);
                 } else {
-                    updateMediaSessionTitle(s);
-                }
-                attachPlaylistStream(video, finalUrl, o);
-            } else {
-                let audio = n.querySelector("#audioPlayer");
-                if (!audio) {
-                    destroyHls();
                     document.getElementById("modalContent").classList.remove("video-modal");
                     n.innerHTML = `
                       <div class="preview-audio-container">
                         <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link &amp; header" aria-label="Copy stream link and header">${icons.info}</button>
                         <div class="audio-icon">${pickPlayerNoteIcon()}</div>
-                        <div class="playlist-now-playing">${escapeHtml(s)}</div>
-                        <audio id="audioPlayer" class="preview-audio" autoplay crossOrigin="anonymous" ${mediaTagAttrs()}>
+                        <div class="playlist-now-playing">${escapeHtml(title)}</div>
+                        <div class="np-song" id="npSong" aria-live="polite"></div>
+                        <div class="np-status" id="npStatus"></div>
+                        <audio id="audioPlayer" class="preview-audio" autoplay ${crossAttr} data-cors="${flag}" ${mediaTagAttrs()}>
                           Your browser does not support audio playback.
                         </audio>
                         ${mediaControlsMarkup()}
                       </div>
                     `;
-                    audio = document.getElementById("audioPlayer");
-                    audio.volume = currentVolume;
-                    audio.onvolumechange = (e) => { currentVolume = e.target.volume; localStorage.setItem("playerVolume", currentVolume); };
-                    setupAudioNormalization(audio);
-                    setupMediaSession(audio, s);
-                    maybeWireMediaControls(audio);
-                    document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
-                    centerAudioIconSvg(n.querySelector(".audio-icon"));
-                } else {
-                    destroyHls();
-                    const titleEl = n.querySelector(".playlist-now-playing");
-                    if (titleEl) titleEl.textContent = s;
-                    const iconEl = n.querySelector(".audio-icon");
-                    if (iconEl) setPlayerIcon(iconEl, pickPlayerNoteIcon());
-                    updateMediaSessionTitle(s);
                 }
-                wirePlayerIconTap(n);
-                attachPlaylistStream(audio, finalUrl, o);
+                el = document.getElementById(id);
+                el.volume = currentVolume;
+                el.onvolumechange = (ev) => {
+                    currentVolume = ev.target.volume;
+                    localStorage.setItem("playerVolume", currentVolume);
+                };
+                if (cors) setupAudioNormalization(el);
+                setupMediaSession(el, title);
+                maybeWireMediaControls(el);
+                document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
+                if (kind === "audio") {
+                    centerAudioIconSvg(n.querySelector(".audio-icon"));
+                    wirePlayerIconTap(n);
+                }
+            } else {
+                destroyHls();
+                if (reset) {
+                    if (kind === "audio") {
+                        const titleEl = n.querySelector(".playlist-now-playing");
+                        if (titleEl) titleEl.textContent = title;
+                        const songEl = document.getElementById("npSong");
+                        if (songEl) {
+                            songEl.textContent = "";
+                            songEl.removeAttribute("title");
+                        }
+                        const iconEl = n.querySelector(".audio-icon");
+                        if (iconEl) setPlayerIcon(iconEl, pickPlayerNoteIcon());
+                    }
+                    updateMediaSessionTitle(title);
+                }
             }
+            return el;
+        }
+        function startAttempt(session, reconnect) {
+            if (playSession !== session) return;
+            const url = session.cands[session.candIdx];
+            const kind = isVideoStreamUrl(url) ? "video" : "audio";
+            const cors = !(session.corsFailed || noCorsHosts.has(hostKey(url)));
+            session.cors = cors;
+            const el = ensurePlaylistMedia(kind, session, cors, !reconnect);
+            session.el = el;
+            attachStream(session, el, url);
+            renderNpStatus();
+        }
+        function recordPlayStart(session) {
+            const slow = session.startMs > SLOW_START_MS;
+            streamHealth.merge(session.item.url, { s: slow ? "weak" : "good", ms: session.startMs, src: "play" });
+            syncTestUI(true);
+        }
+        function failSession(session) {
+            if (playSession !== session) return;
+            clearStreamTimeout();
+            clearStall(session);
+            clearTimeout(session.reloadTimer);
+            clearTimeout(session.stableTimer);
+            // A stream that played and then kept dropping is Weak; one that never
+            // started is Off air, or Blocked when its http:// address was refused.
+            const status = session.everPlayed ? "weak" : session.cands.length > 1 ? "blocked" : "bad";
+            streamHealth.merge(session.item.url, { s: status, src: "play" });
+            syncTestUI(true);
+            failStreak++;
+            if (failStreak >= 15) {
+                announce("Too many streams in a row are unavailable. Stopping.");
+                stopPlaylist();
+                return;
+            }
+            skipToNext();
+        }
+        // The stream never produced sound: next thing to try.
+        function advanceAfterStartFailure(session, allowCorsRetry) {
+            if (playSession !== session) return;
+            clearStreamTimeout();
+            if (allowCorsRetry && session.cors && !session.usesHls && !session.corsFailed) {
+                session.corsFailed = true;
+                startAttempt(session, false);
+                return;
+            }
+            if (session.candIdx < session.cands.length - 1) {
+                session.candIdx++;
+                session.corsFailed = false;
+                startAttempt(session, false);
+                return;
+            }
+            failSession(session);
+        }
+        function attemptTimedOut(session) {
+            if (playSession !== session || session.everPlayed) return;
+            advanceAfterStartFailure(session, false);
+        }
+        // The stream was playing and stopped: reconnect quietly, a few times.
+        function dropAndReconnect(session) {
+            if (playSession !== session || session.reloadTimer) return;
+            clearStall(session);
+            session.drops++;
+            const prev = streamHealth.get(session.item.url) || {};
+            streamHealth.merge(session.item.url, { s: "weak", dr: (prev.dr || 0) + 1, src: "play" });
+            if (session.retries >= RECONNECT_MAX) {
+                failSession(session);
+                return;
+            }
+            session.retries++;
+            session.reconnecting = true;
+            setPlaylistBuffering(true);
+            renderNpStatus();
+            const delay = RECONNECT_DELAYS_MS[session.retries - 1] || 3500;
+            session.reloadTimer = setTimeout(() => {
+                session.reloadTimer = null;
+                if (playSession !== session) return;
+                session.reloading = true;
+                startAttempt(session, true);
+            }, delay);
+        }
+        function armStall(session) {
+            clearStall(session);
+            session.stallTimer = setTimeout(() => {
+                session.stallTimer = null;
+                if (playSession === session && session.everPlayed && session.el && !session.el.paused) dropAndReconnect(session);
+            }, STALL_RECONNECT_MS);
+        }
+        function bindSessionEvents(session, el) {
+            const alive = () => playSession === session;
+            el.onplaying = () => {
+                if (!alive()) return;
+                clearStreamTimeout();
+                clearStall(session);
+                session.reloading = false;
+                setPlaylistBuffering(false);
+                failStreak = 0;
+                if (!session.everPlayed) {
+                    session.everPlayed = true;
+                    session.startMs = Math.round(performance.now() - session.t0);
+                    if (session.corsFailed) rememberNoCors(hostKey(session.cands[session.candIdx]));
+                    recordPlayStart(session);
+                    startNowPlaying(session);
+                }
+                if (session.reconnecting) {
+                    session.reconnecting = false;
+                    clearTimeout(session.stableTimer);
+                    // after half a minute of steady playing the retry count starts over
+                    session.stableTimer = setTimeout(() => {
+                        session.retries = 0;
+                    }, 30000);
+                }
+                renderNpStatus();
+            };
+            el.onwaiting = () => {
+                if (!alive() || !session.everPlayed || el.seeking || session.reconnecting) return;
+                setPlaylistBuffering(true);
+                armStall(session);
+            };
+            el.ontimeupdate = () => {
+                if (!alive() || el.currentTime === session.lastT) return;
+                session.lastT = el.currentTime;
+                if (session.stallTimer) {
+                    clearStall(session);
+                    setPlaylistBuffering(false);
+                }
+            };
+            el.onpause = () => {
+                if (!alive()) return;
+                clearStall(session);
+                if (!session.reloading) session.pausedAt = Date.now();
+            };
+            el.onplay = () => {
+                if (!alive()) return;
+                const was = session.pausedAt;
+                session.pausedAt = 0;
+                // resuming a live stream after a long pause: jump back to the live point
+                if (was && session.everPlayed && !session.reloading && !session.reconnecting && Date.now() - was > LIVE_RESUME_RECONNECT_MS && isLiveStream(session)) {
+                    session.reloading = true;
+                    startAttempt(session, true);
+                }
+            };
+            el.onerror = () => {
+                if (!alive()) return;
+                if (session.everPlayed) dropAndReconnect(session);
+                else advanceAfterStartFailure(session, true);
+            };
+            el.onended = () => {
+                if (!alive()) return;
+                clearStreamTimeout();
+                if (session.everPlayed && !isFinite(el.duration)) {
+                    dropAndReconnect(session); // a live stream "ended": the server hung up
+                    return;
+                }
+                goToNextTrack();
+            };
+        }
+        function attachStream(session, el, url) {
+            const lower = url.toLowerCase();
+            session.attemptStartedAt = performance.now();
+            bindSessionEvents(session, el);
+            clearStreamTimeout();
+            streamTimeout = setTimeout(() => attemptTimedOut(session), STREAM_TIMEOUT_MS);
+            const onBlocked = (err) => {
+                // Autoplay was refused: wait for the person to press play instead of skipping.
+                if (err && err.name === "NotAllowedError" && playSession === session) {
+                    clearStreamTimeout();
+                    setPlaylistBuffering(false);
+                    announce("Press play to start.");
+                }
+            };
+            if (typeof Hls !== "undefined" && Hls.isSupported() && (lower.includes(".m3u8") || lower.includes("application/x-mpegurl"))) {
+                session.usesHls = true;
+                const hls = new Hls();
+                currentHls = hls;
+                hls.loadSource(url);
+                hls.attachMedia(el);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    const p = el.play();
+                    if (p && p.catch) p.catch(onBlocked);
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (!data || !data.fatal || playSession !== session) return;
+                    if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !session.mediaRecovered) {
+                        session.mediaRecovered = true;
+                        try {
+                            hls.recoverMediaError();
+                        } catch (e) {}
+                        return;
+                    }
+                    if (session.everPlayed) dropAndReconnect(session);
+                    else advanceAfterStartFailure(session, false);
+                });
+                if (Hls.Events.FRAG_PARSING_METADATA) {
+                    hls.on(Hls.Events.FRAG_PARSING_METADATA, (event, data) => {
+                        if (playSession !== session || !data || !data.samples) return;
+                        for (const smp of data.samples) {
+                            const tags = parseId3Text(smp.data);
+                            if (!tags) continue;
+                            const t = tags.artist && tags.title ? `${tags.artist} - ${tags.title}` : tags.title || tags.streamTitle || "";
+                            if (t) npSetTitle(session, t);
+                        }
+                    });
+                }
+            } else {
+                session.usesHls = false;
+                el.src = url;
+                el.load();
+                const p = el.play();
+                if (p && p.catch) p.catch(onBlocked);
+            }
+        }
+        async function playPlaylistTrack(e) {
+            if (e < 0 || e >= currentPlaylist.length) return;
+            endPlaySession();
+            const item = currentPlaylist[e];
+            const session = {
+                item,
+                index: e,
+                t0: performance.now(),
+                cands: [],
+                candIdx: 0,
+                corsFailed: false,
+                cors: true,
+                usesHls: false,
+                everPlayed: false,
+                retries: 0,
+                drops: 0,
+                reconnecting: false,
+                reloading: false,
+                pausedAt: 0,
+                startMs: 0,
+                song: "",
+                mediaRecovered: false,
+                stallTimer: null,
+                reloadTimer: null,
+                stableTimer: null,
+                lastT: -1,
+                el: null,
+            };
+            playSession = session;
+            streamTimeout = setTimeout(() => attemptTimedOut(session), STREAM_TIMEOUT_MS);
+
+            currentPlaylistIndex = e;
+            updatePlaylistUI();
+            document.getElementById("modalTitle").textContent = item.title;
+            announce(`Loading: ${item.title}`);
+            // Show a buffering hint right away instead of a silent wait while the
+            // stream URL resolves.
+            setPlaylistBuffering(true);
+
+            const finalUrl = await resolveStreamUrl(item.url);
+            if (playSession !== session) return; // moved on to another track meanwhile
+            session.cands = buildCandidates(finalUrl);
+            startAttempt(session, false);
         }
 
         async function openFile(filePath, fileType, fileName) {
+            endPlaySession();
+            cancelHealthTest();
             rememberModalFocus("modal");
             const modalEl = document.getElementById("modal"),
                 titleEl = document.getElementById("modalTitle"),
@@ -4103,8 +5431,8 @@
             const modalEl = document.getElementById("modal");
             modalEl.classList.remove("active");
 
-            destroyHls();
-            clearStreamTimeout();
+            endPlaySession();
+            cancelHealthTest();
 
             const videoEl = modalEl.querySelector("video");
             const audioEl = modalEl.querySelector("audio");

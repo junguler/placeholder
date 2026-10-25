@@ -506,7 +506,7 @@
             display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; white-space: nowrap;
         }
         .playlist-bar #playlistStop { padding-left: 0.4rem; padding-right: 0.4rem; }
-        .playlist-bar #playlistTest[hidden] { display: none; }
+        .playlist-bar #playlistTest[hidden], .playlist-bar #playlistSongs[hidden] { display: none; }
         .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
         .goto-input { width: 3.4rem; height: 1.25rem; box-sizing: border-box; text-align: center; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
         .goto-input::-webkit-outer-spin-button, .goto-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -978,7 +978,7 @@
                 </div>
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist">Test</button>
-                <button class="playlist-btn" id="playlistSongs" title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
+                <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
                 <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist">Stop</button>
             </div>
             <div class="modal-body" id="modalBody"></div>
@@ -4731,6 +4731,7 @@
             const title = cleanSongTitle(raw, session.item.title);
             if (!title || title === session.song) return;
             session.song = title;
+            syncSongsBtn();
             const el = document.getElementById("npSong");
             if (el) {
                 el.textContent = title;
@@ -4878,9 +4879,15 @@
                 session.stallTimer = null;
             }
         }
+        // The "Songs heard" button only shows while the current station is actually sending song titles.
+        function syncSongsBtn() {
+            const b = document.getElementById("playlistSongs");
+            if (b) b.hidden = !(playSession && playSession.song);
+        }
         function endPlaySession() {
             const s = playSession;
             playSession = null;
+            syncSongsBtn();
             if (s) {
                 clearStall(s);
                 clearTimeout(s.reloadTimer);
@@ -5224,6 +5231,7 @@
                 el: null,
             };
             playSession = session;
+            syncSongsBtn();
             streamTimeout = setTimeout(() => attemptTimedOut(session), STREAM_TIMEOUT_MS);
 
             currentPlaylistIndex = e;

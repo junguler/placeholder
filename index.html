@@ -706,6 +706,9 @@
         .song-links { margin-top: 0.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
         .song-links a { font-size: 0.72rem; color: var(--accent-text, var(--accent)); text-decoration: none; }
         .song-links a:hover { text-decoration: underline; }
+        .song-copy { padding: 0; background: none; border: 0; font: inherit; font-size: 0.72rem; color: var(--accent-text, var(--accent)); cursor: pointer; }
+        .song-copy:hover { text-decoration: underline; }
+        .rec-panel .rec-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
         .songs-empty { padding: 1rem 0; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
         .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
         .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.65rem 0.5rem; text-align: center; }
@@ -1025,7 +1028,7 @@
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="btn-txt">Test</span></button>
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
-                <button class="playlist-btn" id="playlistRec" hidden title="Record this stream" aria-label="Record this stream"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
+                <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
                 <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop</span></button>
             </div>
             <div class="rec-panel" id="recPanel" hidden></div>
@@ -1072,9 +1075,9 @@
     <div class="modal-overlay" id="recModal" role="dialog" aria-modal="true" aria-labelledby="recTitle">
         <div class="modal rec-modal" id="recModalContent">
             <div class="modal-header">
-                <span class="modal-title" id="recTitle">Recordings</span>
+                <span class="modal-title" id="recTitle">Recordings (kept in this tab until you save)</span>
                 <div class="modal-actions">
-                    <button class="modal-btn text-btn" id="recZipBtn" title="Download everything as one zip" aria-label="Save all recordings as a zip">Save all (.zip)</button>
+                    <button class="modal-btn text-btn" id="recZipBtn" title="Save everything to your device (one zip file)" aria-label="Save all recordings as a zip">Save all</button>
                     <button class="modal-btn text-btn" id="recClearBtn" title="Discard all recordings" aria-label="Clear recordings">Clear</button>
                     <button class="modal-btn" id="recCloseBtn" title="Close" aria-label="Close recordings"><svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg></button>
                 </div>
@@ -1087,6 +1090,7 @@
             <div class="modal-header">
                 <span class="modal-title" id="songsTitle">Songs heard</span>
                 <div class="modal-actions">
+                    <button class="modal-btn text-btn" id="songsSaveBtn" title="Save this list as a text file" aria-label="Save the songs list as a text file">Save list</button>
                     <button class="modal-btn text-btn" id="songsClearBtn" title="Clear the list" aria-label="Clear the songs list">Clear</button>
                     <button class="modal-btn" id="songsCloseBtn" title="Close" aria-label="Close songs heard">
                         <svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg>
@@ -2803,6 +2807,8 @@
             document.getElementById("playlistSongs").addEventListener("click", openSongsModal);
             document.getElementById("songsCloseBtn").addEventListener("click", closeSongsModal);
             document.getElementById("songsClearBtn").addEventListener("click", clearSongs);
+            document.getElementById("songsSaveBtn").addEventListener("click", saveSongsList);
+            document.getElementById("songsList").addEventListener("click", copySongClick);
             document.getElementById("songsSearch").addEventListener("input", renderSongsList);
             recInit();
             document.getElementById("songsModal").addEventListener("click", (e) => {
@@ -5074,7 +5080,7 @@
                     .map((s) => {
                         const enc = encodeURIComponent(s.t);
                         const when = new Date(s.a).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-                        return `<div class="song-row"><div class="song-title">${escapeHtml(s.t)}</div><div class="song-meta">${escapeHtml(s.s)} · ${escapeHtml(when)}</div><div class="song-links"><a href="https://www.youtube.com/results?search_query=${enc}" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://open.spotify.com/search/${enc}" target="_blank" rel="noopener noreferrer">Spotify</a><a href="https://music.apple.com/search?term=${enc}" target="_blank" rel="noopener noreferrer">Apple Music</a></div></div>`;
+                        return `<div class="song-row"><div class="song-title">${escapeHtml(s.t)}</div><div class="song-meta">${escapeHtml(s.s)} · ${escapeHtml(when)}</div><div class="song-links"><a href="https://www.youtube.com/results?search_query=${enc}" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://open.spotify.com/search/${enc}" target="_blank" rel="noopener noreferrer">Spotify</a><a href="https://music.apple.com/search?term=${enc}" target="_blank" rel="noopener noreferrer">Apple Music</a><button type="button" class="song-copy" data-copy="${escapeHtml(s.t)}">Copy name</button></div></div>`;
                     })
                     .join("") + (rows.length > 200 ? `<div class="songs-empty">Showing the newest 200 of ${rows.length}.</div>` : "");
         }
@@ -5087,6 +5093,17 @@
         function closeSongsModal() {
             document.getElementById("songsModal").classList.remove("active");
             restoreModalFocus("songsModal");
+        }
+        function saveSongsList() {
+            if (!songsHeard.length) return alert("No songs yet. Titles show up here while a station sends them.");
+            const txt = songsHeard.map((s) => s.t + "  [" + s.s + ", " + new Date(s.a).toLocaleString() + "]").join("\r\n");
+            recSave(new Blob([txt], { type: "text/plain" }), "Songs heard " + new Date().toISOString().slice(0, 10) + ".txt");
+        }
+        function copySongClick(e) {
+            const b = e.target.closest("button[data-copy]");
+            if (!b) return;
+            const done = () => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy name"), 1500); };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(b.dataset.copy).then(done, () => {});
         }
         function clearSongs() {
             if (!songsHeard.length) return;
@@ -5121,7 +5138,7 @@
             };
         }
         // First byte offset that starts an MP3 / ADTS-AAC frame, or -1.
-        function recSync(v, ext) {
+        function recFrame(v, ext) {
             if (ext !== "mp3" && ext !== "aac") return -1;
             for (let i = 0; i < v.length - 3; i++) {
                 if (v[i] !== 255) continue;
@@ -5169,6 +5186,17 @@
             e.setUint32(0, 0x06054b50, true); e.setUint16(8, items.length, true); e.setUint16(10, items.length, true); e.setUint32(12, cs, true); e.setUint32(16, off, true);
             return new Blob(parts.concat(cen, [e.buffer]), { type: "application/zip" });
         }
+        // One click: a single recording is saved as is, several become one zip.
+        async function recSaveAll(b) {
+            const items = REC.items.slice().reverse(), total = items.reduce((a, i) => a + i.blob.size, 0);
+            if (!items.length) return;
+            if (items.length === 1) return recSave(items[0].blob, items[0].name);
+            if (total > 3.5 * 1024 ** 3) return alert("That's too much for one zip. Open the list and save the files one by one.");
+            const t = b.textContent;
+            b.textContent = "Zipping…";
+            b.disabled = true;
+            try { recSave(await recZip(items), "Recordings " + new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-") + ".zip"); } finally { b.textContent = t; b.disabled = false; }
+        }
         function recSave(blob, name) {
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
@@ -5200,7 +5228,7 @@
             let s = r.song;
             const due = r.mode === "songs" ? r.cut : recOpt.split && Date.now() - s.t0 >= recOpt.split * 1000 ? true : null;
             if (due) {
-                const o = recSync(v, r.ext);
+                const o = recFrame(v, r.ext);
                 if (o >= 0) {
                     s.add(v.subarray(0, o));
                     recFinish(r, s);
@@ -5261,8 +5289,8 @@
             const pr = await recProbe(ses);
             REC.probing = false;
             if (playSession !== ses || REC.st) return;
-            if (!pr.ok) return recMsg("Can't record: this server blocks browser access.");
-            if (pr.split) { REC.choose = true; recMsg(pr.exact ? "Song titles available. Cuts will be exact." : "Song titles available (polled). Cuts will be approximate."); }
+            if (!pr.ok) return recMsg("This station doesn't allow recording from a web page.");
+            if (pr.split) { REC.choose = true; recMsg(pr.exact ? "This station sends song names. Pick how you want to save it." : "This station sends song names. Pick how you want to save it (song cuts may be a few seconds off)."); }
             else recStart("whole", true);
         }
         function recMsg(t) { REC.msg = t; recRender(); }
@@ -5274,10 +5302,14 @@
             if (!p) return;
             b.classList.toggle("rec-on", !!r);
             p.classList.toggle("rec-on", !!r);
-            if (r) p.innerHTML = '<span class="rec-dot">●</span><span class="rec-info">' + escapeHtml(recInfo(r)) + '</span><button class="playlist-btn" id="recStopBtn" title="Stop recording" aria-label="Stop recording"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop</span></button>';
+            const n = REC.items.length;
+            const saveBtn = n ? '<button class="playlist-btn rec-primary" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">Save ' + (n === 1 ? "recording" : "all " + n) + "</button>" : "";
+            const listBtn = n > 1 ? '<button class="playlist-btn" id="recOpenBtn" title="See each recording and save them one at a time">View list</button>' : "";
+            if (r) p.innerHTML = '<span class="rec-dot">●</span><span class="rec-info">' + escapeHtml(recInfo(r)) + "</span>" + saveBtn + '<button class="playlist-btn" id="recStopBtn" title="Stop recording" aria-label="Stop recording"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop</span></button>';
             else {
-                const bad = recBlocked(), n = REC.items.length;
-                p.innerHTML = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="whole" title="Record until you stop">Whole stream</button><button class="playlist-btn" data-rec="songs" title="Save each song as its own file">Song by song</button>' : "") + '<span class="rec-info">' + escapeHtml(REC.msg || (bad ? "This server doesn't allow recording." : "")) + "</span>" + (n ? '<button class="playlist-btn" id="recOpenBtn">Recordings (' + n + ")</button>" : "");
+                const bad = recBlocked();
+                const hint = REC.msg || (bad ? "This station doesn't allow recording from a web page." : n ? "Recordings are only kept in this tab. Save them before you leave." : "");
+                p.innerHTML = (REC.choose && !bad ? '<button class="playlist-btn rec-primary" data-rec="songs" title="Every song becomes its own file with its name and artist">Each song separately</button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop">One long recording</button>' : "") + '<span class="rec-info">' + escapeHtml(hint) + "</span>" + (REC.choose ? "" : saveBtn + listBtn);
             }
         }
         function recSync() {
@@ -5288,7 +5320,7 @@
         function recOnEnd() {
             recSync();
             REC.choose = false;
-            if (REC.st) recStop("Station changed. Saved what was recorded.");
+            if (REC.st) recStop("Station changed. Press Save to keep what was recorded.");
             const p = recEl("recPanel");
             if (p) p.hidden = true;
         }
@@ -5301,7 +5333,7 @@
             if (r.wake) r.wake.release().catch(() => {});
             if (r.mode === "songs") r.song.partial = true;
             recFinish(r, r.song);
-            REC.msg = msg || "Stopped · " + r.count + " saved" + (r.skipped ? ", " + r.skipped + " skipped" : "");
+            REC.msg = msg || (r.count ? "Done. " + r.count + (r.count === 1 ? " file is" : " files are") + " ready. Press Save to keep " + (r.count === 1 ? "it" : "them") + "." : "Stopped. Nothing was long enough to keep.") + (r.skipped ? " (" + r.skipped + " short clips skipped)" : "");
             recRender();
         }
         async function recStart(mode, noTitles) {
@@ -5312,18 +5344,18 @@
             REC.choose = false;
             let u = ses.cands[ses.candIdx];
             if (location.protocol === "https:" && /^http:/i.test(u)) u = u.replace(/^http:/i, "https:");
-            if (recBlocked()) return recMsg("This server doesn't allow recording.");
+            if (recBlocked()) return recMsg("This station doesn't allow recording from a web page.");
             recMsg("Connecting…");
             const ctl = new AbortController(), tag = mode === "songs", o = { signal: ctl.signal, cache: "no-store", credentials: "omit" };
             let res = null;
             try { res = await fetch(u, tag ? Object.assign({ headers: { "Icy-MetaData": "1" } }, o) : o); } catch (e) {
                 if (tag) { try { res = await fetch(u, o); } catch (e2) {} }
             }
-            if (!res || !res.ok || !res.body) return recMsg("Can't record: this server blocks browser access.");
+            if (!res || !res.ok || !res.body) return recMsg("This station doesn't allow recording from a web page.");
             const ct = (res.headers.get("content-type") || "").toLowerCase();
-            if (/html/.test(ct)) { ctl.abort(); return recMsg("That link isn't an audio stream."); }
+            if (/html/.test(ct)) { ctl.abort(); return recMsg("This link isn't an audio stream, so it can't be recorded."); }
             const ext = /aac|mp4/.test(ct) ? "aac" : /ogg|opus|flac/.test(ct) ? "ogg" : "mp3";
-            if (tag && ext === "ogg") { ctl.abort(); return recMsg("Song by song supports MP3 and AAC streams. Use Whole stream."); }
+            if (tag && ext === "ogg") { ctl.abort(); return recMsg("This station can only be recorded as one long file. Choose “One long recording”."); }
             const mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;
             const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: !!mi, noTitles: !!noTitles });
             r.song = recNew(tag && !mi && ses.song ? ses.song : null, tag);
@@ -5352,7 +5384,7 @@
                     if (mi) eat(value); else recPush(r, value);
                 }
             } catch (e) {}
-            if (REC.st === r) recStop("Stream ended. Saved what was recorded.");
+            if (REC.st === r) recStop("Stream ended. Press Save to keep what was recorded.");
         }
         function renderRecList() {
             const l = recEl("recList");
@@ -5390,6 +5422,7 @@
                 if (b.dataset.rec) recStart(b.dataset.rec);
                 else if (b.id === "recStopBtn") recStop();
                 else if (b.id === "recOpenBtn") openRecModal();
+                else if (b.id === "recSaveAllBtn") recSaveAll(b);
             });
             recEl("recCloseBtn").addEventListener("click", closeRecModal);
             recEl("recModal").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeRecModal(); });
@@ -5407,15 +5440,7 @@
                 renderRecList();
                 recRender();
             });
-            recEl("recZipBtn").addEventListener("click", async (e) => {
-                const items = REC.items.slice().reverse(), total = items.reduce((a, i) => a + i.blob.size, 0);
-                if (!items.length) return;
-                if (total > 3.5 * 1024 ** 3) return alert("That's too much for one zip. Save the files individually.");
-                const b = e.currentTarget, t = b.textContent;
-                b.textContent = "Zipping…";
-                b.disabled = true;
-                try { recSave(await recZip(items), "Recordings " + new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-") + ".zip"); } finally { b.textContent = t; b.disabled = false; }
-            });
+            recEl("recZipBtn").addEventListener("click", (e) => recSaveAll(e.currentTarget));
             window.addEventListener("beforeunload", (e) => { if (REC.st || REC.items.length) { e.preventDefault(); e.returnValue = ""; } });
         }
         function loadNoCorsHosts() {

@@ -672,6 +672,18 @@
         .hs-dot.hs-weak { color: var(--warning); }
         .hs-dot.hs-bad, .hs-dot.hs-blocked { color: var(--danger); }
         .modal-btn.text-btn { padding: 0.375rem 0.6rem; font-size: 0.75rem; }
+        /* Narrow bar/panel: Test, Record and Stop collapse to icons so everything stays on one row */
+        .playlist-bar, .rec-panel { container-type: inline-size; }
+        .ico-c { display: none; }
+        .playlist-bar #playlistRec .ico-c { color: var(--danger); }
+        @container (max-width: 520px) {
+            .btn-txt { display: none; }
+            .ico-c { display: block; }
+            .playlist-bar #playlistTest, .playlist-bar #playlistRec, .playlist-bar #playlistStop, .rec-panel #recStopBtn { min-width: 1.9rem; padding-left: 0.3rem; padding-right: 0.3rem; }
+            .playlist-bar #playlistTest.active { padding-left: 0.5rem; padding-right: 0.5rem; }
+            .playlist-bar #playlistTest.active .btn-txt { display: inline; }
+            .playlist-bar #playlistTest.active .ico-c { display: none; }
+        }
         .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; padding: 0.4rem 0.6rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
         .rec-panel[hidden], .settings-row[hidden] { display: none; }
         .rec-panel .playlist-btn { height: 1.5rem; box-sizing: border-box; padding: 0 0.55rem; font-size: 0.75rem; white-space: nowrap; }
@@ -692,7 +704,7 @@
         .song-title { font-size: 0.88rem; color: var(--text-primary); word-break: break-word; }
         .song-meta { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); margin-top: 0.1rem; }
         .song-links { margin-top: 0.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        .song-links a { font-size: 0.72rem; color: var(--accent); text-decoration: none; }
+        .song-links a { font-size: 0.72rem; color: var(--accent-text, var(--accent)); text-decoration: none; }
         .song-links a:hover { text-decoration: underline; }
         .songs-empty { padding: 1rem 0; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
         .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
@@ -1011,10 +1023,10 @@
                     </div>
                 </div>
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
-                <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist">Test</button>
+                <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="btn-txt">Test</span></button>
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
-                <button class="playlist-btn" id="playlistRec" hidden title="Record this stream" aria-label="Record this stream">Record</button>
-                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist">Stop</button>
+                <button class="playlist-btn" id="playlistRec" hidden title="Record this stream" aria-label="Record this stream"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
+                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop</span></button>
             </div>
             <div class="rec-panel" id="recPanel" hidden></div>
             <div class="modal-body" id="modalBody"></div>
@@ -4584,7 +4596,7 @@
             const btn = document.getElementById("playlistTest");
             const out = document.getElementById("playlistHealth");
             if (btn) {
-                btn.textContent = healthTest ? `Stop ${healthTest.done}/${healthTest.total}` : "Test";
+                btn.querySelector(".btn-txt").textContent = healthTest ? `Stop ${healthTest.done}/${healthTest.total}` : "Test";
                 btn.classList.toggle("active", !!healthTest);
                 btn.title = healthTest ? "Stop testing" : "Test the streams in this playlist";
                 // Hide the button once there is nothing left to test (test finished, or every stream already checked recently).
@@ -5038,7 +5050,7 @@
             if (!p) return;
             b.classList.toggle("rec-on", !!r);
             p.classList.toggle("rec-on", !!r);
-            if (r) p.innerHTML = '<span class="rec-dot">●</span><span class="rec-info">' + escapeHtml(recInfo(r)) + '</span><button class="playlist-btn" id="recStopBtn">Stop</button>';
+            if (r) p.innerHTML = '<span class="rec-dot">●</span><span class="rec-info">' + escapeHtml(recInfo(r)) + '</span><button class="playlist-btn" id="recStopBtn" title="Stop recording" aria-label="Stop recording"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop</span></button>';
             else {
                 const bad = recBlocked(), n = REC.items.length;
                 p.innerHTML = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="whole" title="Record until you stop">Whole stream</button><button class="playlist-btn" data-rec="songs" title="Save each song as its own file">Song by song</button>' : "") + '<span class="rec-info">' + escapeHtml(REC.msg || (bad ? "This server doesn't allow recording." : "")) + "</span>" + (n ? '<button class="playlist-btn" id="recOpenBtn">Recordings (' + n + ")</button>" : "");

@@ -1013,7 +1013,7 @@
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist">Test</button>
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
-                <button class="playlist-btn" id="playlistRec" hidden title="Record this stream" aria-label="Record this stream"><svg viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="6"/></svg></button>
+                <button class="playlist-btn" id="playlistRec" hidden title="Record this stream" aria-label="Record this stream">Record</button>
                 <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist">Stop</button>
             </div>
             <div class="rec-panel" id="recPanel" hidden></div>
@@ -4989,8 +4989,45 @@
         function recInfo(r) {
             let s = "REC " + recFmt(Math.floor((Date.now() - r.t0) / 1000)) + " · " + (r.bytes / 1048576).toFixed(1) + " MB";
             if (r.mode === "songs") s += " · " + r.count + " saved · " + (r.song.title || "waiting for a title") + (r.inband ? "" : " (titles polled, cuts approximate)");
+            else if (r.noTitles) s += " · no song titles, one stream" + (r.count ? " · " + r.count + " files" : "");
             else if (r.count) s += " · " + r.count + " files";
             return s;
+        }
+        // Opens the stream just long enough to read its headers. split = the
+        // station sends titles (in-band exact, or polled) and the format is MP3/AAC.
+        async function recProbe(ses) {
+            let u = ses.cands[ses.candIdx];
+            if (location.protocol === "https:" && /^http:/i.test(u)) u = u.replace(/^http:/i, "https:");
+            const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000), o = { signal: ctl.signal, cache: "no-store", credentials: "omit" };
+            let out = { ok: false, split: false, exact: false };
+            try {
+                let res = null;
+                try { res = await fetch(u, Object.assign({ headers: { "Icy-MetaData": "1" } }, o)); } catch (e) { try { res = await fetch(u, o); } catch (e2) {} }
+                if (res && res.ok && res.body) {
+                    const ct = (res.headers.get("content-type") || "").toLowerCase(), mi = parseInt(res.headers.get("icy-metaint"), 10) || 0;
+                    const mp3aac = !/ogg|opus|flac/.test(ct);
+                    out = { ok: !/html/.test(ct), split: mp3aac && (mi > 0 || !!ses.song), exact: mi > 0 };
+                }
+            } finally { clearTimeout(timer); ctl.abort(); }
+            return out;
+        }
+        async function recRecordClick() {
+            const p = recEl("recPanel");
+            if (REC.st || REC.probing) { p.hidden = REC.probing ? p.hidden : !p.hidden; if (!p.hidden) recRender(); return; }
+            if (!p.hidden) { p.hidden = true; return; }
+            const ses = playSession;
+            if (!ses) return;
+            REC.dir = null; REC.choose = false; REC.msg = "";
+            if (recOpt.dir && window.showDirectoryPicker) { try { REC.dir = await window.showDirectoryPicker({ mode: "readwrite" }); } catch (e) {} }
+            p.hidden = false;
+            REC.probing = true;
+            recMsg("Checking the stream…");
+            const pr = await recProbe(ses);
+            REC.probing = false;
+            if (playSession !== ses || REC.st) return;
+            if (!pr.ok) return recMsg("Can't record: this server blocks browser access.");
+            if (pr.split) { REC.choose = true; recMsg(pr.exact ? "Song titles available. Cuts will be exact." : "Song titles available (polled). Cuts will be approximate."); }
+            else recStart("whole", true);
         }
         function recMsg(t) { REC.msg = t; recRender(); }
         function recBlocked() {
@@ -5004,7 +5041,7 @@
             if (r) p.innerHTML = '<span class="rec-dot">●</span><span class="rec-info">' + escapeHtml(recInfo(r)) + '</span><button class="playlist-btn" id="recStopBtn">Stop</button>';
             else {
                 const bad = recBlocked(), n = REC.items.length;
-                p.innerHTML = '<button class="playlist-btn" data-rec="whole"' + (bad ? " disabled" : "") + ' title="Record until you stop">Whole stream</button><button class="playlist-btn" data-rec="songs"' + (bad ? " disabled" : "") + ' title="Save each song as its own file">Song by song</button><span class="rec-info">' + escapeHtml(REC.msg || (bad ? "This server doesn't allow recording." : "")) + "</span>" + (n ? '<button class="playlist-btn" id="recOpenBtn">Recordings (' + n + ")</button>" : "");
+                p.innerHTML = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="whole" title="Record until you stop">Whole stream</button><button class="playlist-btn" data-rec="songs" title="Save each song as its own file">Song by song</button>' : "") + '<span class="rec-info">' + escapeHtml(REC.msg || (bad ? "This server doesn't allow recording." : "")) + "</span>" + (n ? '<button class="playlist-btn" id="recOpenBtn">Recordings (' + n + ")</button>" : "");
             }
         }
         function recSync() {
@@ -5014,6 +5051,7 @@
         }
         function recOnEnd() {
             recSync();
+            REC.choose = false;
             if (REC.st) recStop("Station changed. Saved what was recorded.");
             const p = recEl("recPanel");
             if (p) p.hidden = true;
@@ -5030,11 +5068,12 @@
             REC.msg = msg || "Stopped · " + r.count + " saved" + (r.skipped ? ", " + r.skipped + " skipped" : "");
             recRender();
         }
-        async function recStart(mode) {
+        async function recStart(mode, noTitles) {
             const ses = playSession;
             if (!ses || REC.st) return;
-            let dir = null;
-            if (recOpt.dir && window.showDirectoryPicker) { try { dir = await window.showDirectoryPicker({ mode: "readwrite" }); } catch (e) {} }
+            const dir = REC.dir || null;
+            REC.dir = null;
+            REC.choose = false;
             let u = ses.cands[ses.candIdx];
             if (location.protocol === "https:" && /^http:/i.test(u)) u = u.replace(/^http:/i, "https:");
             if (recBlocked()) return recMsg("This server doesn't allow recording.");
@@ -5050,7 +5089,7 @@
             const ext = /aac|mp4/.test(ct) ? "aac" : /ogg|opus|flac/.test(ct) ? "ogg" : "mp3";
             if (tag && ext === "ogg") { ctl.abort(); return recMsg("Song by song supports MP3 and AAC streams. Use Whole stream."); }
             const mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;
-            const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: !!mi });
+            const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: !!mi, noTitles: !!noTitles });
             r.song = recNew(tag && !mi && ses.song ? ses.song : null, tag);
             REC.msg = "";
             r.timer = setInterval(() => { const i = document.querySelector("#recPanel .rec-info"); if (i) i.textContent = recInfo(r); }, 1000);
@@ -5108,7 +5147,7 @@
                 recOpt.keep = recEl("recKeepToggle").checked; recOpt.tags = recEl("recTagsToggle").checked; recOpt.dir = recEl("recDirToggle").checked;
                 try { localStorage.setItem(RECOPT_KEY, JSON.stringify(recOpt)); } catch (e) {}
             }));
-            recEl("playlistRec").addEventListener("click", () => { const p = recEl("recPanel"); p.hidden = !p.hidden; if (!p.hidden) recRender(); });
+            recEl("playlistRec").addEventListener("click", recRecordClick);
             recEl("recPanel").addEventListener("click", (e) => {
                 const b = e.target.closest("button");
                 if (!b) return;

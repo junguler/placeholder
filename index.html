@@ -484,6 +484,7 @@
             display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; white-space: nowrap;
         }
         .playlist-bar #playlistStop { padding-left: 0.6rem; padding-right: 0.6rem; font-weight: 600; margin-left: auto; }
+        .lbl-short { display: none; }
         .playlist-bar .bar-break { display: none; flex: 0 0 100%; height: 0; }
         .playlist-bar #playlistTest[hidden], .playlist-bar #playlistSongs[hidden], .playlist-bar #playlistRec[hidden] { display: none; }
         .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
@@ -508,8 +509,8 @@
         .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 0.5rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
         .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
         .preview-audio-container { width: 100%; max-width: 500px; padding: 0.6rem 0.75rem 0.5rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; position: relative; }
-        .audio-icon { width: 56px; height: 56px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
-        .audio-icon svg { width: 38px; height: 38px; }
+        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
+        .audio-icon svg { width: 54px; height: 54px; }
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
         .preview-audio { width: 100%; height: 40px; display: none; }
         .preview-audio[controls] { display: block; }
@@ -608,7 +609,7 @@
             .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
             .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
             .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
-            .playlist-btn span:not(.btn-txt) { display: none; }
+            .playlist-btn span:not(.btn-txt):not(.lbl-long):not(.lbl-short) { display: none; }
             .preview-image { max-height: 80vh; max-height: 80dvh; }
             .preview-pdf { height: 80vh; height: 80dvh; }
             .preview-media-container { padding: 0.5rem; }
@@ -668,6 +669,12 @@
             .playlist-bar .bar-break { display: block; }
             .playlist-bar .playlist-info { flex: 1 1 0; }
         }
+        @container (max-width: 520px) {
+            .lbl-long { display: none; }
+            .lbl-short { display: inline; }
+            .playlist-bar { gap: 0.4rem; }
+            .playlist-bar #playlistTest, .playlist-bar #playlistSongs, .playlist-bar #playlistRec, .playlist-bar #playlistStop { padding-left: 0.5rem; padding-right: 0.5rem; }
+        }
         /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
         .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
         .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
@@ -681,9 +688,15 @@
         .rec-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rec-actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
         @container (max-width: 520px) {
-            /* Narrow: status on top, buttons on their own row, pushed right and only as wide as their label. A choice gets two equal halves. */
-            .rec-panel .rec-actions { flex: 1 1 100%; justify-content: flex-end; margin-left: 0; }
+            /* Narrow: one line while recording (clock on the left, buttons on the right, details hidden).
+               A choice puts its message on one line and its two equal buttons on the next. */
+            .rec-panel { gap: 0.4rem 0.5rem; }
+            .rec-panel .rec-meta { display: none; }
+            .rec-panel .rec-live { margin-right: auto; }
+            .rec-panel .rec-actions { flex-wrap: nowrap; }
+            .rec-panel .rec-actions.rec-choose { flex: 1 1 100%; margin-left: 0; }
             .rec-panel .rec-actions.rec-choose .playlist-btn { flex: 1 1 0; }
+            .rec-panel .playlist-btn { padding: 0 0.5rem; }
         }
         .rec-dot { display: inline-block; width: 0.6rem; height: 0.6rem; background: var(--danger); border-radius: var(--radius-full); flex-shrink: 0; }
         .rec-on .rec-dot, .playlist-bar #playlistRec.rec-on .rec-core { animation: recPulse 1.2s ease-in-out infinite; }
@@ -1018,7 +1031,7 @@
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="btn-txt">Test</span></button>
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="btn-txt">Songs</span></button>
                 <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle class="rec-core" cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
-                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop playlist</span></button>
+                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt"><span class="lbl-long">Stop playlist</span><span class="lbl-short">Stop</span></span></button>
             </div>
             <div class="rec-panel" id="recPanel" hidden></div>
             <div class="modal-body" id="modalBody"></div>
@@ -5336,16 +5349,16 @@
             b.setAttribute("aria-label", r ? "Recording in progress. Show or hide the recording panel" : "Record this station");
             const n = REC.items.length;
             const dl = '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
-            const saveBtn = n ? '<button class="playlist-btn" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">' + dl + (n === 1 ? "Save recording" : "Save all " + n) + "</button>" : "";
+            const saveBtn = n ? '<button class="playlist-btn" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">' + dl + (n === 1 ? '<span class="lbl-long">Save recording</span><span class="lbl-short">Save</span>' : "Save all " + n) + "</button>" : "";
             const listBtn = n > 1 ? '<button class="playlist-btn" id="recOpenBtn" title="See each recording and save them one at a time">View list</button>' : "";
             if (r) {
                 const st = recStat(r);
                 const stopBtn = '<button class="playlist-btn rec-stop" id="recStopBtn" title="Stop recording and keep what was recorded" aria-label="Stop recording"><svg viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><rect x="8.5" y="8.5" width="7" height="7"/></svg>Stop recording</button>';
-                p.innerHTML = '<span class="rec-live"><i class="rec-dot"></i>Recording <span class="rec-time">' + st.time + '</span></span><span class="rec-meta" title="' + escapeHtml(st.meta) + '">' + escapeHtml(st.meta) + '</span><div class="rec-actions">' + saveBtn + stopBtn + "</div>";
+                p.innerHTML = '<span class="rec-live"><i class="rec-dot"></i>' + '<span class="lbl-long">Recording </span><span class="rec-time">' + st.time + '</span></span><span class="rec-meta" title="' + escapeHtml(st.meta) + '">' + escapeHtml(st.meta) + '</span><div class="rec-actions">' + saveBtn + stopBtn + "</div>";
             } else {
                 const bad = recBlocked();
                 const hint = REC.msg || (bad ? "This station doesn't allow recording from a web page." : n ? "Recordings are only kept in this tab. Save them before you leave." : "");
-                const acts = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" title="Every song becomes its own file with its name and artist">Each song separately</button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop recording">One long recording</button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
+                const acts = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" title="Every song becomes its own file with its name and artist"><span class="lbl-long">Each song separately</span><span class="lbl-short">Each song</span></button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop recording"><span class="lbl-long">One long recording</span><span class="lbl-short">One long file</span></button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
                 p.innerHTML = '<span class="rec-msg">' + escapeHtml(hint) + "</span>" + (acts ? '<div class="rec-actions' + (REC.choose ? " rec-choose" : "") + '">' + acts + "</div>" : "");
             }
         }

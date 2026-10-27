@@ -463,7 +463,7 @@
         .modal-btn.play-playlist-btn:hover { color: var(--text-primary) !important; }
         .modal-btn.play-playlist-btn svg { width: 22px; height: 22px; }
         .modal-btn.hidden { display: none; }
-        .playlist-bar { display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); position: relative; }
+        .playlist-bar { display: none; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.5rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); position: relative; }
         .playlist-bar.active { display: flex; }
         .playlist-controls { display: flex; gap: 0.25rem; align-items: center; }
         .playlist-btn.top-native-btn { display: none; }
@@ -473,16 +473,18 @@
         .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .playlist-btn svg { width: 14px; height: 14px; }
         .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
-        .playlist-info { flex: 1; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
+        .playlist-info { flex: 1 1 8rem; min-width: 0; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
         .playlist-track { color: var(--text-primary); font-weight: 500; }
         .playlist-stop-btn { padding: 0.25rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
         .playlist-stop-btn:hover { opacity: 0.9; }
+        .playlist-stop-btn svg { width: 14px; height: 14px; }
         /* Test / Songs / Stop share one fixed height (the Stop button's) so they line up in the bar */
         .playlist-bar #playlistTest, .playlist-bar #playlistSongs, .playlist-bar #playlistRec, .playlist-bar #playlistStop {
-            box-sizing: border-box; height: 1.5rem; padding-top: 0; padding-bottom: 0; line-height: 1;
+            box-sizing: border-box; height: 1.65rem; padding-top: 0; padding-bottom: 0; line-height: 1; gap: 0.35rem;
             display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; white-space: nowrap;
         }
-        .playlist-bar #playlistStop { padding-left: 0.4rem; padding-right: 0.4rem; }
+        .playlist-bar #playlistStop { padding-left: 0.6rem; padding-right: 0.6rem; font-weight: 600; margin-left: auto; }
+        .playlist-bar .bar-break { display: none; flex: 0 0 100%; height: 0; }
         .playlist-bar #playlistTest[hidden], .playlist-bar #playlistSongs[hidden], .playlist-bar #playlistRec[hidden] { display: none; }
         .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
         .goto-input { width: 3.4rem; height: 1.25rem; box-sizing: border-box; text-align: center; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control) !important; font-size: 0.8rem; padding: 0.35rem 0.2rem; -moz-appearance: textfield; }
@@ -503,22 +505,28 @@
         .modal-body { flex: 1; overflow: hidden; background: var(--bg-primary); display: flex; flex-direction: column; min-height: 0; }
         .modal-body.scrollable { overflow: auto; }
         .preview-image { max-width: 100%; max-height: 90vh; object-fit: contain; display: block; margin: auto; }
-        .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
+        .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 0.5rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
         .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
-        .preview-audio-container { width: 100%; max-width: 500px; padding: 1.25rem 1rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; position: relative; }
-        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
-        .audio-icon svg { width: 54px; height: 54px; }
+        .preview-audio-container { width: 100%; max-width: 500px; padding: 0.6rem 0.75rem 0.5rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; position: relative; }
+        .audio-icon { width: 56px; height: 56px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
+        .audio-icon svg { width: 38px; height: 38px; }
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
         .preview-audio { width: 100%; height: 40px; display: none; }
         .preview-audio[controls] { display: block; }
-        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; max-width: 480px; margin: 0.15rem auto 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.75rem 0.9rem; }
+        .player-bar { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; width: 100%; max-width: 480px; margin: 0.1rem auto 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.4rem 0.75rem; }
         .player-seek-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
-        .player-seek { flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; border-radius: var(--radius-full); }
+        .player-seek { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 10px; margin: 0; cursor: pointer; border: 1px solid var(--border-color); border-radius: var(--radius-full);
+            background: linear-gradient(to right, var(--seek-fill, var(--stat-fill, var(--accent))) var(--seek-pct, 0%), var(--control-surface) var(--seek-pct, 0%)); }
+        .player-seek::-webkit-slider-runnable-track { background: transparent; height: 100%; }
+        .player-seek::-moz-range-track { background: transparent; height: 100%; }
+        .player-seek::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin-top: -3px; border-radius: var(--radius-full); background: var(--on-control); border: 1px solid var(--border-color); }
+        .player-seek::-moz-range-thumb { width: 12px; height: 12px; border-radius: var(--radius-full); background: var(--on-control); border: 1px solid var(--border-color); }
+        .player-seek:focus-visible { outline: 2px solid var(--on-control); outline-offset: 2px; }
         .player-seek:disabled { opacity: 0.4; cursor: not-allowed; }
         .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; flex-wrap: nowrap; overflow-x: auto; }
-        .player-controls-row .playlist-btn { padding: 0.5rem; flex-shrink: 0; border-radius: var(--radius-full); }
+        .player-controls-row .playlist-btn { padding: 0.35rem; flex-shrink: 0; border-radius: var(--radius-full); }
         .player-divider { width: 1px; height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-        .player-play-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--on-accent) !important; border-radius: var(--radius-full) !important; width: 2.75rem; height: 2.75rem; padding: 0 !important; transition: background-color var(--transition), border-color var(--transition); }
+        .player-play-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--on-accent) !important; border-radius: var(--radius-full) !important; width: 2.4rem; height: 2.4rem; padding: 0 !important; transition: background-color var(--transition), border-color var(--transition); }
         .player-play-btn:hover { background: var(--accent-hover) !important; border-color: var(--accent-hover) !important; }
         .player-play-btn svg { width: 20px; height: 20px; }
         .player-time, .player-vol { font-size: 0.75rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; }
@@ -600,14 +608,14 @@
             .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
             .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
             .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
-            .playlist-btn span { display: none; }
+            .playlist-btn span:not(.btn-txt) { display: none; }
             .preview-image { max-height: 80vh; max-height: 80dvh; }
             .preview-pdf { height: 80vh; height: 80dvh; }
             .preview-media-container { padding: 0.5rem; }
-            .player-bar { padding: 0.5rem 0.5rem; max-width: 100%; gap: 0.25rem; }
+            .player-bar { padding: 0.3rem 0.5rem; max-width: 100%; gap: 0.2rem; }
             .player-bar .playlist-btn { padding: 0.4rem; }
             .player-bar .playlist-btn svg { width: 12px; height: 12px; }
-            .player-play-btn { width: 2.25rem !important; height: 2.25rem !important; }
+            .player-play-btn { width: 2rem !important; height: 2rem !important; }
             .player-play-btn svg { width: 16px !important; height: 16px !important; }
             .player-time { min-width: 1.6rem; font-size: 0.65rem; }
             .player-vol { min-width: 1.9rem; font-size: 0.65rem; }
@@ -641,37 +649,30 @@
         .playlist-health { color: var(--text-muted); font-weight: 400; }
         .np-song { max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
         .np-song:empty { display: none; }
-        .np-status { font-size: var(--data-size); color: var(--text-muted); text-align: center; line-height: 1.4; min-height: 1em; }
+        .np-status { font-size: var(--data-size); color: var(--text-muted); text-align: center; line-height: 1.3; min-height: 1em; }
+        .np-song, .playlist-now-playing { margin: 0; }
         .hs-dot { color: var(--text-muted); }
         .hs-dot.hs-good { color: var(--success); }
         .hs-dot.hs-weak { color: var(--warning); }
         .hs-dot.hs-bad, .hs-dot.hs-blocked { color: var(--danger); }
         .modal-btn.text-btn { padding: 0.375rem 0.6rem; font-size: 0.75rem; }
-        /* Narrow bar/panel: Test, Record and Stop collapse to icons so everything stays on one row */
+        .modal-btn.text-btn.armed { background: var(--danger); border-color: var(--danger); color: #fff !important; }
+        /* Every bar button is icon + label. The playlist bar is two rows (track on top, tools below) whenever it is narrow. */
         .playlist-bar, .rec-panel { container-type: inline-size; }
-        .ico-c { display: none; }
         .playlist-bar #playlistRec .ico-c { color: var(--danger); }
-        @container (max-width: 520px) {
-            .btn-txt { display: none; }
-            .ico-c { display: block; }
-            .playlist-bar #playlistTest, .playlist-bar #playlistRec, .playlist-bar #playlistStop { min-width: 1.9rem; padding-left: 0.3rem; padding-right: 0.3rem; }
-            .playlist-bar #playlistTest.active { padding-left: 0.5rem; padding-right: 0.5rem; }
-            .playlist-bar #playlistTest.active .btn-txt { display: inline; }
-            .playlist-bar #playlistTest.active .ico-c { display: none; }
-            /* While recording, the bar's Record button keeps its pulsing icon and shows the clock */
-            .playlist-bar #playlistRec.rec-on { padding-left: 0.5rem; padding-right: 0.5rem; }
-            .playlist-bar #playlistRec.rec-on .btn-txt { display: inline; }
-            /* Recording panel: buttons drop to their own full-width row, labels stay readable */
-            .rec-panel .rec-actions { flex: 1 1 100%; margin-left: 0; }
-            .rec-panel .rec-actions .playlist-btn { flex: 1 1 0; }
-        }
-        .playlist-bar #playlistRec.rec-on .ico-c { display: block; }
+        .playlist-bar .ico-c { display: block; flex-shrink: 0; }
+        .playlist-bar .playlist-btn .btn-txt, .playlist-bar .playlist-stop-btn .btn-txt { display: inline; }
+        .playlist-bar #playlistTest.active .ico-c { display: none; }
         .playlist-bar #playlistRec.rec-on .btn-txt { font-variant-numeric: tabular-nums; }
+        @container (max-width: 640px) {
+            .playlist-bar .bar-break { display: block; }
+            .playlist-bar .playlist-info { flex: 1 1 0; }
+        }
         /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
-        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
+        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
         .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
         .rec-panel[hidden], .settings-row[hidden] { display: none; }
-        .rec-panel .playlist-btn { height: 1.75rem; box-sizing: border-box; padding: 0 0.7rem; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
+        .rec-panel .playlist-btn { height: 1.65rem; box-sizing: border-box; padding: 0 0.65rem; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
         .rec-panel .playlist-btn svg { flex-shrink: 0; }
         .rec-panel .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .rec-live { display: inline-flex; align-items: center; gap: 0.4rem; flex-shrink: 0; font-size: 0.8rem; font-weight: 600; line-height: 1.4; color: var(--text-primary); }
@@ -679,6 +680,11 @@
         .rec-meta, .rec-msg { flex: 1 1 10rem; min-width: 0; font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); }
         .rec-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rec-actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
+        @container (max-width: 520px) {
+            /* Narrow: status on top, buttons on their own row, pushed right and only as wide as their label. A choice gets two equal halves. */
+            .rec-panel .rec-actions { flex: 1 1 100%; justify-content: flex-end; margin-left: 0; }
+            .rec-panel .rec-actions.rec-choose .playlist-btn { flex: 1 1 0; }
+        }
         .rec-dot { display: inline-block; width: 0.6rem; height: 0.6rem; background: var(--danger); border-radius: var(--radius-full); flex-shrink: 0; }
         .rec-on .rec-dot, .playlist-bar #playlistRec.rec-on .rec-core { animation: recPulse 1.2s ease-in-out infinite; }
         @keyframes recPulse { 50% { opacity: 0.25; } }
@@ -686,8 +692,6 @@
         /* Stop recording: unmistakably red and labeled, so it is never confused with the playlist Stop or the window's close button */
         .rec-panel .rec-stop { background: var(--danger); border-color: var(--danger); color: #fff !important; font-weight: 600; }
         .rec-panel .rec-stop:hover { background: var(--danger); border-color: var(--danger); opacity: 0.9; }
-        /* Primary action (Save, Each song separately): the normal button, with a stronger outline */
-        .rec-panel .rec-primary { border-color: var(--on-control); font-weight: 600; }
         .playlist-bar #playlistRec.rec-on { color: var(--danger); border-color: var(--danger); }
         .rec-modal { max-width: 560px; }
         .songs-modal { max-width: 560px; }
@@ -703,7 +707,6 @@
         .song-links a:hover { text-decoration: underline; }
         .song-copy { padding: 0; background: none; border: 0; font: inherit; font-size: 0.72rem; color: var(--accent-text, var(--accent)); cursor: pointer; }
         .song-copy:hover { text-decoration: underline; }
-        .rec-panel .rec-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
         .songs-empty { padding: 1rem 0; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
         .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
         .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.65rem 0.5rem; text-align: center; }
@@ -1011,8 +1014,9 @@
                     </div>
                 </div>
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
+                <div class="bar-break" aria-hidden="true"></div>
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="btn-txt">Test</span></button>
-                <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
+                <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="btn-txt">Songs</span></button>
                 <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle class="rec-core" cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
                 <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop playlist</span></button>
             </div>
@@ -1121,10 +1125,15 @@
             fetchCache = new Map();
 
         // -- Audio pipeline state --
-        let currentVolume = 0.5, // Default volume set to 50%
+        let currentVolume = 0.25, // Default volume 25% (on the player's own scale, see volToEl)
             audioCtx = null,
             normalizedElements = new WeakSet(),
             compressor = null;
+        // The volume shown to the user is not the raw element volume: it is squared on the way in, so the low
+        // end is much quieter and fine-grained, and Web Audio adds make-up gain so the top end is louder.
+        const volToEl = (u) => Math.pow(Math.max(0, Math.min(1, u)), 2);
+        const elToVol = (v) => Math.round(Math.sqrt(Math.max(0, Math.min(1, v))) * 100) / 100;
+        const VOL_KEY = "playerVolumeUi";
 
         // -- Theming / UI preference state --
         let currentFontSize = 16,
@@ -1714,7 +1723,7 @@
             if (so) sortBy = so;
             const sortSel = document.getElementById("sortSelect");
             if (sortSel) sortSel.value = sortBy;
-            const savedVolume = parseFloat(localStorage.getItem("playerVolume"));
+            const savedVolume = parseFloat(localStorage.getItem(VOL_KEY));
             if (!isNaN(savedVolume) && savedVolume >= 0 && savedVolume <= 1) currentVolume = savedVolume;
             useNativePlayer = localStorage.getItem("useNativePlayer") === "1";
             const nativeToggle = document.getElementById("nativePlayerToggle");
@@ -2340,12 +2349,23 @@
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     // Settings for a "broadcast style" leveling
                     compressor = audioCtx.createDynamicsCompressor();
-                    compressor.threshold.value = -24; // Start compressing early to catch peaks
-                    compressor.knee.value = 30;       // Soft knee for smooth transition
-                    compressor.ratio.value = 12;      // High ratio to act as a leveler
-                    compressor.attack.value = 0.003;  // Fast attack
-                    compressor.release.value = 0.25;  // Standard release
-                    compressor.connect(audioCtx.destination);
+                    compressor.threshold.value = -30; // Start leveling earlier so quiet and loud stations land close together
+                    compressor.knee.value = 24;
+                    compressor.ratio.value = 18;      // Strong leveler
+                    compressor.attack.value = 0.003;
+                    compressor.release.value = 0.25;
+                    // Make-up gain gives the top of the volume range real headroom; the limiter keeps it from clipping.
+                    const makeup = audioCtx.createGain();
+                    makeup.gain.value = 2.4;
+                    const limiter = audioCtx.createDynamicsCompressor();
+                    limiter.threshold.value = -2;
+                    limiter.knee.value = 0;
+                    limiter.ratio.value = 20;
+                    limiter.attack.value = 0.001;
+                    limiter.release.value = 0.1;
+                    compressor.connect(makeup);
+                    makeup.connect(limiter);
+                    limiter.connect(audioCtx.destination);
                 }
 
                 // Browser policy requires user interaction to resume audio context
@@ -2423,7 +2443,7 @@
             <button class="playlist-btn shuffle-btn" id="playlistShuffle" title="Shuffle" aria-label="Toggle shuffle" aria-pressed="false" disabled>${icons.shuffleCtl}</button>
             <span class="player-divider"></span>
             <button class="playlist-btn" id="volDownBtn" title="Volume down" aria-label="Decrease volume">${icons.volDownCtl}</button>
-            <span class="player-vol" id="playerVolLabel" aria-live="polite">50%</span>
+            <span class="player-vol" id="playerVolLabel" aria-live="polite">25%</span>
             <button class="playlist-btn" id="volUpBtn" title="Volume up" aria-label="Increase volume">${icons.volUpCtl}</button>
           </div>
         </div>
@@ -2488,7 +2508,12 @@
                 if (range) return range.start + (sliderValue / 1000) * (range.end - range.start);
                 return mediaEl.currentTime;
             }
+            function paintSeek() { seek.style.setProperty("--seek-pct", (seek.value / 10) + "%"); }
             function syncSeekBar() {
+                syncSeekBarInner();
+                paintSeek();
+            }
+            function syncSeekBarInner() {
                 if (seeking) return;
                 const dur = mediaEl.duration;
                 if (isFinite(dur) && dur > 0) {
@@ -2522,6 +2547,7 @@
             syncSeekBar();
             seek.addEventListener("input", () => {
                 seeking = true;
+                paintSeek();
                 const target = getSeekTarget(seek.value);
                 curTimeEl.textContent = formatTime(target);
                 seek.setAttribute("aria-valuetext", formatTime(target));
@@ -2531,14 +2557,13 @@
                 seeking = false;
             });
 
-            const updateVolLabel = () => (volLabel.textContent = Math.round(mediaEl.volume * 100) + "%");
+            const updateVolLabel = () => (volLabel.textContent = Math.round(elToVol(mediaEl.volume) * 100) + "%");
+            const stepVol = (d) => { mediaEl.muted = false; const pct = Math.max(0, Math.min(100, Math.round(elToVol(mediaEl.volume) * 100) + d)); mediaEl.volume = volToEl(pct / 100); };
             volDownBtn.addEventListener("click", () => {
-                mediaEl.muted = false;
-                mediaEl.volume = Math.max(0, +(mediaEl.volume - 0.1).toFixed(2));
+                stepVol(-5);
             });
             volUpBtn.addEventListener("click", () => {
-                mediaEl.muted = false;
-                mediaEl.volume = Math.min(1, +(mediaEl.volume + 0.1).toFixed(2));
+                stepVol(5);
             });
             // Covers every path that can change volume (these buttons, the
             // element's own onvolumechange set in openFile/playPlaylistTrack,
@@ -5076,6 +5101,7 @@
             document.getElementById("songsCloseBtn").focus();
         }
         function closeSongsModal() {
+            disarmClearSongs();
             document.getElementById("songsModal").classList.remove("active");
             restoreModalFocus("songsModal");
         }
@@ -5090,9 +5116,24 @@
             const done = () => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy name"), 1500); };
             if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(b.dataset.copy).then(done, () => {});
         }
+        // A native confirm() freezes the page, which stalls the live stream until it closes, so this asks in place instead.
+        let clearSongsTimer = null;
+        function disarmClearSongs() {
+            clearTimeout(clearSongsTimer);
+            clearSongsTimer = null;
+            const b = document.getElementById("songsClearBtn");
+            if (b) { b.textContent = "Clear"; b.classList.remove("armed"); }
+        }
         function clearSongs() {
             if (!songsHeard.length) return;
-            if (!confirm("Clear the list of songs you heard?")) return;
+            if (!clearSongsTimer) {
+                const b = document.getElementById("songsClearBtn");
+                b.textContent = "Press again to clear";
+                b.classList.add("armed");
+                clearSongsTimer = setTimeout(disarmClearSongs, 3000);
+                return;
+            }
+            disarmClearSongs();
             songsHeard = [];
             saveSongs();
             renderSongsList();
@@ -5295,7 +5336,7 @@
             b.setAttribute("aria-label", r ? "Recording in progress. Show or hide the recording panel" : "Record this station");
             const n = REC.items.length;
             const dl = '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
-            const saveBtn = n ? '<button class="playlist-btn rec-primary" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">' + dl + (n === 1 ? "Save recording" : "Save all " + n) + "</button>" : "";
+            const saveBtn = n ? '<button class="playlist-btn" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">' + dl + (n === 1 ? "Save recording" : "Save all " + n) + "</button>" : "";
             const listBtn = n > 1 ? '<button class="playlist-btn" id="recOpenBtn" title="See each recording and save them one at a time">View list</button>' : "";
             if (r) {
                 const st = recStat(r);
@@ -5304,8 +5345,8 @@
             } else {
                 const bad = recBlocked();
                 const hint = REC.msg || (bad ? "This station doesn't allow recording from a web page." : n ? "Recordings are only kept in this tab. Save them before you leave." : "");
-                const acts = (REC.choose && !bad ? '<button class="playlist-btn rec-primary" data-rec="songs" title="Every song becomes its own file with its name and artist">Each song separately</button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop recording">One long recording</button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
-                p.innerHTML = '<span class="rec-msg">' + escapeHtml(hint) + "</span>" + (acts ? '<div class="rec-actions">' + acts + "</div>" : "");
+                const acts = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" title="Every song becomes its own file with its name and artist">Each song separately</button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop recording">One long recording</button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
+                p.innerHTML = '<span class="rec-msg">' + escapeHtml(hint) + "</span>" + (acts ? '<div class="rec-actions' + (REC.choose ? " rec-choose" : "") + '">' + acts + "</div>" : "");
             }
         }
         function recSync() {
@@ -5605,10 +5646,10 @@
                     `;
                 }
                 el = document.getElementById(id);
-                el.volume = currentVolume;
+                el.volume = volToEl(currentVolume);
                 el.onvolumechange = (ev) => {
-                    currentVolume = ev.target.volume;
-                    localStorage.setItem("playerVolume", currentVolume);
+                    currentVolume = elToVol(ev.target.volume);
+                    localStorage.setItem(VOL_KEY, currentVolume);
                 };
                 if (cors) setupAudioNormalization(el);
                 setupMediaSession(el, title);
@@ -5955,8 +5996,8 @@
                         // Apply volume and normalization to single files too
                         const singleVideo = bodyEl.querySelector('video');
                         if (singleVideo) {
-                            singleVideo.volume = currentVolume;
-                            singleVideo.onvolumechange = (e) => { currentVolume = e.target.volume; localStorage.setItem("playerVolume", currentVolume); };
+                            singleVideo.volume = volToEl(currentVolume);
+                            singleVideo.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); localStorage.setItem(VOL_KEY, currentVolume); };
                             setupAudioNormalization(singleVideo);
                             setupMediaSession(singleVideo, fileName);
                             maybeWireMediaControls(singleVideo);
@@ -5980,8 +6021,8 @@
                         // Apply volume and normalization to single files too
                         const singleAudio = bodyEl.querySelector('audio');
                         if (singleAudio) {
-                            singleAudio.volume = currentVolume;
-                            singleAudio.onvolumechange = (e) => { currentVolume = e.target.volume; localStorage.setItem("playerVolume", currentVolume); };
+                            singleAudio.volume = volToEl(currentVolume);
+                            singleAudio.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); localStorage.setItem(VOL_KEY, currentVolume); };
                             setupAudioNormalization(singleAudio);
                             setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);

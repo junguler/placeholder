@@ -485,6 +485,14 @@
         }
         .playlist-bar #playlistStop { padding-left: 0.6rem; padding-right: 0.6rem; font-weight: 600; margin-left: auto; }
         .lbl-short { display: none; }
+        .bico-x { display: none; }
+        /* Player buttons option (Settings > Media Player): default = icons and labels as designed, labels = text only, icons = glyphs only */
+        body[data-btn-style="labels"] .playlist-bar .playlist-btn svg, body[data-btn-style="labels"] .rec-panel .playlist-btn svg { display: none !important; }
+        body[data-btn-style="icons"] .playlist-bar .playlist-btn .btn-txt, body[data-btn-style="icons"] .rec-panel .playlist-btn .blabel,
+        body[data-btn-style="icons"] .rec-panel .playlist-btn .lbl-long, body[data-btn-style="icons"] .rec-panel .playlist-btn .lbl-short { display: none !important; }
+        body[data-btn-style="icons"] .playlist-bar .playlist-btn svg, body[data-btn-style="icons"] .rec-panel .playlist-btn svg { display: block !important; }
+        body[data-btn-style="icons"] .playlist-bar #playlistTest, body[data-btn-style="icons"] .playlist-bar #playlistSongs, body[data-btn-style="icons"] .playlist-bar #playlistRec { min-width: 2rem; padding-left: 0.45rem; padding-right: 0.45rem; }
+        body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding: 0 0.5rem; }
         .playlist-bar .bar-break { display: none; flex: 0 0 100%; height: 0; }
         .playlist-bar #playlistTest[hidden], .playlist-bar #playlistSongs[hidden], .playlist-bar #playlistRec[hidden] { display: none; }
         .goto-quick { display: flex; align-items: center; gap: 0.35rem; }
@@ -609,7 +617,7 @@
             .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
             .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
             .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
-            .playlist-btn span:not(.btn-txt):not(.lbl-long):not(.lbl-short) { display: none; }
+            .playlist-btn span:not(.btn-txt):not(.blabel):not(.lbl-long):not(.lbl-short) { display: none; }
             .preview-image { max-height: 80vh; max-height: 80dvh; }
             .preview-pdf { height: 80vh; height: 80dvh; }
             .preview-media-container { padding: 0.5rem; }
@@ -876,6 +884,10 @@
                                             <span class="switch-slider"></span>
                                         </label>
                                     </div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Player buttons</span>
+                                        <select class="sort-select" id="btnStyleSel" aria-label="Show the playlist and recording buttons with their usual icons and labels, with labels only, or with icons only"><option value="default">Default</option><option value="labels">All labels</option><option value="icons">All icons</option></select>
+                                    </div>
                                 </div>
                                 <div class="settings-section" style="border-top: 1px solid var(--border-color)">
                                     <div class="settings-section-title">Recording</div>
@@ -1031,7 +1043,6 @@
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="btn-txt">Test</span></button>
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="btn-txt">Songs</span></button>
                 <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle class="rec-core" cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
-                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt"><span class="lbl-long">Stop playlist</span><span class="lbl-short">Stop</span></span></button>
             </div>
             <div class="rec-panel" id="recPanel" hidden></div>
             <div class="modal-body" id="modalBody"></div>
@@ -1742,6 +1753,10 @@
             const nativeToggle = document.getElementById("nativePlayerToggle");
             if (nativeToggle) nativeToggle.checked = useNativePlayer;
             skipDeadStreams = localStorage.getItem(SKIPDEAD_KEY) !== "0";
+            const btnStyle = ["labels", "icons"].includes(localStorage.getItem(BTNSTYLE_KEY)) ? localStorage.getItem(BTNSTYLE_KEY) : "default";
+            document.body.dataset.btnStyle = btnStyle;
+            const btnStyleSel = document.getElementById("btnStyleSel");
+            if (btnStyleSel) btnStyleSel.value = btnStyle;
             const skipDeadToggle = document.getElementById("skipDeadToggle");
             if (skipDeadToggle) skipDeadToggle.checked = skipDeadStreams;
             document.body.classList.toggle("native-player-mode", useNativePlayer);
@@ -2801,6 +2816,10 @@
                 localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0");
                 document.body.classList.toggle("native-player-mode", useNativePlayer);
             });
+            document.getElementById("btnStyleSel").addEventListener("change", (e) => {
+                document.body.dataset.btnStyle = e.target.value;
+                try { localStorage.setItem(BTNSTYLE_KEY, e.target.value); } catch (err) {}
+            });
             document.getElementById("skipDeadToggle").addEventListener("change", (e) => {
                 skipDeadStreams = e.target.checked;
                 localStorage.setItem(SKIPDEAD_KEY, skipDeadStreams ? "1" : "0");
@@ -2825,7 +2844,6 @@
             document.getElementById("topShuffleBtn").addEventListener("click", toggleShuffle);
             document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink);
             document.getElementById("favoriteBtn").addEventListener("click", () => toggleFavoriteFile(currentFilePath));
-            document.getElementById("playlistStop").addEventListener("click", stopPlaylist);
             document.getElementById("playlistTest").addEventListener("click", runPlaylistTest);
             document.getElementById("playlistSongs").addEventListener("click", openSongsModal);
             document.getElementById("songsCloseBtn").addEventListener("click", closeSongsModal);
@@ -4115,6 +4133,7 @@
         const SONGS_MAX = 500;
         const NOCORS_KEY = "noCorsHosts";
         const SKIPDEAD_KEY = "skipDeadStreams";
+        const BTNSTYLE_KEY = "playerBtnStyle";
         const HEALTH_LABEL = { good: "On air", weak: "Weak", bad: "Off air", blocked: "Blocked" };
 
         let skipDeadStreams = true;
@@ -5348,17 +5367,17 @@
             b.title = r ? "Recording. Show or hide the recording panel" : "Record this station and save it as audio files";
             b.setAttribute("aria-label", r ? "Recording in progress. Show or hide the recording panel" : "Record this station");
             const n = REC.items.length;
-            const dl = '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
-            const saveBtn = n ? '<button class="playlist-btn" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">' + dl + (n === 1 ? '<span class="lbl-long">Save recording</span><span class="lbl-short">Save</span>' : "Save all " + n) + "</button>" : "";
-            const listBtn = n > 1 ? '<button class="playlist-btn" id="recOpenBtn" title="See each recording and save them one at a time">View list</button>' : "";
+            const dl = '<svg class="bico" viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
+            const saveBtn = n ? '<button class="playlist-btn" id="recSaveAllBtn" aria-label="Save recording" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">' + dl + (n === 1 ? '<span class="lbl-long">Save recording</span><span class="lbl-short">Save</span>' : '<span class="blabel">Save all ' + n + "</span>") + "</button>" : "";
+            const listBtn = n > 1 ? '<button class="playlist-btn" id="recOpenBtn" aria-label="View list" title="See each recording and save them one at a time"><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><path d="M4 5h16v2H4zm0 6h16v2H4zm0 6h16v2H4z"/></svg><span class="blabel">View list</span></button>' : "";
             if (r) {
                 const st = recStat(r);
-                const stopBtn = '<button class="playlist-btn rec-stop" id="recStopBtn" title="Stop recording and keep what was recorded" aria-label="Stop recording"><svg viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><rect x="8.5" y="8.5" width="7" height="7"/></svg>Stop recording</button>';
+                const stopBtn = '<button class="playlist-btn rec-stop" id="recStopBtn" title="Stop recording and keep what was recorded" aria-label="Stop recording"><svg class="bico" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><rect x="8.5" y="8.5" width="7" height="7"/></svg><span class="blabel">Stop recording</span></button>';
                 p.innerHTML = '<span class="rec-live"><i class="rec-dot"></i>' + '<span class="lbl-long">Recording </span><span class="rec-time">' + st.time + '</span></span><span class="rec-meta" title="' + escapeHtml(st.meta) + '">' + escapeHtml(st.meta) + '</span><div class="rec-actions">' + saveBtn + stopBtn + "</div>";
             } else {
                 const bad = recBlocked();
                 const hint = REC.msg || (bad ? "This station doesn't allow recording from a web page." : n ? "Recordings are only kept in this tab. Save them before you leave." : "");
-                const acts = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" title="Every song becomes its own file with its name and artist"><span class="lbl-long">Each song separately</span><span class="lbl-short">Each song</span></button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop recording"><span class="lbl-long">One long recording</span><span class="lbl-short">One long file</span></button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
+                const acts = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" aria-label="Each song separately" title="Every song becomes its own file with its name and artist"><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="lbl-long">Each song separately</span><span class="lbl-short">Each song</span></button><button class="playlist-btn" data-rec="whole" aria-label="One long recording" title="Records everything until you press Stop recording"><svg class="bico-x" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span class="lbl-long">One long recording</span><span class="lbl-short">One long file</span></button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
                 p.innerHTML = '<span class="rec-msg">' + escapeHtml(hint) + "</span>" + (acts ? '<div class="rec-actions' + (REC.choose ? " rec-choose" : "") + '">' + acts + "</div>" : "");
             }
         }

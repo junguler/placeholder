@@ -654,20 +654,40 @@
         @container (max-width: 520px) {
             .btn-txt { display: none; }
             .ico-c { display: block; }
-            .playlist-bar #playlistTest, .playlist-bar #playlistRec, .playlist-bar #playlistStop, .rec-panel #recStopBtn { min-width: 1.9rem; padding-left: 0.3rem; padding-right: 0.3rem; }
+            .playlist-bar #playlistTest, .playlist-bar #playlistRec, .playlist-bar #playlistStop { min-width: 1.9rem; padding-left: 0.3rem; padding-right: 0.3rem; }
             .playlist-bar #playlistTest.active { padding-left: 0.5rem; padding-right: 0.5rem; }
             .playlist-bar #playlistTest.active .btn-txt { display: inline; }
             .playlist-bar #playlistTest.active .ico-c { display: none; }
+            /* While recording, the bar's Record button keeps its pulsing icon and shows the clock */
+            .playlist-bar #playlistRec.rec-on { padding-left: 0.5rem; padding-right: 0.5rem; }
+            .playlist-bar #playlistRec.rec-on .btn-txt { display: inline; }
+            /* Recording panel: buttons drop to their own full-width row, labels stay readable */
+            .rec-panel .rec-actions { flex: 1 1 100%; margin-left: 0; }
+            .rec-panel .rec-actions .playlist-btn { flex: 1 1 0; }
         }
-        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; padding: 0.4rem 0.6rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
+        .playlist-bar #playlistRec.rec-on .ico-c { display: block; }
+        .playlist-bar #playlistRec.rec-on .btn-txt { font-variant-numeric: tabular-nums; }
+        /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
+        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
+        .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
         .rec-panel[hidden], .settings-row[hidden] { display: none; }
-        .rec-panel .playlist-btn { height: 1.5rem; box-sizing: border-box; padding: 0 0.55rem; font-size: 0.75rem; white-space: nowrap; }
+        .rec-panel .playlist-btn { height: 1.75rem; box-sizing: border-box; padding: 0 0.7rem; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
+        .rec-panel .playlist-btn svg { flex-shrink: 0; }
         .rec-panel .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .rec-info { flex: 1; min-width: 6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); }
-        .rec-dot { color: var(--danger); }
-        .rec-on .rec-dot { animation: recPulse 1.2s ease-in-out infinite; }
+        .rec-live { display: inline-flex; align-items: center; gap: 0.4rem; flex-shrink: 0; font-size: 0.8rem; font-weight: 600; line-height: 1.4; color: var(--text-primary); }
+        .rec-time { font-variant-numeric: tabular-nums; }
+        .rec-meta, .rec-msg { flex: 1 1 10rem; min-width: 0; font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); }
+        .rec-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rec-actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
+        .rec-dot { display: inline-block; width: 0.6rem; height: 0.6rem; background: var(--danger); border-radius: var(--radius-full); flex-shrink: 0; }
+        .rec-on .rec-dot, .playlist-bar #playlistRec.rec-on .rec-core { animation: recPulse 1.2s ease-in-out infinite; }
         @keyframes recPulse { 50% { opacity: 0.25; } }
-        @media (prefers-reduced-motion: reduce) { .rec-on .rec-dot { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { .rec-on .rec-dot, .playlist-bar #playlistRec.rec-on .rec-core { animation: none; } }
+        /* Stop recording: unmistakably red and labeled, so it is never confused with the playlist Stop or the window's close button */
+        .rec-panel .rec-stop { background: var(--danger); border-color: var(--danger); color: #fff !important; font-weight: 600; }
+        .rec-panel .rec-stop:hover { background: var(--danger); border-color: var(--danger); opacity: 0.9; }
+        /* Primary action (Save, Each song separately): the normal button, with a stronger outline */
+        .rec-panel .rec-primary { border-color: var(--on-control); font-weight: 600; }
         .playlist-bar #playlistRec.rec-on { color: var(--danger); border-color: var(--danger); }
         .rec-modal { max-width: 560px; }
         .songs-modal { max-width: 560px; }
@@ -993,8 +1013,8 @@
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="btn-txt">Test</span></button>
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></button>
-                <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
-                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop</span></button>
+                <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle class="rec-core" cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
+                <button class="playlist-stop-btn" id="playlistStop" title="Stop playlist" aria-label="Stop playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop playlist</span></button>
             </div>
             <div class="rec-panel" id="recPanel" hidden></div>
             <div class="modal-body" id="modalBody"></div>
@@ -5154,13 +5174,14 @@
         // One click: a single recording is saved as is, several become one zip.
         async function recSaveAll(b) {
             const items = REC.items.slice().reverse(), total = items.reduce((a, i) => a + i.blob.size, 0);
-            if (!items.length) return;
-            if (items.length === 1) return recSave(items[0].blob, items[0].name);
-            if (total > 3.5 * 1024 ** 3) return alert("That's too much for one zip. Open the list and save the files one by one.");
-            const t = b.textContent;
+            if (!items.length) return false;
+            if (items.length === 1) { recSave(items[0].blob, items[0].name); return true; }
+            if (total > 3.5 * 1024 ** 3) { alert("That's too much for one zip. Open the list and save the files one by one."); return false; }
+            const t = b.innerHTML;
             b.textContent = "Zipping…";
             b.disabled = true;
-            try { recSave(await recZip(items), "Recordings " + new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-") + ".zip"); } finally { b.textContent = t; b.disabled = false; }
+            try { recSave(await recZip(items), "Recordings " + new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-") + ".zip"); } finally { b.innerHTML = t; b.disabled = false; }
+            return true;
         }
         function recSave(blob, name) {
             const a = document.createElement("a");
@@ -5215,12 +5236,13 @@
             if (!r.song.title) r.song.title = t;
             else if (t !== r.song.title) r.cut = t;
         }
-        function recInfo(r) {
-            let s = "REC " + recFmt(Math.floor((Date.now() - r.t0) / 1000)) + " · " + (r.bytes / 1048576).toFixed(1) + " MB";
-            if (r.mode === "songs") s += " · " + r.count + " saved · " + (r.song.title || "waiting for a title") + (r.inband ? "" : " (titles polled, cuts approximate)");
-            else if (r.noTitles) s += " · no song titles, one stream" + (r.count ? " · " + r.count + " files" : "");
-            else if (r.count) s += " · " + r.count + " files";
-            return s;
+        function recStat(r) {
+            const time = recFmt(Math.floor((Date.now() - r.t0) / 1000));
+            let m = (r.bytes / 1048576).toFixed(1) + " MB";
+            if (r.mode === "songs") m += " · " + r.count + " saved · " + (r.song.title || "waiting for a title") + (r.inband ? "" : " (titles polled, cuts approximate)");
+            else if (r.noTitles) m += " · no song titles, one stream" + (r.count ? " · " + r.count + " files" : "");
+            else if (r.count) m += " · " + r.count + " files";
+            return { time, meta: m };
         }
         // Opens the stream just long enough to read its headers. split = the
         // station sends titles (in-band exact, or polled) and the format is MP3/AAC.
@@ -5267,14 +5289,23 @@
             if (!p) return;
             b.classList.toggle("rec-on", !!r);
             p.classList.toggle("rec-on", !!r);
+            const bt = b.querySelector(".btn-txt");
+            if (bt) bt.textContent = r ? recStat(r).time : "Record";
+            b.title = r ? "Recording. Show or hide the recording panel" : "Record this station and save it as audio files";
+            b.setAttribute("aria-label", r ? "Recording in progress. Show or hide the recording panel" : "Record this station");
             const n = REC.items.length;
-            const saveBtn = n ? '<button class="playlist-btn rec-primary" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">Save ' + (n === 1 ? "recording" : "all " + n) + "</button>" : "";
+            const dl = '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
+            const saveBtn = n ? '<button class="playlist-btn rec-primary" id="recSaveAllBtn" title="' + (n === 1 ? "Save the recording to your device" : "Save all recordings to your device as one zip file") + '">' + dl + (n === 1 ? "Save recording" : "Save all " + n) + "</button>" : "";
             const listBtn = n > 1 ? '<button class="playlist-btn" id="recOpenBtn" title="See each recording and save them one at a time">View list</button>' : "";
-            if (r) p.innerHTML = '<span class="rec-dot">●</span><span class="rec-info">' + escapeHtml(recInfo(r)) + "</span>" + saveBtn + '<button class="playlist-btn" id="recStopBtn" title="Stop recording" aria-label="Stop recording"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span class="btn-txt">Stop</span></button>';
-            else {
+            if (r) {
+                const st = recStat(r);
+                const stopBtn = '<button class="playlist-btn rec-stop" id="recStopBtn" title="Stop recording and keep what was recorded" aria-label="Stop recording"><svg viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><rect x="8.5" y="8.5" width="7" height="7"/></svg>Stop recording</button>';
+                p.innerHTML = '<span class="rec-live"><i class="rec-dot"></i>Recording <span class="rec-time">' + st.time + '</span></span><span class="rec-meta" title="' + escapeHtml(st.meta) + '">' + escapeHtml(st.meta) + '</span><div class="rec-actions">' + saveBtn + stopBtn + "</div>";
+            } else {
                 const bad = recBlocked();
                 const hint = REC.msg || (bad ? "This station doesn't allow recording from a web page." : n ? "Recordings are only kept in this tab. Save them before you leave." : "");
-                p.innerHTML = (REC.choose && !bad ? '<button class="playlist-btn rec-primary" data-rec="songs" title="Every song becomes its own file with its name and artist">Each song separately</button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop">One long recording</button>' : "") + '<span class="rec-info">' + escapeHtml(hint) + "</span>" + (REC.choose ? "" : saveBtn + listBtn);
+                const acts = (REC.choose && !bad ? '<button class="playlist-btn rec-primary" data-rec="songs" title="Every song becomes its own file with its name and artist">Each song separately</button><button class="playlist-btn" data-rec="whole" title="Records everything until you press Stop recording">One long recording</button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
+                p.innerHTML = '<span class="rec-msg">' + escapeHtml(hint) + "</span>" + (acts ? '<div class="rec-actions">' + acts + "</div>" : "");
             }
         }
         function recSync() {
@@ -5285,7 +5316,7 @@
         function recOnEnd() {
             recSync();
             REC.choose = false;
-            if (REC.st) recStop("Station changed. Press Save to keep what was recorded.");
+            if (REC.st) recStop("Station changed.");
             const p = recEl("recPanel");
             if (p) p.hidden = true;
         }
@@ -5298,7 +5329,7 @@
             if (r.wake) r.wake.release().catch(() => {});
             if (r.mode === "songs") r.song.partial = true;
             recFinish(r, r.song);
-            REC.msg = msg || (r.count ? "Done. " + r.count + (r.count === 1 ? " file is" : " files are") + " ready. Press Save to keep " + (r.count === 1 ? "it" : "them") + "." : "Stopped. Nothing was long enough to keep.") + (r.skipped ? " (" + r.skipped + " short clips skipped)" : "");
+            REC.msg = (msg ? msg + " " : "") + "Recording stopped. " + (r.count ? r.count + (r.count === 1 ? " file is" : " files are") + " ready to save." : "Nothing was long enough to keep.") + (r.skipped ? " (" + r.skipped + " short clips skipped)" : "");
             recRender();
         }
         async function recStart(mode, noTitles) {
@@ -5325,7 +5356,12 @@
             const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: !!mi, noTitles: !!noTitles });
             r.song = recNew(tag && !mi && ses.song ? ses.song : null, tag);
             REC.msg = "";
-            r.timer = setInterval(() => { const i = document.querySelector("#recPanel .rec-info"); if (i) i.textContent = recInfo(r); }, 1000);
+            r.timer = setInterval(() => {
+                const st = recStat(r), t = document.querySelector("#recPanel .rec-time"), m = document.querySelector("#recPanel .rec-meta"), bt = document.querySelector("#playlistRec .btn-txt");
+                if (t) t.textContent = st.time;
+                if (m) { m.textContent = st.meta; m.title = st.meta; }
+                if (bt) bt.textContent = st.time;
+            }, 1000);
             if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { r.wake = w; if (REC.st !== r) w.release(); }).catch(() => {});
             recRender();
             // In-band ICY: audio / length byte / metadata block, repeating.
@@ -5349,7 +5385,7 @@
                     if (mi) eat(value); else recPush(r, value);
                 }
             } catch (e) {}
-            if (REC.st === r) recStop("Stream ended. Press Save to keep what was recorded.");
+            if (REC.st === r) recStop("Stream ended.");
         }
         function renderRecList() {
             const l = recEl("recList");
@@ -5387,7 +5423,14 @@
                 if (b.dataset.rec) recStart(b.dataset.rec);
                 else if (b.id === "recStopBtn") recStop();
                 else if (b.id === "recOpenBtn") openRecModal();
-                else if (b.id === "recSaveAllBtn") recSaveAll(b);
+                else if (b.id === "recSaveAllBtn") {
+                    const h = b.innerHTML;
+                    Promise.resolve(recSaveAll(b)).then((ok) => {
+                        if (!ok || !b.isConnected || b.disabled) return;
+                        b.textContent = "Saved";
+                        setTimeout(() => { if (b.isConnected) b.innerHTML = h; }, 1500);
+                    });
+                }
             });
             recEl("recCloseBtn").addEventListener("click", closeRecModal);
             recEl("recModal").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeRecModal(); });

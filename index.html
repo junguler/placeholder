@@ -474,8 +474,8 @@
         .playlist-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .playlist-btn svg { width: 14px; height: 14px; }
         .playlist-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent) !important; }
-        .playlist-info { flex: 1 1 8rem; min-width: 0; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
-        .playlist-track { color: var(--text-primary); font-weight: 500; }
+        .playlist-info { flex: 1 1 8rem; min-width: 0; display: flex; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; white-space: nowrap; line-height: 1.4; }
+        .playlist-track { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); font-weight: 500; }
         .playlist-stop-btn { padding: 0.25rem; background: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius); color: #fff; cursor: pointer; font-size: 0.75rem; }
         .playlist-stop-btn:hover { opacity: 0.9; }
         .playlist-stop-btn svg { width: 14px; height: 14px; }
@@ -656,10 +656,10 @@
         .shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; }
         .stats-modal { max-width: 420px; }
         .stats-body { padding: 0.85rem 1rem 1rem; overflow-y: auto; }
-        .playlist-health { color: var(--text-muted); font-weight: 400; }
+        .playlist-health { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-left: 0.35em; color: var(--text-muted); font-weight: 400; }
         .np-song { max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
-        .np-song:empty { display: none; }
-        .np-status { font-size: var(--data-size); color: var(--text-muted); text-align: center; line-height: 1.3; min-height: 1em; }
+        .np-song:empty { display: block; }
+        .np-song:empty::before { content: attr(data-hint); color: var(--text-muted); font-size: var(--data-size); }
         .np-song, .playlist-now-playing { margin: 0; }
         .hs-dot { color: var(--text-muted); }
         .hs-dot.hs-good { color: var(--success); }
@@ -684,8 +684,21 @@
             .playlist-bar { gap: 0.4rem; }
             .playlist-bar #playlistTest, .playlist-bar #playlistSongs, .playlist-bar #playlistRec, .playlist-bar #playlistStop { padding-left: 0.5rem; padding-right: 0.5rem; }
         }
+        /* Mobile: the station + song under the glyph are the one place the station is named, so the header title and the
+           title line in the bar are hidden. That leaves the bar with just the track controls and Test / Songs / Record on one row. */
+        @container (max-width: 400px) {
+            .playlist-bar #playlistTest:not(.active) .btn-txt, .playlist-bar #playlistSongs .btn-txt, .playlist-bar #playlistRec:not(.rec-on) .btn-txt { display: none; }
+        }
+        body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-btn-style="labels"] .playlist-bar #playlistSongs .btn-txt, body[data-btn-style="labels"] .playlist-bar #playlistRec .btn-txt { display: inline; }
+        @media (max-width: 640px) {
+            .modal:has(.playlist-bar.active) .modal-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; flex: none; }
+            .modal:has(.playlist-bar.active) .modal-actions { margin-left: auto; }
+            #playlistBar .playlist-info, #playlistBar .bar-break { display: none; }
+            #playlistBar .playlist-controls { margin-right: auto; }
+            body:not([data-btn-style="labels"]) #playlistBar { flex-wrap: nowrap; }
+        }
         /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
-        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
+        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; min-height: 2.55rem; box-sizing: border-box; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
         .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
         .rec-panel[hidden], .settings-row[hidden] { display: none; }
         .rec-panel .playlist-btn { height: 1.65rem; box-sizing: border-box; padding: 0 0.65rem; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
@@ -697,14 +710,11 @@
         .rec-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rec-actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
         @container (max-width: 520px) {
-            /* Narrow: one line while recording (clock on the left, buttons on the right, details hidden).
-               A choice puts its message on one line and its two equal buttons on the next. */
-            .rec-panel { gap: 0.4rem 0.5rem; }
-            .rec-panel .rec-meta { display: none; }
-            .rec-panel .rec-live { margin-right: auto; }
-            .rec-panel .rec-actions { flex-wrap: nowrap; }
-            .rec-panel .rec-actions.rec-choose { flex: 1 1 100%; margin-left: 0; }
-            .rec-panel .rec-actions.rec-choose .playlist-btn { flex: 1 1 0; }
+            /* Narrow: always one line of the same height, so nothing shifts between states.
+               Recording: clock, song / progress, buttons. Choice: short explanation, the two buttons. */
+            .rec-panel { gap: 0.4rem 0.5rem; flex-wrap: nowrap; }
+            .rec-panel .rec-meta, .rec-panel .rec-msg { display: block; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .rec-panel .rec-actions, .rec-panel .rec-actions.rec-choose { flex: 0 0 auto; flex-wrap: nowrap; margin-left: auto; }
             .rec-panel .playlist-btn { padding: 0 0.5rem; }
         }
         .rec-dot { display: inline-block; width: 0.6rem; height: 0.6rem; background: var(--danger); border-radius: var(--radius-full); flex-shrink: 0; }
@@ -4867,7 +4877,6 @@
             if (!force && now - testUiAt < 250) return;
             testUiAt = now;
             const btn = document.getElementById("playlistTest");
-            const out = document.getElementById("playlistHealth");
             if (btn) {
                 btn.querySelector(".btn-txt").textContent = healthTest ? `Stop ${healthTest.done}/${healthTest.total}` : "Test";
                 btn.classList.toggle("active", !!healthTest);
@@ -4877,32 +4886,27 @@
                 const needsTest = currentPlaylist.some((it) => !streamHealth.fresh(it.url));
                 btn.hidden = !healthTest && currentPlaylist.length > 0 && !needsTest;
             }
-            if (out) out.textContent = healthSummaryText();
             renderNpStatus();
         }
-        // One line under the station name: state, format, start time.
+        // The checking status at the top of the player carries this stream's format and start time.
+        // Connecting / Reconnecting use the (reserved) song line under the station name until a song title arrives.
         function renderNpStatus() {
-            const el = document.getElementById("npStatus");
-            if (!el) return;
+            const out = document.getElementById("playlistHealth");
+            const song = document.getElementById("npSong");
             const s = playSession;
-            if (!s) {
-                el.textContent = "";
-                return;
-            }
-            const rec = streamHealth.get(s.item.url);
-            let label;
-            let cls = "";
-            if (s.reconnecting) label = `Reconnecting ${s.retries}/${RECONNECT_MAX}…`;
-            else if (!s.everPlayed) label = "Connecting…";
-            else {
-                label = rec ? HEALTH_LABEL[rec.s] || "Playing" : "Playing";
-                cls = rec ? " hs-" + rec.s : "";
-            }
+            const rec = s ? streamHealth.get(s.item.url) : null;
             const bits = [];
             if (rec && rec.fmt) bits.push(rec.fmt + (rec.kbps ? " " + rec.kbps + " kbps" : ""));
             else if (rec && rec.kbps) bits.push(rec.kbps + " kbps");
-            if (s.everPlayed && s.startMs) bits.push("started in " + (s.startMs / 1000).toFixed(1) + " s");
-            el.innerHTML = `<span class="hs-dot${cls}">●</span> ${escapeHtml(label)}${bits.length ? " · " + escapeHtml(bits.join(" · ")) : ""}`;
+            if (s && s.everPlayed && s.startMs) bits.push("started in " + (s.startMs / 1000).toFixed(1) + " s");
+            if (out) out.textContent = healthSummaryText() + (bits.length ? " · " + bits.join(" · ") : "");
+            if (song) {
+                let hint = "";
+                if (s && s.reconnecting) hint = `Reconnecting ${s.retries}/${RECONNECT_MAX}…`;
+                else if (s && !s.everPlayed) hint = "Connecting…";
+                if (hint) song.setAttribute("data-hint", hint);
+                else song.removeAttribute("data-hint");
+            }
         }
 
         // ---- now playing: song titles from the station ---------------------
@@ -5316,7 +5320,28 @@
             if (r.mode === "songs") m += " · " + r.count + " saved · " + (r.song.title || "waiting for a title") + (r.inband ? "" : " (titles polled, cuts approximate)");
             else if (r.noTitles) m += " · no song titles, one stream" + (r.count ? " · " + r.count + " files" : "");
             else if (r.count) m += " · " + r.count + " files";
-            return { time, meta: m };
+            const short = r.mode === "songs" ? r.count + " saved · " + (r.song.title || "waiting for a title") : (r.bytes / 1048576).toFixed(1) + " MB" + (r.count ? " · " + r.count + " files" : "");
+            return { time, meta: m, short };
+        }
+        // Wide: full text. Narrow (one-line bar): the short text.
+        function recMetaHtml(st) {
+            return '<span class="lbl-long">' + escapeHtml(st.meta) + '</span><span class="lbl-short">' + escapeHtml(st.short) + "</span>";
+        }
+        function recShortHint(h) {
+            let m;
+            if (/^Checking the stream/.test(h)) return "Checking the stream…";
+            if (/Pick how you want to save/.test(h)) return "Pick how to save it";
+            if (/doesn't allow recording/.test(h)) return "Can't record this station";
+            if (/isn't an audio stream/.test(h)) return "Not an audio stream";
+            if (/only be recorded as one long file/.test(h)) return "Only as one long file";
+            if (/Nothing was long enough/.test(h)) return "Nothing long enough to keep";
+            if ((m = /(\d+) files? (?:is|are) ready to save/.exec(h))) return m[1] + (m[1] === "1" ? " file" : " files") + " ready to save";
+            if (/only kept in this tab/.test(h)) return "Kept in this tab. Save first.";
+            return h;
+        }
+        function recHintHtml(h) {
+            const sh = recShortHint(h);
+            return sh === h ? escapeHtml(h) : '<span class="lbl-long">' + escapeHtml(h) + '</span><span class="lbl-short">' + escapeHtml(sh) + "</span>";
         }
         // Opens the stream just long enough to read its headers. split = the
         // station sends titles (in-band exact, or polled) and the format is MP3/AAC.
@@ -5374,12 +5399,12 @@
             if (r) {
                 const st = recStat(r);
                 const stopBtn = '<button class="playlist-btn rec-stop" id="recStopBtn" title="Stop recording and keep what was recorded" aria-label="Stop recording"><svg class="bico" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><rect x="8.5" y="8.5" width="7" height="7"/></svg><span class="blabel">Stop recording</span></button>';
-                p.innerHTML = '<span class="rec-live"><i class="rec-dot"></i>' + '<span class="lbl-long">Recording </span><span class="rec-time">' + st.time + '</span></span><span class="rec-meta" title="' + escapeHtml(st.meta) + '">' + escapeHtml(st.meta) + '</span><div class="rec-actions">' + saveBtn + stopBtn + "</div>";
+                p.innerHTML = '<span class="rec-live"><i class="rec-dot"></i>' + '<span class="lbl-long">Recording </span><span class="rec-time">' + st.time + '</span></span><span class="rec-meta" title="' + escapeHtml(st.meta) + '">' + recMetaHtml(st) + '</span><div class="rec-actions">' + saveBtn + stopBtn + "</div>";
             } else {
                 const bad = recBlocked();
                 const hint = REC.msg || (bad ? "This station doesn't allow recording from a web page." : n ? "Recordings are only kept in this tab. Save them before you leave." : "");
                 const acts = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" aria-label="Each song separately" title="Every song becomes its own file with its name and artist"><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="lbl-long">Each song separately</span><span class="lbl-short">Each song</span></button><button class="playlist-btn" data-rec="whole" aria-label="One long recording" title="Records everything until you press Stop recording"><svg class="bico-x" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span class="lbl-long">One long recording</span><span class="lbl-short">One long file</span></button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
-                p.innerHTML = '<span class="rec-msg">' + escapeHtml(hint) + "</span>" + (acts ? '<div class="rec-actions' + (REC.choose ? " rec-choose" : "") + '">' + acts + "</div>" : "");
+                p.innerHTML = '<span class="rec-msg" title="' + escapeHtml(hint) + '">' + recHintHtml(hint) + "</span>" + (acts ? '<div class="rec-actions' + (REC.choose ? " rec-choose" : "") + '">' + acts + "</div>" : "");
             }
         }
         function recSync() {
@@ -5433,7 +5458,7 @@
             r.timer = setInterval(() => {
                 const st = recStat(r), t = document.querySelector("#recPanel .rec-time"), m = document.querySelector("#recPanel .rec-meta"), bt = document.querySelector("#playlistRec .btn-txt");
                 if (t) t.textContent = st.time;
-                if (m) { m.textContent = st.meta; m.title = st.meta; }
+                if (m) { m.innerHTML = recMetaHtml(st); m.title = st.meta; }
                 if (bt) bt.textContent = st.time;
             }, 1000);
             if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { r.wake = w; if (REC.st !== r) w.release(); }).catch(() => {});
@@ -5670,7 +5695,6 @@
                         <div class="audio-icon">${pickPlayerNoteIcon()}</div>
                         <div class="playlist-now-playing">${escapeHtml(title)}</div>
                         <div class="np-song" id="npSong" aria-live="polite"></div>
-                        <div class="np-status" id="npStatus"></div>
                         <audio id="audioPlayer" class="preview-audio" autoplay ${crossAttr} data-cors="${flag}" ${mediaTagAttrs()}>
                           Your browser does not support audio playback.
                         </audio>

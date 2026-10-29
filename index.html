@@ -956,7 +956,7 @@
                                     </div>
                                     <div class="settings-row" id="recStampFmtRow">
                                         <span class="settings-label">What to add</span>
-                                        <select class="sort-select" id="recStampFmtSel" aria-label="What to add to song-by-song file names"><option value="datetime">Date and time</option><option value="time">Time only</option><option value="date">Date only</option><option value="compact">Compact date and time</option><option value="number">Song number</option></select>
+                                        <select class="sort-select" id="recStampFmtSel" aria-label="What to add to song-by-song file names"><option value="number">Song number</option><option value="datetime">Date and time</option><option value="time">Time only</option><option value="date">Date only</option><option value="compact">Compact date and time</option></select>
                                     </div>
                                     <div class="settings-row" id="recStampPosRow">
                                         <span class="settings-label">Where</span>
@@ -5228,8 +5228,8 @@
         // titles for exact song cuts, ID3 tags, a store-only zip writer.
         // ======================================================================
         const RECOPT_KEY = "recOpts";
-        const recOpt = { split: 3600, min: 30, keep: false, tags: true, dir: false, stamp: true, stampFmt: "datetime", stampPos: "before" };
-        const REC_STAMP_FMTS = [["datetime", "Date and time"], ["time", "Time only"], ["date", "Date only"], ["compact", "Compact date and time"], ["number", "Song number"]];
+        const recOpt = { split: 3600, min: 30, keep: false, tags: true, dir: false, stamp: true, stampFmt: "number", stampPos: "before" };
+        const REC_STAMP_FMTS = [["number", "Song number"], ["datetime", "Date and time"], ["time", "Time only"], ["date", "Date only"], ["compact", "Compact date and time"]];
         const REC = { st: null, items: [], msg: "", seq: 0 };
         const recEl = (id) => document.getElementById(id);
         const recP2 = (n) => String(n).padStart(2, "0");
@@ -5571,7 +5571,7 @@
         function recInit() {
             try { Object.assign(recOpt, JSON.parse(localStorage.getItem(RECOPT_KEY) || "{}")); } catch (e) {}
             const ids = ["recSplitSel", "recMinSel", "recKeepToggle", "recTagsToggle", "recDirToggle", "recStampToggle", "recStampFmtSel", "recStampPosSel"];
-            if (!REC_STAMP_FMTS.some((f) => f[0] === recOpt.stampFmt)) recOpt.stampFmt = "datetime";
+            if (!REC_STAMP_FMTS.some((f) => f[0] === recOpt.stampFmt)) recOpt.stampFmt = "number";
             if (recOpt.stampPos !== "after") recOpt.stampPos = "before";
             recEl("recStampToggle").checked = recOpt.stamp !== false;
             recEl("recStampFmtSel").value = recOpt.stampFmt;

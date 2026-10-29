@@ -800,14 +800,21 @@
 
         /* --- Visual pass: the player. Same flat language as the rest of the page: hairlines, surface tones, one font, tokens only. ---
            Reading order: glyph, a quiet station label, then the song as the one large line (it is what changes and what you glance at). */
-        .preview-audio-container { gap: 0.55rem; padding-top: 0.9rem; }
-        .audio-icon { position: relative; outline: 1px solid var(--border-color); outline-offset: -1px; }
-        .preview-audio-container .playlist-now-playing { order: 1; font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-muted); margin-top: 0.2rem; }
-        .preview-audio-container .np-song { order: 2; font-size: 1.05rem; font-weight: 600; line-height: 1.5; min-height: 1.5em; color: var(--text-primary); padding: 0 0.25rem; }
+        .preview-audio-container { gap: 0; padding-top: 0.9rem; }
+        /* Big glyph: it is the same size whether or not the station sends song titles, so nothing resizes when a title arrives. */
+        .audio-icon { position: relative; outline: 1px solid var(--border-color); outline-offset: -1px; width: 112px; height: 112px; }
+        .audio-icon svg { width: 80px; height: 80px; }
+        @media (max-height: 560px) { .audio-icon { width: 80px; height: 80px; } .audio-icon svg { width: 54px; height: 54px; } }
+        .preview-audio-container .playlist-now-playing { order: 1; font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-muted); margin-top: 0.6rem; }
+        /* Song line sits tight under the station name. With no title (and nothing to say like "Connecting…") it collapses, after a
+           short grace period so stations that send a title a second or two late don't make the player jump; the glyph keeps its size. */
+        .preview-audio-container .np-song { order: 2; font-size: 1.05rem; font-weight: 600; line-height: 1.35; min-height: 1.35em; max-height: 1.6em; margin-top: 0.1rem; color: var(--text-primary); padding: 0 0.25rem; transition: max-height 0.2s ease, min-height 0.2s ease, margin-top 0.2s ease; }
+        .preview-audio-container .np-song:empty:not([data-hint]) { min-height: 0; max-height: 0; margin-top: 0; transition-delay: 3s; }
+        @media (prefers-reduced-motion: reduce) { .preview-audio-container .np-song { transition-duration: 0s; } }
         .preview-audio-container .np-song:empty::before { font-size: var(--data-size); font-weight: 400; letter-spacing: 0.01em; }
         .preview-audio-container .audio-icon { order: 0; }
         .preview-audio-container .preview-audio { order: 3; }
-        .preview-audio-container .player-bar { order: 4; margin-top: 0.35rem; }
+        .preview-audio-container .player-bar { order: 4; margin-top: 0.9rem; }
         /* Recording is visible in the player itself, not only in the bar: the glyph gets a red hairline and a REC tag that blinks. */
         body.is-recording .audio-icon { outline-color: var(--danger); }
         body.is-recording .audio-icon::after { content: "REC"; position: absolute; top: 0; left: 0; border-top-left-radius: var(--radius-lg); padding: 0.1rem 0.35rem; background: var(--danger); color: #fff; font-size: 0.6rem; font-weight: 700; letter-spacing: var(--label-track); line-height: 1.3; animation: recPulse 1.2s ease-in-out infinite; }
@@ -822,8 +829,9 @@
         /* Recording panel: the live song reads a step brighter than the byte counter */
         .rec-meta { color: var(--text-secondary); }
         @media (max-width: 640px) {
-            .preview-audio-container { gap: 0.4rem; padding-top: 0.6rem; }
+            .preview-audio-container { padding-top: 0.6rem; }
             .preview-audio-container .np-song { font-size: 1rem; }
+            .preview-audio-container .player-bar { margin-top: 0.7rem; }
             .player-bar { padding: 0.3rem 0.5rem; gap: 0.2rem; }
             .player-controls-row { gap: 0.4rem; }
         }
@@ -5777,7 +5785,7 @@
                         <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link &amp; header" aria-label="Copy stream link and header">${icons.info}</button>
                         <div class="audio-icon">${pickPlayerNoteIcon()}</div>
                         <div class="playlist-now-playing">${escapeHtml(title)}</div>
-                        <div class="np-song" id="npSong" aria-live="polite"></div>
+                        <div class="np-song" id="npSong" aria-live="polite" data-hint="Connecting…"></div>
                         <audio id="audioPlayer" class="preview-audio" autoplay ${crossAttr} data-cors="${flag}" ${mediaTagAttrs()}>
                           Your browser does not support audio playback.
                         </audio>

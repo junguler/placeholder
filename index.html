@@ -859,11 +859,9 @@
         .audio-icon svg { width: 80px; height: 80px; }
         @media (max-height: 560px) { .audio-icon { width: 80px; height: 80px; } .audio-icon svg { width: 54px; height: 54px; } }
         .preview-audio-container .playlist-now-playing { order: 1; font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-muted); margin-top: 0.6rem; }
-        /* Song line sits tight under the station name. With no title (and nothing to say like "Connecting…") it collapses, after a
-           short grace period so stations that send a title a second or two late don't make the player jump; the glyph keeps its size. */
-        .preview-audio-container .np-song { order: 2; font-size: 1.05rem; font-weight: 600; line-height: 1.35; min-height: 1.35em; max-height: 1.6em; margin-top: 0.1rem; color: var(--text-primary); padding: 0 0.25rem; transition: max-height 0.2s ease, min-height 0.2s ease, margin-top 0.2s ease; }
-        .preview-audio-container .np-song:empty:not([data-hint]) { min-height: 0; max-height: 0; margin-top: 0; transition-delay: 3s; }
-        @media (prefers-reduced-motion: reduce) { .preview-audio-container .np-song { transition-duration: 0s; } }
+        /* The song line always keeps its full height, with or without stream metadata, so the player never changes size;
+           only the text inside it changes (title, "Connecting…", "Reconnecting…", or nothing). */
+        .preview-audio-container .np-song { order: 2; font-size: 1.05rem; font-weight: 600; line-height: 1.35; height: 1.35em; margin-top: 0.1rem; color: var(--text-primary); padding: 0 0.25rem; }
         .preview-audio-container .np-song:empty::before { font-size: var(--data-size); font-weight: 400; letter-spacing: 0.01em; }
         .preview-audio-container .audio-icon { order: 0; }
         .preview-audio-container .preview-audio { order: 3; }

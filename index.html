@@ -5595,19 +5595,16 @@
         // Opens the stream just long enough to read its headers. split = the
         // station sends titles (in-band exact, or polled) and the format is MP3/AAC.
         async function recProbe(ses) {
-            let u = ses.cands[ses.candIdx];
-            if (location.protocol === "https:" && /^http:/i.test(u)) u = u.replace(/^http:/i, "https:");
-            const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000), o = { signal: ctl.signal, cache: "no-store", credentials: "omit" };
-            let out = { ok: false, split: false, exact: false };
+            const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 15000);
+            let out = { ok: false, split: false, exact: false, why: [] };
             try {
-                let res = null;
-                try { res = await fetch(u, Object.assign({ headers: { "Icy-MetaData": "1" } }, o)); } catch (e) { try { res = await fetch(u, o); } catch (e2) {} }
-                if (res && res.ok && res.body) {
-                    const ct = (res.headers.get("content-type") || "").toLowerCase(), mi = parseInt(res.headers.get("icy-metaint"), 10) || 0;
-                    const mp3aac = !/ogg|opus|flac/.test(ct);
-                    out = { ok: !/html/.test(ct), split: mp3aac && (mi > 0 || !!ses.song), exact: mi > 0 };
+                const op = await recOpen(ses.cands[ses.candIdx], true, ctl.signal);
+                out.why = op.why || [];
+                if (op.res) {
+                    const ct = (op.res.headers.get("content-type") || "").toLowerCase(), mi = parseInt(op.res.headers.get("icy-metaint"), 10) || 0;
+                    out = { ok: !/html/.test(ct), split: !/ogg|opus|flac/.test(ct) && (mi > 0 || !!ses.song), exact: mi > 0, why: ["not audio"] };
                 }
-            } finally { clearTimeout(timer); ctl.abort(); }
+            } catch (e) {} finally { clearTimeout(timer); ctl.abort(); }
             return out;
         }
         async function recRecordClick() {
@@ -5616,7 +5613,8 @@
             if (!p.hidden) { p.hidden = true; return; }
             const ses = playSession;
             if (!ses) return;
-            REC.dir = null; REC.choose = false; REC.msg = "";
+            REC.dir = null; REC.choose = false; REC.cap = false; REC.msg = "";
+            if (ses.usesHls) { p.hidden = false; REC.cap = true; return recMsg("HLS streams are split into many small pieces. Press “Record tab audio” to capture this one."); }
             if (recOpt.dir && window.showDirectoryPicker) { try { REC.dir = await window.showDirectoryPicker({ mode: "readwrite" }); } catch (e) {} }
             p.hidden = false;
             REC.probing = true;
@@ -5624,13 +5622,73 @@
             const pr = await recProbe(ses);
             REC.probing = false;
             if (playSession !== ses || REC.st) return;
-            if (!pr.ok) return recMsg("This station doesn't allow recording from a web page.");
+            if (!pr.ok) { REC.cap = true; return recMsg(recWhy(pr.why)); }
             if (pr.split) { REC.choose = true; recMsg(pr.exact ? "This station sends song names. Pick how you want to save it." : "This station sends song names. Pick how you want to save it (song cuts may be a few seconds off)."); }
             else recStart("whole", true);
         }
+        // ---- Getting at a stream: direct download first, tab capture as the fallback ----
+        // Resolves { res } on success or { res: null, why: [...] }. Never throws except on abort.
+        async function recOpen(url, tag, signal) {
+            const o = { signal, cache: "no-store", credentials: "omit" }, why = [];
+            const fx = async (u) => {
+                for (const h of tag ? [{ "Icy-MetaData": "1" }, null] : [null]) {
+                    try {
+                        const r = await fetch(u, h ? Object.assign({ headers: h }, o) : o);
+                        if (r.ok && r.body) return r;
+                        why.push("HTTP " + r.status);
+                        break;
+                    } catch (e) { if (signal.aborted) throw e; why.push("blocked"); }
+                }
+                return null;
+            };
+            const tryUrls = location.protocol === "https:" ? [url.replace(/^http:/i, "https:")] : /^http:/i.test(url) ? [url.replace(/^http:/i, "https:"), url] : [url];
+            for (const u of tryUrls) { const r = await fx(u); if (r) return { res: r, via: "direct" }; }
+            return { res: null, why };
+        }
+        function recWhy(why) {
+            why = why || [];
+            const h = why.find((x) => /^HTTP/.test(x));
+            const lead = why.includes("not audio") ? "This link isn't an audio stream. " : h ? "The station refused the download (" + h + "), possibly a listener limit. " : "The station's server doesn't let web pages download it. ";
+            return lead + (recCanCapture() ? "Press “Record tab audio” to capture what the tab plays instead." : "This browser can't capture tab audio. Chrome, Edge or Brave can record this station.");
+        }
+        function recCanCapture() { return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && typeof MediaRecorder !== "undefined"); }
+        function recCapBtn() {
+            if (!recCanCapture()) return "";
+            return '<button class="playlist-btn" data-rec="capture" aria-label="Record tab audio" title="Records what this tab plays (re-encoded to WebM/Opus). Works for any stream. Choose this tab and tick Share tab audio."><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="6"/></svg><span class="lbl-long">Record tab audio</span><span class="lbl-short">Tab audio</span></button>';
+        }
+        async function recStartCapture() {
+            const ses = playSession;
+            if (!ses || REC.st) return;
+            if (!recCanCapture()) return recMsg(recWhy([]));
+            REC.cap = false;
+            REC.choose = false;
+            let ms;
+            try { ms = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true, preferCurrentTab: true, selfBrowserSurface: "include", systemAudio: "include" }); } catch (e) { REC.cap = true; return recMsg("Capture was cancelled. Choose this tab and tick “Share tab audio”."); }
+            const at = ms.getAudioTracks();
+            ms.getVideoTracks().forEach((v) => v.stop());
+            if (!at.length || typeof MediaRecorder === "undefined") { ms.getTracks().forEach((v) => v.stop()); REC.cap = true; return recMsg("No audio was shared. Choose this tab and tick “Share tab audio” (Firefox and Safari can't; Chrome, Edge and Brave can)."); }
+            const mime = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
+            const mr = new MediaRecorder(new MediaStream(at), mime ? { mimeType: mime, audioBitsPerSecond: 192000 } : {});
+            const ext = /mp4/.test(mr.mimeType) ? "m4a" : /ogg/.test(mr.mimeType) ? "ogg" : "webm";
+            const ctl = { abort() { try { if (mr.state !== "inactive") mr.stop(); } catch (e) {} ms.getTracks().forEach((v) => v.stop()); } };
+            const r = (REC.st = { mode: "whole", ext, mime: mr.mimeType || "audio/webm", station: ses.item.title, ctl, dir: null, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: false, noTitles: true });
+            r.song = recNew(null, false);
+            mr.ondataavailable = (e) => { if (e.data && e.data.size) { r.song.parts.push(e.data); r.song.bytes += e.data.size; r.bytes += e.data.size; } };
+            at[0].onended = () => { if (REC.st === r) recStop("Sharing stopped."); };
+            r.timer = setInterval(() => {
+                const st = recStat(r), t = document.querySelector("#recPanel .rec-time"), m = document.querySelector("#recPanel .rec-meta"), bt = document.querySelector("#playlistRec .btn-txt");
+                if (t) t.textContent = st.time;
+                if (m) { m.innerHTML = recMetaHtml(st); m.title = st.meta; }
+                if (bt) bt.textContent = st.time;
+            }, 1000);
+            if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { r.wake = w; if (REC.st !== r) w.release(); }).catch(() => {});
+            REC.msg = "";
+            recRender();
+            mr.start(250);
+        }
         function recMsg(t) { REC.msg = t; recRender(); }
         function recBlocked() {
-            return !playSession || noCorsHosts.has(hostKey(playSession.cands[playSession.candIdx]));
+            return false; // never pre-judged: every station is tried, then the fallbacks run
         }
         function recRender() {
             const p = recEl("recPanel"), b = recEl("playlistRec"), r = REC.st;
@@ -5653,18 +5711,19 @@
             } else {
                 const bad = recBlocked();
                 const hint = REC.msg || (bad ? "This station doesn't allow recording from a web page." : n ? "Recordings are only kept in this tab. Save them before you leave." : "");
-                const acts = (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" aria-label="Each song separately" title="Every song becomes its own file with its name and artist"><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="lbl-long">Each song separately</span><span class="lbl-short">Each song</span></button><button class="playlist-btn" data-rec="whole" aria-label="One long recording" title="Records everything until you press Stop recording"><svg class="bico-x" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span class="lbl-long">One long recording</span><span class="lbl-short">One long file</span></button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
+                const acts = REC.cap ? recCapBtn() : (REC.choose && !bad ? '<button class="playlist-btn" data-rec="songs" aria-label="Each song separately" title="Every song becomes its own file with its name and artist"><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="lbl-long">Each song separately</span><span class="lbl-short">Each song</span></button><button class="playlist-btn" data-rec="whole" aria-label="One long recording" title="Records everything until you press Stop recording"><svg class="bico-x" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span class="lbl-long">One long recording</span><span class="lbl-short">One long file</span></button>' : "") + (REC.choose ? "" : listBtn + saveBtn);
                 p.innerHTML = '<span class="rec-msg" title="' + escapeHtml(hint) + '">' + recHintHtml(hint) + "</span>" + (acts ? '<div class="rec-actions' + (REC.choose ? " rec-choose" : "") + '">' + acts + "</div>" : "");
             }
         }
         function recSync() {
             const b = recEl("playlistRec");
-            if (b) b.hidden = !(playSession && !playSession.usesHls);
+            if (b) b.hidden = !playSession;
             if (!REC.st) recRender();
         }
         function recOnEnd() {
             recSync();
             REC.choose = false;
+            REC.cap = false;
             if (REC.st) recStop("Station changed.");
             const p = recEl("recPanel");
             if (p) p.hidden = true;
@@ -5682,6 +5741,7 @@
             recRender();
         }
         async function recStart(mode, noTitles) {
+            if (mode === "capture") return recStartCapture();
             const ses = playSession;
             if (!ses || REC.st) return;
             const dir = REC.dir || null;
@@ -5689,16 +5749,13 @@
             REC.choose = false;
             let u = ses.cands[ses.candIdx];
             if (location.protocol === "https:" && /^http:/i.test(u)) u = u.replace(/^http:/i, "https:");
-            if (recBlocked()) return recMsg("This station doesn't allow recording from a web page.");
             recMsg("Connecting…");
-            const ctl = new AbortController(), tag = mode === "songs", o = { signal: ctl.signal, cache: "no-store", credentials: "omit" };
-            let res = null;
-            try { res = await fetch(u, tag ? Object.assign({ headers: { "Icy-MetaData": "1" } }, o) : o); } catch (e) {
-                if (tag) { try { res = await fetch(u, o); } catch (e2) {} }
-            }
-            if (!res || !res.ok || !res.body) return recMsg("This station doesn't allow recording from a web page.");
+            const ctl = new AbortController(), tag = mode === "songs";
+            const op = await recOpen(ses.cands[ses.candIdx], tag, ctl.signal);
+            const res = op.res;
+            if (!res) { REC.cap = true; return recMsg(recWhy(op.why)); }
             const ct = (res.headers.get("content-type") || "").toLowerCase();
-            if (/html/.test(ct)) { ctl.abort(); return recMsg("This link isn't an audio stream, so it can't be recorded."); }
+            if (/html/.test(ct)) { ctl.abort(); REC.cap = true; return recMsg(recWhy(["not audio"])); }
             const ext = /aac|mp4/.test(ct) ? "aac" : /ogg|opus|flac/.test(ct) ? "ogg" : "mp3";
             if (tag && ext === "ogg") { ctl.abort(); return recMsg("This station can only be recorded as one long file. Choose “One long recording”."); }
             const mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;

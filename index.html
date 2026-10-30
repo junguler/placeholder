@@ -5651,7 +5651,11 @@
             const lead = why.includes("not audio") ? "This link isn't an audio stream. " : h ? "The station refused the download (" + h + "), possibly a listener limit. " : "The station's server doesn't let web pages download it. ";
             return lead + (recCanCapture() ? "Press “Record tab audio” to capture what the tab plays instead." : "This browser can't capture tab audio. Chrome, Edge or Brave can record this station.");
         }
-        function recCanCapture() { return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && typeof MediaRecorder !== "undefined"); }
+        function recCanCapture() {
+            // Tab audio can only be shared from Chromium browsers (Chrome, Edge, Brave, Opera...), so nobody else is offered it.
+            const ua = navigator.userAgentData, chromium = ua && ua.brands ? ua.brands.some((x) => /Chromium/i.test(x.brand)) : /Chrome\//.test(navigator.userAgent) && !/Firefox|FxiOS|CriOS/.test(navigator.userAgent);
+            return !!(chromium && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && typeof MediaRecorder !== "undefined");
+        }
         function recCapBtn() {
             if (!recCanCapture()) return "";
             return '<button class="playlist-btn" data-rec="capture" aria-label="Record tab audio" title="Records what this tab plays (re-encoded to WebM/Opus). Works for any stream. Choose this tab and tick Share tab audio."><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="6"/></svg><span class="lbl-long">Record tab audio</span><span class="lbl-short">Tab audio</span></button>';
@@ -5666,7 +5670,7 @@
             try { ms = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true, preferCurrentTab: true, selfBrowserSurface: "include", systemAudio: "include" }); } catch (e) { REC.cap = true; return recMsg("Capture was cancelled. Choose this tab and tick “Share tab audio”."); }
             const at = ms.getAudioTracks();
             ms.getVideoTracks().forEach((v) => v.stop());
-            if (!at.length || typeof MediaRecorder === "undefined") { ms.getTracks().forEach((v) => v.stop()); REC.cap = true; return recMsg("No audio was shared. Choose this tab and tick “Share tab audio” (Firefox and Safari can't; Chrome, Edge and Brave can)."); }
+            if (!at.length || typeof MediaRecorder === "undefined") { ms.getTracks().forEach((v) => v.stop()); REC.cap = true; return recMsg("No audio was shared. Choose this tab and tick “Share tab audio”."); }
             const mime = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
             const mr = new MediaRecorder(new MediaStream(at), mime ? { mimeType: mime, audioBitsPerSecond: 192000 } : {});
             const ext = /mp4/.test(mr.mimeType) ? "m4a" : /ogg/.test(mr.mimeType) ? "ogg" : "webm";

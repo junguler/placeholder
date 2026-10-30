@@ -597,13 +597,16 @@
         .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         /* Preview text has its own size (Settings > Font Size > Preview text), independent of the interface size. */
-        .preview-code pre { font-family: var(--font-mono); font-size: var(--preview-font-size, 0.8rem); line-height: 1.5; tab-size: 4; }
+        .preview-code pre { font-family: var(--font-mono); font-size: var(--preview-font-size, 0.8rem); line-height: 1.4; tab-size: 4; }
         .preview-code pre code { font-family: inherit; font-size: inherit; line-height: inherit; }
         .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; }
         .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
         .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.9em; }
-        .preview-code pre code.hljs { background: transparent !important; padding: 0 !important; }
         .preview-pdf { width: 100%; height: 90vh; border: none; }
+        /* Skip link: off-screen until a keyboard user tabs to it. */
+        .skip-link { position: fixed; top: 0; left: 0; z-index: 100000; padding: 0.5rem 0.75rem; background: var(--accent-solid); color: var(--on-accent); text-decoration: none; transform: translateY(-120%); }
+        .skip-link:focus { transform: none; }
+        #main:focus { outline: none; }
         .preview-unavailable { text-align: center; padding: 2rem; color: var(--text-secondary); }
         .preview-unavailable svg { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
         .preview-unavailable h3 { margin-bottom: 0.25rem; color: var(--text-primary); font-size: 1.05rem; font-weight: 700; }
@@ -957,6 +960,7 @@
     <svg style="display:none" aria-hidden="true">
         <symbol id="icon-x" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
     </svg>
+    <a class="skip-link" id="skipLink" href="#main">Skip to files</a>
     <header class="header">
         <div class="header-content">
             <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="Go to home folder">
@@ -1188,7 +1192,7 @@
             <div class="tree-header">Folders</div>
             <div class="tree-content" id="treeContent"></div>
         </aside>
-        <main class="main" id="main">
+        <main class="main" id="main" tabindex="-1">
             <div class="skeleton-list" aria-hidden="true">
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name"></div><div class="skeleton-block skeleton-meta"></div></div>
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:60%"></div><div class="skeleton-block skeleton-meta"></div></div>
@@ -1311,6 +1315,7 @@
             currentView = "tree",
             expandedFolders = new Set([""]),
             allFiles = [],
+            filesByPath = new Map(),
             sortBy = "name-asc",
             suppressHashSync = false;
 
@@ -1963,17 +1968,7 @@
             loadFavoriteFiles();
             initThemeColor();
             updateThemeButtons();
-            syncHljsTheme();
-        }
-        // Picks a highlight.js theme (github-dark or github light) based on
-        // the effective theme so code previews don't clash with the app's
-        // own light/dark mode. Only the token colors come from hljs — the
-        // background is overridden by CSS to stay consistent with the app.
-        function isLightTheme() {
-            const t = document.documentElement.getAttribute("data-theme");
-            if (t === "light" || t === "hc-light") return true;
-            if (t === "dark" || t === "hc-dark") return false;
-            return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches);
+            syncThemeColorMeta();
         }
         // Keeps the mobile browser bar the same color as the app header.
         function syncThemeColorMeta() {
@@ -1981,15 +1976,6 @@
             if (!meta) return;
             const v = getComputedStyle(document.documentElement).getPropertyValue("--bg-secondary").trim();
             if (v) meta.setAttribute("content", v);
-        }
-        function syncHljsTheme() {
-            syncThemeColorMeta();
-            const link = document.getElementById("hljsTheme");
-            if (!link) return;
-            const href = isLightTheme()
-                ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
-                : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css";
-            if (link.href !== href) link.href = href;
         }
         // Announces a short message to screen readers via the hidden
         // aria-live region, without visually changing anything. Clearing
@@ -2009,7 +1995,7 @@
                 : (localStorage.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
                 updateThemeButtons();
             if (vividColor) applyCustomColor();
-            syncHljsTheme();
+            syncThemeColorMeta();
         }
         function setupDropdown(btnId, menuId, dropdownId) {
             const btn = document.getElementById(btnId),
@@ -2442,6 +2428,13 @@
             try { localStorage.setItem("previewFontSize", String(previewFontSize)); } catch (e) {}
             applyPreviewFontSize();
         }
+        // "1536" -> "1.5 KB". Same format the index generator used to store.
+        function formatFileSize(bytes) {
+            if (!bytes || bytes < 0) return "0 B";
+            const k = 1024, units = ["B", "KB", "MB", "GB", "TB"];
+            const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), units.length - 1);
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+        }
         function isPlaylistExtension(e) {
             const t = e.toLowerCase();
             return t.endsWith(".m3u") || t.endsWith(".m3u8");
@@ -2472,6 +2465,12 @@
                 let dateObj = null;
                 try { dateObj = getItemDate(node); } catch (err) { dateObj = null; }
                 node.dateObj = dateObj;
+                // The index no longer stores a ready-made "1.2 MB" string
+                // (the page can make it from the byte size), so fill it in
+                // here once, on the tree node and on the flattened copy.
+                if (node.type === "file" && node.sizeFormatted === undefined) {
+                    node.sizeFormatted = formatFileSize(node.size);
+                }
                 allFiles.push({
                     ...node,
                     fullPath: currentPathStr,
@@ -2483,6 +2482,7 @@
                     parentPath: pathPrefix.toLowerCase(),
                     dateObj: dateObj
                 });
+                if (node.type === "file") filesByPath.set(currentPathStr, allFiles[allFiles.length - 1]);
                 if (node.type === "directory" && node.children) {
                     preprocessFiles(node.children, currentPathStr);
                 }
@@ -2839,8 +2839,10 @@
                 fileIndex = await response.json();
                 preprocessFiles(fileIndex.root);
                 setupEventListeners();
+                setupSkipLink();
                 setupIntersectionObserver();
                 navigateTo(hashToPath());
+                resetTabStart();
             } catch (err) {
                 console.error(err);
                 document.getElementById("main").innerHTML = `
@@ -2851,6 +2853,35 @@
           </div>
         `;
             }
+        }
+        // The link's href="#main" is only there for no-script fallback; clicking
+        // would put "#main" in the URL and the hash router would treat it as a
+        // folder path, so the click is handled here instead.
+        // The router rewrites the URL hash on load, and Chrome responds by moving the
+        // "where does Tab start" position past the header. Briefly focusing <body> puts it
+        // back at the top so the first Tab stop is the skip link. Nothing visible changes.
+        function resetTabStart() {
+            if (document.activeElement && document.activeElement !== document.body) return;
+            document.body.tabIndex = -1;
+            document.body.focus({ preventScroll: true });
+            document.body.removeAttribute("tabindex");
+        }
+        function setupSkipLink() {
+            const link = document.getElementById("skipLink");
+            if (!link) return;
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                const target = document.querySelector("#main .file-card, #main .tree-item") || document.getElementById("main");
+                if (target) target.focus();
+            });
+        }
+        // While any dialog is open, the page behind it can't be reached by Tab,
+        // screen-reader browsing or clicks. Called right after each dialog is
+        // opened or closed (not via an observer) so that focus can be handed
+        // back to the page the same instant the dialog closes.
+        function syncBackgroundInert() {
+            const open = !!document.querySelector(".modal-overlay.active");
+            document.querySelectorAll(".header, .app-container").forEach((el) => { el.inert = open; });
         }
         function updateSearchClearVisibility() {
             const input = document.getElementById("search");
@@ -3644,7 +3675,7 @@
                 return;
             }
             const rows = favoriteFiles.map((path) => {
-                const item = allFiles.find((f) => f.type === "file" && f.fullPath === path);
+                const item = filesByPath.get(path);
                 const name = item ? item.name : path.substring(path.lastIndexOf("/") + 1);
                 const iconType = item ? (getFileIconType(item.name) || item.category || "other") : "other";
                 const pathAttr = escapeHtml(path);
@@ -3693,7 +3724,7 @@
             return { onClick, onKeydown };
         }
         function openFavoriteFile(path) {
-            const fileItem = allFiles.find((f) => f.type === "file" && f.fullPath === path);
+            const fileItem = filesByPath.get(path);
             openFile(path, fileItem ? fileItem.category : "", fileItem ? fileItem.name : path.substring(path.lastIndexOf("/") + 1));
         }
         const favoriteFilesHandlers = makePinnedListHandlers({
@@ -3884,11 +3915,11 @@
           </span>
         </div>
         <div class="main-content">
-          <div class="${listClass}" id="fileItems" role="grid">
+          <div class="${listClass}" id="fileItems">
           ${
               isColumnView && !searchQuery
                   ? `
-            <div class="file-list-header" role="row">
+            <div class="file-list-header">
               <span class="col-star-spacer" aria-hidden="true"></span>
               <span class="col-icon-spacer" aria-hidden="true"></span>
               <span class="col col-name" data-sort="name">Name<span class="sort-arrow"></span></span>
@@ -4254,8 +4285,31 @@
                 isPlaylistFile &&
                     (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText());
         }
+        // Text fetched for playlists and previews is cached so reopening a file
+        // is instant, but the cache is bounded (entry count and total size) so a
+        // long session through big playlists can't grow memory without limit.
+        // Map iteration order is insertion order, so deleting the first key
+        // evicts the least recently used entry (hits re-insert their key).
+        const FETCH_CACHE_MAX_ENTRIES = 24;
+        const FETCH_CACHE_MAX_CHARS = 24 * 1024 * 1024;
+        let fetchCacheChars = 0;
+        function fetchCacheSet(url, text) {
+            if (fetchCache.has(url)) fetchCacheChars -= fetchCache.get(url).length;
+            fetchCache.delete(url);
+            fetchCache.set(url, text);
+            fetchCacheChars += text.length;
+            while (fetchCache.size > 1 && (fetchCache.size > FETCH_CACHE_MAX_ENTRIES || fetchCacheChars > FETCH_CACHE_MAX_CHARS)) {
+                const oldest = fetchCache.keys().next().value;
+                fetchCacheChars -= fetchCache.get(oldest).length;
+                fetchCache.delete(oldest);
+            }
+        }
         async function fetchTextCached(url) {
-            if (fetchCache.has(url)) return fetchCache.get(url);
+            if (fetchCache.has(url)) {
+                const hit = fetchCache.get(url);
+                fetchCacheSet(url, hit);
+                return hit;
+            }
             const response = await fetch(url);
             if (!response.ok) {
                 const err = new Error(`HTTP ${response.status}`);
@@ -4263,89 +4317,86 @@
                 throw err;
             }
             const text = await response.text();
-            fetchCache.set(url, text);
+            fetchCacheSet(url, text);
             return text;
         }
-        // Maps common file extensions to highlight.js language aliases.
-        // Falls back to hljs's own auto-detection if the extension isn't
-        // recognized, and to plain escaped text if hljs isn't available at all.
-        const EXT_TO_HLJS_LANG = {
-            js: "javascript", mjs: "javascript", cjs: "javascript", jsx: "javascript",
-            ts: "typescript", tsx: "typescript",
-            py: "python", rb: "ruby", php: "php", go: "go", rs: "rust",
-            java: "java", kt: "kotlin", swift: "swift", c: "c", h: "c",
-            cpp: "cpp", cc: "cpp", hpp: "cpp", cs: "csharp",
-            sh: "bash", bash: "bash", zsh: "bash", ps1: "powershell",
-            html: "xml", htm: "xml", xml: "xml", svg: "xml",
-            css: "css", scss: "scss", less: "less",
-            json: "json", jsonc: "json", yml: "yaml", yaml: "yaml",
-            toml: "ini", ini: "ini", md: "markdown", markdown: "markdown",
-            sql: "sql", dockerfile: "dockerfile", makefile: "makefile",
-            lua: "lua", r: "r", pl: "perl", diff: "diff", patch: "diff",
-        };
-        function guessHljsLanguage(fileName) {
-            if (!window.hljs || !fileName) return null;
-            const base = fileName.toLowerCase();
-            const ext = base.includes(".") ? base.split(".").pop() : base;
-            const lang = EXT_TO_HLJS_LANG[ext];
-            return lang && hljs.getLanguage(lang) ? lang : null;
-        }
-        // highlight.js returns one HTML string with <span> tags that can span
-        // multiple lines. Splitting naively on "\n" would leave unclosed tags
-        // dangling, so this walks the markup and reopens/closes spans at each
-        // line boundary, letting each line wrap in its own <span class="line">
-        // for the CSS-counter line numbers.
-        function splitHighlightedHtml(html) {
-            const rawLines = html.split("\n");
-            const tagRegex = /<span class="([^"]*)">|<\/span>/g;
-            let openTags = [];
-            const result = [];
-            for (const line of rawLines) {
-                const prefix = openTags.map((cls) => `<span class="${cls}">`).join("");
-                const stack = [...openTags];
-                tagRegex.lastIndex = 0;
-                let match;
-                while ((match = tagRegex.exec(line))) {
-                    if (match[0] === "</span>") stack.pop();
-                    else stack.push(match[1]);
-                }
-                result.push(prefix + line + "</span>".repeat(stack.length));
-                openTags = stack;
+        // Used only for on-screen previews. Playlists still go through
+        // fetchTextCached above, because parsing them needs every byte; a
+        // preview only needs the top of the file, so a huge file is cut off
+        // after MAX_PREVIEW_BYTES instead of being downloaded whole and then
+        // thrown away. Resolves to { text, truncated }.
+        const MAX_PREVIEW_BYTES = 2 * 1024 * 1024;
+        async function fetchTextPreview(url) {
+            if (fetchCache.has(url)) return { text: await fetchTextCached(url), truncated: false };
+            const response = await fetch(url);
+            if (!response.ok) {
+                const err = new Error(`HTTP ${response.status}`);
+                err.status = response.status;
+                throw err;
             }
-            return result;
-        }
-        function renderTextPreview(container, text, fileName) {
-            const MAX_LINES = 1e4;
-            const allLines = text.split("\n");
-            const lines = allLines.slice(0, MAX_LINES);
-            const truncated = allLines.length > MAX_LINES;
-            const lang = guessHljsLanguage(fileName);
-
-            let highlightedLines;
-            if (lang) {
-                try {
-                    highlightedLines = lines.map(escapeHtml);
-                } catch (e) {
-                    console.warn("Syntax highlighting failed, falling back to plain text:", e);
-                    highlightedLines = lines.map(escapeHtml);
-                }
+            if (!response.body || !response.body.getReader) {
+                const all = await response.text();
+                if (all.length <= MAX_PREVIEW_BYTES) { fetchCacheSet(url, all); return { text: all, truncated: false }; }
+                return { text: all.slice(0, MAX_PREVIEW_BYTES), truncated: true };
+            }
+            const reader = response.body.getReader();
+            const chunks = [];
+            let received = 0, truncated = false;
+            for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                received += value.length;
+                if (received > MAX_PREVIEW_BYTES) { truncated = true; reader.cancel().catch(() => {}); break; }
+            }
+            const bytes = new Uint8Array(received);
+            let off = 0;
+            for (const c of chunks) { bytes.set(c, off); off += c.length; }
+            let text = new TextDecoder("utf-8").decode(truncated ? bytes.subarray(0, MAX_PREVIEW_BYTES) : bytes);
+            if (truncated) {
+                // Drop the last, probably half-cut, line.
+                const cut = text.lastIndexOf("\n");
+                if (cut > 0) text = text.slice(0, cut + 1);
             } else {
-                highlightedLines = lines.map(escapeHtml);
+                fetchCacheSet(url, text);
             }
-
-            const rendered = highlightedLines.map((l) => `<span class="line">${l}</span>`).join("\n");
+            return { text, truncated };
+        }
+        // Plain-text preview with line numbers. Each line is its own block
+        // <span> that carries its own trailing newline. The newline must live
+        // INSIDE the span: a bare "\n" text node between two block spans is
+        // laid out as an extra empty line box, which doubled the spacing
+        // between every line. Keeping it inside also means the preview's
+        // textContent (and so copy/paste) is still the original text.
+        const MAX_PREVIEW_LINES = 1e4;
+        function renderTextPreview(container, text, fileName, byteTruncated) {
+            let allLines = text.split("\n");
+            // A file that ends in a newline is not one line longer.
+            if (allLines.length > 1 && allLines[allLines.length - 1] === "") allLines.pop();
+            const lineTruncated = allLines.length > MAX_PREVIEW_LINES;
+            const lines = lineTruncated ? allLines.slice(0, MAX_PREVIEW_LINES) : allLines;
+            const rendered = lines
+                .map((l) => `<span class="line">${escapeHtml(l.endsWith("\r") ? l.slice(0, -1) : l)}\n</span>`)
+                .join("");
+            let notice = "";
+            if (byteTruncated) {
+                // The file itself is longer than what was downloaded, so an "of N lines" total would be wrong.
+                notice = `Showing the first ${lines.length.toLocaleString()} lines (previews stop at ${formatFileSize(MAX_PREVIEW_BYTES)})`;
+            } else if (lineTruncated) {
+                notice = `Showing first ${MAX_PREVIEW_LINES.toLocaleString()} of ${allLines.length.toLocaleString()} lines`;
+            }
             container.innerHTML = `
-        ${truncated ? `<div class="truncation-notice">Showing first ${MAX_LINES.toLocaleString()} of ${allLines.length.toLocaleString()} lines — download the file to see the rest.</div>` : ""}
-        <div class="preview-code line-numbers${lang ? " hljs" : ""}">
-          <pre><code class="hljs">${rendered}</code></pre>
+        ${notice ? `<div class="truncation-notice">${notice} \u2014 download the file to see the rest.</div>` : ""}
+        <div class="preview-code line-numbers">
+          <pre><code>${rendered}</code></pre>
         </div>
       `;
         }
         async function showPlaylistAsText() {
             const e = `./${encodePathForUrl(currentFilePath)}`;
             try {
-                const text = await fetchTextCached(e);
-                renderTextPreview(document.getElementById("modalBody"), text, currentFileName);
+                const { text, truncated } = await fetchTextPreview(e);
+                renderTextPreview(document.getElementById("modalBody"), text, currentFileName, truncated);
             } catch (err) {
                 showUnavailable(document.getElementById("modalBody"), currentFileName, e, err);
             }
@@ -5366,11 +5417,13 @@
             rememberModalFocus("songsModal");
             renderSongsList();
             document.getElementById("songsModal").classList.add("active");
-            document.getElementById("songsCloseBtn").focus();
+            syncBackgroundInert();
+            focusWhenReady("songsCloseBtn", "songsModal");
         }
         function closeSongsModal() {
             disarmClearSongs();
             document.getElementById("songsModal").classList.remove("active");
+            syncBackgroundInert();
             restoreModalFocus("songsModal");
         }
         function saveSongsList() {
@@ -5806,10 +5859,12 @@
             rememberModalFocus("recModal");
             renderRecList();
             recEl("recModal").classList.add("active");
-            recEl("recCloseBtn").focus();
+            syncBackgroundInert();
+            focusWhenReady("recCloseBtn", "recModal");
         }
         function closeRecModal() {
             recEl("recModal").classList.remove("active");
+            syncBackgroundInert();
             restoreModalFocus("recModal");
         }
         function recInit() {
@@ -6360,7 +6415,8 @@
             else playPlaylistBtn.classList.add("hidden");
             document.getElementById("modalContent").classList.remove("video-modal", "compact-modal");
             modalEl.classList.add("active");
-            requestAnimationFrame(() => document.getElementById("closeBtn").focus());
+            syncBackgroundInert();
+            focusWhenReady("closeBtn", "modal");
             const o = fileUrlAttr;
             try {
                 switch (fileType) {
@@ -6435,8 +6491,8 @@
                     case "data":
                     case "text":
                         try {
-                            const text = await fetchTextCached(fileUrl);
-                            renderTextPreview(bodyEl, text, fileName);
+                            const { text, truncated } = await fetchTextPreview(fileUrl);
+                            renderTextPreview(bodyEl, text, fileName, truncated);
                             bodyEl.classList.add("scrollable");
                         } catch (err) {
                             showUnavailable(bodyEl, fileName, fileUrl, err);
@@ -6520,9 +6576,27 @@
                 }
             }
         }
+        // Moves keyboard focus onto a dialog's close button right after the dialog opens.
+        // A direct .focus() call (or one attempt on the next frame) silently fails because
+        // the dialog is still fading in and cannot take focus yet, which left keyboard focus
+        // on the page behind it. So the call is retried briefly until it sticks, and
+        // abandoned if the dialog gets closed first.
+        function focusWhenReady(buttonId, dialogId) {
+            const btn = document.getElementById(buttonId);
+            const dialog = document.getElementById(dialogId);
+            if (!btn || !dialog) return;
+            let tries = 0;
+            const attempt = () => {
+                if (!dialog.classList.contains("active")) return;
+                btn.focus();
+                if (document.activeElement !== btn && ++tries < 12) setTimeout(attempt, 50);
+            };
+            requestAnimationFrame(attempt);
+        }
         function closeModal() {
             const modalEl = document.getElementById("modal");
             modalEl.classList.remove("active");
+            syncBackgroundInert();
 
             endPlaySession();
             cancelHealthTest();
@@ -6575,10 +6649,12 @@
         function openShortcutsModal() {
             rememberModalFocus("shortcutsModal");
             document.getElementById("shortcutsModal").classList.add("active");
-            document.getElementById("shortcutsCloseBtn").focus();
+            syncBackgroundInert();
+            focusWhenReady("shortcutsCloseBtn", "shortcutsModal");
         }
         function closeShortcutsModal() {
             document.getElementById("shortcutsModal").classList.remove("active");
+            syncBackgroundInert();
             restoreModalFocus("shortcutsModal");
         }
         // Human-readable byte size, matching the units getItemSize() already
@@ -6661,10 +6737,12 @@
             rememberModalFocus("statsModal");
             renderLibraryStats();
             document.getElementById("statsModal").classList.add("active");
-            document.getElementById("statsCloseBtn").focus();
+            syncBackgroundInert();
+            focusWhenReady("statsCloseBtn", "statsModal");
         }
         function closeStatsModal() {
             document.getElementById("statsModal").classList.remove("active");
+            syncBackgroundInert();
             restoreModalFocus("statsModal");
         }
         // Percent-encodes a repo-relative path one segment at a time so "/" is
@@ -6675,13 +6753,13 @@
             return String(path).split("/").map(encodeURIComponent).join("/");
         }
         // Escapes a string for safe use in both HTML text and attribute
-        // values. The textContent/innerHTML round-trip alone only escapes
-        // &, <, > — quotes are escaped here too so callers are also safe to
-        // drop into a quoted attribute (e.g. a filename with a literal ' or ").
+        // values (&, <, >, " and '), so callers can also drop the result into
+        // a quoted attribute (e.g. a filename with a literal ' or "). A plain
+        // string replace: the old version built a DOM element on every call,
+        // which added up fast (one per line in a 10,000-line preview).
+        const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
         function escapeHtml(e) {
-            const t = document.createElement("div");
-            t.textContent = e;
-            return t.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            return (e == null ? "" : String(e)).replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
         }
 
         // Wraps the parts of `name` that matched `rawQuery` in <mark> tags for

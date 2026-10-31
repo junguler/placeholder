@@ -959,23 +959,44 @@
         .player-controls-row .playlist-btn:not(.player-play-btn), .playlist-bar .playlist-controls .playlist-btn, #modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) { width: var(--ctl); height: var(--ctl); min-width: 0; min-height: 0; padding: 0; flex-shrink: 0; }
         .playlist-bar .playlist-btn .btn-txt { padding-right: 0.2rem; }
 
-        /* --- Mobile player: same structure as desktop, stable height, anchored to the bottom ---
-           Station name in the header (as on desktop), the song replaces the station name in one fixed slot, the status line is one fixed line,
-           and the preview sheet sits on the bottom edge so anything that changes height grows upward and the player itself never moves. */
+        /* --- Mobile: every preview is a full-screen page; the player fills it and eases between states ---
+           Station name in the header (as on desktop). The song replaces the station name in one fixed slot, the status line is one fixed line,
+           and the glyph is sized from the room the screen actually has, so when something appears (the recording row) the glyph glides to its
+           new size instead of the page jumping. */
         @media (max-width: 640px) {
-            #modal.modal-overlay { align-items: flex-end; }
-            #modal .modal { max-height: 100vh; max-height: 100dvh; padding-bottom: env(safe-area-inset-bottom, 0px); }
+            #modal .modal { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; border: 0; padding-bottom: env(safe-area-inset-bottom, 0px); transform: translateY(1.25rem); transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.3s ease; opacity: 0; }
+            #modal.active .modal { transform: none; opacity: 1; }
+            #modal .modal-header { padding: 0.5rem 0.75rem; }
+            #modal .modal-title { font-size: 0.9rem; }
             .modal:has(.playlist-bar.active) .modal-title { position: static; width: auto; height: auto; margin: 0; clip-path: none; overflow: hidden; white-space: nowrap; flex: 1 1 0; min-width: 0; }
             .modal:has(.playlist-bar.active) .modal-actions { margin-left: 0; }
-            .playlist-bar { padding: 0.35rem 0.5rem; gap: 0.3rem 0.5rem; }
+            .playlist-bar { padding: 0.4rem 0.75rem; gap: 0.3rem 0.5rem; }
             #playlistBar .playlist-info { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.4em; font-size: 0.75rem; }
-            .preview-audio-container { padding: 0.6rem 0.5rem 0.5rem; }
-            .preview-audio-container .audio-icon { width: clamp(96px, min(52vw, 26vh), 200px); height: clamp(96px, min(52vw, 26vh), 200px); }
-            @supports (height: 1svh) { .preview-audio-container .audio-icon { width: clamp(96px, min(52vw, 26svh), 200px); height: clamp(96px, min(52vw, 26svh), 200px); } }
+            .rec-panel:not([hidden]) { animation: recSlide 0.3s ease-out; overflow: hidden; }
+            @keyframes recSlide { from { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; min-height: 0; } to { max-height: 4rem; opacity: 1; } }
+            #modalBody:has(.preview-audio-container) { container-type: size; }
+            .modal-body > .preview-audio-container { width: 100%; max-width: none; height: 100%; box-sizing: border-box; padding: 0.75rem 1rem 1rem; overflow-y: auto; }
+            .preview-audio-container .audio-icon { margin-top: auto; flex-shrink: 0; width: max(72px, min(80cqw, 100cqh - 230px, 340px)); height: max(72px, min(80cqw, 100cqh - 230px, 340px)); }
             .preview-audio-container .audio-icon svg { width: 74%; height: 74%; }
-            .preview-audio-container .np-stack { margin-top: 0.5rem; }
-            .preview-audio-container .player-bar { margin-top: 0.6rem; }
-            .player-controls-row { overflow-x: visible; }
+            .preview-audio-container .np-stack { margin-top: 1.25rem; }
+            .preview-audio-container .np-stack .playlist-now-playing, .preview-audio-container .np-song { font-size: 1.15rem; transition-duration: 0.35s; }
+            .preview-audio-container .player-bar { margin-top: auto; padding: 0.75rem 0.75rem 0.85rem; gap: 0.75rem; max-width: 100%; }
+            .player-bar .player-seek { height: 14px; }
+            .player-bar .player-seek::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -5px; }
+            .player-bar .player-seek::-moz-range-thumb { width: 18px; height: 18px; }
+            .player-controls-row { overflow-x: visible; gap: 0.3rem; justify-content: space-between; }
+            .preview-audio-container .player-bar { padding: 0.75rem 0.5rem 0.85rem; }
+            .player-bar .playlist-btn.player-play-btn { flex: 0 0 3.25rem; width: 3.25rem; height: 3.25rem; }
+            .player-bar .playlist-btn.player-play-btn svg { width: 26px; height: 26px; }
+            .player-controls-row .playlist-btn:not(.player-play-btn) { flex: 0 1 2.5rem; width: auto; min-width: 0; height: 2.5rem; }
+            .player-bar .playlist-btn svg { width: 18px; height: 18px; }
+            .player-controls-row .player-vol { min-width: 2.2rem; }
+            .player-time, .player-vol { font-size: 0.8rem; }
+            /* Same size for every control in the page header */
+            .header-actions { flex: 1 1 100%; }
+            .search-container { flex: 1 1 auto; width: auto; min-width: 0; }
+            .search-input { height: 2.25rem; box-sizing: border-box; }
+            .header-actions .settings-btn, .header-actions .view-btn { min-width: 2.25rem; min-height: 2.25rem; }
         }
 </style>
 </head>

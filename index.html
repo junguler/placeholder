@@ -12,7 +12,6 @@
     <meta property="og:description" content="Browse and preview files from this repository directly in your browser." />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23121212' width='24' height='24'/%3E%3Crect fill='%239b5de5' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%23121212' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%23121212' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%239b5de5' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%239b5de5' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%23121212' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
-    <script src="./hls.min.js" defer></script>
     
     <style>
         :root {
@@ -1309,6 +1308,27 @@
     </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
     <script>
+        // Browser storage can throw just by being touched (blocked site data,
+        // hardened Firefox, some private modes). `store` is localStorage when it
+        // works and an in-memory stand-in when it does not, so the page still opens.
+        const store = (() => {
+            try {
+                const ls = window.localStorage;
+                ls.getItem("__probe");
+                return ls;
+            } catch (err) {
+                const mem = new Map();
+                return {
+                    getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+                    setItem: (k, v) => { mem.set(k, String(v)); },
+                    removeItem: (k) => { mem.delete(k); },
+                    clear: () => mem.clear(),
+                    key: (i) => Array.from(mem.keys())[i] ?? null,
+                    get length() { return mem.size; },
+                };
+            }
+        })();
+
         // -- Navigation / browsing state --
         let fileIndex = null,
             currentPath = [],
@@ -1916,18 +1936,18 @@
             if (!audioEl.paused) startAutoSwap(audioEl);
         }
         function loadSettings() {
-            const e = localStorage.getItem("theme");
+            const e = store.getItem("theme");
             e && e !== "auto"
                 ? document.documentElement.setAttribute("data-theme", e)
                 : document.documentElement.removeAttribute("data-theme");
-            const t = localStorage.getItem("fontSize");
+            const t = store.getItem("fontSize");
             t &&
                 ((currentFontSize = Math.max(12, Math.min(20, parseInt(t) || 16))),
                 document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px")),
                 updateThemeButtons(),
                 updateFontSizeLabel();
             initPreviewFontSize();
-            const v = localStorage.getItem("viewMode");
+            const v = store.getItem("viewMode");
             if (v === "grid" || v === "list" || v === "tree") {
                 currentView = v;
                 document.querySelectorAll(".view-btn").forEach((btn) => {
@@ -1935,32 +1955,32 @@
                 });
                 document.getElementById("treePanel").classList.toggle("visible", v === "tree");
             }
-            const so = localStorage.getItem("sortBy");
+            const so = store.getItem("sortBy");
             if (so) sortBy = so;
             const sortSel = document.getElementById("sortSelect");
             if (sortSel) sortSel.value = sortBy;
-            const savedVolume = parseFloat(localStorage.getItem(VOL_KEY));
+            const savedVolume = parseFloat(store.getItem(VOL_KEY));
             if (!isNaN(savedVolume) && savedVolume >= 0 && savedVolume <= 1) currentVolume = savedVolume;
-            useNativePlayer = localStorage.getItem("useNativePlayer") === "1";
+            useNativePlayer = store.getItem("useNativePlayer") === "1";
             const nativeToggle = document.getElementById("nativePlayerToggle");
             if (nativeToggle) nativeToggle.checked = useNativePlayer;
-            skipDeadStreams = localStorage.getItem(SKIPDEAD_KEY) !== "0";
-            const btnStyle = ["labels", "icons"].includes(localStorage.getItem(BTNSTYLE_KEY)) ? localStorage.getItem(BTNSTYLE_KEY) : "default";
+            skipDeadStreams = store.getItem(SKIPDEAD_KEY) !== "0";
+            const btnStyle = ["labels", "icons"].includes(store.getItem(BTNSTYLE_KEY)) ? store.getItem(BTNSTYLE_KEY) : "default";
             document.body.dataset.btnStyle = btnStyle;
             const btnStyleSel = document.getElementById("btnStyleSel");
             if (btnStyleSel) btnStyleSel.value = btnStyle;
             const skipDeadToggle = document.getElementById("skipDeadToggle");
             if (skipDeadToggle) skipDeadToggle.checked = skipDeadStreams;
             document.body.classList.toggle("native-player-mode", useNativePlayer);
-            const compactDensity = localStorage.getItem("compactDensity") === "1";
+            const compactDensity = store.getItem("compactDensity") === "1";
             document.body.classList.toggle("compact-density", compactDensity);
             const compactToggle = document.getElementById("compactDensityToggle");
             if (compactToggle) compactToggle.checked = compactDensity;
-            const zebraOn = localStorage.getItem("zebraStriping") !== "0";
+            const zebraOn = store.getItem("zebraStriping") !== "0";
             document.documentElement.classList.toggle("no-zebra", !zebraOn);
             const zebraToggle = document.getElementById("zebraStripingToggle");
             if (zebraToggle) zebraToggle.checked = zebraOn;
-            const storedDepth = parseInt(localStorage.getItem(DEPTH_KEY), 10);
+            const storedDepth = parseInt(store.getItem(DEPTH_KEY), 10);
             uiDepth = [1, 2, 3, 4, 5].includes(storedDepth) ? storedDepth : 1;
             applyDepth(uiDepth, false);
             loadPinnedFolders();
@@ -1990,8 +2010,8 @@
         }
         function saveTheme(e) {
             e === "auto"
-                ? (localStorage.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
-                : (localStorage.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
+                ? (store.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
+                : (store.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
                 updateThemeButtons();
             if (vividColor) applyCustomColor();
             syncThemeColorMeta();
@@ -2254,7 +2274,7 @@
         }
         function setCustomColor(hex) {
             vividColor = hex;
-            localStorage.setItem(CUSTOM_COLOR_KEY, hex);
+            store.setItem(CUSTOM_COLOR_KEY, hex);
             document.documentElement.style.setProperty("--custom-theme-swatch", hex);
             applyCustomColor();
             renderIntensityBar();
@@ -2273,7 +2293,7 @@
         }
         function resetCustomColor() {
             vividColor = null;
-            localStorage.removeItem(CUSTOM_COLOR_KEY);
+            store.removeItem(CUSTOM_COLOR_KEY);
             clearCustomVars();
             document.documentElement.style.removeProperty("--custom-theme-swatch");
             syncThemeColorMeta();
@@ -2294,7 +2314,7 @@
         }
         function setColorIntensity(pct) {
             colorIntensity = pct;
-            localStorage.setItem(COLOR_INTENSITY_KEY, String(pct));
+            store.setItem(COLOR_INTENSITY_KEY, String(pct));
             updateColorIntensityUI();
             if (vividColor) applyCustomColor();
         }
@@ -2311,7 +2331,7 @@
             uiDepth = level;
             if (level === 1) document.documentElement.removeAttribute("data-depth");
             else document.documentElement.setAttribute("data-depth", String(level));
-            if (persist !== false) localStorage.setItem(DEPTH_KEY, String(level));
+            if (persist !== false) store.setItem(DEPTH_KEY, String(level));
             updateDepthUI();
         }
         function updateDepthUI() {
@@ -2367,17 +2387,17 @@
         function initThemeColor() {
             renderThemeSwatches();
             const input = document.getElementById("themeColorInput");
-            let storedIntensity = localStorage.getItem(COLOR_INTENSITY_KEY);
+            let storedIntensity = store.getItem(COLOR_INTENSITY_KEY);
             if (storedIntensity == null) {
                 // Migrate the old binary "Muted colors" toggle if it was set;
                 // otherwise fall back to the new default of 60%.
-                storedIntensity = localStorage.getItem(MUTED_COLORS_KEY) === "1" ? "20" : String(DEFAULT_COLOR_INTENSITY);
+                storedIntensity = store.getItem(MUTED_COLORS_KEY) === "1" ? "20" : String(DEFAULT_COLOR_INTENSITY);
             }
             const parsedIntensity = parseInt(storedIntensity, 10);
             colorIntensity = [20, 40, 60, 80, 100].includes(parsedIntensity) ? parsedIntensity : DEFAULT_COLOR_INTENSITY;
             updateColorIntensityUI();
             renderIntensityBar();
-            const storedColor = localStorage.getItem(CUSTOM_COLOR_KEY);
+            const storedColor = store.getItem(CUSTOM_COLOR_KEY);
             if (storedColor) {
                 vividColor = storedColor;
                 applyCustomColor();
@@ -2387,7 +2407,7 @@
             markActiveSwatch(null);
         }
         function updateThemeButtons() {
-            const e = localStorage.getItem("theme") || "auto";
+            const e = store.getItem("theme") || "auto";
             const customActive = !!vividColor;
             document.querySelectorAll(".theme-btn").forEach((t) => {
                 t.classList.toggle("active", t.dataset.theme === "custom" ? customActive : !customActive && t.dataset.theme === e);
@@ -2401,7 +2421,7 @@
         function changeFontSize(e) {
             (currentFontSize = Math.max(12, Math.min(20, currentFontSize + e))),
                 document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px"),
-                localStorage.setItem("fontSize", currentFontSize),
+                store.setItem("fontSize", currentFontSize),
                 updateFontSizeLabel();
         }
         // Preview text (code / text file previews) has its own size, in rem, so it can sit
@@ -2418,13 +2438,13 @@
         }
         function initPreviewFontSize() {
             let stored = NaN;
-            try { stored = parseFloat(localStorage.getItem("previewFontSize")); } catch (e) {}
+            try { stored = parseFloat(store.getItem("previewFontSize")); } catch (e) {}
             previewFontSize = Number.isFinite(stored) ? clampPreviewFont(stored) : PREVIEW_FONT_DEFAULT;
             applyPreviewFontSize();
         }
         function changePreviewFontSize(dir) {
             previewFontSize = clampPreviewFont(previewFontSize + dir * PREVIEW_FONT_STEP);
-            try { localStorage.setItem("previewFontSize", String(previewFontSize)); } catch (e) {}
+            try { store.setItem("previewFontSize", String(previewFontSize)); } catch (e) {}
             applyPreviewFontSize();
         }
         // "1536" -> "1.5 KB". Same format the index generator used to store.
@@ -3076,24 +3096,24 @@
             document.getElementById("sortSelect").addEventListener("change", (e) => setSortBy(e.target.value));
             document.getElementById("nativePlayerToggle").addEventListener("change", (e) => {
                 useNativePlayer = e.target.checked;
-                localStorage.setItem("useNativePlayer", useNativePlayer ? "1" : "0");
+                store.setItem("useNativePlayer", useNativePlayer ? "1" : "0");
                 document.body.classList.toggle("native-player-mode", useNativePlayer);
             });
             document.getElementById("btnStyleSel").addEventListener("change", (e) => {
                 document.body.dataset.btnStyle = e.target.value;
-                try { localStorage.setItem(BTNSTYLE_KEY, e.target.value); } catch (err) {}
+                try { store.setItem(BTNSTYLE_KEY, e.target.value); } catch (err) {}
             });
             document.getElementById("skipDeadToggle").addEventListener("change", (e) => {
                 skipDeadStreams = e.target.checked;
-                localStorage.setItem(SKIPDEAD_KEY, skipDeadStreams ? "1" : "0");
+                store.setItem(SKIPDEAD_KEY, skipDeadStreams ? "1" : "0");
             });
             document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
                 document.body.classList.toggle("compact-density", e.target.checked);
-                localStorage.setItem("compactDensity", e.target.checked ? "1" : "0");
+                store.setItem("compactDensity", e.target.checked ? "1" : "0");
             });
             document.getElementById("zebraStripingToggle").addEventListener("change", (e) => {
                 document.documentElement.classList.toggle("no-zebra", !e.target.checked);
-                localStorage.setItem("zebraStriping", e.target.checked ? "1" : "0");
+                store.setItem("zebraStriping", e.target.checked ? "1" : "0");
             });
             const depthControl = document.getElementById("depthControl");
             if (depthControl) depthControl.addEventListener("click", (e) => {
@@ -3351,7 +3371,7 @@
 
         function setView(e) {
             (currentView = e),
-                localStorage.setItem("viewMode", e),
+                store.setItem("viewMode", e),
                 document.querySelectorAll(".view-btn").forEach((t) => {
                     t.classList.toggle("active", t.dataset.view === e);
                 }),
@@ -3362,7 +3382,7 @@
                 render();
         }
         function setSortBy(e) {
-            (sortBy = e), localStorage.setItem("sortBy", e), syncSortUI(), render();
+            (sortBy = e), store.setItem("sortBy", e), syncSortUI(), render();
         }
         function getItemSize(item) {
             if (typeof item.size === "number") return item.size;
@@ -3513,14 +3533,14 @@
         const PINNED_FOLDERS_KEY = "pinnedFolders";
         function loadPinnedFolders() {
             try {
-                const stored = JSON.parse(localStorage.getItem(PINNED_FOLDERS_KEY) || "[]");
+                const stored = JSON.parse(store.getItem(PINNED_FOLDERS_KEY) || "[]");
                 pinnedFolders = Array.isArray(stored) ? stored : [];
             } catch {
                 pinnedFolders = [];
             }
         }
         function savePinnedFolders() {
-            localStorage.setItem(PINNED_FOLDERS_KEY, JSON.stringify(pinnedFolders));
+            store.setItem(PINNED_FOLDERS_KEY, JSON.stringify(pinnedFolders));
         }
         function isPinned(pathArr) {
             const target = JSON.stringify(pathArr);
@@ -3626,14 +3646,14 @@
         const FAVORITE_FILES_KEY = "favoriteFiles";
         function loadFavoriteFiles() {
             try {
-                const stored = JSON.parse(localStorage.getItem(FAVORITE_FILES_KEY) || "[]");
+                const stored = JSON.parse(store.getItem(FAVORITE_FILES_KEY) || "[]");
                 favoriteFiles = Array.isArray(stored) ? stored : [];
             } catch {
                 favoriteFiles = [];
             }
         }
         function saveFavoriteFiles() {
-            localStorage.setItem(FAVORITE_FILES_KEY, JSON.stringify(favoriteFiles));
+            store.setItem(FAVORITE_FILES_KEY, JSON.stringify(favoriteFiles));
         }
         function isFavoriteFile(path) {
             return favoriteFiles.includes(path);
@@ -4423,11 +4443,9 @@
         const NOCORS_KEY = "noCorsHosts";
         const SKIPDEAD_KEY = "skipDeadStreams";
         const BTNSTYLE_KEY = "playerBtnStyle";
-        const HEALTH_LABEL = { good: "On air", weak: "Weak", bad: "Off air", blocked: "Blocked" };
 
         let skipDeadStreams = true;
         let playSession = null; // state of the track that is playing right now
-        let playSeq = 0;
         let failStreak = 0; // consecutive tracks that failed to start
         let npJob = null; // now-playing poller for the current track
         let healthTest = null; // the running "test playlist" job, if any
@@ -5372,7 +5390,7 @@
         // ---- songs heard ---------------------------------------------------
         function loadSongs() {
             try {
-                const a = JSON.parse(localStorage.getItem(SONGS_KEY) || "[]");
+                const a = JSON.parse(store.getItem(SONGS_KEY) || "[]");
                 songsHeard = Array.isArray(a) ? a : [];
             } catch (e) {
                 songsHeard = [];
@@ -5380,7 +5398,7 @@
         }
         function saveSongs() {
             try {
-                localStorage.setItem(SONGS_KEY, JSON.stringify(songsHeard));
+                store.setItem(SONGS_KEY, JSON.stringify(songsHeard));
             } catch (e) {}
         }
         function recordSong(title, station) {
@@ -5864,7 +5882,7 @@
             restoreModalFocus("recModal");
         }
         function recInit() {
-            try { Object.assign(recOpt, JSON.parse(localStorage.getItem(RECOPT_KEY) || "{}")); } catch (e) {}
+            try { Object.assign(recOpt, JSON.parse(store.getItem(RECOPT_KEY) || "{}")); } catch (e) {}
             const ids = ["recSplitSel", "recMinSel", "recKeepToggle", "recTagsToggle", "recDirToggle", "recStampToggle", "recStampFmtSel", "recStampPosSel"];
             if (!REC_STAMP_FMTS.some((f) => f[0] === recOpt.stampFmt)) recOpt.stampFmt = "number";
             if (recOpt.stampPos !== "after") recOpt.stampPos = "before";
@@ -5891,7 +5909,7 @@
                 recOpt.keep = recEl("recKeepToggle").checked; recOpt.tags = recEl("recTagsToggle").checked; recOpt.dir = recEl("recDirToggle").checked;
                 recOpt.stamp = recEl("recStampToggle").checked; recOpt.stampFmt = recEl("recStampFmtSel").value; recOpt.stampPos = recEl("recStampPosSel").value;
                 stampUi();
-                try { localStorage.setItem(RECOPT_KEY, JSON.stringify(recOpt)); } catch (e) {}
+                try { store.setItem(RECOPT_KEY, JSON.stringify(recOpt)); } catch (e) {}
             }));
             recEl("playlistRec").addEventListener("click", recRecordClick);
             recEl("recPanel").addEventListener("click", (e) => {
@@ -5930,7 +5948,7 @@
         }
         function loadNoCorsHosts() {
             try {
-                const a = JSON.parse(localStorage.getItem(NOCORS_KEY) || "[]");
+                const a = JSON.parse(store.getItem(NOCORS_KEY) || "[]");
                 if (Array.isArray(a)) a.forEach((h) => noCorsHosts.add(h));
             } catch (e) {}
         }
@@ -5938,7 +5956,7 @@
             if (!host || noCorsHosts.has(host)) return;
             noCorsHosts.add(host);
             try {
-                localStorage.setItem(NOCORS_KEY, JSON.stringify(Array.from(noCorsHosts).slice(-500)));
+                store.setItem(NOCORS_KEY, JSON.stringify(Array.from(noCorsHosts).slice(-500)));
             } catch (e) {}
         }
         loadSongs();
@@ -6086,7 +6104,7 @@
                 el.volume = volToEl(currentVolume);
                 el.onvolumechange = (ev) => {
                     currentVolume = elToVol(ev.target.volume);
-                    localStorage.setItem(VOL_KEY, currentVolume);
+                    store.setItem(VOL_KEY, currentVolume);
                 };
                 if (cors) setupAudioNormalization(el);
                 setupMediaSession(el, title);
@@ -6284,7 +6302,7 @@
                     announce("Press play to start.");
                 }
             };
-            if (typeof Hls !== "undefined" && Hls.isSupported() && (lower.includes(".m3u8") || lower.includes("application/x-mpegurl"))) {
+            const startHls = () => {
                 session.usesHls = true;
                 const hls = new Hls();
                 currentHls = hls;
@@ -6317,13 +6335,36 @@
                         }
                     });
                 }
-            } else {
+            };
+            const startNative = () => {
                 session.usesHls = false;
                 el.src = url;
                 el.load();
                 const p = el.play();
                 if (p && p.catch) p.catch(onBlocked);
+            };
+            // hls.js (about 540 KB) is only fetched the first time an .m3u8 stream is played.
+            if (!lower.includes(".m3u8")) return startNative();
+            if (typeof Hls !== "undefined") return Hls.isSupported() ? startHls() : startNative();
+            loadHlsLib().then(() => {
+                if (playSession !== session) return; // moved on while the library was loading
+                if (typeof Hls !== "undefined" && Hls.isSupported()) startHls();
+                else startNative();
+            });
+        }
+        let hlsLibPromise = null;
+        function loadHlsLib() {
+            if (typeof Hls !== "undefined") return Promise.resolve();
+            if (!hlsLibPromise) {
+                hlsLibPromise = new Promise((resolve) => {
+                    const sc = document.createElement("script");
+                    sc.src = "./hls.min.js";
+                    sc.onload = resolve;
+                    sc.onerror = () => { hlsLibPromise = null; sc.remove(); resolve(); };
+                    document.head.appendChild(sc);
+                });
             }
+            return hlsLibPromise;
         }
         async function playPlaylistTrack(e) {
             if (e < 0 || e >= currentPlaylist.length) return;
@@ -6435,7 +6476,7 @@
                         const singleVideo = bodyEl.querySelector('video');
                         if (singleVideo) {
                             singleVideo.volume = volToEl(currentVolume);
-                            singleVideo.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); localStorage.setItem(VOL_KEY, currentVolume); };
+                            singleVideo.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); store.setItem(VOL_KEY, currentVolume); };
                             setupAudioNormalization(singleVideo);
                             setupMediaSession(singleVideo, fileName);
                             maybeWireMediaControls(singleVideo);
@@ -6460,7 +6501,7 @@
                         const singleAudio = bodyEl.querySelector('audio');
                         if (singleAudio) {
                             singleAudio.volume = volToEl(currentVolume);
-                            singleAudio.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); localStorage.setItem(VOL_KEY, currentVolume); };
+                            singleAudio.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); store.setItem(VOL_KEY, currentVolume); };
                             setupAudioNormalization(singleAudio);
                             setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);

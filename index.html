@@ -886,7 +886,7 @@
         .preview-audio-container .np-stack .playlist-now-playing { margin-top: 0; }
         .preview-audio-container .np-song { font-size: 1.05rem; font-weight: 600; line-height: 1.35; height: 1.35em; margin-top: 0; color: var(--text-primary); padding: 0 0.25rem; opacity: 1; transition: height 0.18s ease, margin-top 0.18s ease, opacity 0.18s ease; }
         .preview-audio-container .np-song:empty::before { content: none; }
-        @media (min-width: 641px) {
+        @media all {
             .preview-audio-container .np-stack { display: grid; align-items: center; min-height: calc(1.05rem * 1.35); }
             .preview-audio-container .np-stack > * { grid-area: 1 / 1; min-width: 0; }
             .preview-audio-container .np-song:empty { opacity: 0; }
@@ -894,13 +894,6 @@
                a pure cross-fade in place: nothing moves, nothing resizes. */
             .preview-audio-container .np-stack .playlist-now-playing { font-size: 1.05rem; font-weight: 600; line-height: 1.35; height: 1.35em; letter-spacing: normal; text-transform: none; color: var(--text-primary); padding: 0 0.25rem; transition: opacity 0.18s ease, visibility 0.18s; }
             .preview-audio-container .np-stack:has(.np-song:not(:empty)) .playlist-now-playing { opacity: 0; visibility: hidden; }
-        }
-        @media (max-width: 640px) {
-            .preview-audio-container .np-stack .playlist-now-playing { font-size: 1.05rem; font-weight: 600; line-height: 1.35; letter-spacing: normal; text-transform: none; color: var(--text-primary); padding: 0 0.25rem; }
-            .preview-audio-container .np-song { margin-top: 0.1rem; }
-            .preview-audio-container .np-song:empty { height: 0; margin-top: 0; padding-top: 0; padding-bottom: 0; opacity: 0; }
-            .preview-audio-container .np-stack { transition: margin-top 0.18s ease; }
-            .preview-audio-container .np-stack:has(.np-song:not(:empty)) { margin-top: 0.4rem; }
         }
         @media (prefers-reduced-motion: reduce) { .preview-audio-container .np-song, .preview-audio-container .np-stack, .preview-audio-container .np-stack .playlist-now-playing { transition: none; } }
         .preview-audio-container .audio-icon { order: 0; }
@@ -965,6 +958,25 @@
         @media (pointer: coarse) { :root { --ctl: 2.25rem; } }
         .player-controls-row .playlist-btn:not(.player-play-btn), .playlist-bar .playlist-controls .playlist-btn, #modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) { width: var(--ctl); height: var(--ctl); min-width: 0; min-height: 0; padding: 0; flex-shrink: 0; }
         .playlist-bar .playlist-btn .btn-txt { padding-right: 0.2rem; }
+
+        /* --- Mobile player: same structure as desktop, stable height, anchored to the bottom ---
+           Station name in the header (as on desktop), the song replaces the station name in one fixed slot, the status line is one fixed line,
+           and the preview sheet sits on the bottom edge so anything that changes height grows upward and the player itself never moves. */
+        @media (max-width: 640px) {
+            #modal.modal-overlay { align-items: flex-end; }
+            #modal .modal { max-height: 100vh; max-height: 100dvh; padding-bottom: env(safe-area-inset-bottom, 0px); }
+            .modal:has(.playlist-bar.active) .modal-title { position: static; width: auto; height: auto; margin: 0; clip-path: none; overflow: hidden; white-space: nowrap; flex: 1 1 0; min-width: 0; }
+            .modal:has(.playlist-bar.active) .modal-actions { margin-left: 0; }
+            .playlist-bar { padding: 0.35rem 0.5rem; gap: 0.3rem 0.5rem; }
+            #playlistBar .playlist-info { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.4em; font-size: 0.75rem; }
+            .preview-audio-container { padding: 0.6rem 0.5rem 0.5rem; }
+            .preview-audio-container .audio-icon { width: clamp(96px, min(52vw, 26vh), 200px); height: clamp(96px, min(52vw, 26vh), 200px); }
+            @supports (height: 1svh) { .preview-audio-container .audio-icon { width: clamp(96px, min(52vw, 26svh), 200px); height: clamp(96px, min(52vw, 26svh), 200px); } }
+            .preview-audio-container .audio-icon svg { width: 74%; height: 74%; }
+            .preview-audio-container .np-stack { margin-top: 0.5rem; }
+            .preview-audio-container .player-bar { margin-top: 0.6rem; }
+            .player-controls-row { overflow-x: visible; }
+        }
 </style>
 </head>
 <body>
@@ -3936,11 +3948,11 @@
         <div class="stats-bar">
           <span class="stat">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>
-            ${fileCount} files ${all.length > visibleItems.length ? `(showing ${visibleItems.length} of ${all.length})` : ""}
+            ${fileCount} ${fileCount === 1 ? "file" : "files"} ${all.length > visibleItems.length ? `(showing ${visibleItems.length} of ${all.length})` : ""}
           </span>
           <span class="stat">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
-            ${folderCount} folders
+            ${folderCount} ${folderCount === 1 ? "folder" : "folders"}
           </span>
         </div>
         <div class="main-content">

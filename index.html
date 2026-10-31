@@ -755,9 +755,15 @@
         @media (max-width: 640px) {
             .modal:has(.playlist-bar.active) .modal-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; flex: none; }
             .modal:has(.playlist-bar.active) .modal-actions { margin-left: auto; }
-            #playlistBar .playlist-info, #playlistBar .bar-break { display: none; }
+            /* The station name is already under the glyph, so the info row carries what is not: the track number out of the total
+               and the stream status (on air / format / start time). It is its own full-width row under the controls, and may wrap
+               to a second line instead of cutting the status off. */
+            #playlistBar .bar-break { display: none; }
+            #playlistBar .playlist-info { display: block; order: 2; flex: 0 0 100%; min-width: 0; overflow: visible; white-space: normal; font-size: 0.8rem; line-height: 1.4; }
+            #playlistBar .playlist-track { display: inline; overflow: visible; }
+            #playlistBar .playlist-track .pl-title { display: none; }
+            #playlistBar .playlist-health { display: inline; overflow: visible; padding-left: 0; }
             #playlistBar .playlist-controls { margin-right: auto; }
-            body:not([data-btn-style="labels"]) #playlistBar { flex-wrap: nowrap; }
         }
         /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
         .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; min-height: 2.55rem; box-sizing: border-box; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
@@ -890,6 +896,7 @@
             .preview-audio-container .np-stack:has(.np-song:not(:empty)) .playlist-now-playing { opacity: 0; visibility: hidden; }
         }
         @media (max-width: 640px) {
+            .preview-audio-container .np-stack .playlist-now-playing { font-size: 1.05rem; font-weight: 600; line-height: 1.35; letter-spacing: normal; text-transform: none; color: var(--text-primary); padding: 0 0.25rem; }
             .preview-audio-container .np-song { margin-top: 0.1rem; }
             .preview-audio-container .np-song:empty { height: 0; margin-top: 0; padding-top: 0; padding-bottom: 0; opacity: 0; }
             .preview-audio-container .np-stack { transition: margin-top 0.18s ease; }
@@ -4114,7 +4121,14 @@
             if (currentPlaylist.length > 0) {
                 e.classList.add("active");
                 const item = currentPlaylist[currentPlaylistIndex];
-                t.textContent = `${currentPlaylistIndex + 1}/${currentPlaylist.length}: ${item.title}`;
+                t.textContent = "";
+                const plNum = document.createElement("span");
+                plNum.className = "pl-num";
+                plNum.textContent = `${currentPlaylistIndex + 1}/${currentPlaylist.length}`;
+                const plTitle = document.createElement("span");
+                plTitle.className = "pl-title";
+                plTitle.textContent = `: ${item.title}`;
+                t.append(plNum, plTitle);
                 let prevDisabled, nextDisabled;
                 if (isShuffle) {
                     (prevDisabled = shuffleHistory.length <= 1), (nextDisabled = currentPlaylist.length <= 1);

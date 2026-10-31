@@ -1321,10 +1321,9 @@
 
         // -- Search / listing state --
         let searchQuery = "",
-            searchResultLimit = 100,
-            // Larger page size for plain folder browsing since it has no
-            // ranking to lean on, unlike search results.
-            folderResultLimit = 300;
+            // Search results are paged (the whole repo can match thousands of
+            // files). Folders are NOT paged: a folder always shows everything in it.
+            searchResultLimit = 100;
 
         // -- Open file / playback state --
         let currentFilePath = "",
@@ -3496,7 +3495,6 @@
             currentPath = pathArr;
             searchQuery = "";
             document.getElementById("search").value = "";
-            folderResultLimit = 300;
             updateSearchClearVisibility();
             let accumulated = "";
             for (const segment of pathArr) {
@@ -3880,8 +3878,7 @@
             } else {
                 all = sortItems(getCurrentItems());
             }
-            const activeLimit = searchQuery ? searchResultLimit : folderResultLimit;
-            const visibleItems = all.slice(0, activeLimit);
+            const visibleItems = searchQuery ? all.slice(0, searchResultLimit) : all;
 
             if (searchQuery) {
                 announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);
@@ -4029,8 +4026,7 @@
             const loadMoreBtn = document.getElementById("loadMoreBtn");
             if (loadMoreBtn) {
                 loadMoreBtn.addEventListener("click", () => {
-                    if (searchQuery) searchResultLimit += 100;
-                    else folderResultLimit += 300;
+                    searchResultLimit += 100;
                     render();
                 });
             }

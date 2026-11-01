@@ -281,6 +281,13 @@
         .intensity-bar-wrap > .intensity-bar-label:first-child { min-width: 3.5rem; }
         .intensity-bar-wrap > .intensity-bar-label:last-child { min-width: 3.5rem; text-align: right; }
         .intensity-bar { display: flex; flex: 1; height: 1.6rem; border-radius: var(--radius-full); overflow: hidden; border: 1px solid var(--border-color); }
+        /* The five color-intensity stops are fixed to square cells. Keep this
+           separate from the corner-rounding control, which should still stretch. */
+        .intensity-bar-wrap.color-intensity-wrap { gap: 0.25rem; }
+        .color-intensity-wrap #colorIntensityControl {
+            flex: 0 0 calc(5 * 1.6rem + 2px);
+            width: calc(5 * 1.6rem + 2px);
+        }
         .intensity-seg { flex: 1; border: none; border-right: 1px solid rgba(0, 0, 0, 0.15); cursor: pointer; padding: 0; position: relative; }
         .intensity-seg:last-child { border-right: none; }
         .intensity-seg:hover { filter: brightness(1.12); }
@@ -1167,7 +1174,7 @@
                                         <span class="settings-label">Color intensity</span>
                                     </div>
                                     <div class="settings-row">
-                                        <div class="intensity-bar-wrap">
+                                        <div class="intensity-bar-wrap color-intensity-wrap">
                                             <span class="intensity-bar-label">Vivid</span>
                                             <div class="intensity-bar" id="colorIntensityControl" role="group" aria-label="Color intensity: vivid on the left, muted on the right">
                                                 <button type="button" class="intensity-seg" data-intensity="100" title="Vivid (100%)" aria-label="Vivid"></button>

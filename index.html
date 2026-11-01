@@ -327,22 +327,23 @@
            strength since it's the one actually driving what's on screen. */
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom) { opacity: 0.7; }
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom):hover { opacity: 1; }
-        /* Four columns by three rows: two rows of vivid colors and one row of
-           grays. Every swatch remains a true square. */
+        /* Eight compact columns keep the three-row preset palette centered without
+           making the theme menu wider. Every swatch remains a true square. */
         .theme-swatches {
             display: grid;
-            grid-template-columns: repeat(4, 36px);
-            justify-content: center;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
             justify-items: center;
             align-items: center;
-            gap: 0.5rem;
+            column-gap: 0.1rem;
+            row-gap: 0.35rem;
             width: 100%;
+            max-width: 256px;
             margin-inline: auto;
             padding: 0.2rem 0;
         }
         .theme-swatch {
-            width: 36px;
-            height: 36px;
+            width: 28px;
+            height: 28px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border-strong);
             cursor: pointer;
@@ -2161,18 +2162,15 @@
                 "--accent-hover": "#002299", "--success": "#006b2d", "--warning": "#8a4b00", "--danger": "#b00020"
             }
         };
-        // Three rows of four: two rows of vivid colors, then one row of grays.
-        // Preset colors are explicit hex values. They are saturated on purpose;
-        // anyone who wants a calmer look can lower the Color intensity bar.
+        // Three rows of eight: twenty vivid colors around the hue wheel, then four
+        // grays to finish the grid. Presets are saturated on purpose; anyone who
+        // wants a calmer look can lower the Color intensity bar.
         const THEME_PRESETS = [
-            { name: "Red", color: "#ff3b3b" }, { name: "Orange", color: "#ff8a00" },
-            { name: "Yellow", color: "#ffd400" }, { name: "Green", color: "#22d65a" },
+            { name: "Red", color: "#ff0a0a" }, { name: "Vermilion", color: "#ff430a" }, { name: "Orange", color: "#ff7c0a" }, { name: "Amber", color: "#ffb60a" }, { name: "Yellow", color: "#ffe70a" }, { name: "Lime", color: "#adff0a" }, { name: "Green", color: "#0aff1f" }, { name: "Emerald", color: "#0aff91" },
 
-            { name: "Cyan", color: "#00c8e6" }, { name: "Blue", color: "#2f6bff" },
-            { name: "Violet", color: "#8b3dff" }, { name: "Magenta", color: "#ff2fb3" },
+            { name: "Teal", color: "#0affde" }, { name: "Turquoise", color: "#0aebff" }, { name: "Cyan", color: "#0ac2ff" }, { name: "Sky", color: "#0a99ff" }, { name: "Azure", color: "#0a70ff" }, { name: "Blue", color: "#0a43ff" }, { name: "Indigo", color: "#230aff" }, { name: "Violet", color: "#740aff" },
 
-            { name: "Black", color: "#171717" }, { name: "Gray", color: "#5c5c5c" },
-            { name: "Silver", color: "#a3a3a3" }, { name: "White", color: "#f2f2f2" }
+            { name: "Purple", color: "#ca0aff" }, { name: "Magenta", color: "#ff0ac2" }, { name: "Pink", color: "#ff0a74" }, { name: "Rose", color: "#ff0a33" }, { name: "Black", color: "#171717" }, { name: "Gray", color: "#5c5c5c" }, { name: "Silver", color: "#a3a3a3" }, { name: "White", color: "#f2f2f2" }
         ];
         function clampNum(v, min, max) {
             return Math.max(min, Math.min(max, v));

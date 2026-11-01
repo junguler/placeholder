@@ -276,12 +276,12 @@
         .settings-control { display: flex; gap: 0.25rem; }
         .settings-control button { padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; font-size: 0.75rem; }
         .settings-control button:hover { color: var(--text-primary); border-color: var(--accent); }
-        .intensity-bar-wrap { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+        .intensity-bar-wrap { display: flex; align-items: center; gap: 0.5rem; width: 100%; justify-content: space-between; }
         .intensity-bar-label { font-size: var(--label-size); font-weight: 600; color: var(--text-muted); flex-shrink: 0; text-transform: uppercase; letter-spacing: var(--label-track); }
         .intensity-bar-wrap > .intensity-bar-label:first-child { min-width: 3.5rem; }
         .intensity-bar-wrap > .intensity-bar-label:last-child { min-width: 3.5rem; text-align: right; }
-        .intensity-bar { display: flex; flex: 1; height: 1.6rem; border-radius: var(--radius-full); overflow: hidden; border: 1px solid var(--border-color); }
-        .intensity-seg { flex: 1; border: none; border-right: 1px solid rgba(0, 0, 0, 0.15); cursor: pointer; padding: 0; position: relative; }
+        .intensity-bar { display: flex; flex: 0 0 auto; height: 1.6rem; border-radius: var(--radius-full); overflow: hidden; border: 1px solid var(--border-color); }
+        .intensity-seg { flex: 0 0 1.6rem; border: none; border-right: 1px solid rgba(0, 0, 0, 0.15); cursor: pointer; padding: 0; position: relative; }
         .intensity-seg:last-child { border-right: none; }
         .intensity-seg:hover { filter: brightness(1.12); }
         .intensity-seg.active { box-shadow: inset 0 0 0 2px var(--on-control); }

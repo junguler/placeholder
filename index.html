@@ -283,7 +283,14 @@
         .intensity-bar { display: flex; flex: 1; height: 1.6rem; border-radius: var(--radius-full); overflow: hidden; border: 1px solid var(--border-color); }
         /* The five color-intensity stops are fixed to square cells. Keep this
            separate from the corner-rounding control, which should still stretch. */
-        .intensity-bar-wrap.color-intensity-wrap { gap: 0.25rem; }
+        .intensity-bar-wrap.color-intensity-wrap { gap: 0.4rem; justify-content: center; }
+        .color-intensity-wrap > .intensity-bar-label:first-child,
+        .color-intensity-wrap > .intensity-bar-label:last-child {
+            min-width: 0;
+            flex: 0 0 auto;
+        }
+        .color-intensity-wrap > .intensity-bar-label:first-child { text-align: right; }
+        .color-intensity-wrap > .intensity-bar-label:last-child { text-align: left; }
         .color-intensity-wrap #colorIntensityControl {
             flex: 0 0 calc(5 * 1.6rem + 2px);
             width: calc(5 * 1.6rem + 2px);
@@ -320,10 +327,31 @@
            strength since it's the one actually driving what's on screen. */
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom) { opacity: 0.7; }
         .theme-toggle.custom-color-active .theme-btn:not(.theme-btn-custom):hover { opacity: 1; }
-        .theme-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.55rem; width: 100%; padding: 0.15rem 0; }
-        .theme-swatch { width: 28px; height: 28px; border-radius: var(--radius-sm); border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+        /* Eight compact columns keep the four-row preset palette centered without
+           making the theme menu wider. Every swatch remains a true square. */
+        .theme-swatches {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            justify-items: center;
+            align-items: center;
+            column-gap: 0.1rem;
+            row-gap: 0.35rem;
+            width: 100%;
+            max-width: 256px;
+            margin-inline: auto;
+            padding: 0.2rem 0;
+        }
+        .theme-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-strong);
+            cursor: pointer;
+            padding: 0;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+        }
         .theme-swatch:hover { border-color: var(--text-muted); }
-        .theme-swatch.active { border-color: var(--text-primary); }
+        .theme-swatch.active { border: 2px solid var(--text-primary); }
         .theme-custom-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
         .theme-custom-row input[type="color"] { width: 32px; height: 28px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: 0 0; padding: 0; cursor: pointer; }
         .theme-reset-btn { flex: 1; border: 1px solid var(--border-strong); background: var(--bg-tertiary); color: var(--text-secondary); border-radius: var(--radius); padding: 0.3rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
@@ -2134,11 +2162,29 @@
                 "--accent-hover": "#002299", "--success": "#006b2d", "--warning": "#8a4b00", "--danger": "#b00020"
             }
         };
+        // Three rows of varied hues and tones, followed by a full grayscale row.
+        // Preset colors are explicit hex values so the palette can include softer,
+        // deeper and earthier choices instead of only fully saturated rainbow hues.
         const THEME_PRESETS = [
-            { name: "Blue", hue: 209.2 }, { name: "Indigo", hue: 243 }, { name: "Purple", hue: 262 },
-            { name: "Pink", hue: 330 }, { name: "Red", hue: 4 }, { name: "Orange", hue: 28 },
-            { name: "Yellow", hue: 48 }, { name: "Green", hue: 142 }, { name: "Teal", hue: 174 },
-            { name: "Cyan", hue: 191 }, { name: "Sky", hue: 199 }, { name: "Rose", hue: 350 }
+            { name: "Ruby", color: "#c93345" }, { name: "Red", color: "#e3433f" },
+            { name: "Coral", color: "#e56c5b" }, { name: "Orange", color: "#e88432" },
+            { name: "Amber", color: "#d99a2e" }, { name: "Gold", color: "#c4a33a" },
+            { name: "Lemon", color: "#d5c746" }, { name: "Olive", color: "#8f993d" },
+
+            { name: "Green", color: "#4e9a45" }, { name: "Emerald", color: "#21956c" },
+            { name: "Mint", color: "#77b99a" }, { name: "Teal", color: "#1d8b82" },
+            { name: "Turquoise", color: "#25a8a8" }, { name: "Cyan", color: "#20a7cf" },
+            { name: "Sky", color: "#58a5d5" }, { name: "Azure", color: "#367bba" },
+
+            { name: "Blue", color: "#2d64c8" }, { name: "Navy", color: "#3b4e80" },
+            { name: "Indigo", color: "#4c53b9" }, { name: "Violet", color: "#7750ca" },
+            { name: "Lavender", color: "#a892d6" }, { name: "Purple", color: "#984eb5" },
+            { name: "Magenta", color: "#c445aa" }, { name: "Rose", color: "#db5a8a" },
+
+            { name: "Black", color: "#171717" }, { name: "Charcoal", color: "#303030" },
+            { name: "Dark Gray", color: "#494949" }, { name: "Gray", color: "#686868" },
+            { name: "Medium Gray", color: "#898989" }, { name: "Silver", color: "#aaaaaa" },
+            { name: "Light Gray", color: "#cccccc" }, { name: "White", color: "#f2f2f2" }
         ];
         function clampNum(v, min, max) {
             return Math.max(min, Math.min(max, v));
@@ -2307,7 +2353,7 @@
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
-            markActiveSwatch(hexToHsl(activeColor).h);
+            markActiveSwatch(vividColor);
             syncThemeColorMeta();
         }
         function setCustomColor(hex) {
@@ -2379,20 +2425,37 @@
                 btn.classList.toggle("active", parseInt(btn.dataset.depth, 10) === uiDepth);
             });
         }
-        function markActiveSwatch(hue) {
+        function markActiveSwatch(hex) {
             const wrap = document.getElementById("themeSwatches");
             if (!wrap) return;
-            wrap.querySelectorAll(".theme-swatch").forEach((sw) => {
-                const swHue = parseFloat(sw.dataset.hue);
-                sw.classList.toggle("active", hue != null && Math.abs(swHue - hue) < 0.5);
+            const swatches = wrap.querySelectorAll(".theme-swatch");
+            swatches.forEach((sw) => sw.classList.remove("active"));
+            if (!hex) return;
+
+            const target = hexToRgb(hex);
+            let closest = null;
+            let closestDistance = Infinity;
+            swatches.forEach((sw) => {
+                const rgb = hexToRgb(sw.dataset.color);
+                const distance = Math.sqrt(
+                    (rgb.r - target.r) ** 2 +
+                    (rgb.g - target.g) ** 2 +
+                    (rgb.b - target.b) ** 2
+                );
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closest = sw;
+                }
             });
+            // Only mark a preset when a custom-picked color is genuinely close
+            // to it. This also lets the gray presets highlight correctly.
+            if (closest && closestDistance <= 28) closest.classList.add("active");
         }
         function renderThemeSwatches() {
             const wrap = document.getElementById("themeSwatches");
             if (!wrap) return;
             wrap.innerHTML = THEME_PRESETS.map((p) => {
-                const swatchColor = hslToHex(p.hue, 100, 55);
-                return `<button type="button" class="theme-swatch" data-hue="${p.hue}" title="${p.name}" style="background:${swatchColor}"></button>`;
+                return `<button type="button" class="theme-swatch" data-color="${p.color}" aria-label="${p.name} preset" title="${p.name} — ${p.color}" style="background:${p.color}"></button>`;
             }).join("");
         }
         function wireThemeColorPicker() {
@@ -2405,8 +2468,7 @@
             if (swatches) swatches.addEventListener("click", (e) => {
                 const sw = e.target.closest(".theme-swatch");
                 if (!sw) return;
-                const hue = parseFloat(sw.dataset.hue);
-                const hex = hslToHex(hue, 100, 55);
+                const hex = sw.dataset.color;
                 setCustomColor(hex);
                 if (input) input.value = hex;
             });

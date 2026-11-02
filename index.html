@@ -945,6 +945,11 @@
         body.is-recording .audio-icon { outline-color: var(--danger); }
         body.is-recording .audio-icon::after { content: "REC"; position: absolute; top: 0; left: 0; border-top-left-radius: var(--radius-lg); padding: 0.1rem 0.35rem; background: var(--danger-solid, var(--danger)); color: var(--on-danger, #fff); font-size: 0.75rem; font-weight: 700; letter-spacing: var(--label-track); line-height: 1.3; animation: recPulse 1.2s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) { body.is-recording .audio-icon::after { animation: none; } }
+        /* Stream format + bitrate (MP3 · 128k): a tag on the top-right corner of the glyph, same language as the REC and Connecting tags.
+           It takes no layout space, so it works the same on desktop and mobile and never moves the player. */
+        .audio-icon .stream-tag { position: absolute; top: 0; right: 0; box-sizing: border-box; max-width: 100%; padding: 0.1rem 0.35rem; border-left: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-top-right-radius: var(--radius-lg); background: var(--bg-primary); color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; letter-spacing: var(--label-track); line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+        .audio-icon .stream-tag:empty { display: none; }
+        body.is-recording .audio-icon .stream-tag { max-width: calc(100% - 2.8rem); }
         /* Transport */
         .player-bar { padding: 0.55rem 0.85rem 0.6rem; gap: 0.5rem; }
         .player-controls-row { gap: 0.5rem; }
@@ -1931,7 +1936,9 @@
         // Sets a glyph's markup on an .audio-icon container and recenters it.
         function setPlayerIcon(iconEl, svgMarkup) {
             if (!iconEl) return;
+            const tag = iconEl.querySelector(".stream-tag");
             iconEl.innerHTML = svgMarkup;
+            if (tag) iconEl.appendChild(tag);
             centerAudioIconSvg(iconEl);
         }
         // Auto-swap registry: one timer per active <audio>, only ticking while
@@ -5277,6 +5284,85 @@
             }
             renderNpStatus();
         }
+        // ---- stream format + bitrate shown on the player glyph ------------
+        const EXT_FMT = { mp3: "MP3", aac: "AAC", aacp: "AAC", m4a: "AAC", ogg: "OGG", oga: "OGG", opus: "OPUS", flac: "FLAC", m3u8: "HLS" };
+        function hlsCodecName(codec) {
+            const c = String(codec || "").toLowerCase();
+            if (!c) return "";
+            if (c.startsWith("mp4a.40.34") || c === "mp3") return "MP3";
+            if (c.startsWith("mp4a")) return "AAC";
+            if (c.startsWith("opus")) return "OPUS";
+            if (c.startsWith("flac")) return "FLAC";
+            return "";
+        }
+        // Best known format / bitrate for the stream being played: live HLS level, then what this play sniffed,
+        // then what an earlier test or play stored, then a guess from the file extension.
+        function liveStreamInfo(session) {
+            let fmt = "";
+            let kbps = 0;
+            const rec = streamHealth.get(session.item.url);
+            if (session.usesHls && currentHls && currentHls.levels && currentHls.levels.length) {
+                const idx = currentHls.currentLevel >= 0 ? currentHls.currentLevel : currentHls.loadLevel >= 0 ? currentHls.loadLevel : currentHls.levels.length === 1 ? 0 : -1;
+                const lv = currentHls.levels[idx];
+                if (lv) {
+                    kbps = Math.round((lv.averageBitrate || lv.bitrate || 0) / 1000);
+                    fmt = hlsCodecName(lv.audioCodec) || "HLS";
+                }
+            }
+            if (!fmt && session.info) {
+                fmt = session.info.fmt || "";
+                kbps = kbps || session.info.kbps || 0;
+            }
+            if (!fmt && rec && rec.fmt && rec.fmt !== "HTML" && rec.fmt !== "LIST") fmt = rec.fmt;
+            if (!kbps && rec && rec.kbps) kbps = rec.kbps;
+            if (!fmt) {
+                const url = session.cands && session.cands[session.candIdx] ? session.cands[session.candIdx] : session.item.url;
+                fmt = EXT_FMT[urlPathExt(url)] || "";
+            }
+            return fmt || kbps ? { fmt, kbps } : null;
+        }
+        // Once a stream is playing, reads its first few KB once to learn the real format and bitrate.
+        // Needs CORS, so it is skipped for servers that only play without it; those fall back to the extension.
+        async function sniffLiveStream(session) {
+            const url = session.cands[session.candIdx];
+            if (!url || session.usesHls || session.sniffed) return;
+            if (session.corsFailed || noCorsHosts.has(hostKey(url))) return;
+            session.sniffed = true;
+            const ctl = new AbortController();
+            session.sniffCtl = ctl;
+            const timer = setTimeout(() => ctl.abort(), 8000);
+            try {
+                const res = await fetch(url, { signal: ctl.signal, cache: "no-store", credentials: "omit" });
+                const ctype = (res.headers.get("content-type") || "").toLowerCase();
+                if (!res.ok || /text\/html|mpegurl|x-scpls|x-ms-asx|xspf/.test(ctype)) return;
+                const reader = res.body.getReader();
+                const chunks = [];
+                let got = 0;
+                while (got < 32768) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    got += value.length;
+                }
+                const sn = sniffAudio(concatChunks(chunks, 32768));
+                let kbps = sn.kbps || 0;
+                const hdrBr = parseInt(res.headers.get("icy-br"), 10);
+                if (!kbps && hdrBr > 0) kbps = hdrBr;
+                const fmt = sn.fmt && sn.fmt !== "HTML" && sn.fmt !== "LIST" ? sn.fmt : fmtFromContentType(ctype);
+                if (playSession !== session || (!fmt && !kbps)) return;
+                session.info = { fmt, kbps };
+                const patch = {};
+                if (fmt) patch.fmt = fmt;
+                if (kbps) patch.kbps = kbps;
+                streamHealth.merge(session.item.url, patch);
+            } catch (e) {
+                // no CORS, timeout or aborted: the extension guess stays
+            } finally {
+                clearTimeout(timer);
+                ctl.abort();
+                if (playSession === session) renderNpStatus();
+            }
+        }
         // The checking status at the top of the player carries this stream's format and start time.
         // Connecting / Reconnecting show as a tag on the glyph (no layout space); the song line stays collapsed until a title arrives.
         function renderNpStatus() {
@@ -5285,7 +5371,13 @@
             const s = playSession;
             const rec = s ? streamHealth.get(s.item.url) : null;
             const bits = [];
-            if (rec && rec.fmt) bits.push(rec.fmt + (rec.kbps ? " " + rec.kbps + " kbps" : ""));
+            // With the glyph tag on screen the format and bitrate live there; the status line only carries them for video.
+            const tagEl = document.getElementById("streamTag");
+            if (tagEl) {
+                const info = s ? liveStreamInfo(s) : null;
+                const txt = info ? info.fmt + (info.fmt && info.kbps ? " · " : "") + (info.kbps ? info.kbps + "k" : "") : "";
+                if (tagEl.textContent !== txt) tagEl.textContent = txt;
+            } else if (rec && rec.fmt) bits.push(rec.fmt + (rec.kbps ? " " + rec.kbps + " kbps" : ""));
             else if (rec && rec.kbps) bits.push(rec.kbps + " kbps");
             if (s && s.everPlayed && s.startMs) bits.push("started in " + (s.startMs / 1000).toFixed(1) + " s");
             if (out) out.textContent = healthSummaryText() + (bits.length ? " · " + bits.join(" · ") : "");
@@ -6125,6 +6217,7 @@
                 clearStall(s);
                 clearTimeout(s.reloadTimer);
                 clearTimeout(s.stableTimer);
+                if (s.sniffCtl) s.sniffCtl.abort();
             }
             stopNowPlaying();
             destroyHls();
@@ -6181,7 +6274,7 @@
                     n.innerHTML = `
                       <div class="preview-audio-container">
                         <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link &amp; header" aria-label="Copy stream link and header">${icons.info}</button>
-                        <div class="audio-icon" data-hint="Connecting…">${pickPlayerNoteIcon()}</div>
+                        <div class="audio-icon" data-hint="Connecting…">${pickPlayerNoteIcon()}<span class="stream-tag" id="streamTag"></span></div>
                         <div class="np-stack">
                           <div class="playlist-now-playing">${escapeHtml(title)}</div>
                           <div class="np-song" id="npSong" aria-live="polite"></div>
@@ -6327,6 +6420,7 @@
                     if (session.corsFailed) rememberNoCors(hostKey(session.cands[session.candIdx]));
                     recordPlayStart(session);
                     startNowPlaying(session);
+                    sniffLiveStream(session);
                 }
                 if (session.reconnecting) {
                     session.reconnecting = false;
@@ -6401,7 +6495,11 @@
                 currentHls = hls;
                 hls.loadSource(url);
                 hls.attachMedia(el);
+                hls.on(Hls.Events.LEVEL_SWITCHED, () => {
+                    if (playSession === session) renderNpStatus();
+                });
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    if (playSession === session) renderNpStatus();
                     const p = el.play();
                     if (p && p.catch) p.catch(onBlocked);
                 });

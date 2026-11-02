@@ -5363,6 +5363,48 @@
                 if (playSession === session) renderNpStatus();
             }
         }
+        // Seconds of audio/video already downloaded ahead of the playhead (the "cached" amount), or -1 when unknown.
+        function bufferedAheadSec(el) {
+            try {
+                if (!el || !el.buffered || !el.buffered.length) return -1;
+                const t = el.currentTime;
+                for (let i = 0; i < el.buffered.length; i++) {
+                    const a = el.buffered.start(i), b = el.buffered.end(i);
+                    if (t >= a - 0.3 && t <= b + 0.05) return Math.max(0, b - t);
+                }
+                return 0;
+            } catch (e) {
+                return -1;
+            }
+        }
+        function fmtBufferAhead(sec) {
+            const n = Math.floor(sec);
+            if (n < 60) return n + "s";
+            const m = Math.floor(n / 60), r = n % 60;
+            if (m >= 60) return Math.floor(m / 60) + "h " + String(m % 60).padStart(2, "0") + "m";
+            return m + "m " + String(r).padStart(2, "0") + "s";
+        }
+        // Glyph tag: format · bitrate · cached time (MP3 · 128k · 12s). Cached time only shows once the stream has started playing.
+        function updateStreamTag() {
+            const tagEl = document.getElementById("streamTag");
+            if (!tagEl) return;
+            const s = playSession;
+            const info = s ? liveStreamInfo(s) : null;
+            const parts = [];
+            if (info && info.fmt) parts.push(info.fmt);
+            if (info && info.kbps) parts.push(info.kbps + "k");
+            if (s && s.everPlayed && !s.reconnecting && s.el) {
+                const ahead = bufferedAheadSec(s.el);
+                if (ahead >= 0) parts.push(fmtBufferAhead(ahead));
+            }
+            const txt = parts.join(" · ");
+            if (tagEl.textContent !== txt) tagEl.textContent = txt;
+        }
+        // Keeps the cached time ticking while a stream plays (the tab being hidden pauses the refresh).
+        setInterval(() => {
+            if (document.hidden || !playSession) return;
+            updateStreamTag();
+        }, 1000);
         // The checking status at the top of the player carries this stream's format and start time.
         // Connecting / Reconnecting show as a tag on the glyph (no layout space); the song line stays collapsed until a title arrives.
         function renderNpStatus() {
@@ -5374,9 +5416,7 @@
             // With the glyph tag on screen the format and bitrate live there; the status line only carries them for video.
             const tagEl = document.getElementById("streamTag");
             if (tagEl) {
-                const info = s ? liveStreamInfo(s) : null;
-                const txt = info ? info.fmt + (info.fmt && info.kbps ? " · " : "") + (info.kbps ? info.kbps + "k" : "") : "";
-                if (tagEl.textContent !== txt) tagEl.textContent = txt;
+                updateStreamTag();
             } else if (rec && rec.fmt) bits.push(rec.fmt + (rec.kbps ? " " + rec.kbps + " kbps" : ""));
             else if (rec && rec.kbps) bits.push(rec.kbps + " kbps");
             if (s && s.everPlayed && s.startMs) bits.push("started in " + (s.startMs / 1000).toFixed(1) + " s");

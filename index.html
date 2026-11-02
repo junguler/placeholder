@@ -908,9 +908,9 @@
         .audio-icon svg { width: 112px; height: 112px; }
         @media (max-height: 640px) { .audio-icon { width: 120px; height: 120px; } .audio-icon svg { width: 88px; height: 88px; } }
         @media (max-height: 520px) { .audio-icon { width: 96px; height: 96px; } .audio-icon svg { width: 70px; height: 70px; } }
-        /* Connecting / Reconnecting n/m is a tag on the bottom edge of the glyph (same language as the REC tag), not a line of its own,
-           so showing or clearing it never moves anything. */
-        .preview-audio-container .audio-icon[data-hint]::before { content: attr(data-hint); position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 0.15rem 0.4rem; border-top: 1px solid var(--border-color); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); background: var(--bg-primary); color: var(--text-secondary); font-size: 0.75rem; line-height: 1.3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; animation: recPulse 1.6s ease-in-out infinite; }
+        /* Connecting / Reconnecting n/m is a band across the middle of the glyph, so it never shares a corner with the corner tags
+           (stream info top-left, REC bottom-left, cached time bottom-right) and showing or clearing it never moves anything. */
+        .preview-audio-container .audio-icon[data-hint]::before { content: attr(data-hint); position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 1; box-sizing: border-box; padding: 0.15rem 0.4rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); font-size: 0.75rem; line-height: 1.3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; animation: recPulse 1.6s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) { .preview-audio-container .audio-icon[data-hint]::before { animation: none; } }
         .preview-audio-container .playlist-now-playing { order: 1; font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-muted); margin-top: 0.6rem; }
         /* Station label + song share one slot (.np-stack).
@@ -943,13 +943,16 @@
         .preview-audio-container .player-bar { order: 4; margin-top: 0.9rem; }
         /* Recording is visible in the player itself, not only in the bar: the glyph gets a red hairline and a REC tag that blinks. */
         body.is-recording .audio-icon { outline-color: var(--danger); }
-        body.is-recording .audio-icon::after { content: "REC"; position: absolute; top: 0; left: 0; border-top-left-radius: var(--radius-lg); padding: 0.1rem 0.35rem; background: var(--danger-solid, var(--danger)); color: var(--on-danger, #fff); font-size: 0.75rem; font-weight: 700; letter-spacing: var(--label-track); line-height: 1.3; animation: recPulse 1.2s ease-in-out infinite; }
+        body.is-recording .audio-icon::after { content: "REC"; position: absolute; bottom: 0; left: 0; border-bottom-left-radius: var(--radius-lg); padding: 0.1rem 0.35rem; background: var(--danger-solid, var(--danger)); color: var(--on-danger, #fff); font-size: 0.75rem; font-weight: 700; letter-spacing: var(--label-track); line-height: 1.3; animation: recPulse 1.2s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) { body.is-recording .audio-icon::after { animation: none; } }
-        /* Stream format + bitrate (MP3 · 128k): a tag on the top-right corner of the glyph, same language as the REC and Connecting tags.
-           It takes no layout space, so it works the same on desktop and mobile and never moves the player. */
-        .audio-icon .stream-tag { position: absolute; top: 0; right: 0; box-sizing: border-box; max-width: 100%; padding: 0.1rem 0.35rem; border-left: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-top-right-radius: var(--radius-lg); background: var(--bg-primary); color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; letter-spacing: var(--label-track); line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-        .audio-icon .stream-tag:empty { display: none; }
-        body.is-recording .audio-icon .stream-tag { max-width: calc(100% - 2.8rem); }
+        /* Corner tags on the glyph, same language as the REC tag. They take no layout space, so they work the same on desktop and mobile,
+           and each has its own corner so they never collide on zoomed fonts: stream format + bitrate (MP3 · 128k) top-left,
+           REC bottom-left, cached time (12s / 1m 05s) bottom-right. */
+        .audio-icon .stream-tag, .audio-icon .cache-tag { position: absolute; box-sizing: border-box; max-width: 100%; padding: 0.1rem 0.35rem; background: var(--bg-primary); color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; letter-spacing: var(--label-track); line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+        .audio-icon .stream-tag { top: 0; left: 0; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-top-left-radius: var(--radius-lg); }
+        .audio-icon .cache-tag { bottom: 0; right: 0; border-left: 1px solid var(--border-color); border-top: 1px solid var(--border-color); border-bottom-right-radius: var(--radius-lg); }
+        .audio-icon .stream-tag:empty, .audio-icon .cache-tag:empty { display: none; }
+        body.is-recording .audio-icon .cache-tag { max-width: calc(100% - 3.2rem); }
         /* Transport */
         .player-bar { padding: 0.55rem 0.85rem 0.6rem; gap: 0.5rem; }
         .player-controls-row { gap: 0.5rem; }
@@ -1936,9 +1939,9 @@
         // Sets a glyph's markup on an .audio-icon container and recenters it.
         function setPlayerIcon(iconEl, svgMarkup) {
             if (!iconEl) return;
-            const tag = iconEl.querySelector(".stream-tag");
+            const tags = iconEl.querySelectorAll(".stream-tag, .cache-tag");
             iconEl.innerHTML = svgMarkup;
-            if (tag) iconEl.appendChild(tag);
+            tags.forEach((t) => iconEl.appendChild(t));
             centerAudioIconSvg(iconEl);
         }
         // Auto-swap registry: one timer per active <audio>, only ticking while
@@ -5384,21 +5387,27 @@
             if (m >= 60) return Math.floor(m / 60) + "h " + String(m % 60).padStart(2, "0") + "m";
             return m + "m " + String(r).padStart(2, "0") + "s";
         }
-        // Glyph tag: format · bitrate · cached time (MP3 · 128k · 12s). Cached time only shows once the stream has started playing.
+        // Glyph tags: format · bitrate (MP3 · 128k) top-left, cached time (12s) bottom-right. Cached time only shows once the stream has started playing.
         function updateStreamTag() {
             const tagEl = document.getElementById("streamTag");
-            if (!tagEl) return;
+            const cacheEl = document.getElementById("cacheTag");
             const s = playSession;
-            const info = s ? liveStreamInfo(s) : null;
-            const parts = [];
-            if (info && info.fmt) parts.push(info.fmt);
-            if (info && info.kbps) parts.push(info.kbps + "k");
-            if (s && s.everPlayed && !s.reconnecting && s.el) {
-                const ahead = bufferedAheadSec(s.el);
-                if (ahead >= 0) parts.push(fmtBufferAhead(ahead));
+            if (tagEl) {
+                const info = s ? liveStreamInfo(s) : null;
+                const parts = [];
+                if (info && info.fmt) parts.push(info.fmt);
+                if (info && info.kbps) parts.push(info.kbps + "k");
+                const txt = parts.join(" · ");
+                if (tagEl.textContent !== txt) tagEl.textContent = txt;
             }
-            const txt = parts.join(" · ");
-            if (tagEl.textContent !== txt) tagEl.textContent = txt;
+            if (cacheEl) {
+                let ctxt = "";
+                if (s && s.everPlayed && !s.reconnecting && s.el) {
+                    const ahead = bufferedAheadSec(s.el);
+                    if (ahead >= 0) ctxt = fmtBufferAhead(ahead);
+                }
+                if (cacheEl.textContent !== ctxt) cacheEl.textContent = ctxt;
+            }
         }
         // Keeps the cached time ticking while a stream plays (the tab being hidden pauses the refresh).
         setInterval(() => {
@@ -6314,7 +6323,7 @@
                     n.innerHTML = `
                       <div class="preview-audio-container">
                         <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link &amp; header" aria-label="Copy stream link and header">${icons.info}</button>
-                        <div class="audio-icon" data-hint="Connecting…">${pickPlayerNoteIcon()}<span class="stream-tag" id="streamTag"></span></div>
+                        <div class="audio-icon" data-hint="Connecting…">${pickPlayerNoteIcon()}<span class="stream-tag" id="streamTag"></span><span class="cache-tag" id="cacheTag"></span></div>
                         <div class="np-stack">
                           <div class="playlist-now-playing">${escapeHtml(title)}</div>
                           <div class="np-song" id="npSong" aria-live="polite"></div>

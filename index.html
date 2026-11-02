@@ -569,7 +569,7 @@
         .playlist-stop-btn:hover { opacity: 0.9; }
         .playlist-stop-btn svg { width: 14px; height: 14px; }
         /* Test / Songs / Stop share one fixed height (the Stop button's) so they line up in the bar */
-        .playlist-bar #playlistTest, .playlist-bar #playlistSongs, .playlist-bar #playlistRec, .playlist-bar #playlistStop {
+        .playlist-bar #playlistTest, .playlist-bar #playlistList, .playlist-bar #playlistSongs, .playlist-bar #playlistRec, .playlist-bar #playlistStop {
             box-sizing: border-box; height: var(--bar-btn-h); min-width: var(--bar-btn-w); padding-top: 0; padding-bottom: 0; line-height: 1; gap: 0.35rem;
             display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; white-space: nowrap;
         }
@@ -581,7 +581,7 @@
         body[data-btn-style="icons"] .playlist-bar .playlist-btn .btn-txt, body[data-btn-style="icons"] .rec-panel .playlist-btn .blabel,
         body[data-btn-style="icons"] .rec-panel .playlist-btn .lbl-long, body[data-btn-style="icons"] .rec-panel .playlist-btn .lbl-short { display: none !important; }
         body[data-btn-style="icons"] .playlist-bar .playlist-btn svg, body[data-btn-style="icons"] .rec-panel .playlist-btn svg { display: block !important; }
-        body[data-btn-style="icons"] .playlist-bar #playlistTest, body[data-btn-style="icons"] .playlist-bar #playlistSongs, body[data-btn-style="icons"] .playlist-bar #playlistRec { min-width: var(--bar-btn-w); padding-left: 0.35rem; padding-right: 0.35rem; }
+        body[data-btn-style="icons"] .playlist-bar #playlistTest, body[data-btn-style="icons"] .playlist-bar #playlistList, body[data-btn-style="icons"] .playlist-bar #playlistSongs, body[data-btn-style="icons"] .playlist-bar #playlistRec { min-width: var(--bar-btn-w); padding-left: 0.35rem; padding-right: 0.35rem; }
         body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding: 0 0.5rem; }
         .playlist-bar .bar-break { display: none; flex: 0 0 100%; height: 0; }
         .playlist-bar #playlistTest[hidden], .playlist-bar #playlistSongs[hidden], .playlist-bar #playlistRec[hidden] { display: none; }
@@ -778,15 +778,15 @@
             .lbl-long { display: none; }
             .lbl-short { display: inline; }
             .playlist-bar { gap: 0.4rem; }
-            .playlist-bar #playlistTest, .playlist-bar #playlistSongs, .playlist-bar #playlistRec { padding-left: 0.35rem; padding-right: 0.35rem; }
+            .playlist-bar #playlistTest, .playlist-bar #playlistList, .playlist-bar #playlistSongs, .playlist-bar #playlistRec { padding-left: 0.35rem; padding-right: 0.35rem; }
             .playlist-bar #playlistStop { padding-left: 0.5rem; padding-right: 0.5rem; }
         }
         /* Mobile: the station + song under the glyph are the one place the station is named, so the header title and the
            title line in the bar are hidden. That leaves the bar with just the track controls and Test / Songs / Record on one row. */
         @container (max-width: 400px) {
-            .playlist-bar #playlistTest:not(.active) .btn-txt, .playlist-bar #playlistSongs .btn-txt, .playlist-bar #playlistRec:not(.rec-on) .btn-txt { display: none; }
+            .playlist-bar #playlistTest:not(.active) .btn-txt, .playlist-bar #playlistList .btn-txt, .playlist-bar #playlistSongs .btn-txt, .playlist-bar #playlistRec:not(.rec-on) .btn-txt { display: none; }
         }
-        body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-btn-style="labels"] .playlist-bar #playlistSongs .btn-txt, body[data-btn-style="labels"] .playlist-bar #playlistRec .btn-txt { display: inline; }
+        body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-btn-style="labels"] .playlist-bar #playlistList .btn-txt, body[data-btn-style="labels"] .playlist-bar #playlistSongs .btn-txt, body[data-btn-style="labels"] .playlist-bar #playlistRec .btn-txt { display: inline; }
         @media (max-width: 640px) {
             .modal:has(.playlist-bar.active) .modal-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; flex: none; }
             .modal:has(.playlist-bar.active) .modal-actions { margin-left: auto; }
@@ -842,6 +842,14 @@
         .song-links a:hover { text-decoration: underline; }
         .song-copy { padding: 0; background: none; border: 0; font: inherit; font-size: 0.75rem; color: var(--accent-text, var(--accent)); cursor: pointer; }
         .song-copy:hover { text-decoration: underline; }
+        .plist-row { display: flex; align-items: baseline; gap: 0.6rem; width: 100%; box-sizing: border-box; padding: 0.5rem 0.4rem; margin: 0; background: none; border: 0; border-bottom: 1px solid var(--border-color); border-radius: 0; font: inherit; text-align: left; color: var(--text-primary); cursor: pointer; }
+        .plist-row:hover { background: var(--bg-tertiary); }
+        .plist-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+        .plist-num { flex: 0 0 auto; min-width: var(--plist-num-w, 2ch); text-align: right; font-size: var(--data-size); font-variant-numeric: tabular-nums; color: var(--text-muted); }
+        .plist-title { flex: 1 1 auto; min-width: 0; font-size: 0.88rem; word-break: break-word; }
+        .plist-row.current { background: var(--bg-tertiary); box-shadow: inset 3px 0 0 var(--accent); }
+        .plist-row.current .plist-title { font-weight: 600; color: var(--accent-text, var(--accent)); }
+        .plist-row.current .plist-num { color: var(--accent-text, var(--accent)); }
         .songs-empty { padding: 1rem 0; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
         .stats-summary-grid { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
         .stats-summary-item { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.65rem 0.5rem; text-align: center; }
@@ -1306,6 +1314,7 @@
                 <div class="playlist-info"><span class="playlist-track" id="playlistTrack">Track 1 of 10</span><span class="playlist-health" id="playlistHealth"></span></div>
                 <div class="bar-break" aria-hidden="true"></div>
                 <button class="playlist-btn" id="playlistTest" title="Test the streams in this playlist" aria-label="Test the streams in this playlist"><svg class="ico-c" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="btn-txt">Test</span></button>
+                <button class="playlist-btn" id="playlistList" title="Show the playlist" aria-label="Show the playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 5h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zM3 17h2v2H3zm4 0h14v2H7z"/></svg><span class="btn-txt">Playlist</span></button>
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="btn-txt">Songs</span></button>
                 <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle class="rec-core" cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
             </div>
@@ -1361,6 +1370,22 @@
                 </div>
             </div>
             <div class="modal-body songs-body"><div id="recList"></div></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="playlistModal" role="dialog" aria-modal="true" aria-labelledby="playlistModalTitle">
+        <div class="modal songs-modal" id="playlistModalContent">
+            <div class="modal-header">
+                <span class="modal-title" id="playlistModalTitle">Playlist</span>
+                <div class="modal-actions">
+                    <button class="modal-btn" id="playlistModalClose" title="Close" aria-label="Close playlist">
+                        <svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body songs-body">
+                <input type="search" class="songs-search" id="playlistSearch" placeholder="Search streams…" aria-label="Search the playlist" autocomplete="off" />
+                <div id="playlistListBody"></div>
+            </div>
         </div>
     </div>
     <div class="modal-overlay" id="songsModal" role="dialog" aria-modal="true" aria-labelledby="songsTitle">
@@ -3101,6 +3126,7 @@
                 const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
                 const statsOpen = document.getElementById("statsModal").classList.contains("active");
                 const songsOpen = document.getElementById("songsModal").classList.contains("active");
+                const plistOpen = document.getElementById("playlistModal").classList.contains("active");
                 if (e.key === "Escape") {
                     const settingsMenuEl = document.getElementById("settingsMenu");
                     const themeMenuEl = document.getElementById("themeColorMenu");
@@ -3115,12 +3141,13 @@
                         return;
                     }
                     if (songsOpen) closeSongsModal();
+                    else if (plistOpen) closePlaylistModal();
                     else if (statsOpen) closeStatsModal();
                     else if (shortcutsOpen) closeShortcutsModal();
                     else closeModal();
                     return;
                 }
-                if (songsOpen) return; // typing / arrows belong to the songs list while it is open
+                if (songsOpen || plistOpen) return; // typing / arrows belong to the songs / playlist list while it is open
                 if (e.key === "?" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !shortcutsOpen && !statsOpen) {
                     e.preventDefault();
                     openShortcutsModal();
@@ -3226,6 +3253,14 @@
             document.getElementById("favoriteBtn").addEventListener("click", () => toggleFavoriteFile(currentFilePath));
             document.getElementById("playlistTest").addEventListener("click", runPlaylistTest);
             document.getElementById("playlistSongs").addEventListener("click", openSongsModal);
+            document.getElementById("playlistList").addEventListener("click", openPlaylistModal);
+            document.getElementById("playlistModalClose").addEventListener("click", closePlaylistModal);
+            document.getElementById("playlistSearch").addEventListener("input", renderPlaylistList);
+            document.getElementById("playlistListBody").addEventListener("click", playlistRowClick);
+            document.getElementById("playlistModal").addEventListener("click", (e) => {
+                if (e.target === e.currentTarget) closePlaylistModal();
+            });
+            document.getElementById("playlistModal").addEventListener("keydown", (e) => trapModalFocus(e, "playlistModalContent"));
             document.getElementById("songsCloseBtn").addEventListener("click", closeSongsModal);
             document.getElementById("songsClearBtn").addEventListener("click", clearSongs);
             document.getElementById("songsSaveBtn").addEventListener("click", saveSongsList);
@@ -4388,6 +4423,7 @@
     `);
         }
         function stopPlaylist() {
+            closePlaylistModal();
             endPlaySession();
             cancelHealthTest();
             const activeMedia = document.getElementById("audioPlayer") || document.getElementById("videoPlayer");
@@ -5662,6 +5698,66 @@
                     })
                     .join("") + (rows.length > 200 ? `<div class="songs-empty">Showing the newest 200 of ${rows.length}.</div>` : "");
         }
+        // ---- playlist window: every stream title with its line number; a click plays it ----
+        function renderPlaylistList() {
+            const body = document.getElementById("playlistListBody");
+            if (!body) return;
+            const q = (document.getElementById("playlistSearch").value || "").trim().toLowerCase();
+            const total = currentPlaylist.length;
+            if (!total) {
+                body.innerHTML = '<div class="songs-empty">No playlist is loaded.</div>';
+                return;
+            }
+            const rows = [];
+            for (let i = 0; i < total; i++) {
+                const t = currentPlaylist[i].title || currentPlaylist[i].url || "";
+                if (q && !(String(i + 1) + " " + t).toLowerCase().includes(q)) continue;
+                rows.push(`<button type="button" class="plist-row${i === currentPlaylistIndex ? " current" : ""}" data-idx="${i}"${i === currentPlaylistIndex ? ' aria-current="true"' : ""}><span class="plist-num">${i + 1}</span><span class="plist-title">${escapeHtml(t)}</span></button>`);
+            }
+            body.style.setProperty("--plist-num-w", String(total).length + "ch");
+            body.innerHTML = rows.length ? rows.join("") : '<div class="songs-empty">No matches.</div>';
+        }
+        // Moves the highlight to the track now playing (and keeps it in view) without rebuilding the list.
+        function syncPlaylistListCurrent(scroll) {
+            const m = document.getElementById("playlistModal");
+            if (!m || !m.classList.contains("active")) return;
+            const body = document.getElementById("playlistListBody");
+            body.querySelectorAll(".plist-row.current").forEach((r) => {
+                r.classList.remove("current");
+                r.removeAttribute("aria-current");
+            });
+            const cur = body.querySelector(`.plist-row[data-idx="${currentPlaylistIndex}"]`);
+            if (cur) {
+                cur.classList.add("current");
+                cur.setAttribute("aria-current", "true");
+                if (scroll) cur.scrollIntoView({ block: "center" });
+            }
+        }
+        function playlistRowClick(e) {
+            const row = e.target.closest(".plist-row");
+            if (!row) return;
+            const idx = parseInt(row.dataset.idx, 10);
+            if (!(idx >= 0 && idx < currentPlaylist.length) || idx === currentPlaylistIndex) return;
+            if (isShuffle) recordShuffleJump(idx);
+            playPlaylistTrack(idx);
+        }
+        function openPlaylistModal() {
+            if (!currentPlaylist.length) return;
+            rememberModalFocus("playlistModal");
+            document.getElementById("playlistSearch").value = "";
+            renderPlaylistList();
+            document.getElementById("playlistModal").classList.add("active");
+            syncBackgroundInert();
+            syncPlaylistListCurrent(true);
+            focusWhenReady("playlistModalClose", "playlistModal");
+        }
+        function closePlaylistModal() {
+            const m = document.getElementById("playlistModal");
+            if (!m || !m.classList.contains("active")) return;
+            m.classList.remove("active");
+            syncBackgroundInert();
+            restoreModalFocus("playlistModal");
+        }
         function openSongsModal() {
             rememberModalFocus("songsModal");
             renderSongsList();
@@ -6641,6 +6737,7 @@
 
             currentPlaylistIndex = e;
             updatePlaylistUI();
+            syncPlaylistListCurrent(false);
             document.getElementById("modalTitle").textContent = item.title;
             announce(`Loading: ${item.title}`);
             // Show a buffering hint right away instead of a silent wait while the

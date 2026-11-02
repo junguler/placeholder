@@ -908,9 +908,10 @@
         .audio-icon svg { width: 112px; height: 112px; }
         @media (max-height: 640px) { .audio-icon { width: 120px; height: 120px; } .audio-icon svg { width: 88px; height: 88px; } }
         @media (max-height: 520px) { .audio-icon { width: 96px; height: 96px; } .audio-icon svg { width: 70px; height: 70px; } }
-        /* Connecting / Reconnecting n/m is a band across the middle of the glyph, so it never shares a corner with the corner tags
-           (stream info top-left, REC bottom-left, cached time bottom-right) and showing or clearing it never moves anything. */
-        .preview-audio-container .audio-icon[data-hint]::before { content: attr(data-hint); position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 1; box-sizing: border-box; padding: 0.15rem 0.4rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); font-size: 0.75rem; line-height: 1.3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; animation: recPulse 1.6s ease-in-out infinite; }
+        /* Connecting / Reconnecting n/m is a bar along the bottom edge, so the glyph itself stays fully visible. The cached time is hidden
+           while it shows, and while recording it starts after the REC tag, so nothing overlaps. Showing or clearing it never moves anything. */
+        .preview-audio-container .audio-icon[data-hint]::before { content: attr(data-hint); position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 0.15rem 0.4rem; border-top: 1px solid var(--border-color); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); background: var(--bg-primary); color: var(--text-secondary); font-size: 0.75rem; line-height: 1.3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; animation: recPulse 1.6s ease-in-out infinite; }
+        body.is-recording .preview-audio-container .audio-icon[data-hint]::before { left: 3.2rem; border-left: 1px solid var(--border-color); border-bottom-left-radius: 0; }
         @media (prefers-reduced-motion: reduce) { .preview-audio-container .audio-icon[data-hint]::before { animation: none; } }
         .preview-audio-container .playlist-now-playing { order: 1; font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-muted); margin-top: 0.6rem; }
         /* Station label + song share one slot (.np-stack).

@@ -5614,7 +5614,6 @@
                 let hint = "";
                 if (s && s.reconnecting) hint = `Reconnecting ${s.retries}/${RECONNECT_MAX}…`;
                 else if (s && !s.everPlayed) hint = "Connecting…";
-                else if (s && s.bufferPaused) hint = "Paused · caching…";
                 if (hint) song.setAttribute("data-hint", hint);
                 else song.removeAttribute("data-hint");
             }

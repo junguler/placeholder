@@ -627,6 +627,7 @@
         .playlist-btn.player-play-btn { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); border-radius: var(--radius-full); width: 2.4rem; height: 2.4rem; padding: 0; transition: background-color var(--transition), border-color var(--transition); }
         .playlist-btn.player-play-btn:hover { background: var(--accent-solid-hover, var(--accent-hover)); border-color: var(--accent-solid-hover, var(--accent-hover)); }
         .playlist-btn.player-play-btn svg { width: 20px; height: 20px; }
+        .player-time.is-behind { cursor: pointer; text-decoration: underline dotted; }
         .player-time, .player-vol { font-size: 0.75rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; }
         .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--on-control); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
@@ -1991,7 +1992,7 @@
         }
         function startAutoSwap(audioEl) {
             const entry = autoSwapRegistry.get(audioEl);
-            if (!entry || entry.timer || document.hidden || mediaIsPaused(audioEl)) return;
+            if (!entry || entry.timer || document.hidden || audioEl.paused) return;
             entry.timer = setInterval(() => {
                 setPlayerIcon(entry.iconEl, pickPlayerNoteIcon());
             }, AUTO_SWAP_MS);
@@ -2011,7 +2012,7 @@
             if (!iconEl || !audioEl) return;
             iconEl.style.cursor = "pointer";
             iconEl.addEventListener("click", () => {
-                if (mediaIsPaused(audioEl)) return;
+                if (audioEl.paused) return;
                 setPlayerIcon(iconEl, pickPlayerNoteIcon());
             });
             if (!autoSwapRegistry.has(audioEl)) {
@@ -2781,126 +2782,21 @@
         // Media Session API: surfaces play/pause/prev/next on the lock screen,
         // hardware media keys, and OS media overlays, regardless of whether
         // the custom control bar or native controls are in use.
-        // Playlist radio has a buffer-preserving pause: keep the media pipeline
-        // running but freeze its media clock and mute output. This lets the
-        // browser (or hls.js) keep downloading without moving the listener's
-        // position. Single files and video still use a real pause.
-        function getPlaylistAudioSession(mediaEl) {
-            const s = playSession;
-            return s && s.el === mediaEl && mediaEl && mediaEl.tagName === "AUDIO" ? s : null;
-        }
-        function mediaIsPaused(mediaEl) {
-            const s = getPlaylistAudioSession(mediaEl);
-            return !!(s && s.bufferPaused) || !!(mediaEl && mediaEl.paused);
-        }
-        function notifyMediaPlaybackState(mediaEl) {
-            if (!mediaEl) return;
-            try { mediaEl.dispatchEvent(new Event("streambufferstatechange")); } catch (e) {}
-            if ("mediaSession" in navigator && navigator.mediaSession) {
-                try { navigator.mediaSession.playbackState = mediaIsPaused(mediaEl) ? "paused" : "playing"; } catch (e) {}
-            }
-        }
-        function setHlsPauseBuffering(session, paused, hlsInstance = currentHls) {
-            if (!session || !hlsInstance || !hlsInstance.config) return;
-            const config = hlsInstance.config;
-            if (paused) {
-                if (!session.hlsBufferOriginal || session.hlsBufferOriginal.instance !== hlsInstance) {
-                    session.hlsBufferOriginal = {
-                        instance: hlsInstance,
-                        maxBufferLength: config.maxBufferLength,
-                        maxMaxBufferLength: config.maxMaxBufferLength,
-                    };
-                }
-                try {
-                    config.maxBufferLength = PAUSED_STREAM_CACHE_SECONDS;
-                    config.maxMaxBufferLength = Math.max(Number(config.maxMaxBufferLength) || 0, PAUSED_STREAM_CACHE_SECONDS);
-                } catch (e) {}
-            } else {
-                const original = session.hlsBufferOriginal;
-                if (original && original.instance === hlsInstance) {
-                    try {
-                        if (original.maxBufferLength !== undefined) config.maxBufferLength = original.maxBufferLength;
-                        if (original.maxMaxBufferLength !== undefined) config.maxMaxBufferLength = original.maxMaxBufferLength;
-                    } catch (e) {}
-                }
-                session.hlsBufferOriginal = null;
-            }
-        }
-        function pauseMediaPlayback(mediaEl) {
-            if (!mediaEl) return;
-            const session = getPlaylistAudioSession(mediaEl);
-            if (!session || !session.everPlayed) {
-                mediaEl.pause();
-                return;
-            }
-            if (session.bufferPaused) return;
-            session.bufferPaused = true;
-            session.bufferPauseWasMuted = !!mediaEl.muted;
-            mediaEl.dataset.streamBufferPaused = "1";
-            mediaEl.muted = true;
-            try { mediaEl.playbackRate = 0; } catch (e) {}
-            setHlsPauseBuffering(session, true);
-            stopAutoSwap(mediaEl);
-            // A native/OS pause may already have paused the element before this
-            // handler runs. Start it again silently at a frozen media clock.
-            if (mediaEl.paused) {
-                const p = mediaEl.play();
-                if (p && p.catch) p.catch(() => {
-                    if (playSession !== session || !session.bufferPaused) return;
-                    session.bufferPaused = false;
-                    delete mediaEl.dataset.streamBufferPaused;
-                    try { mediaEl.playbackRate = 1; } catch (e) {}
-                    mediaEl.muted = session.bufferPauseWasMuted;
-                    setHlsPauseBuffering(session, false);
-                    notifyMediaPlaybackState(mediaEl);
-                });
-            }
-            notifyMediaPlaybackState(mediaEl);
-            renderNpStatus();
-            updateStreamTag();
-        }
-        function resumeMediaPlayback(mediaEl) {
-            if (!mediaEl) return;
-            const session = getPlaylistAudioSession(mediaEl);
-            if (session && session.bufferPaused) {
-                session.bufferPaused = false;
-                delete mediaEl.dataset.streamBufferPaused;
-                setHlsPauseBuffering(session, false);
-                try { mediaEl.playbackRate = 1; } catch (e) {}
-                mediaEl.muted = !!session.bufferPauseWasMuted;
-                if (mediaEl.paused) {
-                    const p = mediaEl.play();
-                    if (p && p.catch) p.catch(() => {});
-                }
-                startAutoSwap(mediaEl);
-                notifyMediaPlaybackState(mediaEl);
-                renderNpStatus();
-                updateStreamTag();
-                return;
-            }
-            mediaEl.muted = false;
-            if (mediaEl.paused) {
-                const p = mediaEl.play();
-                if (p && p.catch) p.catch(() => {});
-            }
-        }
-        function toggleMediaPlayback(mediaEl) {
-            if (mediaIsPaused(mediaEl)) resumeMediaPlayback(mediaEl);
-            else pauseMediaPlayback(mediaEl);
-        }
         function setupMediaSession(mediaEl, title) {
             if (!("mediaSession" in navigator)) return;
             updateMediaSessionTitle(title);
-            navigator.mediaSession.setActionHandler("play", () => resumeMediaPlayback(mediaEl));
-            navigator.mediaSession.setActionHandler("pause", () => pauseMediaPlayback(mediaEl));
+            navigator.mediaSession.setActionHandler("play", () => {
+                mediaEl.muted = false;
+                mediaEl.play().catch(() => {});
+            });
+            navigator.mediaSession.setActionHandler("pause", () => mediaEl.pause());
             navigator.mediaSession.setActionHandler("previoustrack", goToPrevTrack);
             navigator.mediaSession.setActionHandler("nexttrack", goToNextTrack);
             const syncPlaybackState = () => {
-                navigator.mediaSession.playbackState = mediaIsPaused(mediaEl) ? "paused" : "playing";
+                navigator.mediaSession.playbackState = mediaEl.paused ? "paused" : "playing";
             };
             mediaEl.addEventListener("play", syncPlaybackState);
             mediaEl.addEventListener("pause", syncPlaybackState);
-            mediaEl.addEventListener("streambufferstatechange", syncPlaybackState);
             syncPlaybackState();
         }
         function updateMediaSessionTitle(title) {
@@ -2913,17 +2809,16 @@
                 sec = Math.floor(seconds % 60);
             return `${m}:${sec.toString().padStart(2, "0")}`;
         }
-        // Playlist radio always uses the custom controls so its logical
-        // buffer-preserving pause is represented accurately. Standalone files
-        // continue to respect the native-player preference.
-        function mediaTagAttrs(forceCustom = false) {
-            return useNativePlayer && !forceCustom ? "controls" : "";
+        // When "Use native player" is on, hand the element back to the browser's
+        // own controls instead of building/wiring our custom bar.
+        function mediaTagAttrs() {
+            return useNativePlayer ? "controls" : "";
         }
-        function mediaControlsMarkup(forceCustom = false) {
-            return useNativePlayer && !forceCustom ? "" : playerControlsHTML();
+        function mediaControlsMarkup() {
+            return useNativePlayer ? "" : playerControlsHTML();
         }
-        function maybeWireMediaControls(el, forceCustom = false) {
-            if (!useNativePlayer || forceCustom) wireMediaControls(el);
+        function maybeWireMediaControls(el) {
+            if (!useNativePlayer) wireMediaControls(el);
         }
         // Builds the markup for our custom play/pause, prev/next, shuffle and
         // volume controls. Used for both single audio/video files and playlist
@@ -2966,15 +2861,16 @@
             if (!playBtn || !mediaEl) return;
 
             function updatePlayIcon() {
-                const paused = mediaIsPaused(mediaEl);
-                playBtn.innerHTML = paused ? icons.playCtl : icons.pauseCtl;
-                const label = paused ? "Play" : "Pause";
+                playBtn.innerHTML = mediaEl.paused ? icons.playCtl : icons.pauseCtl;
+                const label = mediaEl.paused ? "Play" : "Pause";
                 (playBtn.title = label), playBtn.setAttribute("aria-label", label);
             }
-            playBtn.addEventListener("click", () => toggleMediaPlayback(mediaEl));
+            playBtn.addEventListener("click", () => {
+                mediaEl.muted = false;
+                mediaEl.paused ? mediaEl.play().catch(() => {}) : mediaEl.pause();
+            });
             mediaEl.addEventListener("play", updatePlayIcon);
             mediaEl.addEventListener("pause", updatePlayIcon);
-            mediaEl.addEventListener("streambufferstatechange", updatePlayIcon);
             updatePlayIcon();
 
             prevBtn.addEventListener("click", goToPrevTrack);
@@ -3042,8 +2938,9 @@
             function syncSeekBarInner() {
                 if (seeking) return;
                 const dur = mediaEl.duration;
-                durTimeEl.classList.remove("is-live");
+                durTimeEl.classList.remove("is-live", "is-behind");
                 if (isFinite(dur) && dur > 0) {
+                    durTimeEl.removeAttribute("title");
                     seek.disabled = false;
                     durTimeEl.textContent = formatTime(dur);
                     seek.value = Math.round((mediaEl.currentTime / dur) * 1000);
@@ -3061,8 +2958,12 @@
                     if (behind < 2) {
                         durTimeEl.textContent = "LIVE";
                         durTimeEl.classList.add("is-live");
+                        durTimeEl.classList.remove("is-behind");
+                        durTimeEl.removeAttribute("title");
                     } else {
                         durTimeEl.textContent = "-" + formatTime(behind);
+                        durTimeEl.classList.add("is-behind");
+                        durTimeEl.title = "Jump to live";
                     }
                     const ratio = (mediaEl.currentTime - range.start) / span;
                     seek.value = Math.round(Math.max(0, Math.min(1, ratio)) * 1000);
@@ -3080,6 +2981,12 @@
             mediaEl.addEventListener("durationchange", syncSeekBar);
             mediaEl.addEventListener("progress", syncSeekBar);
             mediaEl.addEventListener("seeked", syncSeekBar);
+            // Behind the live edge (after a pause or a rewind), the time label jumps back to the newest cached audio.
+            durTimeEl.addEventListener("click", () => {
+                if (!durTimeEl.classList.contains("is-behind")) return;
+                const r = getSeekableRange();
+                if (r) mediaEl.currentTime = Math.max(r.start, r.end - 1);
+            });
             mediaEl.addEventListener("timeupdate", () => {
                 curTimeEl.textContent = formatTime(mediaEl.currentTime);
                 syncSeekBar();
@@ -3098,7 +3005,7 @@
             });
 
             const updateVolLabel = () => (volLabel.textContent = Math.round(elToVol(mediaEl.volume) * 100) + "%");
-            const stepVol = (d) => { if (!mediaIsPaused(mediaEl)) mediaEl.muted = false; const pct = Math.max(0, Math.min(100, Math.round(elToVol(mediaEl.volume) * 100) + d)); mediaEl.volume = volToEl(pct / 100); };
+            const stepVol = (d) => { mediaEl.muted = false; const pct = Math.max(0, Math.min(100, Math.round(elToVol(mediaEl.volume) * 100) + d)); mediaEl.volume = volToEl(pct / 100); };
             volDownBtn.addEventListener("click", () => {
                 stepVol(-5);
             });
@@ -4719,7 +4626,7 @@
         const RECONNECT_MAX = 3;
         const RECONNECT_DELAYS_MS = [400, 1500, 3500];
         const STALL_RECONNECT_MS = 10000; // buffering this long while playing = a drop
-        const PAUSED_STREAM_CACHE_SECONDS = 15 * 60; // HLS may build up to 15 minutes ahead while the listener is paused
+        const LIVE_RESUME_RECONNECT_MS = 60000; // paused longer than this: resume at the live point
         const NP_POLL_MS = 15000;
         const SONGS_KEY = "songsHeard";
         const SONGS_MAX = 500;
@@ -4736,6 +4643,7 @@
         let songsHeard = [];
         const noCorsHosts = new Set(); // servers that only play without crossOrigin
         const npBad = new Set(); // "source|origin" pairs that never worked (this page load)
+        const npFails = new Map(); // "source|origin" -> failures in a row; a source is only given up on after 3
 
         // ---- small URL / fetch helpers ------------------------------------
         function urlPathExt(url) {
@@ -5589,9 +5497,11 @@
                 if (cacheEl.textContent !== ctxt) cacheEl.textContent = ctxt;
             }
         }
-        // Keeps the cached time ticking while a stream is active, including its buffer-preserving pause (the tab being hidden pauses the refresh).
+        // Keeps the cached time ticking while a stream plays (the tab being hidden pauses the refresh).
         setInterval(() => {
-            if (document.hidden || !playSession) return;
+            if (!playSession) return;
+            flushTitles(playSession);
+            if (document.hidden) return;
             updateStreamTag();
         }, 1000);
         // The checking status at the top of the player carries this stream's format and start time.
@@ -5763,11 +5673,15 @@
                         try {
                             const title = await fn(url, job.ctl.signal);
                             if (job.stopped) return;
+                            npFails.delete(key);
                             if (title) npSetTitle(session, title);
                             break; // this source works; don't bother the others
                         } catch (e) {
                             if (job.stopped) return;
-                            npBad.add(key);
+                            // one dropped request must not end title updates for the whole page session
+                            const n = (npFails.get(key) || 0) + 1;
+                            npFails.set(key, n);
+                            if (n >= 3) npBad.add(key);
                         }
                     }
                 }
@@ -5776,12 +5690,35 @@
             };
             tick();
         }
+        // A title as the station reports it right now. The recording follows the live stream, so it gets it at once;
+        // what is shown under the glyph (and logged as heard) waits until the playhead reaches that point in the cached audio.
         function npSetTitle(session, raw) {
             if (playSession !== session) return;
             const title = cleanSongTitle(raw, session.item.title);
-            if (!title || title === session.song) return;
-            session.song = title;
+            if (!title) return;
             recTitle(title);
+            if (title === session.songLive) return;
+            session.songLive = title;
+            const el = session.el;
+            const ahead = el && session.everPlayed ? bufferedAheadSec(el) : 0;
+            if (ahead >= 3) {
+                (session.titleQ = session.titleQ || []).push({ title, at: el.currentTime + ahead });
+                return;
+            }
+            session.titleQ = [];
+            showSongTitle(session, title);
+        }
+        // Shows queued titles whose point in the audio has been reached.
+        function flushTitles(session) {
+            if (!session || playSession !== session || !session.titleQ || !session.titleQ.length || !session.el) return;
+            const t = session.el.currentTime;
+            let due = null;
+            while (session.titleQ.length && session.titleQ[0].at <= t + 0.3) due = session.titleQ.shift();
+            if (due) showSongTitle(session, due.title);
+        }
+        function showSongTitle(session, title) {
+            if (playSession !== session || !title || title === session.song) return;
+            session.song = title;
             syncSongsBtn();
             const el = document.getElementById("npSong");
             if (el) {
@@ -6103,22 +6040,6 @@
             if (!t) return;
             if (!r.song.title) r.song.title = t;
             else if (t !== r.song.title) r.cut = t;
-
-            // The recorder reads ICY metadata on its own fetch. Mirror that
-            // title into the player because some stations expose no separate
-            // status endpoint for the under-glyph now-playing line.
-            const session = playSession;
-            if (session && session.item.title === r.station && t !== session.song) {
-                session.song = t;
-                syncSongsBtn();
-                const songEl = document.getElementById("npSong");
-                if (songEl) {
-                    songEl.textContent = t;
-                    songEl.title = t;
-                }
-                updateMediaSessionSong(t, session.item.title);
-                recordSong(t, session.item.title);
-            }
         }
         function recStat(r) {
             const time = recFmt(Math.floor((Date.now() - r.t0) / 1000));
@@ -6159,7 +6080,7 @@
                 out.why = op.why || [];
                 if (op.res) {
                     const ct = (op.res.headers.get("content-type") || "").toLowerCase(), mi = parseInt(op.res.headers.get("icy-metaint"), 10) || 0;
-                    out = { ok: !/html/.test(ct), split: !/ogg|opus|flac/.test(ct) && (mi > 0 || !!ses.song), exact: mi > 0, why: ["not audio"] };
+                    out = { ok: !/html/.test(ct), split: !/ogg|opus|flac/.test(ct) && (mi > 0 || !!(ses.songLive || ses.song)), exact: mi > 0, why: ["not audio"] };
                 }
             } catch (e) {} finally { clearTimeout(timer); ctl.abort(); }
             return out;
@@ -6321,7 +6242,7 @@
             if (tag && ext === "ogg") { ctl.abort(); return recMsg("This station can only be recorded as one long file. Choose “One long recording”."); }
             const mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;
             const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: !!mi, noTitles: !!noTitles });
-            r.song = recNew(tag && !mi && ses.song ? ses.song : null, tag);
+            r.song = recNew(tag && !mi && (ses.songLive || ses.song) ? ses.songLive || ses.song : null, tag);
             REC.msg = "";
             r.timer = setInterval(() => {
                 const st = recStat(r), t = document.querySelector("#recPanel .rec-time"), m = document.querySelector("#recPanel .rec-meta"), bt = document.querySelector("#playlistRec .btn-txt");
@@ -6339,7 +6260,7 @@
                     else if (st === 1) { mlen = v[0] * 16; v = v.subarray(1); mbuf = []; if (mlen) { st = 2; left = mlen; } else { st = 0; left = mi; } }
                     else {
                         const n = Math.min(left, v.length); mbuf.push(v.slice(0, n)); v = v.subarray(n); left -= n;
-                        if (!left) { const t = streamTitleFromIcy(decodeIcyBytes(new Uint8Array(await0(mbuf)))); if (t) recTitle(t); st = 0; left = mi; }
+                        if (!left) { const t = streamTitleFromIcy(decodeIcyBytes(new Uint8Array(await0(mbuf)))); if (t) { recTitle(t); npSetTitle(ses, t); } st = 0; left = mi; }
                     }
                 }
             };
@@ -6526,14 +6447,7 @@
             }
             stopNowPlaying();
             destroyHls();
-            if (s && s.bufferPaused && s.el) {
-                try {
-                    s.el.playbackRate = 1;
-                    s.el.muted = !!s.bufferPauseWasMuted;
-                    delete s.el.dataset.streamBufferPaused;
-                    s.el.pause();
-                } catch (e) {}
-            }
+            destroyMse();
             clearStreamTimeout();
         }
         function releaseMediaElement(el) {
@@ -6543,6 +6457,15 @@
                 el.removeAttribute("src");
                 el.load();
             } catch (e) {}
+        }
+        function isLiveStream(session) {
+            const el = session.el;
+            if (!el) return false;
+            if (currentHls) {
+                const lv = currentHls.levels && currentHls.levels[currentHls.currentLevel];
+                return !(lv && lv.details && lv.details.live === false);
+            }
+            return !isFinite(el.duration);
         }
         // Finds or builds the <audio>/<video> for this track. The element is
         // rebuilt when the crossOrigin mode has to change, because an element
@@ -6583,20 +6506,14 @@
                           <div class="playlist-now-playing">${escapeHtml(title)}</div>
                           <div class="np-song" id="npSong" aria-live="polite"></div>
                         </div>
-                        <audio id="audioPlayer" class="preview-audio" autoplay preload="auto" ${crossAttr} data-cors="${flag}" ${mediaTagAttrs(true)}>
+                        <audio id="audioPlayer" class="preview-audio" autoplay ${crossAttr} data-cors="${flag}" ${mediaTagAttrs()}>
                           Your browser does not support audio playback.
                         </audio>
-                        ${mediaControlsMarkup(true)}
+                        ${mediaControlsMarkup()}
                       </div>
                     `;
                 }
                 el = document.getElementById(id);
-                if (kind === "audio") {
-                    el.preload = "auto";
-                    el.playbackRate = 1;
-                    el.muted = false;
-                    delete el.dataset.streamBufferPaused;
-                }
                 el.volume = volToEl(currentVolume);
                 el.onvolumechange = (ev) => {
                     currentVolume = elToVol(ev.target.volume);
@@ -6604,7 +6521,7 @@
                 };
                 if (cors) setupAudioNormalization(el);
                 setupMediaSession(el, title);
-                maybeWireMediaControls(el, kind === "audio");
+                maybeWireMediaControls(el);
                 document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                 if (kind === "audio") {
                     centerAudioIconSvg(n.querySelector(".audio-icon"));
@@ -6612,12 +6529,9 @@
                 }
             } else {
                 destroyHls();
+                destroyMse();
                 if (reset) {
                     if (kind === "audio") {
-                        el.preload = "auto";
-                        el.playbackRate = 1;
-                        el.muted = false;
-                        delete el.dataset.streamBufferPaused;
                         const titleEl = n.querySelector(".playlist-now-playing");
                         if (titleEl) titleEl.textContent = title;
                         const songEl = document.getElementById("npSong");
@@ -6672,6 +6586,13 @@
         function advanceAfterStartFailure(session, allowCorsRetry) {
             if (playSession !== session) return;
             clearStreamTimeout();
+            if (session.usesMse && !session.mseFailed) {
+                // the own-buffer path did not start: try the plain element on the same address before anything else
+                session.mseFailed = true;
+                destroyMse();
+                startAttempt(session, false);
+                return;
+            }
             if (allowCorsRetry && session.cors && !session.usesHls && !session.corsFailed) {
                 session.corsFailed = true;
                 startAttempt(session, false);
@@ -6716,7 +6637,7 @@
             clearStall(session);
             session.stallTimer = setTimeout(() => {
                 session.stallTimer = null;
-                if (playSession === session && session.everPlayed && !session.bufferPaused && session.el && !session.el.paused) dropAndReconnect(session);
+                if (playSession === session && session.everPlayed && session.el && !session.el.paused) dropAndReconnect(session);
             }, STALL_RECONNECT_MS);
         }
         function bindSessionEvents(session, el) {
@@ -6747,12 +6668,13 @@
                 renderNpStatus();
             };
             el.onwaiting = () => {
-                if (!alive() || !session.everPlayed || el.seeking || session.reconnecting || session.bufferPaused) return;
+                if (!alive() || !session.everPlayed || el.seeking || session.reconnecting) return;
                 setPlaylistBuffering(true);
                 armStall(session);
             };
             el.ontimeupdate = () => {
                 if (!alive() || el.currentTime === session.lastT) return;
+                flushTitles(session);
                 session.lastT = el.currentTime;
                 if (session.stallTimer) {
                     clearStall(session);
@@ -6760,21 +6682,18 @@
                 }
             };
             el.onpause = () => {
-                if (!alive() || el.ended) return;
+                if (!alive()) return;
                 clearStall(session);
-                if (!session.reloading && !session.reconnecting && session.everPlayed && !session.bufferPaused) {
-                    // Covers a pause initiated outside the custom control layer.
-                    // Re-enter the buffer-preserving state instead of stopping
-                    // the stream fetch or later reconnecting to the live edge.
-                    pauseMediaPlayback(el);
-                }
+                if (!session.reloading) session.pausedAt = Date.now();
             };
             el.onplay = () => {
                 if (!alive()) return;
-                if (session.bufferPaused) {
-                    el.muted = true;
-                    try { el.playbackRate = 0; } catch (e) {}
-                    return;
+                const was = session.pausedAt;
+                session.pausedAt = 0;
+                // resuming a live stream after a long pause: jump back to the live point
+                if (was && session.everPlayed && !session.reloading && !session.reconnecting && !session.usesMse && Date.now() - was > LIVE_RESUME_RECONNECT_MS && isLiveStream(session)) {
+                    session.reloading = true;
+                    startAttempt(session, true);
                 }
             };
             el.onerror = () => {
@@ -6792,9 +6711,143 @@
                 goToNextTrack();
             };
         }
+        // ---- own buffer: the page downloads the stream itself and feeds it to the player through MediaSource ----
+        // A browser stops reading a stream when it is paused or has "enough", so the cache never grew while paused.
+        // Here the download never waits for playback: pausing only stops the playhead, and the cache keeps growing
+        // (up to OWN_BUFFER_AHEAD_S ahead; the last OWN_BUFFER_BEHIND_S of played audio stay available for rewinding).
+        const OWN_BUFFER_AHEAD_S = 1800;
+        const OWN_BUFFER_BEHIND_S = 600;
+        let currentOwnBuffer = null;
+        function canUseOwnBuffer(session, el, url) {
+            if (session.mseFailed || typeof MediaSource === "undefined" || !el || el.tagName !== "AUDIO") return false;
+            if (session.corsFailed || noCorsHosts.has(hostKey(url))) return false; // the page may not read this server's audio
+            return true;
+        }
+        function destroyMse() {
+            const m = currentOwnBuffer;
+            if (!m) return;
+            currentOwnBuffer = null;
+            m.alive = false;
+            try { m.ctl.abort(); } catch (e) {}
+            if (m.objUrl) {
+                try { URL.revokeObjectURL(m.objUrl); } catch (e) {}
+            }
+        }
+        async function startOwnBuffer(session, el, url, onBlocked, fallback) {
+            const m = { alive: true, ctl: new AbortController(), objUrl: "" };
+            currentOwnBuffer = m;
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            const bail = () => {
+                if (!m.alive) return;
+                destroyMse();
+                session.mseFailed = true;
+                session.usesMse = false;
+                if (playSession === session) fallback();
+            };
+            let res;
+            try {
+                res = await fetch(url, { signal: m.ctl.signal, cache: "no-store", credentials: "omit" });
+            } catch (e) {
+                return bail(); // no CORS, mixed content or a network error: use the plain element
+            }
+            if (!m.alive || playSession !== session) return;
+            const ct = (res.headers.get("content-type") || "").toLowerCase();
+            const mime = /mpeg|mp3/.test(ct) ? "audio/mpeg" : /aac/.test(ct) ? "audio/aac" : "";
+            if (!res.ok || !res.body || !mime || !MediaSource.isTypeSupported(mime)) return bail();
+            const ms = new MediaSource();
+            m.objUrl = URL.createObjectURL(ms);
+            session.usesMse = true;
+            el.src = m.objUrl;
+            const p = el.play();
+            if (p && p.catch) p.catch(onBlocked);
+            await new Promise((r) => ms.addEventListener("sourceopen", r, { once: true }));
+            if (!m.alive) return;
+            let sb;
+            try {
+                sb = ms.addSourceBuffer(mime);
+                sb.mode = "sequence";
+            } catch (e) {
+                return bail();
+            }
+            try { ms.duration = Infinity; } catch (e) {}
+            const q = [];
+            let qBytes = 0;
+            const cacheEnd = () => {
+                try { return sb.buffered.length ? sb.buffered.end(sb.buffered.length - 1) : 0; } catch (e) { return 0; }
+            };
+            const trimBehind = (keep) => {
+                try {
+                    if (sb.updating || !sb.buffered.length) return false;
+                    const from = sb.buffered.start(0), to = el.currentTime - keep;
+                    if (to - from < 5) return false;
+                    sb.remove(from, to);
+                    return true;
+                } catch (e) { return false; }
+            };
+            const pump = () => {
+                if (!m.alive || sb.updating || ms.readyState !== "open") return;
+                try {
+                    if (sb.buffered.length && el.currentTime - sb.buffered.start(0) > OWN_BUFFER_BEHIND_S + 30 && trimBehind(OWN_BUFFER_BEHIND_S)) return;
+                } catch (e) {}
+                if (!q.length) return;
+                const parts = [];
+                let total = 0;
+                while (q.length && total < 262144) {
+                    const c = q.shift();
+                    parts.push(c);
+                    total += c.length;
+                }
+                const buf = new Uint8Array(total);
+                let o = 0;
+                for (const c of parts) { buf.set(c, o); o += c.length; }
+                try {
+                    sb.appendBuffer(buf);
+                    qBytes -= total;
+                } catch (e) {
+                    q.unshift(buf); // not lost: tried again after room is made
+                    if (e && e.name === "QuotaExceededError") trimBehind(15);
+                    else bail();
+                }
+            };
+            sb.addEventListener("updateend", pump);
+            sb.addEventListener("error", () => {
+                if (m.alive && !session.everPlayed) bail();
+            });
+            const rd = res.body.getReader();
+            try {
+                for (;;) {
+                    // the only reasons to wait: a very long cache, or the player not taking data (should be rare)
+                    while (m.alive && (qBytes > 4194304 || cacheEnd() - el.currentTime > OWN_BUFFER_AHEAD_S)) {
+                        pump();
+                        await sleep(500);
+                    }
+                    if (!m.alive) return;
+                    const { value, done } = await rd.read();
+                    if (done) break;
+                    if (value && value.length) {
+                        q.push(value);
+                        qBytes += value.length;
+                        pump();
+                    }
+                }
+            } catch (e) {
+                // the connection dropped: what is cached still plays out below
+            }
+            if (!m.alive) return;
+            for (let i = 0; m.alive && (q.length || sb.updating) && i < 600; i++) {
+                pump();
+                await sleep(100);
+            }
+            // the stream is over: once the cached audio has played, 'ended' fires and the usual reconnect takes over
+            if (m.alive && ms.readyState === "open") {
+                try { ms.endOfStream(); } catch (e) {}
+            }
+        }
         function attachStream(session, el, url) {
             const lower = url.toLowerCase();
             session.attemptStartedAt = performance.now();
+            destroyMse();
+            session.titleQ = []; // a new connection starts a new timeline, so titles waiting for the old one are dropped
             bindSessionEvents(session, el);
             clearStreamTimeout();
             streamTimeout = setTimeout(() => attemptTimedOut(session), STREAM_TIMEOUT_MS);
@@ -6810,11 +6863,8 @@
                 session.usesHls = true;
                 const hls = new Hls();
                 currentHls = hls;
-                if (session.bufferPaused) setHlsPauseBuffering(session, true, hls);
                 hls.loadSource(url);
                 hls.attachMedia(el);
-                el.muted = !!session.bufferPaused;
-                try { el.playbackRate = session.bufferPaused ? 0 : 1; } catch (e) {}
                 hls.on(Hls.Events.LEVEL_SWITCHED, () => {
                     if (playSession === session) renderNpStatus();
                 });
@@ -6849,14 +6899,19 @@
             };
             const startNative = () => {
                 session.usesHls = false;
-                el.preload = "auto";
+                session.usesMse = false;
                 el.src = url;
                 el.load();
-                el.muted = !!session.bufferPaused;
-                try { el.playbackRate = session.bufferPaused ? 0 : 1; } catch (e) {}
                 const p = el.play();
                 if (p && p.catch) p.catch(onBlocked);
             };
+            // Plain audio streams are pulled by the page itself (fetch -> MediaSource) so the cache keeps filling while paused.
+            // Anything the browser refuses (no CORS, unsupported format) plays through the ordinary element as before.
+            if (!lower.includes(".m3u8") && canUseOwnBuffer(session, el, url)) {
+                destroyMse();
+                session.usesHls = false;
+                return startOwnBuffer(session, el, url, onBlocked, startNative);
+            }
             // hls.js (about 540 KB) is only fetched the first time an .m3u8 stream is played.
             if (!lower.includes(".m3u8")) return startNative();
             if (typeof Hls !== "undefined") return Hls.isSupported() ? startHls() : startNative();
@@ -6898,11 +6953,9 @@
                 drops: 0,
                 reconnecting: false,
                 reloading: false,
+                pausedAt: 0,
                 startMs: 0,
                 song: "",
-                bufferPaused: false,
-                bufferPauseWasMuted: false,
-                hlsBufferOriginal: null,
                 mediaRecovered: false,
                 stallTimer: null,
                 reloadTimer: null,
@@ -7102,7 +7155,8 @@
         function toggleModalPlayback() {
             const media = document.getElementById("modalBody").querySelector("audio, video");
             if (!media) return;
-            toggleMediaPlayback(media);
+            media.muted = false;
+            media.paused ? media.play().catch(() => {}) : media.pause();
         }
         function handleModalKeydown(key) {
             const modalBody = document.getElementById("modalBody");
@@ -7123,7 +7177,7 @@
                         startPlaylistMode();
                     } else {
                         const media = modalBody.querySelector("audio, video");
-                        media && resumeMediaPlayback(media);
+                        media && media.play().catch(() => {});
                     }
                     break;
                 }

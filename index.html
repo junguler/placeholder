@@ -1038,7 +1038,7 @@
             .search-container { flex: 1 1 auto; width: auto; min-width: 0; }
         }
 
-        /* ---- Added features: mode chip, tree drawer, Markdown, archives, progress toast ---- */
+        /* ---- Added features: mode chip, Markdown, archives, progress toast ---- */
         .mode-chip { display: inline-flex; align-items: center; gap: 0.5rem; max-width: 16rem; padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-muted); font-size: 0.75rem; line-height: 1.2; flex-shrink: 0; min-width: 0; }
         .mode-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         body[data-source="local"] .mode-chip { color: var(--accent-text, var(--accent)); border-color: var(--accent); }
@@ -1046,26 +1046,67 @@
         .mode-chip-close:hover { color: var(--text-primary); }
         .mode-chip-close[hidden], .op-toast[hidden], .md-toggle[hidden], #localCloseBtn[hidden], #opToastCancel[hidden] { display: none !important; }
         @media (max-width: 640px) { body:not([data-source="local"]) .mode-chip { display: none; } .mode-chip { max-width: 11rem; } }
-        @media (max-width: 480px) { #localBtn { display: none; } }
+        /* Header: the search box and the tool buttons share one row. The tools are never hidden or clipped: the Local folder button stays on
+           phones, and if a screen is really narrow the tools drop under the search box instead of running off the edge. */
+        .header-tools { display: flex; align-items: center; gap: 0.375rem; flex-shrink: 0; }
+        @media (max-width: 640px) {
+            .header { padding: 0.5rem 0.625rem; }
+            .header-actions { flex-wrap: wrap; row-gap: 0.375rem; }
+            .search-container { flex: 1 1 8rem; min-width: 0; }
+            .header-tools { gap: 0.25rem; margin-left: auto; }
+            /* Local folder mode shows its name chip: it gets the logo row, and the path moves to its own row so neither is squeezed */
+            body[data-source="local"] .mode-chip { flex: 1 1 0; min-width: 0; max-width: none; justify-content: space-between; }
+            body[data-source="local"] .breadcrumb { order: 3; flex: 1 1 100%; }
+            body[data-source="local"] .header-actions { order: 4; }
+        }
         .empty-action { flex: none; padding: 0.4rem 0.9rem; font-size: 0.85rem; margin-top: 0.5rem; }
 
-        /* folder tree: header actions, desktop collapse, narrow-screen drawer */
+        /* folder tree: header actions */
         .tree-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
         .tree-header-actions { display: flex; align-items: center; gap: 0.25rem; }
         .tree-hdr-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; background: none; border: none; border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; text-transform: none; }
         .tree-hdr-btn svg { width: 14px; height: 14px; }
         .tree-hdr-btn:hover, .tree-hdr-btn:focus-visible { color: var(--text-primary); background: var(--bg-hover); }
-        .tree-drawer-close { display: none; }
-        .tree-scrim { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 90; }
-        @media (min-width: 481px) { body.tree-collapsed .tree-panel.visible { display: none; } }
+
+        /* ---- Gallery: an open image, audio file or video gets a rail of the other files of the SAME kind from the same folder.
+           Left side on wide screens, a strip along the bottom on phones. Without a rail the layout is exactly what it was. ---- */
+        .modal-main { display: contents; }
+        .modal.has-gallery .modal-main { display: flex; flex: 1 1 auto; min-height: 0; min-width: 0; }
+        .modal.has-gallery { height: 95vh; height: 95dvh; }
+        .modal.has-gallery[data-gallery="audio"] { max-width: min(880px, 95vw); height: min(640px, 95vh); height: min(640px, 95dvh); }
+        .modal.has-gallery .modal-body { min-width: 0; }
+        .modal.has-gallery[data-gallery="image"] .modal-body { padding: 0.5rem; box-sizing: border-box; }
+        .modal.has-gallery .preview-image { flex: 1 1 0; min-height: 0; width: 100%; max-width: 100%; max-height: none; height: auto; object-fit: contain; margin: 0; }
+        .modal.has-gallery[data-gallery="audio"] .preview-audio-container { margin: auto; }
+        .gallery-rail { flex: 0 0 auto; display: flex; flex-direction: column; width: 7.75rem; min-height: 0; background: var(--bg-secondary); border-right: 1px solid var(--border-color); }
+        .gallery-rail[hidden] { display: none; }
+        .gallery-rail[data-kind="audio"], .gallery-rail[data-kind="video"] { width: 15rem; }
+        .gal-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: var(--data-size); line-height: 1.4; }
+        .gal-count { font-variant-numeric: tabular-nums; }
+        .gal-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .gal-item { position: relative; flex: none; display: flex; align-items: center; gap: 0.5rem; width: 100%; box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); font: inherit; font-size: 0.8rem; line-height: 1.3; text-align: left; cursor: pointer; }
+        .gal-item:hover { border-color: var(--accent); color: var(--text-primary); }
+        .gal-item.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--bg-hover); color: var(--text-primary); }
+        .gal-item:focus-visible { outline-offset: -2px; }
+        .gal-ico { display: flex; flex-shrink: 0; }
+        .gal-ico svg { width: 16px; height: 16px; }
+        .gal-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .gallery-rail[data-kind="audio"] .gal-item, .gallery-rail[data-kind="video"] .gal-item { padding: 0.5rem 0.6rem; min-height: 2.25rem; }
+        .gallery-rail[data-kind="image"] .gal-item { aspect-ratio: 1; justify-content: center; }
+        .gallery-rail[data-kind="image"] .gal-ico { opacity: 0.4; }
+        .gallery-rail[data-kind="image"] .gal-ico svg { width: 24px; height: 24px; }
+        .gal-thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+        .gal-thumb.lazy { opacity: 0; }
+        .gal-thumb.loaded { opacity: 1; transition: opacity 0.2s; }
         @media (max-width: 640px) {
-            body.tree-drawer-open .tree-scrim { display: block; }
-            body.tree-drawer-open .tree-panel { display: flex !important; position: fixed; top: 0; left: 0; bottom: 0; width: min(86vw, 320px); max-height: none; z-index: 95; border-right: 1px solid var(--border-color); border-bottom: none; overflow: hidden; }
-            body.tree-drawer-open .tree-panel .tree-header { display: flex; }
-            body.tree-drawer-open .tree-panel .tree-content { display: block; overflow-y: auto; }
-            body.tree-drawer-open .tree-drawer-close { display: inline-flex; }
-            body.tree-drawer-open .tree-pinned { max-height: 30%; overflow-y: auto; }
+            .modal.has-gallery .modal-main { flex-direction: column-reverse; }
+            .gallery-rail, .gallery-rail[data-kind="audio"], .gallery-rail[data-kind="video"] { width: auto; border-right: 0; border-top: 1px solid var(--border-color); padding-bottom: 0; }
+            .gal-head { display: none; }
+            .gal-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0.4rem; }
+            .gallery-rail[data-kind="image"] .gal-item { width: 4.25rem; }
+            .gallery-rail[data-kind="audio"] .gal-item, .gallery-rail[data-kind="video"] .gal-item { width: 10.5rem; }
         }
+        @media (prefers-reduced-motion: reduce) { .gal-thumb.loaded { transition: none; } }
 
         /* shared small buttons */
         .md-toggle { display: inline-flex; align-items: center; padding: 0.25rem 0.6rem; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-secondary); font-size: 0.75rem; cursor: pointer; text-decoration: none; flex-shrink: 0; }
@@ -1159,6 +1200,7 @@
                         <svg viewBox="0 0 24 24" fill="currentcolor" width="12" height="12"><use href="#icon-x"/></svg>
                     </button>
                 </div>
+                <div class="header-tools">
                 <button class="settings-btn" id="localBtn" title="Open a local folder (works offline)" aria-label="Open a local folder"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></button>
                 <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
                     <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
@@ -1290,14 +1332,6 @@
                                 <details class="settings-section settings-collapsible" style="border-top: 1px solid var(--border-color)">
                                     <summary class="settings-section-title">Library</summary>
                                     <div class="settings-row">
-                                        <span class="settings-label">Open README on first load</span>
-                                        <label class="switch"><input type="checkbox" id="landingToggle" checked aria-label="Open the README automatically when the library first loads" /><span class="switch-slider"></span></label>
-                                    </div>
-                                    <div class="settings-row">
-                                        <span class="settings-label">README names</span>
-                                        <input type="text" class="songs-search settings-text" id="landingFilesInput" aria-label="Preferred README file names, comma separated, in order" autocomplete="off" spellcheck="false" />
-                                    </div>
-                                    <div class="settings-row">
                                         <span class="settings-label">Local folder</span>
                                         <span class="settings-control"><button type="button" class="theme-reset-btn" id="localOpenBtn">Open&hellip;</button><button type="button" class="theme-reset-btn" id="localCloseBtn" hidden>Close</button></span>
                                     </div>
@@ -1376,21 +1410,20 @@
                         </div>
                     </div>
                 </div>
-                <button class="settings-btn" id="treeToggleBtn" title="Folders sidebar" aria-label="Show or hide the folders sidebar" aria-controls="treePanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentcolor"><path fill-rule="evenodd" d="M3 3h18v18H3V3zm2 2v14h4V5H5zm6 0v14h8V5h-8z"/></svg></button>
                 <div class="view-toggle" role="group" aria-label="View mode">
                     <button class="view-btn" data-view="grid" title="Grid" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
                     <button class="view-btn" data-view="list" title="List" aria-label="List view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg></button>
                     <button class="view-btn active" data-view="tree" title="Tree" aria-label="Tree view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/></svg></button>
                 </div>
+                </div>
             </div>
         </div>
     </header>
     <div class="app-container">
-        <div class="tree-scrim" id="treeScrim"></div>
         <aside class="tree-panel visible" id="treePanel">
             <div class="tree-pinned" id="treePinned"></div>
             <div class="tree-pinned" id="treeFavorites"></div>
-            <div class="tree-header"><span>Folders</span><span class="tree-header-actions"><button type="button" class="tree-hdr-btn" id="treeCollapseAll" title="Collapse all folders" aria-label="Collapse all folders"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 13H5v-2h14v2z"/></svg></button><button type="button" class="tree-hdr-btn tree-drawer-close" id="treeDrawerClose" title="Close folders" aria-label="Close folders"><svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg></button></span></div>
+            <div class="tree-header"><span>Folders</span><span class="tree-header-actions"><button type="button" class="tree-hdr-btn" id="treeCollapseAll" title="Collapse all folders" aria-label="Collapse all folders"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 13H5v-2h14v2z"/></svg></button></span></div>
             <div class="tree-content" id="treeContent"></div>
         </aside>
         <main class="main" id="main" tabindex="-1">
@@ -1438,7 +1471,10 @@
                 <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle class="rec-core" cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
             </div>
             <div class="rec-panel" id="recPanel" hidden></div>
-            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-main" id="modalMain">
+                <aside class="gallery-rail" id="galleryRail" aria-label="Files in this folder" hidden></aside>
+                <div class="modal-body" id="modalBody"></div>
+            </div>
         </div>
     </div>
     <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
@@ -1459,6 +1495,7 @@
                     <div class="shortcut-row"><dt><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd>Navigate files &amp; folders</dd></div>
                     <div class="shortcut-row"><dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt><dd>Open selected file or folder</dd></div>
                     <div class="shortcut-row"><dt><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> (in preview)</dt><dd>Stop / play playlist track</dd></div>
+                    <div class="shortcut-row"><dt><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> (image gallery)</dt><dd>Previous / next image</dd></div>
                     <div class="shortcut-row"><dt><kbd>&uarr;</kbd> / <kbd>&darr;</kbd> (in preview)</dt><dd>Scroll preview</dd></div>
                     <div class="shortcut-row"><dt><kbd>Space</kbd> (in preview)</dt><dd>Play / pause media</dd></div>
                 </dl>
@@ -3165,7 +3202,6 @@
         }
         async function init() {
             loadSettings();
-            loadLibrarySettings();
             try {
                 const response = await fetch("./file_index.json");
                 if (!response.ok) throw new Error("Failed to load file index");
@@ -3176,7 +3212,6 @@
                 const startPath = hashToPath();
                 navigateTo(startPath);
                 resetTabStart();
-                if (startPath.length === 0) maybeOpenLanding();
             } catch (err) {
                 console.error(err);
                 if (!uiWired) { fileIndex = null; allFiles = []; filesByPath = new Map(); }
@@ -3318,7 +3353,6 @@
                 const plistOpen = document.getElementById("playlistModal").classList.contains("active");
                 if (e.key === "Escape") {
                     if (document.getElementById("localModal").classList.contains("active")) { closeLocalModal(); return; }
-                    if (isTreeDrawerOpen()) { setTreeDrawer(false, true); return; }
                     const settingsMenuEl = document.getElementById("settingsMenu");
                     const themeMenuEl = document.getElementById("themeColorMenu");
                     if (settingsMenuEl.classList.contains("active")) {
@@ -3661,7 +3695,7 @@
             }
             if (n) {
                 const path = safeJsonParse(n.dataset.path, null);
-                if (path) { navigateTo(path); if (isTreeDrawerOpen()) setTreeDrawer(false, true); }
+                if (path) navigateTo(path);
             }
         }
         function setupIntersectionObserver() {
@@ -7139,10 +7173,95 @@
             startAttempt(session, false);
         }
 
+        // ======================================================================
+        // Gallery rail. While an image, an audio file or a video is open, the other
+        // files of that same kind from the same folder are listed beside it (images
+        // as thumbnails, audio and video as names). The kinds are never mixed: an
+        // image shows the images, audio the audio, video the videos. Everything else
+        // opens exactly as before, with no rail.
+        // ======================================================================
+        const GALLERY_LABELS = { image: "Images", audio: "Audio", video: "Video" };
+        let gallery = null,
+            openSeq = 0;
+        function gallerySiblings(dir, kind) {
+            if (!fileIndex) return [];
+            let items = fileIndex.root;
+            if (dir) { const node = findNode(dir); items = node && node.children; }
+            if (!items) return [];
+            return items
+                .filter((n) => n.type !== "directory" && n.category === kind)
+                .map((n) => ({ path: dir ? dir + "/" + n.name : n.name, name: n.name }))
+                .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+        }
+        function galleryItemHtml(it, i, kind) {
+            const name = escapeHtml(it.name);
+            if (kind === "image") {
+                const src = LOCAL.active ? `data-lpath="${escapeHtml(it.path)}"` : `data-src="./${escapeHtml(encodePathForUrl(it.path))}"`;
+                return `<button type="button" class="gal-item" data-i="${i}" title="${name}" aria-label="${name}"><span class="gal-ico">${icons.image}</span><img class="gal-thumb lazy" alt="" decoding="async" ${src}></button>`;
+            }
+            return `<button type="button" class="gal-item" data-i="${i}" title="${name}"><span class="gal-ico">${icons[kind]}</span><span class="gal-name">${name}</span></button>`;
+        }
+        function hideGallery() {
+            const rail = document.getElementById("galleryRail"), modal = document.getElementById("modalContent");
+            gallery = null;
+            rail.hidden = true;
+            rail.innerHTML = "";
+            modal.classList.remove("has-gallery");
+            delete modal.dataset.gallery;
+        }
+        // Shows (or updates) the rail for the file being opened. Returns true when a rail is showing.
+        // The rail is only rebuilt when the folder or kind changes, so its scroll position survives stepping through files.
+        function syncGallery(filePath, kind) {
+            if (!GALLERY_LABELS[kind] || !fileIndex) { hideGallery(); return false; }
+            const rail = document.getElementById("galleryRail"), modal = document.getElementById("modalContent");
+            const dir = dirOfPath(filePath), key = (LOCAL.active ? "local:" : "hosted:") + dir + "|" + kind;
+            if (!gallery || gallery.key !== key) {
+                const items = gallerySiblings(dir, kind);
+                if (items.length < 2 || !items.some((it) => it.path === filePath)) { hideGallery(); return false; }
+                gallery = { key, kind, items };
+                rail.dataset.kind = kind;
+                rail.innerHTML = `<div class="gal-head"><span>${GALLERY_LABELS[kind]}</span><span class="gal-count" id="galCount"></span></div><div class="gal-list">${items.map((it, i) => galleryItemHtml(it, i, kind)).join("")}</div>`;
+                if (kind === "image") rail.querySelectorAll(".gal-thumb.lazy").forEach((img) => intersectionObserver.observe(img));
+            }
+            rail.hidden = false;
+            modal.classList.add("has-gallery");
+            modal.dataset.gallery = kind;
+            const idx = gallery.items.findIndex((it) => it.path === filePath);
+            const btns = rail.querySelectorAll(".gal-item");
+            btns.forEach((b, i) => {
+                const on = i === idx;
+                b.classList.toggle("active", on);
+                b.tabIndex = on ? 0 : -1;
+                if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+            });
+            const count = document.getElementById("galCount");
+            if (count) count.textContent = `${idx + 1} / ${gallery.items.length}`;
+            if (btns[idx]) btns[idx].scrollIntoView({ block: "nearest", inline: "nearest" });
+            return true;
+        }
+        function galleryStep(delta) {
+            if (!gallery) return;
+            const i = gallery.items.findIndex((it) => it.path === currentFilePath) + delta;
+            if (i < 0 || i >= gallery.items.length) return;
+            const it = gallery.items[i];
+            openFile(it.path, gallery.kind, it.name);
+        }
+        // The player's previous / next buttons step through the rail's files (they are otherwise only for playlists).
+        function wireGalleryStep() {
+            if (!gallery) return;
+            const i = gallery.items.findIndex((it) => it.path === currentFilePath);
+            const prev = document.getElementById("playlistPrev"), next = document.getElementById("playlistNext");
+            if (prev) { prev.disabled = i <= 0; prev.addEventListener("click", () => galleryStep(-1)); }
+            if (next) { next.disabled = i >= gallery.items.length - 1; next.addEventListener("click", () => galleryStep(1)); }
+        }
+
         async function openFile(filePath, fileType, fileName) {
             endPlaySession();
             cancelHealthTest();
-            rememberModalFocus("modal");
+            // Stepping through the gallery re-opens the preview while it is already open: keep the focus where it is.
+            const wasOpen = document.getElementById("modal").classList.contains("active");
+            if (!wasOpen) rememberModalFocus("modal");
+            const seq = ++openSeq;
             const modalEl = document.getElementById("modal"),
                 titleEl = document.getElementById("modalTitle"),
                 bodyEl = document.getElementById("modalBody"),
@@ -7161,6 +7280,7 @@
             runModalCleanups();
             let fileUrl = `./${encodePathForUrl(filePath)}`;
             try { fileUrl = await urlForPath(filePath); } catch (err) { console.error(err); }
+            if (seq !== openSeq) return; // another file was opened (or the preview closed) while this one was loading
             // The same URL, safe to drop into an HTML attribute string.
             const fileUrlAttr = escapeHtml(fileUrl);
 
@@ -7180,9 +7300,10 @@
             if (isPlaylistFile) playPlaylistBtn.classList.remove("hidden");
             else playPlaylistBtn.classList.add("hidden");
             document.getElementById("modalContent").classList.remove("video-modal", "compact-modal");
+            const galleryOn = syncGallery(filePath, previewKindOverride(fileName) || fileType);
             modalEl.classList.add("active");
             syncBackgroundInert();
-            focusWhenReady("closeBtn", "modal");
+            if (!wasOpen) focusWhenReady("closeBtn", "modal");
             const o = fileUrlAttr;
             try {
                 switch (previewKindOverride(fileName) || fileType) {
@@ -7217,11 +7338,12 @@
                             setupAudioNormalization(singleVideo);
                             setupMediaSession(singleVideo, fileName);
                             maybeWireMediaControls(singleVideo);
+                            if (!useNativePlayer) wireGalleryStep();
                         }
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
                         break;
                     case "audio":
-                        document.getElementById("modalContent").classList.add("compact-modal");
+                        if (!galleryOn) document.getElementById("modalContent").classList.add("compact-modal");
                         bodyEl.innerHTML = `
               <div class="preview-audio-container">
                 <button class="player-info-btn" id="streamInfoBtn" title="Copy stream link" aria-label="Copy stream link">${icons.info}</button>
@@ -7242,6 +7364,7 @@
                             setupAudioNormalization(singleAudio);
                             setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);
+                            if (!useNativePlayer) wireGalleryStep();
                         }
                         wirePlayerIconTap(bodyEl);
                         document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
@@ -7337,9 +7460,11 @@
                 case "ArrowLeft":
                     // If a playlist is actively playing, stop it and drop back
                     // into the (now-static) preview rather than closing outright.
+                    if (gallery && gallery.kind === "image") { galleryStep(-1); break; }
                     modalBackHook && modalBackHook() ? 0 : currentPlaylist.length > 0 ? stopPlaylist() : closeModal();
                     break;
                 case "ArrowRight": {
+                    if (gallery && gallery.kind === "image") { galleryStep(1); break; }
                     if (isPlaylistFile && currentPlaylist.length === 0) {
                         startPlaylistMode();
                     } else {
@@ -7372,6 +7497,8 @@
             modalEl.classList.remove("active");
             syncBackgroundInert();
             runModalCleanups();
+            openSeq++;
+            hideGallery();
 
             endPlaySession();
             cancelHealthTest();
@@ -7601,19 +7728,12 @@
 
         // ======================================================================
         // Added features: library source layer (hosted vs local folder), folder
-        // tree persistence + mobile drawer, landing README, shared progress toast.
+        // tree persistence, shared progress toast.
         // Markdown, archive browsing, folder zip and local-folder mode follow.
         // Everything below is plain browser JS: no libraries, no build step.
         // ======================================================================
-        const LS_TREE_EXPANDED = "treeExpanded",
-            LS_TREE_COLLAPSED = "treeCollapsed",
-            LS_LANDING_ON = "landingReadme",
-            LS_LANDING_FILES = "landingFiles",
-            DEFAULT_LANDING_FILES = "README.md, README.markdown, README";
-        let landingOn = true,
-            landingFiles = DEFAULT_LANDING_FILES,
-            landingDone = false,
-            uiWired = false;
+        const LS_TREE_EXPANDED = "treeExpanded";
+        let uiWired = false;
 
         // Where the files come from. Hosted: relative URLs next to this page.
         // Local: File objects the user picked (nothing is uploaded or stored).
@@ -7694,28 +7814,7 @@
             return u;
         }
 
-        // ---- Settings: landing README -------------------------------------
-        function loadLibrarySettings() {
-            landingOn = store.getItem(LS_LANDING_ON) !== "0";
-            landingFiles = (store.getItem(LS_LANDING_FILES) || "").trim() || DEFAULT_LANDING_FILES;
-            const t = document.getElementById("landingToggle"), f = document.getElementById("landingFilesInput");
-            if (t) t.checked = landingOn;
-            if (f) f.value = landingFiles;
-            document.body.classList.toggle("tree-collapsed", store.getItem(LS_TREE_COLLAPSED) === "1");
-        }
-        function maybeOpenLanding() {
-            if (!landingOn || landingDone || !fileIndex) return;
-            landingDone = true;
-            if (currentPath.length || document.querySelector(".modal-overlay.active")) return;
-            const wanted = landingFiles.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-            const rootFiles = fileIndex.root.filter((n) => n.type === "file");
-            for (const want of wanted) {
-                const hit = rootFiles.find((n) => n.name.toLowerCase() === want);
-                if (hit) { openFile(hit.name, hit.category || "text", hit.name); return; }
-            }
-        }
-
-        // ---- Folder tree: remembered open/closed state + mobile drawer ------
+        // ---- Folder tree: remembered open/closed state ----------------------
         let treeSaveTimer = 0;
         function loadTreeExpanded() {
             if (LOCAL.active) return;
@@ -7739,29 +7838,6 @@
             persistTreeExpanded();
             renderTree();
         }
-        const narrowMQ = window.matchMedia("(max-width: 640px)");
-        function isTreeDrawerOpen() { return document.body.classList.contains("tree-drawer-open"); }
-        function setTreeDrawer(open, returnFocus) {
-            const btn = document.getElementById("treeToggleBtn");
-            document.body.classList.toggle("tree-drawer-open", open);
-            if (btn) btn.setAttribute("aria-expanded", String(open));
-            if (open) {
-                renderTree();
-                const active = document.querySelector("#treeContent .tree-item.active") || document.querySelector("#treeContent .tree-item");
-                if (active) active.focus();
-            } else if (returnFocus && btn) btn.focus();
-        }
-        function toggleTreeSidebar() {
-            if (narrowMQ.matches) { setTreeDrawer(!isTreeDrawerOpen(), true); return; }
-            // Wide screens: the sidebar belongs to the Tree view; the button opens it there, or folds it away.
-            if (currentView !== "tree") { store.setItem(LS_TREE_COLLAPSED, "0"); document.body.classList.remove("tree-collapsed"); setView("tree"); return; }
-            const collapsed = !document.body.classList.contains("tree-collapsed");
-            document.body.classList.toggle("tree-collapsed", collapsed);
-            store.setItem(LS_TREE_COLLAPSED, collapsed ? "1" : "0");
-            const btn = document.getElementById("treeToggleBtn");
-            if (btn) btn.setAttribute("aria-expanded", String(!collapsed));
-        }
-
         // ---- Shared progress toast (folder zip, reading a local folder) -----
         let opAbort = null;
         function opStart(text, onCancel) {
@@ -8808,14 +8884,11 @@
             expandedFolders = new Set([""]);
             fetchCache.clear();
             fetchCacheChars = 0;
-            landingDone = false;
             document.body.dataset.source = "local";
             syncModeUi();
             closeLocalModal();
-            setTreeDrawer(false);
             wireUiOnce();
             navigateTo([]);
-            maybeOpenLanding();
             announce(`Opened local folder ${name}`);
         }
         function closeLocalFolder() {
@@ -8912,11 +8985,7 @@
         // ======================================================================
         function setupNewFeatureListeners() {
             const $ = (id) => document.getElementById(id);
-            $("treeToggleBtn").addEventListener("click", toggleTreeSidebar);
-            $("treeScrim").addEventListener("click", () => setTreeDrawer(false, true));
-            $("treeDrawerClose").addEventListener("click", () => setTreeDrawer(false, true));
             $("treeCollapseAll").addEventListener("click", collapseAllFolders);
-            narrowMQ.addEventListener("change", () => { if (!narrowMQ.matches) setTreeDrawer(false); });
             $("breadcrumb").addEventListener("click", (e) => { if (e.target.closest("#zipFolderBtn")) downloadFolderZip(); });
             $("main").addEventListener("click", (e) => { if (e.target.closest('[data-act="open-local"]')) openLocalFolder(); });
             $("localBtn").addEventListener("click", openLocalFolder);
@@ -8928,13 +8997,23 @@
             $("localModalClose").addEventListener("click", closeLocalModal);
             $("localModal").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeLocalModal(); });
             $("localModal").addEventListener("keydown", (e) => trapModalFocus(e, "localModalContent"));
-            $("landingToggle").addEventListener("change", (e) => { landingOn = e.target.checked; store.setItem(LS_LANDING_ON, landingOn ? "1" : "0"); });
-            $("landingFilesInput").addEventListener("change", (e) => {
-                landingFiles = e.target.value.trim() || DEFAULT_LANDING_FILES;
-                e.target.value = landingFiles;
-                store.setItem(LS_LANDING_FILES, landingFiles);
+            const rail = $("galleryRail");
+            rail.addEventListener("click", (e) => {
+                const b = e.target.closest(".gal-item");
+                if (!b || !gallery) return;
+                const it = gallery.items[Number(b.dataset.i)];
+                if (it && it.path !== currentFilePath) openFile(it.path, gallery.kind, it.name);
             });
-            $("treeToggleBtn").setAttribute("aria-expanded", String(!document.body.classList.contains("tree-collapsed") && currentView === "tree"));
+            // Up / Down / Home / End move between the rail's files (the preview's own Up / Down scrolling stays for everywhere else).
+            rail.addEventListener("keydown", (e) => {
+                if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) return;
+                const btns = Array.from(rail.querySelectorAll(".gal-item")), cur = btns.indexOf(document.activeElement);
+                if (cur < 0) return;
+                const to = e.key === "ArrowUp" ? cur - 1 : e.key === "ArrowDown" ? cur + 1 : e.key === "Home" ? 0 : btns.length - 1;
+                e.preventDefault();
+                e.stopPropagation();
+                btns[Math.max(0, Math.min(btns.length - 1, to))].focus();
+            });
             syncModeUi();
         }
         init();

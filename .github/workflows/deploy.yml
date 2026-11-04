@@ -3,7 +3,7 @@ name: Deploy File Viewer
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:
+  push: # workflow_dispatch:
 
 permissions:
   contents: read

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 #ubuntu-latest
     # Normal runs take about 4 minutes. 10 minutes leaves headroom but makes
     # a stalled run fail fast so it can be re-run.
     timeout-minutes: 10

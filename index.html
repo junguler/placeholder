@@ -5,13 +5,13 @@
     <script>(function(){try{var t=localStorage.getItem("theme");if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
     <meta name="referrer" content="no-referrer" />
-    <meta name="theme-color" content="#ffd100" />
+    <meta name="theme-color" content="#1a1a1a" />
     <title>File Viewer</title>
     <meta name="description" content="Browse and preview files from this repository directly in your browser — code, images, audio, video, and playlists." />
     <meta property="og:title" content="File Viewer" />
     <meta property="og:description" content="Browse and preview files from this repository directly in your browser." />
     <meta property="og:type" content="website" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%231a1a1a' width='24' height='24'/%3E%3Crect fill='%23ffd100' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%231a1a1a' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%231a1a1a' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%23ffd100' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%23ffd100' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%231a1a1a' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23121212' width='24' height='24'/%3E%3Crect fill='%239b5de5' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%23121212' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%23121212' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%239b5de5' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%239b5de5' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%23121212' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
     
     <style>
         :root {
@@ -60,10 +60,10 @@
             --shadow-color-strong: rgba(0, 0, 0, 0.6);
             --accent-glow: rgba(155, 93, 229, 0.3);
             --transition: 0.15s ease;
-            --font-size-base: 14px;
-            --bw: 4px;
-            --font-ui: ui-monospace, Consolas, "Courier New", monospace;
-            --font-mono: ui-monospace, Consolas, "Courier New", monospace;
+            --font-size-base: 16px;
+            --bw: 1px;
+            --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
             --label-size: 0.75rem;
             --label-track: 0.06em;
             --data-size: 0.78rem;
@@ -1084,7 +1084,7 @@
         .gal-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem; }
         .gal-item { position: relative; flex: none; display: flex; align-items: center; gap: 0.5rem; width: 100%; box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; background: var(--bg-tertiary); border: var(--bw) solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); font: inherit; font-size: 0.8rem; line-height: 1.3; text-align: left; cursor: pointer; }
         .gal-item:hover { border-color: var(--accent); color: var(--text-primary); }
-        .gal-item.active { border-color: var(--accent); box-shadow: none; background: var(--bg-hover); color: var(--text-primary); }
+        .gal-item.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--bg-hover); color: var(--text-primary); }
         .gal-item:focus-visible { outline-offset: -2px; }
         .gal-ico { display: flex; flex-shrink: 0; }
         .gal-ico svg { width: 16px; height: 16px; }
@@ -1176,51 +1176,52 @@
         .op-toast button { flex: none; padding: 0.2rem 0.6rem; font-size: 0.75rem; }
 
         /* ======================================================================
-           CONCRETE SIGNAL — neo-brutalist look (from look_prompt.txt).
-           Flat, loud, high-contrast: signal-yellow banner on dark concrete,
-           4px borders, hard zero-blur offset shadows, black text on role-colored
-           buttons, monospace everywhere, border-radius 0 on everything.
-           The look is fixed: every app token is forced here (!important) so the
-           light / high-contrast / custom-color themes can no longer change it,
-           and the Theme & Color menu is hidden.
+           CONCRETE SIGNAL — two extra themes (pick in Settings > Theme):
+           "Concrete" (fixed yellow/gray) and "Concrete Custom" (same look, colors
+           follow the custom color + intensity engine).
+           Neo-brutalist: signal-yellow banner on dark concrete, 4px borders,
+           hard zero-blur shadows, black text on role-colored buttons, mono type.
+           Everything is scoped to the two concrete themes; other themes
+           are untouched.
            ====================================================================== */
-        html {
-            --concrete: #2b2b2b; --panel: #1a1a1a; --line: #e6e6e6; --ink: #000000;
-            --text: #ffffff; --muted: #bdbdbd;
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) {
+            --cc-page: #2b2b2b; --cc-panel: #1a1a1a; --cc-line: #e6e6e6; --cc-accent: #ffd100; --cc-text: #ffffff; --cc-muted: #bdbdbd;
+            --concrete: var(--cc-page); --panel: var(--cc-panel); --line: var(--cc-line); --ink: #000000;
+            --text: var(--cc-text); --muted: var(--cc-muted);
             --orange: #ff6a1a; --pink: #ff4fa3; --violet: #a77bff; --green: #3ddc84;
-            --yellow: #ffd100; --red: #ff3b30; --blue: #3d8bff;
+            --yellow: var(--cc-accent); --red: #ff3b30; --blue: #3d8bff;
             --bw: 4px;
             --mono: ui-monospace, Consolas, "Courier New", monospace;
         }
-        html, html[data-theme], :root:not([data-theme]) {
-            --bg-primary: #2b2b2b !important;
-            --bg-secondary: #1a1a1a !important;
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) {
+            --bg-primary: var(--cc-page) !important;
+            --bg-secondary: var(--cc-panel) !important;
             --bg-tertiary: #000000 !important;
-            --bg-hover: #2b2b2b !important;
-            --border-color: #e6e6e6 !important;
-            --border-strong: #e6e6e6 !important;
-            --text-primary: #ffffff !important;
-            --text-secondary: #bdbdbd !important;
-            --text-muted: #bdbdbd !important;
-            --accent: #ffd100 !important;
-            --accent-hover: #ffd100 !important;
-            --accent-text: #ffd100 !important;
-            --accent-solid: #ffd100 !important;
-            --accent-solid-hover: #ffd100 !important;
+            --bg-hover: var(--cc-page) !important;
+            --border-color: var(--cc-line) !important;
+            --border-strong: var(--cc-line) !important;
+            --text-primary: var(--cc-text) !important;
+            --text-secondary: var(--cc-muted) !important;
+            --text-muted: var(--cc-muted) !important;
+            --accent: var(--cc-accent) !important;
+            --accent-hover: var(--cc-accent) !important;
+            --accent-text: var(--cc-accent) !important;
+            --accent-solid: var(--cc-accent) !important;
+            --accent-solid-hover: var(--cc-accent) !important;
             --on-accent: #000000 !important;
             --accent-glow: transparent !important;
             --control-surface: #000000 !important;
-            --control-surface-hover: #2b2b2b !important;
+            --control-surface-hover: var(--cc-page) !important;
             --on-control: #ffffff !important;
-            --skeleton-base: #2b2b2b !important;
-            --skeleton-shine: #2b2b2b !important;
+            --skeleton-base: var(--cc-page) !important;
+            --skeleton-shine: var(--cc-page) !important;
             --success: #3ddc84 !important;
-            --warning: #ffd100 !important;
+            --warning: var(--cc-accent) !important;
             --danger: #ff3b30 !important;
             --danger-solid: #ff3b30 !important;
             --on-danger: #000000 !important;
             --icon-keep: 100% !important;
-            --header-bg: #ffd100 !important;
+            --header-bg: var(--cc-accent) !important;
             --radius: 0px !important; --radius-sm: 0px !important; --radius-lg: 0px !important; --radius-full: 0px !important;
             --shadow: none !important; --shadow-sm: none !important; --shadow-lg: none !important;
             --zebra-up: 0% !important; --zebra-down: 0% !important;
@@ -1228,49 +1229,91 @@
             --font-mono: ui-monospace, Consolas, "Courier New", monospace !important;
             color-scheme: dark !important;
         }
-        :root { --ctl: 2.5rem; }
-        @media (pointer: coarse) { :root { --ctl: 2.7rem; } }
-        *, *::before, *::after { border-radius: 0 !important; text-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-        button, input, select, textarea { font-family: inherit; }
-        #themeColorDropdown { display: none !important; }
-        .breadcrumb.fade-start, .breadcrumb.fade-end, .breadcrumb.fade-start.fade-end { -webkit-mask-image: none; mask-image: none; }
-
-        /* ---------- Banner (title) ---------- */
-        .header { background: var(--yellow); color: var(--ink); border-bottom: var(--bw) solid var(--line); padding: 8px 14px; }
-        .header-content { gap: 12px; }
-        .header-tools { display: flex; align-items: center; gap: 10px; }
-        .header-actions { gap: 10px; }
-        .logo { color: var(--ink); font-size: 1.9rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.15; }
-        .logo svg { width: 28px; height: 28px; }
-        .header .breadcrumb-item { color: var(--ink); font-weight: 800; }
-        .header .breadcrumb-item:hover { background: var(--ink); color: var(--yellow); }
-        .header .breadcrumb-item.current, .header .breadcrumb-item.current:hover { background: none; color: var(--ink); font-weight: 900; }
-        .header .breadcrumb-separator { color: var(--ink); font-weight: 900; }
-        .header .breadcrumb-pin-btn { color: var(--ink); }
-        .header .breadcrumb-pin-btn:hover { background: var(--ink); color: var(--yellow); }
-        .header .breadcrumb-pin-btn.pinned { background: var(--ink); color: var(--yellow); }
-        .mode-chip { background: var(--ink); color: var(--yellow); border-color: var(--ink); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
-        .mode-chip-close:hover { color: var(--text); }
-        .header :focus-visible { outline-color: var(--ink); }
-        @media (max-width: 640px) { .logo { font-size: 1.35rem; } .logo svg { width: 22px; height: 22px; } }
-
-        /* ---------- Inputs, selects ---------- */
-        .search-input, .sort-select, .goto-input, .songs-search, .ar-filter, select, textarea, input[type="text"], input[type="search"], input[type="number"] {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) { --ctl: 2.5rem; }
+@media (pointer: coarse) {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) { --ctl: 2.7rem; }
+}
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) *,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) *::before,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) *::after { border-radius: 0 !important; text-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) button,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) input,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) select,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) textarea { font-family: inherit; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .breadcrumb.fade-start,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .breadcrumb.fade-end,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .breadcrumb.fade-start.fade-end { -webkit-mask-image: none; mask-image: none; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header { background: var(--yellow); color: var(--ink); border-bottom: var(--bw) solid var(--line); padding: 8px 14px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header-content { gap: 12px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header-tools { display: flex; align-items: center; gap: 10px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header-actions { gap: 10px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .logo { color: var(--ink); font-size: 1.9rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.15; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .logo svg { width: 28px; height: 28px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-item { color: var(--ink); font-weight: 800; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-item:hover { background: var(--ink); color: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-item.current,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-item.current:hover { background: none; color: var(--ink); font-weight: 900; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-separator { color: var(--ink); font-weight: 900; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-pin-btn { color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-pin-btn:hover { background: var(--ink); color: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .breadcrumb-pin-btn.pinned { background: var(--ink); color: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .mode-chip { background: var(--ink); color: var(--yellow); border-color: var(--ink); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .mode-chip-close:hover { color: var(--text); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header :focus-visible { outline-color: var(--ink); }
+@media (max-width: 640px) {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .logo { font-size: 1.35rem; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .logo svg { width: 22px; height: 22px; }
+}
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .search-input,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .sort-select,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-input,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .songs-search,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .ar-filter,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) select,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) textarea,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) input[type="text"],
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) input[type="search"],
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) input[type="number"] {
             background: var(--ink); color: var(--text); border: var(--bw) solid var(--line); font-family: inherit;
         }
-        .search-input { padding: 8px 30px; margin: 0; }
-        .sort-select, .songs-search, .ar-filter { padding: 8px 10px; }
-        .search-input::placeholder, .songs-search::placeholder, .ar-filter::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
-        .search-input:focus, .sort-select:focus, .goto-input:focus, .songs-search:focus, .ar-filter:focus, select:focus, textarea:focus,
-        .search-input:focus-visible, .goto-input:focus-visible, .songs-search:focus-visible, .sort-select:focus-visible {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .search-input { padding: 8px 30px; margin: 0; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .sort-select,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .songs-search,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .ar-filter { padding: 8px 10px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .search-input::placeholder,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .songs-search::placeholder,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .ar-filter::placeholder,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) textarea::placeholder { color: var(--muted); opacity: 1; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .search-input:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .sort-select:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-input:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .songs-search:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .ar-filter:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) select:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) textarea:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .search-input:focus-visible,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-input:focus-visible,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .songs-search:focus-visible,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .sort-select:focus-visible {
             border-color: var(--yellow); outline: 3px solid var(--yellow); outline-offset: 2px;
         }
-        .header .search-input:focus, .header .search-input:focus-visible { outline-color: var(--ink); }
-        .search-clear { color: var(--text); }
-
-        /* ---------- Buttons: black text on role color, hard white shadow ---------- */
-        .settings-btn, .view-btn, .modal-btn, .playlist-btn, .goto-step-btn, .settings-menu-close, .settings-control button,
-        .theme-reset-btn, .md-toggle, .load-more-btn, .download-btn, .tree-hdr-btn, .card-star-btn, .op-toast button {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .search-input:focus,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .header .search-input:focus-visible { outline-color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .search-clear { color: var(--text); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-step-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-close,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-control button,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .theme-reset-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .md-toggle,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .load-more-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .download-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-hdr-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .card-star-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .op-toast button {
             --c: var(--line);
             background: var(--c) !important; color: var(--ink) !important;
             border: var(--bw) solid var(--ink) !important;
@@ -1278,160 +1321,236 @@
             font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; -webkit-text-stroke: 0.6px currentColor;
             text-decoration: none; transition: none; cursor: pointer; opacity: 1;
         }
-        .settings-btn:hover:not(:disabled), .view-btn:hover:not(:disabled), .modal-btn:hover:not(:disabled), .playlist-btn:hover:not(:disabled),
-        .goto-step-btn:hover:not(:disabled), .settings-menu-close:hover:not(:disabled), .settings-control button:hover:not(:disabled),
-        .theme-reset-btn:hover:not(:disabled), .md-toggle:hover:not(:disabled), .load-more-btn:hover:not(:disabled),
-        .download-btn:hover:not(:disabled), .tree-hdr-btn:hover:not(:disabled), .card-star-btn:hover:not(:disabled), .op-toast button:hover:not(:disabled) {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-step-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-close:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-control button:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .theme-reset-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .md-toggle:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .load-more-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .download-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-hdr-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .card-star-btn:hover:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .op-toast button:hover:not(:disabled) {
             filter: brightness(1.08); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--text) !important; opacity: 1;
         }
-        .settings-btn:active:not(:disabled), .view-btn:active:not(:disabled), .modal-btn:active:not(:disabled), .playlist-btn:active:not(:disabled),
-        .goto-step-btn:active:not(:disabled), .settings-menu-close:active:not(:disabled), .settings-control button:active:not(:disabled),
-        .theme-reset-btn:active:not(:disabled), .md-toggle:active:not(:disabled), .load-more-btn:active:not(:disabled),
-        .download-btn:active:not(:disabled), .tree-hdr-btn:active:not(:disabled), .card-star-btn:active:not(:disabled), .op-toast button:active:not(:disabled) {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-step-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-close:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-control button:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .theme-reset-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .md-toggle:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .load-more-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .download-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-hdr-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .card-star-btn:active:not(:disabled),
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .op-toast button:active:not(:disabled) {
             box-shadow: none !important; transform: translate(3px, 3px);
         }
-        .settings-btn:disabled, .view-btn:disabled, .modal-btn:disabled, .playlist-btn:disabled, .goto-step-btn:disabled, .settings-menu-close:disabled,
-        .settings-control button:disabled, .theme-reset-btn:disabled, .md-toggle:disabled, .load-more-btn:disabled, .tree-hdr-btn:disabled, .card-star-btn:disabled {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-step-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-close:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-control button:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .theme-reset-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .md-toggle:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .load-more-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-hdr-btn:disabled,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .card-star-btn:disabled {
             opacity: 0.65 !important; filter: grayscale(1); box-shadow: none !important; transform: none; cursor: not-allowed;
         }
-        .settings-btn svg, .view-btn svg, .modal-btn svg, .playlist-btn svg, .goto-step-btn svg, .settings-menu-close svg, .tree-hdr-btn svg, .card-star-btn svg { color: var(--ink); }
-
-        /* sizes */
-        .settings-btn, .view-btn { min-width: 40px; min-height: 40px; padding: 4px; }
-        .view-toggle { background: none; padding: 0; gap: 8px; }
-        .settings-menu-close { min-width: 34px; min-height: 34px; }
-        .modal-btn { min-width: 36px; min-height: 36px; }
-        .modal-btn.text-btn { padding: 0 12px; }
-        .modal-btn.play-playlist-btn { min-height: 40px; padding: 0 14px; font-size: 0.9rem; }
-        .settings-control button { min-width: 38px; min-height: 32px; }
-        .theme-reset-btn { min-height: 34px; }
-        .md-toggle { min-height: 32px; padding: 4px 12px; }
-        .op-toast button { min-height: 32px; }
-        .tree-hdr-btn { width: 30px; height: 30px; border-width: 3px !important; }
-        .card-star-btn { border-width: 3px !important; width: 28px; height: 28px; }
-        .file-list.list-columns .card-star-btn { width: 28px; height: 28px; }
-        .load-more-btn, .download-btn, .local-pick, .empty-action {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-btn svg,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-btn svg,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn svg,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn svg,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-step-btn svg,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-close svg,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-hdr-btn svg,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .card-star-btn svg { color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-btn { min-width: 40px; min-height: 40px; padding: 4px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-toggle { background: none; padding: 0; gap: 8px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-close { min-width: 34px; min-height: 34px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn { min-width: 36px; min-height: 36px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn.text-btn { padding: 0 12px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn.play-playlist-btn { min-height: 40px; padding: 0 14px; font-size: 0.9rem; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-control button { min-width: 38px; min-height: 32px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .theme-reset-btn { min-height: 34px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .md-toggle { min-height: 32px; padding: 4px 12px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .op-toast button { min-height: 32px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-hdr-btn { width: 30px; height: 30px; border-width: 3px !important; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .card-star-btn { border-width: 3px !important; width: 28px; height: 28px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-list.list-columns .card-star-btn { width: 28px; height: 28px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .load-more-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .download-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .local-pick,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .empty-action {
             min-width: 130px; min-height: 48px; padding: 8px 16px; font-size: 0.95rem; text-align: center; justify-content: center; align-items: center;
         }
-        .load-more-btn { display: block; }
-        .playlist-btn.player-play-btn { width: 3rem; height: 3rem; padding: 0; }
-        @media (max-width: 640px) { .player-bar .playlist-btn.player-play-btn { width: 2.7rem; height: 2.7rem; } }
-
-        /* role colors: orange primary/file, pink URL/online, violet paste/text, blue pause/secondary,
-           red cancel/danger, green download/success, yellow reports/secondary download, gray neutral/view */
-        #localBtn { --c: var(--orange); }
-        #statsBtn { --c: var(--yellow); }
-        .view-btn.active { --c: var(--orange); }
-        .modal-btn[id$="Close"], #closeBtn, .settings-menu-close { --c: var(--red); }
-        #downloadBtn, #recZipBtn, #songsSaveBtn, #recSaveAllBtn, .download-btn, .modal-btn.copied { --c: var(--green); }
-        #copyLinkBtn { --c: var(--pink); }
-        #favoriteBtn { --c: var(--yellow); }
-        #favoriteBtn.favorited { --c: var(--orange); }
-        #playPlaylistBtn { --c: var(--orange); }
-        #recClearBtn, #songsClearBtn, .rec-panel .rec-stop, #opToastCancel, #localCloseBtn, .modal-btn.text-btn.armed { --c: var(--red); }
-        .playlist-btn.active { --c: var(--orange); }
-        #playlistTest { --c: var(--blue); }
-        #playlistTest.active { --c: var(--orange); }
-        #playlistList { --c: var(--violet); }
-        #playlistSongs { --c: var(--yellow); }
-        #playlistRec { --c: var(--orange); }
-        #playlistRec.rec-on { --c: var(--red); }
-        #playPauseBtn { --c: var(--orange); }
-        #volDownBtn, #volUpBtn { --c: var(--blue); }
-        .playlist-btn[data-rec="capture"] { --c: var(--blue); }
-        .playlist-btn[data-rec="songs"] { --c: var(--violet); }
-        .playlist-btn[data-rec="whole"] { --c: var(--orange); }
-        #recOpenBtn { --c: var(--yellow); }
-        .shuffle-btn[aria-pressed="true"] { --c: var(--orange); }
-        .settings-control button, .goto-step-btn { --c: var(--blue); }
-        .theme-reset-btn { --c: var(--blue); }
-        #localOpenBtn, .local-pick, .empty-action { --c: var(--orange); }
-        .md-toggle[aria-pressed="true"] { --c: var(--orange); }
-        .load-more-btn { --c: var(--orange); }
-        .card-star-btn.starred { --c: var(--yellow); }
-
-        /* file inputs */
-        input[type="file"]::file-selector-button { background: var(--orange); color: var(--ink); border: 3px solid var(--ink); font: inherit; font-weight: 900; text-transform: uppercase; padding: 6px 12px; margin-right: 10px; cursor: pointer; }
-
-        /* ---------- Switches ---------- */
-        .switch { width: 50px; height: 28px; }
-        .switch-slider { background: var(--ink); border: var(--bw) solid var(--line); transition: none; }
-        .switch-slider::before { width: 12px; height: 12px; left: 2px; top: 2px; background: var(--muted); transition: none; }
-        .switch input:checked + .switch-slider { background: var(--green); border-color: var(--line); }
-        .switch input:checked + .switch-slider::before { background: var(--ink); transform: translateX(26px); }
-        .switch input:focus-visible + .switch-slider { outline: 3px solid var(--yellow); outline-offset: 2px; }
-
-        /* ---------- Settings menu, <details> ---------- */
-        .settings-menu { margin-top: 12px; }
-        .settings-menu-card { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 10px 10px 0 var(--ink); }
-        .settings-menu-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); }
-        .settings-menu-title { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
-        .settings-section-title { color: var(--text); font-weight: 900; }
-        details.settings-collapsible { background: var(--ink); border: var(--bw) solid var(--line); margin: 10px; padding: 0; }
-        .settings-collapsible > summary { padding: 10px; color: var(--text); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0; }
-        .settings-collapsible[open] > summary { border-bottom: var(--bw) solid var(--line); }
-        .settings-collapsible > :not(summary) { background: var(--panel); padding-left: 10px; padding-right: 10px; }
-        .settings-collapsible > .settings-row { padding-top: 8px; padding-bottom: 8px; }
-        .settings-label { color: var(--muted); }
-
-        /* ---------- Modals ---------- */
-        .modal-overlay { background: var(--concrete); }
-        .modal { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 10px 10px 0 var(--ink); }
-        .modal-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); padding: 8px 12px; }
-        .modal-title { font-size: 1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
-        .modal-body { background: var(--ink); }
-        @media (min-width: 641px) {
-            .modal-overlay, .modal-overlay .modal, .modal-overlay.active .modal { transition: none; transform: none; }
-        }
-        @media (max-width: 640px) { .modal { box-shadow: none; } }
-        .op-toast { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 6px 6px 0 var(--ink); }
-        .empty-state h2, .preview-unavailable h3, .stats-breakdown-title { text-transform: uppercase; font-weight: 900; letter-spacing: 0.04em; }
-
-        /* ---------- Tree panel ---------- */
-        .tree-panel { background: var(--panel); border-right: var(--bw) solid var(--line); }
-        .tree-header { background: var(--ink); color: var(--text); font-weight: 900; border-bottom: var(--bw) solid var(--line); }
-        .tree-pinned-header { color: var(--text); font-weight: 900; }
-        .tree-item, .tree-pinned-item { border-left: var(--bw) solid transparent; }
-        .tree-item.active, .tree-pinned-item.active, .tree-item.active:hover, .tree-pinned-item.active:hover { background: var(--yellow); color: var(--ink); font-weight: 800; border-left-color: var(--ink); }
-        .tree-pinned-item.active .tree-pinned-unpin { color: var(--ink); }
-
-        /* ---------- Files ---------- */
-        .file-card { background: var(--panel); border: var(--bw) solid var(--line); }
-        .file-card:nth-child(odd) { --card-bg: var(--panel); background: var(--panel); }
-        .file-card:nth-child(even) { --card-bg: var(--ink); background: var(--ink); }
-        html.no-zebra .file-card:nth-child(odd), html.no-zebra .file-card:nth-child(even) { --card-bg: var(--panel); background: var(--panel); }
-        .file-card:hover, html.no-zebra .file-card:hover { background: var(--concrete); border-color: var(--yellow); box-shadow: 4px 4px 0 var(--ink); z-index: 1; }
-        .file-list { gap: 0; }
-        .file-list > .file-card { margin-top: calc(var(--bw) * -1); }
-        .file-list > .file-card:first-child { margin-top: 0; }
-        .file-list-header { background: var(--ink); color: var(--text); font-weight: 900; border-bottom: var(--bw) solid var(--line); margin-bottom: 0; }
-        .file-list-header .col.active, .file-list-header .col:hover { color: var(--yellow); }
-        .file-name { font-weight: 700; }
-        .file-icon { border: 3px solid var(--ink); background: var(--c, var(--line)); color: var(--ink); }
-        .file-icon svg { color: var(--ink); }
-        .file-icon.folder { --c: var(--yellow); } .file-icon.image { --c: var(--pink); } .file-icon.video { --c: var(--red); }
-        .file-icon.audio { --c: var(--green); } .file-icon.code { --c: var(--blue); } .file-icon.document { --c: var(--orange); }
-        .file-icon.text { --c: var(--line); } .file-icon.data { --c: var(--violet); } .file-icon.archive { --c: var(--orange); }
-        .file-icon.markup { --c: var(--blue); } .file-icon.style { --c: var(--pink); } .file-icon.font { --c: var(--violet); }
-        .file-icon.playlist { --c: var(--green); } .file-icon.other { --c: var(--line); }
-        .file-icon.folder, .file-icon.image, .file-icon.video, .file-icon.audio, .file-icon.code, .file-icon.document, .file-icon.text,
-        .file-icon.data, .file-icon.archive, .file-icon.markup, .file-icon.style, .file-icon.font, .file-icon.playlist, .file-icon.other { background: var(--c); color: var(--ink); }
-        mark.search-highlight { background: var(--yellow); color: var(--ink); font-weight: 900; }
-        kbd { border-width: 3px; background: var(--ink); color: var(--text); }
-        .skeleton-block { background: var(--skeleton-base) !important; animation: none !important; }
-        .spinner { border: var(--bw) solid var(--line); border-top-color: var(--yellow); }
-        .stats-row-bar-track { height: 16px; border-width: 3px; background: var(--ink); }
-        .stats-row-bar-fill { background: var(--stat-fill, var(--yellow)); }
-
-        /* ---------- Player ---------- */
-        .audio-icon { background: var(--ink); }
-        .audio-icon .stream-tag, .audio-icon .cache-tag { border-width: 3px; background: var(--concrete); color: var(--text); }
-        .player-bar { background: var(--ink); }
-        .player-seek { height: 20px; background: var(--ink); }
-        .player-seek::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -2px; background: var(--yellow); border: 3px solid var(--ink); }
-        .player-seek::-moz-range-thumb { width: 10px; height: 10px; background: var(--yellow); border: 3px solid var(--ink); }
-        .rec-dot { background: var(--red); }
-    </style>
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .load-more-btn { display: block; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn.player-play-btn { width: 3rem; height: 3rem; padding: 0; }
+@media (max-width: 640px) {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .player-bar .playlist-btn.player-play-btn { width: 2.7rem; height: 2.7rem; }
+}
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #localBtn { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #statsBtn { --c: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .view-btn.active { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn[id$="Close"],
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #closeBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-close { --c: var(--red); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #downloadBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #recZipBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #songsSaveBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #recSaveAllBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .download-btn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn.copied { --c: var(--green); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #copyLinkBtn { --c: var(--pink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #favoriteBtn { --c: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #favoriteBtn.favorited { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playPlaylistBtn { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #recClearBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #songsClearBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .rec-panel .rec-stop,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #opToastCancel,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #localCloseBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-btn.text-btn.armed { --c: var(--red); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn.active { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playlistTest { --c: var(--blue); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playlistTest.active { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playlistList { --c: var(--violet); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playlistSongs { --c: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playlistRec { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playlistRec.rec-on { --c: var(--red); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #playPauseBtn { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #volDownBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #volUpBtn { --c: var(--blue); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn[data-rec="capture"] { --c: var(--blue); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn[data-rec="songs"] { --c: var(--violet); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .playlist-btn[data-rec="whole"] { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #recOpenBtn { --c: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .shuffle-btn[aria-pressed="true"] { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-control button,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .goto-step-btn { --c: var(--blue); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .theme-reset-btn { --c: var(--blue); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) #localOpenBtn,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .local-pick,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .empty-action { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .md-toggle[aria-pressed="true"] { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .load-more-btn { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .card-star-btn.starred { --c: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) input[type="file"]::file-selector-button { background: var(--orange); color: var(--ink); border: 3px solid var(--ink); font: inherit; font-weight: 900; text-transform: uppercase; padding: 6px 12px; margin-right: 10px; cursor: pointer; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .switch { width: 50px; height: 28px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .switch-slider { background: var(--ink); border: var(--bw) solid var(--line); transition: none; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .switch-slider::before { width: 12px; height: 12px; left: 2px; top: 2px; background: var(--muted); transition: none; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .switch input:checked + .switch-slider { background: var(--green); border-color: var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .switch input:checked + .switch-slider::before { background: var(--ink); transform: translateX(26px); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .switch input:focus-visible + .switch-slider { outline: 3px solid var(--yellow); outline-offset: 2px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu { margin-top: 12px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-card { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 10px 10px 0 var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-menu-title { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-section-title { color: var(--text); font-weight: 900; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) details.settings-collapsible { background: var(--ink); border: var(--bw) solid var(--line); margin: 10px; padding: 0; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-collapsible > summary { padding: 10px; color: var(--text); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-collapsible[open] > summary { border-bottom: var(--bw) solid var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-collapsible > :not(summary) { background: var(--panel); padding-left: 10px; padding-right: 10px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-collapsible > .settings-row { padding-top: 8px; padding-bottom: 8px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .settings-label { color: var(--muted); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-overlay { background: var(--concrete); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 10px 10px 0 var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); padding: 8px 12px; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-title { font-size: 1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-body { background: var(--ink); }
+@media (min-width: 641px) {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-overlay,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-overlay .modal,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal-overlay.active .modal { transition: none; transform: none; }
+}
+@media (max-width: 640px) {
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .modal { box-shadow: none; }
+}
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .op-toast { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 6px 6px 0 var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .empty-state h2,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .preview-unavailable h3,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .stats-breakdown-title { text-transform: uppercase; font-weight: 900; letter-spacing: 0.04em; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-panel { background: var(--panel); border-right: var(--bw) solid var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-header { background: var(--ink); color: var(--text); font-weight: 900; border-bottom: var(--bw) solid var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-pinned-header { color: var(--text); font-weight: 900; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-item,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-pinned-item { border-left: var(--bw) solid transparent; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-item.active,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-pinned-item.active,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-item.active:hover,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-pinned-item.active:hover { background: var(--yellow); color: var(--ink); font-weight: 800; border-left-color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .tree-pinned-item.active .tree-pinned-unpin { color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-card { background: var(--panel); border: var(--bw) solid var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-card:nth-child(odd) { --card-bg: var(--panel); background: var(--panel); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-card:nth-child(even) { --card-bg: var(--ink); background: var(--ink); }
+html.no-zebra:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-card:nth-child(odd),
+html.no-zebra:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-card:nth-child(even) { --card-bg: var(--panel); background: var(--panel); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-card:hover,
+html.no-zebra:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-card:hover { background: var(--concrete); border-color: var(--yellow); box-shadow: 4px 4px 0 var(--ink); z-index: 1; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-list { gap: 0; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-list > .file-card { margin-top: calc(var(--bw) * -1); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-list > .file-card:first-child { margin-top: 0; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .gal-item.active { box-shadow: none; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-list-header { background: var(--ink); color: var(--text); font-weight: 900; border-bottom: var(--bw) solid var(--line); margin-bottom: 0; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-list-header .col.active,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-list-header .col:hover { color: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-name { font-weight: 700; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon { border: 3px solid var(--ink); background: var(--c, var(--line)); color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon svg { color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.folder { --c: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.image { --c: var(--pink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.video { --c: var(--red); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.audio { --c: var(--green); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.code { --c: var(--blue); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.document { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.text { --c: var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.data { --c: var(--violet); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.archive { --c: var(--orange); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.markup { --c: var(--blue); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.style { --c: var(--pink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.font { --c: var(--violet); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.playlist { --c: var(--green); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.other { --c: var(--line); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.folder,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.image,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.video,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.audio,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.code,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.document,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.text,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.data,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.archive,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.markup,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.style,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.font,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.playlist,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .file-icon.other { background: var(--c); color: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) mark.search-highlight { background: var(--yellow); color: var(--ink); font-weight: 900; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) kbd { border-width: 3px; background: var(--ink); color: var(--text); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .skeleton-block { background: var(--skeleton-base) !important; animation: none !important; }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .spinner { border: var(--bw) solid var(--line); border-top-color: var(--yellow); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .stats-row-bar-track { height: 16px; border-width: 3px; background: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .stats-row-bar-fill { background: var(--stat-fill, var(--yellow)); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .audio-icon { background: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .audio-icon .stream-tag,
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .audio-icon .cache-tag { border-width: 3px; background: var(--concrete); color: var(--text); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .player-bar { background: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .player-seek { height: 20px; background: var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .player-seek::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -2px; background: var(--yellow); border: 3px solid var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .player-seek::-moz-range-thumb { width: 10px; height: 10px; background: var(--yellow); border: 3px solid var(--ink); }
+html:is([data-theme="concrete"], [data-theme="concrete-custom"]) .rec-dot { background: var(--red); }
+</style>
 </head>
 <body>
     <svg style="display:none" aria-hidden="true">
@@ -1476,7 +1595,7 @@
                                 <div class="settings-section">
                                     <div class="settings-section-title">Font Size</div>
                                     <div class="settings-row">
-                                        <span class="settings-label">Interface text <span id="fontSizeLabel">14px</span></span>
+                                        <span class="settings-label">Interface text <span id="fontSizeLabel">16px</span></span>
                                         <div class="settings-control">
                                             <button id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
                                             <button id="fontIncrease" title="Increase font size" aria-label="Increase font size">A+</button>
@@ -1614,6 +1733,8 @@
                                             <button class="theme-btn" data-theme="auto" title="System theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28.0-.5.22-.5.5.0.12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5.0 0112 22zm0-18c-4.41.0-8 3.59-8 8s3.59 8 8 8c.28.0.5-.22.5-.5a.54.54.0 00-.14-.35c-.41-.46-.63-1.05-.63-1.65a2.5 2.5.0 012.5-2.5H16c2.21.0 4-1.79 4-4 0-3.86-3.59-7-8-7z"/><circle cx="6.5" cy="11.5" r="1.5"/><circle cx="9.5" cy="7.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/><circle cx="17.5" cy="11.5" r="1.5"/></svg><span class="theme-btn-label">Auto</span></button>
                                             <button class="theme-btn" data-theme="hc-dark" title="High contrast dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 2v16a8 8 0 010-16z"/></svg><span class="theme-btn-label">HC Dark</span></button>
                                             <button class="theme-btn" data-theme="hc-light" title="High contrast light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 18V4a8 8 0 010 16z"/></svg><span class="theme-btn-label">HC Light</span></button>
+                                            <button class="theme-btn" data-theme="concrete" title="Concrete Signal theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 3h18v18H3V3zm4 4v10h10V7H7z"/></svg><span class="theme-btn-label">Concrete</span></button>
+                                            <button class="theme-btn theme-btn-custom" data-theme="concrete-custom" title="Concrete Custom theme — the Concrete look in your own color"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 3h18v18H3V3zm4 4v10h10V7H7zm3 3h4v4h-4v-4z"/></svg><span class="theme-btn-label">Concrete+</span></button>
                                             <button class="theme-btn theme-btn-custom" data-theme="custom" title="Custom color theme — active whenever a custom color is set"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2 0-.52-.2-.99-.53-1.34-.32-.34-.52-.8-.52-1.32.0-1.1.9-2 2-2H17c2.76.0 5-2.24 5-5C22 6.13 17.5 2 12 2zm-5.5 9c-.83.0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83.0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83.0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5S18.33 11 17.5 11z"/></svg><span class="theme-btn-label">Custom</span></button>
                                         </div>
                                     </div>
@@ -1896,7 +2017,7 @@
         const VOL_KEY = "playerVolumeUi";
 
         // -- Theming / UI preference state --
-        let currentFontSize = 14,
+        let currentFontSize = 16,
             vividColor = null,
             colorIntensity = 60,
             uiDepth = 1;
@@ -2469,7 +2590,7 @@
                 : document.documentElement.removeAttribute("data-theme");
             const t = store.getItem("fontSize");
             t &&
-                ((currentFontSize = Math.max(12, Math.min(20, parseInt(t) || 14))),
+                ((currentFontSize = Math.max(12, Math.min(20, parseInt(t) || 16))),
                 document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px")),
                 updateThemeButtons(),
                 updateFontSizeLabel();
@@ -2520,7 +2641,7 @@
         function syncThemeColorMeta() {
             const meta = document.querySelector('meta[name="theme-color"]');
             if (!meta) return;
-            const v = getComputedStyle(document.documentElement).getPropertyValue("--header-bg").trim();
+            const v = getComputedStyle(document.documentElement).getPropertyValue("--header-bg").trim() || getComputedStyle(document.documentElement).getPropertyValue("--bg-secondary").trim();
             if (v) meta.setAttribute("content", v);
         }
         // Announces a short message to screen readers via the hidden
@@ -2540,7 +2661,8 @@
                 ? (store.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
                 : (store.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
                 updateThemeButtons();
-            if (vividColor) applyCustomColor();
+            if (e === "concrete") clearCustomVars();
+            else if (vividColor) applyCustomColor();
             syncThemeColorMeta();
         }
         function setupDropdown(btnId, menuId, dropdownId) {
@@ -2800,10 +2922,24 @@
             root.setProperty("--on-accent", onAccent);
             const rgb = hexToRgb(newVals["--accent"]);
             root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
+            // Concrete theme palette (only read by data-theme="concrete"): the picked hue becomes
+            // a dark tinted concrete, a darker panel, a light tinted line and a vivid signal accent.
+            if (document.documentElement.getAttribute("data-theme") !== "concrete") {
+            root.setProperty("--cc-page", hslToHex(ctrlH, clampNum(ctrlS * 0.45, 0, 45), 17));
+            root.setProperty("--cc-panel", hslToHex(ctrlH, clampNum(ctrlS * 0.45, 0, 45), 10));
+            root.setProperty("--cc-line", hslToHex(ctrlH, clampNum(ctrlS * 0.5, 0, 45), 90));
+            root.setProperty("--cc-muted", hslToHex(ctrlH, clampNum(ctrlS * 0.3, 0, 30), 75));
+            root.setProperty("--cc-text", "#ffffff");
+            root.setProperty("--cc-accent", hslToHex(ctrlH, Math.min(90, ctrlS), 62));
+            }
             markActiveSwatch(vividColor);
             syncThemeColorMeta();
         }
         function setCustomColor(hex) {
+            if (document.documentElement.getAttribute("data-theme") === "concrete") {
+                store.setItem("theme", "concrete-custom");
+                document.documentElement.setAttribute("data-theme", "concrete-custom");
+            }
             vividColor = hex;
             store.setItem(CUSTOM_COLOR_KEY, hex);
             document.documentElement.style.setProperty("--custom-theme-swatch", hex);
@@ -2819,6 +2955,7 @@
                 "--accent", "--accent-hover", "--accent-text", "--accent-solid", "--accent-solid-hover", "--border-strong", "--on-accent", "--accent-glow",
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
+                "--cc-page", "--cc-panel", "--cc-line", "--cc-muted", "--cc-text", "--cc-accent",
             ];
             for (const key of keys) root.removeProperty(key);
         }
@@ -2957,7 +3094,7 @@
             const e = store.getItem("theme") || "auto";
             const customActive = !!vividColor;
             document.querySelectorAll(".theme-btn").forEach((t) => {
-                t.classList.toggle("active", t.dataset.theme === "custom" ? customActive : !customActive && t.dataset.theme === e);
+                t.classList.toggle("active", t.dataset.theme === "custom" ? customActive && e !== "concrete" && e !== "concrete-custom" : (t.dataset.theme === "concrete" || t.dataset.theme === "concrete-custom") ? e === t.dataset.theme : !customActive && t.dataset.theme === e);
             });
             const toggle = document.getElementById("themeToggle");
             if (toggle) toggle.classList.toggle("custom-color-active", customActive);
@@ -3679,7 +3816,13 @@
             setupDropdown("themeColorBtn", "themeColorMenu", "themeColorDropdown");
             document.querySelectorAll(".theme-btn").forEach((btn) => {
                 btn.addEventListener("click", () => {
-                    if (btn.dataset.theme === "custom") {
+                    if (btn.dataset.theme === "concrete-custom") {
+                        saveTheme("concrete-custom");
+                        if (!vividColor) {
+                            const input = document.getElementById("themeColorInput");
+                            setCustomColor((input && input.value) || "#8080ff");
+                        }
+                    } else if (btn.dataset.theme === "custom") {
                         if (vividColor) return; // already the active look, nothing to do
                         const input = document.getElementById("themeColorInput");
                         setCustomColor((input && input.value) || "#8080ff");

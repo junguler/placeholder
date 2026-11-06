@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <script>(function(){try{var t=localStorage.getItem("theme");if(t==="concrete-custom"){t="concrete";localStorage.setItem("theme",t);}if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+    <script>(function(){try{var t=localStorage.getItem("theme");if(t==="concrete-custom"){t="concrete";localStorage.setItem("theme",t);}if(t==="vivid")document.documentElement.setAttribute("data-vivid","1");else if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#1a1a1a" />
@@ -1190,7 +1190,7 @@ html[data-theme="concrete"] {
             --text: var(--cc-text); --muted: var(--cc-muted);
             --orange: #ff6a1a; --pink: #ff4fa3; --violet: #a77bff; --green: #3ddc84;
             --yellow: var(--cc-accent); --red: #ff3b30; --blue: #3d8bff;
-            --bw: 4px;
+            --bw: 2px;
             --mono: ui-monospace, Consolas, "Courier New", monospace;
         }
 html[data-theme="concrete"] {
@@ -1229,10 +1229,6 @@ html[data-theme="concrete"] {
             --font-mono: ui-monospace, Consolas, "Courier New", monospace !important;
             color-scheme: dark !important;
         }
-html[data-theme="concrete"] { --ctl: 2.5rem; }
-@media (pointer: coarse) {
-html[data-theme="concrete"] { --ctl: 2.7rem; }
-}
 html[data-theme="concrete"] *,
 html[data-theme="concrete"] *::before,
 html[data-theme="concrete"] *::after { border-radius: 0 !important; text-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
@@ -1243,12 +1239,8 @@ html[data-theme="concrete"] textarea { font-family: inherit; }
 html[data-theme="concrete"] .breadcrumb.fade-start,
 html[data-theme="concrete"] .breadcrumb.fade-end,
 html[data-theme="concrete"] .breadcrumb.fade-start.fade-end { -webkit-mask-image: none; mask-image: none; }
-html[data-theme="concrete"] .header { background: var(--yellow); color: var(--ink); border-bottom: var(--bw) solid var(--line); padding: 8px 14px; }
-html[data-theme="concrete"] .header-content { gap: 12px; }
-html[data-theme="concrete"] .header-tools { display: flex; align-items: center; gap: 10px; }
-html[data-theme="concrete"] .header-actions { gap: 10px; }
-html[data-theme="concrete"] .logo { color: var(--ink); font-size: 1.9rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.15; }
-html[data-theme="concrete"] .logo svg { width: 28px; height: 28px; }
+html[data-theme="concrete"] .header { background: var(--yellow); color: var(--ink); border-bottom: var(--bw) solid var(--line); }
+html[data-theme="concrete"] .logo { color: var(--ink); font-size: 1.15rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
 html[data-theme="concrete"] .header .breadcrumb-item { color: var(--ink); font-weight: 800; }
 html[data-theme="concrete"] .header .breadcrumb-item:hover { background: var(--ink); color: var(--yellow); }
 html[data-theme="concrete"] .header .breadcrumb-item.current,
@@ -1260,10 +1252,6 @@ html[data-theme="concrete"] .header .breadcrumb-pin-btn.pinned { background: var
 html[data-theme="concrete"] .mode-chip { background: var(--ink); color: var(--yellow); border-color: var(--ink); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 html[data-theme="concrete"] .mode-chip-close:hover { color: var(--text); }
 html[data-theme="concrete"] .header :focus-visible { outline-color: var(--ink); }
-@media (max-width: 640px) {
-html[data-theme="concrete"] .logo { font-size: 1.35rem; }
-html[data-theme="concrete"] .logo svg { width: 22px; height: 22px; }
-}
 html[data-theme="concrete"] .search-input,
 html[data-theme="concrete"] .sort-select,
 html[data-theme="concrete"] .goto-input,
@@ -1276,10 +1264,6 @@ html[data-theme="concrete"] input[type="search"],
 html[data-theme="concrete"] input[type="number"] {
             background: var(--ink); color: var(--text); border: var(--bw) solid var(--line); font-family: inherit;
         }
-html[data-theme="concrete"] .search-input { padding: 8px 30px; margin: 0; }
-html[data-theme="concrete"] .sort-select,
-html[data-theme="concrete"] .songs-search,
-html[data-theme="concrete"] .ar-filter { padding: 8px 10px; }
 html[data-theme="concrete"] .search-input::placeholder,
 html[data-theme="concrete"] .songs-search::placeholder,
 html[data-theme="concrete"] .ar-filter::placeholder,
@@ -1295,7 +1279,7 @@ html[data-theme="concrete"] .search-input:focus-visible,
 html[data-theme="concrete"] .goto-input:focus-visible,
 html[data-theme="concrete"] .songs-search:focus-visible,
 html[data-theme="concrete"] .sort-select:focus-visible {
-            border-color: var(--yellow); outline: 3px solid var(--yellow); outline-offset: 2px;
+            border-color: var(--yellow); outline: 2px solid var(--yellow); outline-offset: 1px;
         }
 html[data-theme="concrete"] .header .search-input:focus,
 html[data-theme="concrete"] .header .search-input:focus-visible { outline-color: var(--ink); }
@@ -1317,8 +1301,8 @@ html[data-theme="concrete"] .op-toast button {
             --c: var(--line);
             background: var(--c) !important; color: var(--ink) !important;
             border: var(--bw) solid var(--ink) !important;
-            box-shadow: 3px 3px 0 var(--text) !important;
-            font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; -webkit-text-stroke: 0.6px currentColor;
+            box-shadow: 2px 2px 0 var(--text) !important;
+            font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; -webkit-text-stroke: 0.6px currentColor;
             text-decoration: none; transition: none; cursor: pointer; opacity: 1;
         }
 html[data-theme="concrete"] .settings-btn:hover:not(:disabled),
@@ -1335,7 +1319,7 @@ html[data-theme="concrete"] .download-btn:hover:not(:disabled),
 html[data-theme="concrete"] .tree-hdr-btn:hover:not(:disabled),
 html[data-theme="concrete"] .card-star-btn:hover:not(:disabled),
 html[data-theme="concrete"] .op-toast button:hover:not(:disabled) {
-            filter: brightness(1.08); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--text) !important; opacity: 1;
+            filter: brightness(1.08); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--text) !important; opacity: 1;
         }
 html[data-theme="concrete"] .settings-btn:active:not(:disabled),
 html[data-theme="concrete"] .view-btn:active:not(:disabled),
@@ -1351,7 +1335,7 @@ html[data-theme="concrete"] .download-btn:active:not(:disabled),
 html[data-theme="concrete"] .tree-hdr-btn:active:not(:disabled),
 html[data-theme="concrete"] .card-star-btn:active:not(:disabled),
 html[data-theme="concrete"] .op-toast button:active:not(:disabled) {
-            box-shadow: none !important; transform: translate(3px, 3px);
+            box-shadow: none !important; transform: translate(2px, 2px);
         }
 html[data-theme="concrete"] .settings-btn:disabled,
 html[data-theme="concrete"] .view-btn:disabled,
@@ -1375,31 +1359,7 @@ html[data-theme="concrete"] .goto-step-btn svg,
 html[data-theme="concrete"] .settings-menu-close svg,
 html[data-theme="concrete"] .tree-hdr-btn svg,
 html[data-theme="concrete"] .card-star-btn svg { color: var(--ink); }
-html[data-theme="concrete"] .settings-btn,
-html[data-theme="concrete"] .view-btn { min-width: 40px; min-height: 40px; padding: 4px; }
-html[data-theme="concrete"] .view-toggle { background: none; padding: 0; gap: 8px; }
-html[data-theme="concrete"] .settings-menu-close { min-width: 34px; min-height: 34px; }
-html[data-theme="concrete"] .modal-btn { min-width: 36px; min-height: 36px; }
-html[data-theme="concrete"] .modal-btn.text-btn { padding: 0 12px; }
-html[data-theme="concrete"] .modal-btn.play-playlist-btn { min-height: 40px; padding: 0 14px; font-size: 0.9rem; }
-html[data-theme="concrete"] .settings-control button { min-width: 38px; min-height: 32px; }
-html[data-theme="concrete"] .theme-reset-btn { min-height: 34px; }
-html[data-theme="concrete"] .md-toggle { min-height: 32px; padding: 4px 12px; }
-html[data-theme="concrete"] .op-toast button { min-height: 32px; }
-html[data-theme="concrete"] .tree-hdr-btn { width: 30px; height: 30px; border-width: 3px !important; }
-html[data-theme="concrete"] .card-star-btn { border-width: 3px !important; width: 28px; height: 28px; }
-html[data-theme="concrete"] .file-list.list-columns .card-star-btn { width: 28px; height: 28px; }
-html[data-theme="concrete"] .load-more-btn,
-html[data-theme="concrete"] .download-btn,
-html[data-theme="concrete"] .local-pick,
-html[data-theme="concrete"] .empty-action {
-            min-width: 130px; min-height: 48px; padding: 8px 16px; font-size: 0.95rem; text-align: center; justify-content: center; align-items: center;
-        }
-html[data-theme="concrete"] .load-more-btn { display: block; }
-html[data-theme="concrete"] .playlist-btn.player-play-btn { width: 3rem; height: 3rem; padding: 0; }
-@media (max-width: 640px) {
-html[data-theme="concrete"] .player-bar .playlist-btn.player-play-btn { width: 2.7rem; height: 2.7rem; }
-}
+html[data-theme="concrete"] .view-toggle { background: none; padding: 0; gap: 6px; }
 html[data-theme="concrete"] #localBtn { --c: var(--orange); }
 html[data-theme="concrete"] #statsBtn { --c: var(--yellow); }
 html[data-theme="concrete"] .view-btn.active { --c: var(--orange); }
@@ -1446,28 +1406,25 @@ html[data-theme="concrete"] .empty-action { --c: var(--orange); }
 html[data-theme="concrete"] .md-toggle[aria-pressed="true"] { --c: var(--orange); }
 html[data-theme="concrete"] .load-more-btn { --c: var(--orange); }
 html[data-theme="concrete"] .card-star-btn.starred { --c: var(--yellow); }
-html[data-theme="concrete"] input[type="file"]::file-selector-button { background: var(--orange); color: var(--ink); border: 3px solid var(--ink); font: inherit; font-weight: 900; text-transform: uppercase; padding: 6px 12px; margin-right: 10px; cursor: pointer; }
-html[data-theme="concrete"] .switch { width: 50px; height: 28px; }
+html[data-theme="concrete"] input[type="file"]::file-selector-button { background: var(--orange); color: var(--ink); border: 2px solid var(--ink); font: inherit; font-weight: 900; text-transform: uppercase; padding: 4px 10px; margin-right: 10px; cursor: pointer; }
 html[data-theme="concrete"] .switch-slider { background: var(--ink); border: var(--bw) solid var(--line); transition: none; }
-html[data-theme="concrete"] .switch-slider::before { width: 12px; height: 12px; left: 2px; top: 2px; background: var(--muted); transition: none; }
+html[data-theme="concrete"] .switch-slider::before { background: var(--muted); transition: none; }
 html[data-theme="concrete"] .switch input:checked + .switch-slider { background: var(--green); border-color: var(--line); }
-html[data-theme="concrete"] .switch input:checked + .switch-slider::before { background: var(--ink); transform: translateX(26px); }
-html[data-theme="concrete"] .switch input:focus-visible + .switch-slider { outline: 3px solid var(--yellow); outline-offset: 2px; }
-html[data-theme="concrete"] .settings-menu { margin-top: 12px; }
-html[data-theme="concrete"] .settings-menu-card { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 10px 10px 0 var(--ink); }
+html[data-theme="concrete"] .switch input:checked + .switch-slider::before { background: var(--ink); }
+html[data-theme="concrete"] .switch input:focus-visible + .switch-slider { outline: 2px solid var(--yellow); outline-offset: 1px; }
+html[data-theme="concrete"] .settings-menu-card { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 6px 6px 0 var(--ink); }
 html[data-theme="concrete"] .settings-menu-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); }
-html[data-theme="concrete"] .settings-menu-title { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+html[data-theme="concrete"] .settings-menu-title { font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
 html[data-theme="concrete"] .settings-section-title { color: var(--text); font-weight: 900; }
-html[data-theme="concrete"] details.settings-collapsible { background: var(--ink); border: var(--bw) solid var(--line); margin: 10px; padding: 0; }
-html[data-theme="concrete"] .settings-collapsible > summary { padding: 10px; color: var(--text); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0; }
+html[data-theme="concrete"] details.settings-collapsible { background: var(--ink); border: var(--bw) solid var(--line); margin: 8px; padding: 0; }
+html[data-theme="concrete"] .settings-collapsible > summary { padding: 8px 10px; color: var(--text); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0; }
 html[data-theme="concrete"] .settings-collapsible[open] > summary { border-bottom: var(--bw) solid var(--line); }
 html[data-theme="concrete"] .settings-collapsible > :not(summary) { background: var(--panel); padding-left: 10px; padding-right: 10px; }
-html[data-theme="concrete"] .settings-collapsible > .settings-row { padding-top: 8px; padding-bottom: 8px; }
 html[data-theme="concrete"] .settings-label { color: var(--muted); }
 html[data-theme="concrete"] .modal-overlay { background: var(--concrete); }
-html[data-theme="concrete"] .modal { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 10px 10px 0 var(--ink); }
-html[data-theme="concrete"] .modal-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); padding: 8px 12px; }
-html[data-theme="concrete"] .modal-title { font-size: 1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
+html[data-theme="concrete"] .modal { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 6px 6px 0 var(--ink); }
+html[data-theme="concrete"] .modal-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); }
+html[data-theme="concrete"] .modal-title { font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
 html[data-theme="concrete"] .modal-body { background: var(--ink); }
 @media (min-width: 641px) {
 html[data-theme="concrete"] .modal-overlay,
@@ -1477,7 +1434,7 @@ html[data-theme="concrete"] .modal-overlay.active .modal { transition: none; tra
 @media (max-width: 640px) {
 html[data-theme="concrete"] .modal { box-shadow: none; }
 }
-html[data-theme="concrete"] .op-toast { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 6px 6px 0 var(--ink); }
+html[data-theme="concrete"] .op-toast { background: var(--panel); border: var(--bw) solid var(--line); box-shadow: 4px 4px 0 var(--ink); }
 html[data-theme="concrete"] .empty-state h2,
 html[data-theme="concrete"] .preview-unavailable h3,
 html[data-theme="concrete"] .stats-breakdown-title { text-transform: uppercase; font-weight: 900; letter-spacing: 0.04em; }
@@ -1497,7 +1454,7 @@ html[data-theme="concrete"] .file-card:nth-child(even) { --card-bg: var(--ink); 
 html.no-zebra[data-theme="concrete"] .file-card:nth-child(odd),
 html.no-zebra[data-theme="concrete"] .file-card:nth-child(even) { --card-bg: var(--panel); background: var(--panel); }
 html[data-theme="concrete"] .file-card:hover,
-html.no-zebra[data-theme="concrete"] .file-card:hover { background: var(--concrete); border-color: var(--yellow); box-shadow: 4px 4px 0 var(--ink); z-index: 1; }
+html.no-zebra[data-theme="concrete"] .file-card:hover { background: var(--concrete); border-color: var(--yellow); box-shadow: 3px 3px 0 var(--ink); z-index: 1; }
 html[data-theme="concrete"] .file-list { gap: 0; }
 html[data-theme="concrete"] .file-list > .file-card { margin-top: calc(var(--bw) * -1); }
 html[data-theme="concrete"] .file-list > .file-card:first-child { margin-top: 0; }
@@ -1506,7 +1463,7 @@ html[data-theme="concrete"] .file-list-header { background: var(--ink); color: v
 html[data-theme="concrete"] .file-list-header .col.active,
 html[data-theme="concrete"] .file-list-header .col:hover { color: var(--yellow); }
 html[data-theme="concrete"] .file-name { font-weight: 700; }
-html[data-theme="concrete"] .file-icon { border: 3px solid var(--ink); background: var(--c, var(--line)); color: var(--ink); }
+html[data-theme="concrete"] .file-icon { border: 2px solid var(--ink); background: var(--c, var(--line)); color: var(--ink); }
 html[data-theme="concrete"] .file-icon svg { color: var(--ink); }
 html[data-theme="concrete"] .file-icon.folder { --c: var(--yellow); }
 html[data-theme="concrete"] .file-icon.image { --c: var(--pink); }
@@ -1537,18 +1494,18 @@ html[data-theme="concrete"] .file-icon.font,
 html[data-theme="concrete"] .file-icon.playlist,
 html[data-theme="concrete"] .file-icon.other { background: var(--c); color: var(--ink); }
 html[data-theme="concrete"] mark.search-highlight { background: var(--yellow); color: var(--ink); font-weight: 900; }
-html[data-theme="concrete"] kbd { border-width: 3px; background: var(--ink); color: var(--text); }
+html[data-theme="concrete"] kbd { border-width: 2px; background: var(--ink); color: var(--text); }
 html[data-theme="concrete"] .skeleton-block { background: var(--skeleton-base) !important; animation: none !important; }
 html[data-theme="concrete"] .spinner { border: var(--bw) solid var(--line); border-top-color: var(--yellow); }
-html[data-theme="concrete"] .stats-row-bar-track { height: 16px; border-width: 3px; background: var(--ink); }
+html[data-theme="concrete"] .stats-row-bar-track { border-width: 2px; background: var(--ink); }
 html[data-theme="concrete"] .stats-row-bar-fill { background: var(--stat-fill, var(--yellow)); }
 html[data-theme="concrete"] .audio-icon { background: var(--ink); }
 html[data-theme="concrete"] .audio-icon .stream-tag,
-html[data-theme="concrete"] .audio-icon .cache-tag { border-width: 3px; background: var(--concrete); color: var(--text); }
+html[data-theme="concrete"] .audio-icon .cache-tag { border-width: 2px; background: var(--concrete); color: var(--text); }
 html[data-theme="concrete"] .player-bar { background: var(--ink); }
-html[data-theme="concrete"] .player-seek { height: 20px; background: var(--ink); }
-html[data-theme="concrete"] .player-seek::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -2px; background: var(--yellow); border: 3px solid var(--ink); }
-html[data-theme="concrete"] .player-seek::-moz-range-thumb { width: 10px; height: 10px; background: var(--yellow); border: 3px solid var(--ink); }
+html[data-theme="concrete"] .player-seek { height: 14px; background: var(--ink); }
+html[data-theme="concrete"] .player-seek::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -1px; background: var(--yellow); border: 2px solid var(--ink); }
+html[data-theme="concrete"] .player-seek::-moz-range-thumb { width: 8px; height: 8px; background: var(--yellow); border: 2px solid var(--ink); }
 html[data-theme="concrete"] .rec-dot { background: var(--red); }
 </style>
 </head>
@@ -1734,7 +1691,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                                             <button class="theme-btn" data-theme="hc-dark" title="High contrast dark theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 2v16a8 8 0 010-16z"/></svg><span class="theme-btn-label">HC Dark</span></button>
                                             <button class="theme-btn" data-theme="hc-light" title="High contrast light theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2a10 10 0 000 20 10 10 0 000-20zm0 18V4a8 8 0 010 16z"/></svg><span class="theme-btn-label">HC Light</span></button>
                                             <button class="theme-btn" data-theme="concrete" title="Concrete Signal theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 3h18v18H3V3zm4 4v10h10V7H7z"/></svg><span class="theme-btn-label">Concrete</span></button>
-                                            <button class="theme-btn theme-btn-custom" data-theme="custom" title="Custom color — tints the current theme (every theme gets a + version). Click again to remove."><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2 0-.52-.2-.99-.53-1.34-.32-.34-.52-.8-.52-1.32.0-1.1.9-2 2-2H17c2.76.0 5-2.24 5-5C22 6.13 17.5 2 12 2zm-5.5 9c-.83.0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83.0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83.0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5S18.33 11 17.5 11z"/></svg><span class="theme-btn-label">Custom</span></button>
+                                            <button class="theme-btn theme-btn-custom" data-theme="custom" title="Vivid theme — the flat, saturated single-color look built from your picked color (color panel + intensity bar). Other themes get a + version of your color."><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2 0-.52-.2-.99-.53-1.34-.32-.34-.52-.8-.52-1.32.0-1.1.9-2 2-2H17c2.76.0 5-2.24 5-5C22 6.13 17.5 2 12 2zm-5.5 9c-.83.0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83.0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83.0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5S18.33 11 17.5 11z"/></svg><span class="theme-btn-label">Vivid</span></button>
                                         </div>
                                     </div>
                                 </div>
@@ -2584,7 +2541,8 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
         }
         function loadSettings() {
             const e = store.getItem("theme");
-            e && e !== "auto"
+            e === "vivid" ? document.documentElement.setAttribute("data-vivid", "1") : document.documentElement.removeAttribute("data-vivid");
+            e && e !== "auto" && e !== "vivid"
                 ? document.documentElement.setAttribute("data-theme", e)
                 : document.documentElement.removeAttribute("data-theme");
             const t = store.getItem("fontSize");
@@ -2656,10 +2614,11 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             });
         }
         function saveTheme(e) {
-            e === "auto"
-                ? (store.removeItem("theme"), document.documentElement.removeAttribute("data-theme"))
-                : (store.setItem("theme", e), document.documentElement.setAttribute("data-theme", e)),
-                updateThemeButtons();
+            const de = document.documentElement;
+            if (e === "auto") { store.removeItem("theme"); de.removeAttribute("data-theme"); de.removeAttribute("data-vivid"); }
+            else if (e === "vivid") { store.setItem("theme", "vivid"); de.removeAttribute("data-theme"); de.setAttribute("data-vivid", "1"); }
+            else { store.setItem("theme", e); de.setAttribute("data-theme", e); de.removeAttribute("data-vivid"); }
+            updateThemeButtons();
             if (vividColor) applyCustomColor();
             syncThemeColorMeta();
         }
@@ -2883,9 +2842,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
         // read back from CSS; the picked hue is poured into it while every lightness stays put,
         // so light themes stay light, dark ones dark, and high-contrast ones keep pure
         // black/white surfaces with strong, re-checked contrast. Concrete re-tints its own palette.
-        function applyCustomColor() {
-            if (!vividColor) return;
-            clearCustomVars();
+        function applyTintColor() {
             const rootEl = document.documentElement, root = rootEl.style;
             const activeColor = muteColorAtIntensity(vividColor, colorIntensity);
             const { h, s: activeS } = hexToHsl(activeColor);
@@ -2949,6 +2906,70 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             markActiveSwatch(vividColor);
             syncThemeColorMeta();
         }
+        function applyVividColor() {
+            if (!vividColor) return;
+            const root = document.documentElement.style;
+            const base = THEME_BASE[getActivePaletteKey()];
+            const newVals = {};
+            // Below 100% intensity the picked color is muted toward a calmer
+            // version of itself first; every surface below then uses that
+            // exact same hex (background, hover fill, accent).
+            const activeColor = muteColorAtIntensity(vividColor, colorIntensity);
+            newVals["--bg-primary"] = activeColor;
+            newVals["--bg-secondary"] = activeColor;
+            newVals["--bg-tertiary"] = activeColor;
+            newVals["--bg-hover"] = activeColor;
+            newVals["--accent"] = activeColor;
+            // Borders/hover need a lightness nudge or they'd be invisible
+            // against an identical fill color.
+            newVals["--border-color"] = visibleVariant(activeColor, activeColor, 2.2, 50);
+            newVals["--accent-hover"] = visibleVariant(activeColor, activeColor, 1.6, 30);
+            newVals["--accent-solid"] = activeColor;
+            newVals["--accent-solid-hover"] = newVals["--accent-hover"];
+            newVals["--border-strong"] = visibleVariant(activeColor, activeColor, 3, 60);
+            // Guaranteed-visible surface for icon-only controls, since a
+            // button matching the flat panel color would otherwise vanish.
+            const { h: ctrlH, s: ctrlS, l: ctrlL } = hexToHsl(activeColor);
+            const shiftedL = clampNum(ctrlL + (ctrlL < 55 ? 22 : -22), 6, 94);
+            const controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+            newVals["--control-surface"] = controlSurface;
+            newVals["--control-surface-hover"] = visibleVariant(controlSurface, controlSurface, 1.3, 25);
+            newVals["--on-control"] = contrastRatio("#ffffff", controlSurface) >= contrastRatio("#000000", controlSurface) ? "#ffffff" : "#000000";
+            // Skeleton shimmer normally animates between --bg-tertiary and
+            // --bg-hover, both flattened here, so reuse the control-surface
+            // pair instead so the loading animation still reads.
+            newVals["--skeleton-base"] = controlSurface;
+            newVals["--skeleton-shine"] = newVals["--control-surface-hover"];
+            // Vivid, contrast-guaranteed fill for proportional bars (e.g.
+            // Library Stats), since a subtle lightness variant of the flat
+            // color wouldn't read as distinct in a thin bar.
+            const vividFill = hslToHex(ctrlH, 85, 55);
+            newVals["--stat-fill"] = visibleVariant(vividFill, controlSurface, 3, 80);
+            // Accent-as-text variant (e.g. breadcrumb links), since the flat
+            // --accent equals the panel background it would sit on.
+            newVals["--accent-text"] = visibleVariant(activeColor, activeColor, 4.5, 100);
+            for (const key of Object.keys(base)) {
+                if (!(key in newVals)) newVals[key] = base[key];
+            }
+            for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 4.5]]) {
+                if (!base[textKey]) continue;
+                newVals[textKey] = readableTextColor(base[textKey], newVals["--bg-primary"], minRatio);
+            }
+            for (const [varName, value] of Object.entries(newVals)) root.setProperty(varName, value);
+            const onAccent = contrastRatio("#ffffff", newVals["--accent"]) >= contrastRatio("#000000", newVals["--accent"]) ? "#ffffff" : "#000000";
+            root.setProperty("--on-accent", onAccent);
+            const rgb = hexToRgb(newVals["--accent"]);
+            root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
+            markActiveSwatch(vividColor);
+            syncThemeColorMeta();
+        }
+        // Vivid = the original flat, saturated custom look. Every other theme gets its identity-preserving "+" tint.
+        function applyCustomColor() {
+            if (!vividColor) return;
+            clearCustomVars();
+            if (store.getItem("theme") === "vivid") applyVividColor();
+            else applyTintColor();
+        }
         function setCustomColor(hex) {
             vividColor = hex;
             store.setItem(CUSTOM_COLOR_KEY, hex);
@@ -2971,6 +2992,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
         }
         function resetCustomColor() {
             vividColor = null;
+            if (store.getItem("theme") === "vivid") saveTheme("auto");
             store.removeItem(CUSTOM_COLOR_KEY);
             clearCustomVars();
             document.documentElement.style.removeProperty("--custom-theme-swatch");
@@ -3105,7 +3127,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             const customActive = !!vividColor;
             document.querySelectorAll(".theme-btn").forEach((t) => {
                 const isCustomBtn = t.dataset.theme === "custom";
-                t.classList.toggle("active", isCustomBtn ? customActive : t.dataset.theme === e);
+                t.classList.toggle("active", isCustomBtn ? e === "vivid" : t.dataset.theme === e);
                 const lbl = t.querySelector(".theme-btn-label");
                 if (lbl && !isCustomBtn) {
                     if (!lbl.dataset.base) lbl.dataset.base = lbl.textContent;
@@ -3833,9 +3855,11 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             document.querySelectorAll(".theme-btn").forEach((btn) => {
                 btn.addEventListener("click", () => {
                     if (btn.dataset.theme === "custom") {
-                        if (vividColor) { resetCustomColor(); return; } // toggle the color off
-                        const input = document.getElementById("themeColorInput");
-                        setCustomColor((input && input.value) || "#8080ff");
+                        saveTheme("vivid");
+                        if (!vividColor) {
+                            const input = document.getElementById("themeColorInput");
+                            setCustomColor((input && input.value) || "#8080ff");
+                        }
                     } else {
                         saveTheme(btn.dataset.theme);
                     }

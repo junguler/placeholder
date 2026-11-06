@@ -6127,8 +6127,18 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                     const ahead = bufferedAheadSec(s.el);
                     if (ahead >= 0) {
                         const own = s.usesMse && currentOwnBuffer && currentOwnBuffer.alive ? currentOwnBuffer.queuedSec() : 0;
-                        ctxt = fmtBufferAhead(ahead + own);
-                        if (s.el.paused && !s.usesMse && s.mseWhy && isLiveStream(s)) ctxt = "not caching · " + s.mseWhy;
+                        const total = ahead + own;
+                        // Prefer the real buffered amount when any exists. The native
+                        // element stops growing the cache while paused (that is what
+                        // mseWhy records), but overwriting a healthy buffer with
+                        // "not caching · …" made it look like nothing was held.
+                        // Only show the disclaimer when there is effectively no
+                        // buffer left to play from.
+                        if (s.el.paused && !s.usesMse && s.mseWhy && isLiveStream(s) && total < 1) {
+                            ctxt = "not caching · " + s.mseWhy;
+                        } else {
+                            ctxt = fmtBufferAhead(total);
+                        }
                     }
                 }
                 if (cacheEl.textContent !== ctxt) cacheEl.textContent = ctxt;

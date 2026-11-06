@@ -5256,10 +5256,6 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
         let playSession = null; // state of the track that is playing right now
         let failStreak = 0; // consecutive tracks that failed to start
         let npJob = null; // now-playing poller for the current track
-        // MyRadio24's documented player.js callback is a separate browser
-        // integration path: it can deliver now-playing data even when the
-        // public status.json endpoint is not readable by cross-origin fetch.
-        const myRadio24Widget = { session: null, login: "", script: null, node: null, timer: null, last: "", state: "idle" };
         const zenoMetadata = { session: null, mount: "", eventSource: null, errors: 0 };
         const radioMvMetadata = { session: null, station: "", eventSource: null, errors: 0 };
         const npDebug = {
@@ -6184,7 +6180,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (raw == null) return "";
             const t = String(raw).replace(/\0/g, "").replace(/\s+/g, " ").trim();
             if (t.length < 2 || t.length > 240) return "";
-            if (/^(unknown|n\/a|null|undefined|no title|untitled|-+|\.+|not available)$/i.test(t)) return "";
+            if (/^(unknown|n\/a|null|undefined|no title|untitled|-+|\.+|not available|error|not found|page not found|forbidden|bad request|unauthorized|access denied|service unavailable|(?:http )?[45]\d\d .*|cannot get .*)$/i.test(t)) return "";
             if (station && t.toLowerCase() === String(station).trim().toLowerCase()) return "";
             return t;
         }
@@ -6205,7 +6201,6 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             for (const key of keys) {
                 const v = obj[key];
                 if (typeof v === "string" && v.trim()) return v.trim();
-                if (typeof v === "number" && Number.isFinite(v)) return String(v);
             }
             return "";
         }
@@ -6213,6 +6208,9 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             depth = depth || 0;
             if (data == null || depth > 7) return null;
             if (typeof data === "string") {
+                // HTML error pages and stray JSON must never become a song title
+                // (SPA hosts answer unknown /api paths with a 200 page).
+                if (/[<>]/.test(data) || /^\s*[\[{]/.test(data)) return null;
                 const title = cleanSongTitle(data);
                 return title ? { title, source: source || "metadata API", playedAt: 0, exact: false } : null;
             }
@@ -6444,108 +6442,6 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             }
             return null;
         }
-        function myRadio24CallbackTrack(info) {
-            return npProviderTitle(myRadio24Widget.session, info, "MyRadio24 widget callback");
-        }
-        const myRadio24PreviousInit = typeof window.my_init_updateinfo === "function" ? window.my_init_updateinfo : null;
-        const myRadio24PreviousCallback = typeof window.my_updateinfo_callback === "function" ? window.my_updateinfo_callback : null;
-        window.my_init_updateinfo = function (info) {
-            const w = myRadio24Widget;
-            if (w.session && playSession === w.session) myRadio24CallbackTrack(info);
-            if (myRadio24PreviousInit && myRadio24PreviousInit !== window.my_init_updateinfo) {
-                try { myRadio24PreviousInit.apply(this, arguments); } catch (e) {}
-            }
-        };
-        window.my_updateinfo_callback = function (info) {
-            const w = myRadio24Widget;
-            if (w.session && playSession === w.session) myRadio24CallbackTrack(info);
-            if (myRadio24PreviousCallback && myRadio24PreviousCallback !== window.my_updateinfo_callback) {
-                try { myRadio24PreviousCallback.apply(this, arguments); } catch (e) {}
-            }
-        };
-        function stopMyRadio24Widget() {
-            const w = myRadio24Widget;
-            w.session = null;
-            w.login = "";
-            w.last = "";
-            if (w.timer) clearInterval(w.timer);
-            w.timer = null;
-            // Keep the player.js <script> in the document forever. MyRadio24 sets
-            // MY.initialized on first load and alerts if the same script is
-            // injected again; removing the tag does not clear that flag.
-            if (w.node && w.node.parentNode) w.node.parentNode.removeChild(w.node);
-            w.node = null;
-            w.state = "idle";
-        }
-        function startMyRadio24Widget(session, streamUrl) {
-            const login = myRadio24Login(streamUrl);
-            if (!login) { stopMyRadio24Widget(); return false; }
-            const w = myRadio24Widget;
-            if (w.session === session && w.login.toLowerCase() === login.toLowerCase() && (w.script || w.node)) return true;
-            // Tear down the previous session's node/timer, but never remove the
-            // shared player.js tag (MyRadio24 forbids loading it twice).
-            stopMyRadio24Widget();
-            w.session = session;
-            w.login = login;
-            w.state = "loading";
-            const node = document.createElement("b");
-            node.setAttribute("data-myinfo", "song");
-            node.setAttribute("aria-hidden", "true");
-            Object.assign(node.style, { position: "fixed", left: "-10000px", top: "0", width: "1px", height: "1px", overflow: "hidden", opacity: "0", pointerEvents: "none" });
-            document.body.appendChild(node);
-            w.node = node;
-            // Point the already-running widget at the new station when possible.
-            try {
-                if (window.MY && typeof window.MY === "object") {
-                    window.MY.radio = login;
-                    if (w.script) w.script.setAttribute("data-radio", login);
-                }
-            } catch (e) {}
-            const scriptAlreadyThere = w.script && (w.script.parentNode || (window.MY && window.MY.initialized));
-            const existing = !w.script && document.querySelector('script[src*="myradio24.com/player/player.js"]');
-            if (scriptAlreadyThere || existing) {
-                if (!w.script && existing) w.script = existing;
-                w.state = "loaded";
-                npDebugSource(session, "myradio24-widget", "loaded", { login, reused: true });
-            } else {
-                const script = document.createElement("script");
-                // Official MyRadio24 widget URL + data-radio attribute.
-                script.src = "https://myradio24.com/player/player.js?v3.31";
-                script.async = true;
-                script.setAttribute("data-radio", login);
-                script.setAttribute("data-interval", "15");
-                script.setAttribute("data-vmid", "0");
-                script.setAttribute("data-lang", "en");
-                script.onload = () => {
-                    if (w.session === session) {
-                        w.state = "loaded";
-                        try { if (window.MY) window.MY.radio = login; } catch (e) {}
-                        npDebugSource(session, "myradio24-widget", "loaded", { login });
-                    }
-                };
-                script.onerror = () => {
-                    if (w.session === session) {
-                        w.state = "script-error";
-                        npDebugSource(session, "myradio24-widget", "error", { login, error: "MyRadio24 player.js failed to load" });
-                    }
-                };
-                w.script = script;
-                document.body.appendChild(script);
-                npDebugSource(session, "myradio24-widget", "loading", { login });
-            }
-            w.timer = setInterval(() => {
-                if (w.session !== session || playSession !== session || !w.node) return;
-                const title = cleanSongTitle(w.node.textContent, session.item.title);
-                if (title && title !== w.last) {
-                    w.last = title;
-                    w.state = "data-myinfo";
-                    npProviderTitle(session, { song: title }, "MyRadio24 data-myinfo");
-                    npDebugSource(session, "myradio24-widget", "ok", { login, title, source: "data-myinfo" });
-                }
-            }, 1000);
-            return true;
-        }
-
         function lautFmStation(streamUrl) {
             try {
                 const u = new URL(streamUrl);
@@ -6749,12 +6645,15 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 u.origin + "/statistics?sid=" + encodeURIComponent(sid) + "&json=1"
             ];
             const results = await Promise.allSettled(endpoints.map((endpoint) => npFetchPayload(endpoint, signal, 4200)));
-            for (const result of results) {
+            for (let ri = 0; ri < results.length; ri++) {
+                const result = results[ri];
                 if (result.status !== "fulfilled") continue;
                 const data = result.value;
                 if (typeof data === "string") {
+                    // 7.html is only trusted when it parses as the CSV status row;
+                    // a bare string counts only from /currentsong (first endpoint).
                     const csv = npCsvSong(data);
-                    const hit = npTrackFromData(csv || data, "SHOUTcast / Centova");
+                    const hit = csv ? npTrackFromData(csv, "SHOUTcast / Centova") : ri === 0 ? npTrackFromData(data, "SHOUTcast / Centova") : null;
                     if (hit) return hit;
                 } else {
                     const hit = npTrackFromData(data, "SHOUTcast / Centova");
@@ -6833,7 +6732,6 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             return out;
         }
         function stopNowPlaying() {
-            stopMyRadio24Widget();
             stopZenoMetadata();
             stopRadioMvMetadata();
             if (!npJob) return;
@@ -6867,14 +6765,25 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
 
             // Push/event feeds supplement the polling adapters. Every listener
             // belongs to this play session and is closed by stopNowPlaying().
-            startMyRadio24Widget(session, url);
             startZenoMetadata(session, url);
             startRadioMvMetadata(session, url);
 
+            // Discovery asks every adapter once; after one yields a title only
+            // that adapter is polled (one request per round, not ten), and the
+            // full sweep returns if it goes quiet for three rounds in a row.
+            let good = null, emptyRounds = 0;
             const tick = async () => {
                 if (job.stopped || playSession !== session) return;
+                if (document.hidden) { job.timer = setTimeout(tick, NP_POLL_MS); return; }
                 npDebug.lastPollAt = new Date().toISOString();
-                const pending = sources.map(async ([id, fn], index) => {
+                let round = sources;
+                // the playback connection already reads ICY titles: don't open a second stream
+                if (session.ownIcy) round = round.filter(([id]) => id !== "icy");
+                if (good) {
+                    const one = round.filter(([id]) => id === good.id && !npBad.has(id + "|" + url));
+                    if (one.length) round = one; else good = null;
+                }
+                const pending = round.map(async ([id, fn], index) => {
                     const key = id + "|" + url;
                     if (npBad.has(key)) return { id, index, skipped: true };
                     npDebugSource(session, id, "checking");
@@ -6909,14 +6818,20 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 // readers report in the same polling round.
                 const winner = results.find((row) => row.track && row.track.title);
                 if (winner) {
+                    good = { id: winner.id, misses: 0 };
+                    emptyRounds = 0;
                     npSetTitle(session, winner.track);
                     npDebugSource(session, winner.id, "ok", { title: winner.track.title, source: winner.track.source || winner.id });
+                } else if (good) {
+                    if (++good.misses >= 3) good = null;
+                } else {
+                    emptyRounds++;
                 }
                 for (const row of results) {
                     if (row.skipped || row.stopped || row.error || (winner && row.id === winner.id)) continue;
                     if (!(row.track && row.track.title)) npDebugSource(session, row.id, "no-title");
                 }
-                const available = sources.some(([id]) => !npBad.has(id + "|" + url));
+                const available = round.some(([id]) => !npBad.has(id + "|" + url));
                 job.timer = setTimeout(() => {
                     if (!available) {
                         // Temporary failures are cooled down, not blacklisted
@@ -6925,7 +6840,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                         for (const key of Array.from(npFails.keys())) if (key.endsWith("|" + url)) npFails.delete(key);
                     }
                     tick();
-                }, available ? NP_POLL_MS : 60000);
+                }, !available ? 60000 : !good && emptyRounds >= 3 ? 30000 : NP_POLL_MS);
             };
             if (sources.length) tick();
             else npDebug.state = "push-only-or-no-poller";
@@ -7434,20 +7349,9 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 /(^|\.)laut\.fm$/i.test(host) || /(^|\.)radiomv\.(com|live)$/i.test(host) || /(^|\.)zeno\.fm$/i.test(host)
             );
         }
-        function npWaitForTitle(session, maxMs) {
-            if (session && (session.songLive || session.song)) return Promise.resolve(true);
-            return new Promise((resolve) => {
-                const started = Date.now();
-                const timer = setInterval(() => {
-                    if (!session || playSession !== session) { clearInterval(timer); resolve(false); return; }
-                    if (session.songLive || session.song) { clearInterval(timer); resolve(true); return; }
-                    if (Date.now() - started >= maxMs) { clearInterval(timer); resolve(false); }
-                }, 200);
-            });
-        }
         // station sends titles (in-band exact, or polled) and the format is MP3/AAC.
         async function recProbe(ses) {
-            const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 16000);
+            const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 12000);
             let out = { ok: false, split: false, exact: false, why: [] };
             try {
                 const op = await recOpen(ses.cands[ses.candIdx], true, ctl.signal);
@@ -7455,13 +7359,13 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 if (op.res) {
                     const ct = (op.res.headers.get("content-type") || "").toLowerCase();
                     const mi = parseInt(op.res.headers.get("icy-metaint"), 10) || 0;
-                    let exact = false;
-                    if (mi > 0) exact = await recProbeIcyTitle(op.res, mi, ses, 5000);
+                    let icyCheck = Promise.resolve(false);
+                    if (mi > 0) icyCheck = recProbeIcyTitle(op.res, mi, ses, 4000);
                     else {
                         try { if (op.res.body) { const p = op.res.body.cancel(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
                     }
-                    if (!(ses.songLive || ses.song)) await npDiscoverTitle(ses, 5000);
-                    if (!(ses.songLive || ses.song)) await npWaitForTitle(ses, 5000);
+                    const apiCheck = (ses.songLive || ses.song) ? Promise.resolve(true) : npDiscoverTitle(ses, 4000);
+                    const exact = (await Promise.all([icyCheck, apiCheck]))[0];
                     const providerMayPublishTitles = npHasProviderMetadata(ses.cands[ses.candIdx]);
                     out = {
                         ok: !/html/.test(ct),
@@ -7649,7 +7553,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             recRender();
             recCaptureStartChunk(r);
         }
-                function recMsg(t) { REC.msg = t; recRender(); }
+        function recMsg(t) { REC.msg = t; recRender(); }
         function recBlocked() {
             return false; // never pre-judged: every station is tried, then the fallbacks run
         }
@@ -8329,7 +8233,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 return bail("fetch"); // no CORS, mixed content or a network error: use the plain element
             }
             if (!m.alive || playSession !== session) return;
-            if (ownBufferMetaInt) npDebugSource(session, "icy-own-buffer", "connected", { metaint: ownBufferMetaInt });
+            if (ownBufferMetaInt) { session.ownIcy = true; npDebugSource(session, "icy-own-buffer", "connected", { metaint: ownBufferMetaInt }); }
             const ct = (res.headers.get("content-type") || "").toLowerCase();
             const mime = /mpeg|mp3/.test(ct) ? "audio/mpeg" : /aac/.test(ct) ? "audio/aac" : "";
             if (!res.ok || !res.body) return bail("fetch");

@@ -6186,8 +6186,109 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             return s.replace(/\0+$/, "");
         }
         function streamTitleFromIcy(meta) {
-            const m = /StreamTitle='([\s\S]*?)';/.exec(meta);
-            return m ? m[1] : null;
+            if (!meta) return null;
+            // Standard StreamTitle='...';  also tolerate unquoted / double-quoted forms some servers emit
+            let m = /StreamTitle='([\s\S]*?)';/i.exec(meta);
+            if (m) return m[1];
+            m = /StreamTitle="([\s\S]*?)";/i.exec(meta);
+            if (m) return m[1];
+            m = /StreamTitle=([^;]*);/i.exec(meta);
+            if (m) return m[1].trim();
+            return null;
+        }
+        // When CORS hides icy-metaint, recover the interval by scanning the first
+        // chunk for the repeating audio / length-byte / metadata pattern.
+        // Common intervals are tried first; a light brute scan covers odd values.
+        function detectIcyMetaInt(bytes) {
+            if (!bytes || bytes.length < 2048) return 0;
+            const tryMi = (mi) => {
+                if (mi < 256 || mi > 65536 || bytes.length < mi + 1 + 16) return false;
+                let pos = 0, checks = 0, hits = 0;
+                while (pos + mi + 1 <= bytes.length && checks < 5) {
+                    const lenByte = bytes[pos + mi];
+                    if (lenByte > 255) return false;
+                    const metaLen = lenByte * 16;
+                    if (metaLen > 4080) return false;
+                    if (pos + mi + 1 + metaLen > bytes.length) break;
+                    if (metaLen === 0) {
+                        hits++;
+                    } else {
+                        const raw = decodeIcyBytes(bytes.subarray(pos + mi + 1, pos + mi + 1 + metaLen));
+                        if (/StreamTitle\s*=/i.test(raw) || /StreamUrl\s*=/i.test(raw)) hits += 2;
+                        else if (/^[\x09\x0a\x0d\x20-\x7e]*$/.test(raw.replace(/\0/g, ""))) hits++;
+                        else return false;
+                    }
+                    pos += mi + 1 + metaLen;
+                    checks++;
+                }
+                return checks >= 2 && hits >= 2;
+            };
+            const common = [16000, 8000, 32000, 16384, 8192, 12000, 24000, 48000, 4096, 6000, 10000, 15000, 20000];
+            for (const mi of common) if (tryMi(mi)) return mi;
+            for (let mi = 1000; mi <= 40000; mi += 500) {
+                if (common.includes(mi)) continue;
+                if (tryMi(mi)) return mi;
+            }
+            // Last resort: locate StreamTitle= and infer interval from the preceding length byte
+            const text = typeof TextDecoder !== "undefined" ? new TextDecoder("latin1").decode(bytes.subarray(0, Math.min(bytes.length, 96000))) : "";
+            const idx = text.search(/StreamTitle\s*=/i);
+            if (idx > 1) {
+                // length byte sits just before the metadata payload
+                for (let back = 1; back <= 16; back++) {
+                    const lenByte = bytes[idx - back];
+                    if (lenByte > 0 && lenByte * 16 >= back - 1 && lenByte * 16 < 4096) {
+                        const mi = idx - back;
+                        if (mi >= 256 && mi <= 65536 && tryMi(mi)) return mi;
+                    }
+                }
+            }
+            return 0;
+        }
+        // Streaming ICY demuxer: feed raw response bytes, get clean audio + titles.
+        // State: 0 = reading audio (left bytes of mi), 1 = reading length byte, 2 = reading meta.
+        function createIcyDemux(mi, onTitle) {
+            let st = 0, left = mi, mlen = 0, mbuf = [];
+            const concat = (arrs) => {
+                let n = 0;
+                for (const a of arrs) n += a.length;
+                const out = new Uint8Array(n);
+                let o = 0;
+                for (const a of arrs) { out.set(a, o); o += a.length; }
+                return out;
+            };
+            return function demux(chunk) {
+                if (!chunk || !chunk.length) return new Uint8Array(0);
+                let v = chunk;
+                const audio = [];
+                while (v.length) {
+                    if (st === 0) {
+                        const n = Math.min(left, v.length);
+                        if (n) audio.push(v.subarray(0, n));
+                        v = v.subarray(n);
+                        left -= n;
+                        if (!left) st = 1;
+                    } else if (st === 1) {
+                        mlen = v[0] * 16;
+                        v = v.subarray(1);
+                        mbuf = [];
+                        if (mlen) { st = 2; left = mlen; }
+                        else { st = 0; left = mi; }
+                    } else {
+                        const n = Math.min(left, v.length);
+                        mbuf.push(v.subarray(0, n));
+                        v = v.subarray(n);
+                        left -= n;
+                        if (!left) {
+                            const t = streamTitleFromIcy(decodeIcyBytes(concat(mbuf)));
+                            if (t && onTitle) onTitle(t);
+                            st = 0;
+                            left = mi;
+                            mbuf = [];
+                        }
+                    }
+                }
+                return concat(audio);
+            };
         }
         let somaCache = { at: 0, data: null };
         async function somaNowPlaying(streamUrl, signal) {
@@ -6217,17 +6318,19 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (/[<>]/.test(t)) throw new Error("not text");
             return t || null;
         }
-        // Reads the first in-stream ICY metadata block. Only works when the
-        // server allows the Icy-MetaData header and exposes icy-metaint.
+        // Reads the first in-stream ICY metadata block.
+        // Works even when CORS hides icy-metaint: the interval is recovered by
+        // scanning the first response bytes for the audio/length/meta pattern.
         async function icyNowPlaying(streamUrl, signal) {
             const ctl = new AbortController();
             const onAbort = () => ctl.abort();
             if (signal) signal.addEventListener("abort", onAbort, { once: true });
-            const timer = setTimeout(() => ctl.abort(), 8000);
+            const timer = setTimeout(() => ctl.abort(), 10000);
             try {
                 const res = await fetch(streamUrl, { headers: { "Icy-MetaData": "1" }, signal: ctl.signal, cache: "no-store", credentials: "omit" });
-                const mi = parseInt(res.headers.get("icy-metaint"), 10);
-                if (!res.ok || !mi || mi < 256 || mi > 65536) throw new Error("no icy-metaint");
+                if (!res.ok || !res.body) throw new Error("no body");
+                let mi = parseInt(res.headers.get("icy-metaint"), 10);
+                if (!(mi >= 256 && mi <= 65536)) mi = 0;
                 const reader = res.body.getReader();
                 let buf = new Uint8Array(0);
                 const fill = async (len) => {
@@ -6240,15 +6343,23 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                         buf = nb;
                     }
                 };
+                // Need enough bytes to either use the header interval or detect it
+                const need = mi ? mi * 2 + 64 : 48000;
+                await fill(Math.min(need, 96000));
+                if (!mi) {
+                    mi = detectIcyMetaInt(buf);
+                    if (!mi) throw new Error("no icy-metaint");
+                }
                 let pos = 0;
-                for (let block = 0; block < 3; block++) {
+                for (let block = 0; block < 6; block++) {
                     await fill(pos + mi + 1);
                     const len = buf[pos + mi] * 16;
                     if (len > 0) {
                         await fill(pos + mi + 1 + len);
-                        return streamTitleFromIcy(decodeIcyBytes(buf.subarray(pos + mi + 1, pos + mi + 1 + len)));
+                        const title = streamTitleFromIcy(decodeIcyBytes(buf.subarray(pos + mi + 1, pos + mi + 1 + len)));
+                        if (title) return title;
                     }
-                    pos += mi + 1;
+                    pos += mi + 1 + len;
                 }
                 return null;
             } finally {
@@ -6704,8 +6815,11 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 const op = await recOpen(ses.cands[ses.candIdx], true, ctl.signal);
                 out.why = op.why || [];
                 if (op.res) {
-                    const ct = (op.res.headers.get("content-type") || "").toLowerCase(), mi = parseInt(op.res.headers.get("icy-metaint"), 10) || 0;
-                    out = { ok: !/html/.test(ct), split: !/ogg|opus|flac/.test(ct) && (mi > 0 || !!(ses.songLive || ses.song)), exact: mi > 0, why: ["not audio"] };
+                    const ct = (op.res.headers.get("content-type") || "").toLowerCase();
+                    let mi = parseInt(op.res.headers.get("icy-metaint"), 10) || 0;
+                    if (!(mi >= 256 && mi <= 65536)) mi = 0;
+                    // Header may be hidden by CORS; still offer song-split for mp3/aac — record path auto-detects.
+                    out = { ok: !/html/.test(ct), split: !/ogg|opus|flac/.test(ct), exact: mi > 0, why: ["not audio"] };
                 }
             } catch (e) {} finally { clearTimeout(timer); ctl.abort(); }
             return out;
@@ -6865,8 +6979,9 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (/html/.test(ct)) { ctl.abort(); REC.cap = true; return recMsg(recWhy(["not audio"])); }
             const ext = /aac|mp4/.test(ct) ? "aac" : /ogg|opus|flac/.test(ct) ? "ogg" : "mp3";
             if (tag && ext === "ogg") { ctl.abort(); return recMsg("This station can only be recorded as one long file. Choose “One long recording”."); }
-            const mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;
-            const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: !!mi, noTitles: !!noTitles });
+            let mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;
+            if (tag && !(mi >= 256 && mi <= 65536)) mi = 0;
+            const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: false, noTitles: !!noTitles, _detect: tag && !mi });
             r.song = recNew(tag && !mi && (ses.songLive || ses.song) ? ses.songLive || ses.song : null, tag);
             REC.msg = "";
             r.timer = setInterval(() => {
@@ -6878,25 +6993,44 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { r.wake = w; if (REC.st !== r) w.release(); }).catch(() => {});
             recRender();
             // In-band ICY: audio / length byte / metadata block, repeating.
-            let st = 0, left = mi, mlen = 0, mbuf = [];
-            const eat = (v) => {
-                while (v.length) {
-                    if (st === 0) { const n = Math.min(left, v.length); recPush(r, v.subarray(0, n)); v = v.subarray(n); left -= n; if (!left) st = 1; }
-                    else if (st === 1) { mlen = v[0] * 16; v = v.subarray(1); mbuf = []; if (mlen) { st = 2; left = mlen; } else { st = 0; left = mi; } }
-                    else {
-                        const n = Math.min(left, v.length); mbuf.push(v.slice(0, n)); v = v.subarray(n); left -= n;
-                        if (!left) { const t = streamTitleFromIcy(decodeIcyBytes(new Uint8Array(await0(mbuf)))); if (t) { recTitle(t); npSetTitle(ses, t); } st = 0; left = mi; }
-                    }
-                }
-            };
-            const await0 = (a) => { const out = []; a.forEach((x) => out.push(...x)); return out; };
+            // If the header hid icy-metaint (CORS), detect from the first ~48 KB then demux.
+            let demux = mi ? createIcyDemux(mi, (t) => { recTitle(t); npSetTitle(ses, t); }) : null;
+            if (mi) r.inband = true;
+            let detectBuf = r._detect ? new Uint8Array(0) : null;
             try {
                 const rd = res.body.getReader();
                 for (;;) {
                     const { value, done } = await rd.read();
                     if (done) break;
-                    if (mi) eat(value); else recPush(r, value);
+                    if (!value || !value.length) continue;
+                    if (detectBuf) {
+                        const nb = new Uint8Array(detectBuf.length + value.length);
+                        nb.set(detectBuf);
+                        nb.set(value, detectBuf.length);
+                        detectBuf = nb;
+                        if (detectBuf.length >= 48000) {
+                            mi = detectIcyMetaInt(detectBuf);
+                            if (mi) {
+                                demux = createIcyDemux(mi, (t) => { recTitle(t); npSetTitle(ses, t); });
+                                r.inband = true;
+                                const audio = demux(detectBuf);
+                                if (audio.length) recPush(r, audio);
+                            } else {
+                                recPush(r, detectBuf);
+                            }
+                            detectBuf = null;
+                            r._detect = false;
+                        }
+                        continue;
+                    }
+                    if (demux) {
+                        const audio = demux(value);
+                        if (audio.length) recPush(r, audio);
+                    } else {
+                        recPush(r, value);
+                    }
                 }
+                if (detectBuf && detectBuf.length) recPush(r, detectBuf);
             } catch (e) {}
             if (REC.st === r) recStop("Stream ended.");
         }
@@ -7405,8 +7539,10 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 if (playSession === session) fallback();
             };
             let res;
+            // Ask for ICY metadata so titles can be stripped from the same byte stream we play.
+            // If the server ignores the header, we still get plain audio (mi stays 0).
             try {
-                res = await fetch(url, { signal: m.ctl.signal, cache: "no-store", credentials: "omit" });
+                res = await fetch(url, { headers: { "Icy-MetaData": "1" }, signal: m.ctl.signal, cache: "no-store", credentials: "omit" });
             } catch (e) {
                 return bail("fetch"); // no CORS, mixed content or a network error: use the plain element
             }
@@ -7417,6 +7553,10 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (!mime) return bail("format");
             if (!MediaSource.isTypeSupported(mime)) return bail("codec");
             session.mseLive = !res.headers.get("content-length"); // a live stream has no length; a plain file does
+            let icyMi = parseInt(res.headers.get("icy-metaint"), 10) || 0;
+            if (!(icyMi >= 256 && icyMi <= 65536)) icyMi = 0;
+            let icyDemux = null; // set once interval is known (header or auto-detect)
+            const onIcyTitle = (t) => { if (playSession === session) npSetTitle(session, t); };
             const ms = new MediaSource();
             m.objUrl = URL.createObjectURL(ms);
             session.usesMse = true;
@@ -7484,6 +7624,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 if (m.alive && !session.everPlayed) bail("append");
             });
             const rd = res.body.getReader();
+            let detectBuf = icyMi ? null : new Uint8Array(0);
             try {
                 for (;;) {
                     // the only reasons to wait: a very long cache, or the player not taking data (should be rare)
@@ -7495,11 +7636,41 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                     const { value, done } = await rd.read();
                     if (done) break;
                     if (value && value.length) {
-                        q.push(value);
-                        qBytes += value.length;
-                        m.rxBytes += value.length;
-                        pump();
+                        let audioChunk = value;
+                        // Auto-detect metaint from the first ~48 KB when CORS hid the header
+                        if (!icyMi && detectBuf) {
+                            const nb = new Uint8Array(detectBuf.length + value.length);
+                            nb.set(detectBuf);
+                            nb.set(value, detectBuf.length);
+                            detectBuf = nb;
+                            if (detectBuf.length >= 48000) {
+                                icyMi = detectIcyMetaInt(detectBuf);
+                                if (icyMi) {
+                                    icyDemux = createIcyDemux(icyMi, onIcyTitle);
+                                    audioChunk = icyDemux(detectBuf);
+                                }
+                                detectBuf = null; // detection done (success or give up)
+                            } else {
+                                continue; // hold bytes until we can decide
+                            }
+                        } else if (icyMi) {
+                            if (!icyDemux) icyDemux = createIcyDemux(icyMi, onIcyTitle);
+                            audioChunk = icyDemux(value);
+                        }
+                        if (audioChunk && audioChunk.length) {
+                            q.push(audioChunk);
+                            qBytes += audioChunk.length;
+                            m.rxBytes += audioChunk.length;
+                            pump();
+                        }
                     }
+                }
+                // If the stream ended before we gathered enough for detection, flush what we held as plain audio
+                if (detectBuf && detectBuf.length) {
+                    q.push(detectBuf);
+                    qBytes += detectBuf.length;
+                    m.rxBytes += detectBuf.length;
+                    pump();
                 }
             } catch (e) {
                 // the connection dropped: what is cached still plays out below

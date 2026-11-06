@@ -6460,9 +6460,10 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             w.last = "";
             if (w.timer) clearInterval(w.timer);
             w.timer = null;
-            if (w.script && w.script.parentNode) w.script.parentNode.removeChild(w.script);
+            // Keep the player.js <script> in the document forever. MyRadio24 sets
+            // MY.initialized on first load and alerts if the same script is
+            // injected again; removing the tag does not clear that flag.
             if (w.node && w.node.parentNode) w.node.parentNode.removeChild(w.node);
-            w.script = null;
             w.node = null;
             w.state = "idle";
         }
@@ -6470,7 +6471,9 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             const login = myRadio24Login(streamUrl);
             if (!login) { stopMyRadio24Widget(); return false; }
             const w = myRadio24Widget;
-            if (w.session === session && w.login.toLowerCase() === login.toLowerCase() && w.script) return true;
+            if (w.session === session && w.login.toLowerCase() === login.toLowerCase() && (w.script || w.node)) return true;
+            // Tear down the previous session's node/timer, but never remove the
+            // shared player.js tag (MyRadio24 forbids loading it twice).
             stopMyRadio24Widget();
             w.session = session;
             w.login = login;
@@ -6481,29 +6484,45 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             Object.assign(node.style, { position: "fixed", left: "-10000px", top: "0", width: "1px", height: "1px", overflow: "hidden", opacity: "0", pointerEvents: "none" });
             document.body.appendChild(node);
             w.node = node;
-            const script = document.createElement("script");
-            // This is the script URL and data-radio parameter used by the
-            // official MyRadio24-generated widget code, not a guessed API.
-            script.src = "https://myradio24.com/player/player.js?v3.31";
-            script.async = true;
-            script.setAttribute("data-radio", login);
-            script.setAttribute("data-interval", "15");
-            script.setAttribute("data-vmid", "0");
-            script.setAttribute("data-lang", "en");
-            script.onload = () => {
-                if (w.session === session) {
-                    w.state = "loaded";
-                    npDebugSource(session, "myradio24-widget", "loaded", { login });
+            // Point the already-running widget at the new station when possible.
+            try {
+                if (window.MY && typeof window.MY === "object") {
+                    window.MY.radio = login;
+                    if (w.script) w.script.setAttribute("data-radio", login);
                 }
-            };
-            script.onerror = () => {
-                if (w.session === session) {
-                    w.state = "script-error";
-                    npDebugSource(session, "myradio24-widget", "error", { login, error: "MyRadio24 player.js failed to load" });
-                }
-            };
-            w.script = script;
-            document.body.appendChild(script);
+            } catch (e) {}
+            const scriptAlreadyThere = w.script && (w.script.parentNode || (window.MY && window.MY.initialized));
+            const existing = !w.script && document.querySelector('script[src*="myradio24.com/player/player.js"]');
+            if (scriptAlreadyThere || existing) {
+                if (!w.script && existing) w.script = existing;
+                w.state = "loaded";
+                npDebugSource(session, "myradio24-widget", "loaded", { login, reused: true });
+            } else {
+                const script = document.createElement("script");
+                // Official MyRadio24 widget URL + data-radio attribute.
+                script.src = "https://myradio24.com/player/player.js?v3.31";
+                script.async = true;
+                script.setAttribute("data-radio", login);
+                script.setAttribute("data-interval", "15");
+                script.setAttribute("data-vmid", "0");
+                script.setAttribute("data-lang", "en");
+                script.onload = () => {
+                    if (w.session === session) {
+                        w.state = "loaded";
+                        try { if (window.MY) window.MY.radio = login; } catch (e) {}
+                        npDebugSource(session, "myradio24-widget", "loaded", { login });
+                    }
+                };
+                script.onerror = () => {
+                    if (w.session === session) {
+                        w.state = "script-error";
+                        npDebugSource(session, "myradio24-widget", "error", { login, error: "MyRadio24 player.js failed to load" });
+                    }
+                };
+                w.script = script;
+                document.body.appendChild(script);
+                npDebugSource(session, "myradio24-widget", "loading", { login });
+            }
             w.timer = setInterval(() => {
                 if (w.session !== session || playSession !== session || !w.node) return;
                 const title = cleanSongTitle(w.node.textContent, session.item.title);
@@ -6514,7 +6533,6 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                     npDebugSource(session, "myradio24-widget", "ok", { login, title, source: "data-myinfo" });
                 }
             }, 1000);
-            npDebugSource(session, "myradio24-widget", "loading", { login });
             return true;
         }
 

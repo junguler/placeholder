@@ -1392,7 +1392,8 @@ html[data-theme="concrete"] #playPauseBtn { --c: var(--orange); }
 html[data-theme="concrete"] #volDownBtn,
 html[data-theme="concrete"] #volUpBtn { --c: var(--blue); }
 html[data-theme="concrete"] .playlist-btn[data-rec="capture"] { --c: var(--blue); }
-html[data-theme="concrete"] .playlist-btn[data-rec="songs"] { --c: var(--violet); }
+html[data-theme="concrete"] .playlist-btn[data-rec="songs"],
+html[data-theme="concrete"] .playlist-btn[data-rec="capture-songs"] { --c: var(--violet); }
 html[data-theme="concrete"] .playlist-btn[data-rec="whole"] { --c: var(--orange); }
 html[data-theme="concrete"] #recOpenBtn { --c: var(--yellow); }
 html[data-theme="concrete"] .shuffle-btn[aria-pressed="true"] { --c: var(--orange); }
@@ -5282,11 +5283,15 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
         function fetchWithTimeout(url, opts, ms, outerSignal) {
             const ctl = new AbortController();
             const timer = setTimeout(() => ctl.abort(), ms || 8000);
+            const onAbort = () => ctl.abort();
             if (outerSignal) {
                 if (outerSignal.aborted) ctl.abort();
-                else outerSignal.addEventListener("abort", () => ctl.abort(), { once: true });
+                else outerSignal.addEventListener("abort", onAbort, { once: true });
             }
-            return fetch(url, Object.assign({}, opts || {}, { signal: ctl.signal })).finally(() => clearTimeout(timer));
+            return fetch(url, Object.assign({}, opts || {}, { signal: ctl.signal })).finally(() => {
+                clearTimeout(timer);
+                if (outerSignal) outerSignal.removeEventListener("abort", onAbort);
+            });
         }
         async function readTextLimited(res, max) {
             max = max || 512 * 1024;
@@ -6150,14 +6155,84 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             }
         }
 
-        // ---- now playing: song titles from the station ---------------------
+        // ---- now playing: multi-provider metadata -------------------------
+        // Every source is normalized to { title, playedAt, source, exact }.
+        // A title reaches npSetTitle() once, which feeds the UI, Media Session,
+        // song history and (when enabled) the recorder's split boundary.
         function cleanSongTitle(raw, station) {
             if (raw == null) return "";
             const t = String(raw).replace(/\0/g, "").replace(/\s+/g, " ").trim();
-            if (t.length < 2 || t.length > 200) return "";
-            if (/^(unknown|n\/a|null|undefined|no title|untitled|-+|\.+)$/i.test(t)) return "";
+            if (t.length < 2 || t.length > 240) return "";
+            if (/^(unknown|n\/a|null|undefined|no title|untitled|-+|\.+|not available)$/i.test(t)) return "";
             if (station && t.toLowerCase() === String(station).trim().toLowerCase()) return "";
             return t;
+        }
+        function npParseTime(value) {
+            if (value == null || value === "") return 0;
+            if (typeof value === "number" && Number.isFinite(value)) return value < 1e12 ? value * 1000 : value;
+            const v = String(value).trim();
+            if (!v || /^\d{1,2}:\d{2}(?::\d{2})?$/.test(v)) return 0;
+            if (/^\d+(?:\.\d+)?$/.test(v)) {
+                const n = Number(v);
+                return n < 1e12 ? n * 1000 : n;
+            }
+            const n = Date.parse(v);
+            return Number.isFinite(n) ? n : 0;
+        }
+        function npFirstText(obj, keys) {
+            if (!obj || typeof obj !== "object") return "";
+            for (const key of keys) {
+                const v = obj[key];
+                if (typeof v === "string" && v.trim()) return v.trim();
+                if (typeof v === "number" && Number.isFinite(v)) return String(v);
+            }
+            return "";
+        }
+        function npTrackFromData(data, source, depth) {
+            depth = depth || 0;
+            if (data == null || depth > 5) return null;
+            if (typeof data === "string") {
+                const title = cleanSongTitle(data);
+                return title ? { title, source: source || "metadata API", playedAt: 0, exact: false } : null;
+            }
+            if (Array.isArray(data)) {
+                for (const row of data) {
+                    const hit = npTrackFromData(row, source, depth + 1);
+                    if (hit) return hit;
+                }
+                return null;
+            }
+            if (typeof data !== "object") return null;
+
+            // Prefer an explicitly nested current-track object over station-level
+            // fields such as the station's own title/name.
+            const nestedKeys = ["now_playing", "nowPlaying", "current_track", "currentTrack", "current", "track", "song"];
+            for (const key of nestedKeys) {
+                const nested = data[key];
+                if (nested && typeof nested === "object") {
+                    const hit = npTrackFromData(nested, source, depth + 1);
+                    if (hit) {
+                        if (!hit.playedAt) hit.playedAt = npParseTime(data.played_at || data.started_at || data.start_time || data.starts);
+                        return hit;
+                    }
+                }
+            }
+
+            const artist = npFirstText(data, ["artist", "song_artist", "performer", "creator", "artist_name"]);
+            // MyRadio24 uses `song` for the full current track and `title` for
+            // the station title; do not mistake a station title for a song.
+            let title = npFirstText(data, ["songtitle", "song_title", "current_song", "currentSong", "track_title", "song"]);
+            if (!title && artist) title = npFirstText(data, ["title", "name", "text"]);
+            if (!title && (data.type === "track" || data.type === "song")) title = npFirstText(data, ["title", "name", "text"]);
+            if (!title && typeof data.title === "string" && (data.played_at || data.starts || data.started_at || data.duration)) title = data.title;
+            if (!title) return null;
+
+            const lowerTitle = title.toLowerCase();
+            const formatted = artist && !lowerTitle.startsWith((artist + " - ").toLowerCase()) && !title.includes(" - ")
+                ? artist + " - " + title
+                : title;
+            const playedAt = npParseTime(data.played_at || data.started_at || data.start_time || data.starts || data.timestamp || data.start);
+            return { title: formatted, source: source || "metadata API", playedAt, exact: false };
         }
         function icecastTitleFromJson(json, pathname) {
             const src = json && json.icestats && json.icestats.source;
@@ -6165,15 +6240,16 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             const list = Array.isArray(src) ? src : [src];
             const byPath = list.find((s) => {
                 try {
-                    return new URL(s.listenurl).pathname === pathname;
+                    const listen = s.listenurl || s.listen_url || "";
+                    return listen && new URL(listen).pathname === pathname;
                 } catch (e) {
                     return false;
                 }
             });
             const m = byPath || (list.length === 1 ? list[0] : null);
             if (!m) return null;
-            const t = m.title || m.yp_currently_playing || "";
-            if (m.artist && t && !String(t).includes(m.artist)) return m.artist + " - " + t;
+            const t = m.title || m.yp_currently_playing || m.streamtitle || "";
+            if (m.artist && t && !String(t).toLowerCase().startsWith((String(m.artist) + " - ").toLowerCase()) && !String(t).includes(" - ")) return m.artist + " - " + t;
             return t || null;
         }
         function decodeIcyBytes(bytes) {
@@ -6186,109 +6262,59 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             return s.replace(/\0+$/, "");
         }
         function streamTitleFromIcy(meta) {
-            if (!meta) return null;
-            // Standard StreamTitle='...';  also tolerate unquoted / double-quoted forms some servers emit
-            let m = /StreamTitle='([\s\S]*?)';/i.exec(meta);
-            if (m) return m[1];
-            m = /StreamTitle="([\s\S]*?)";/i.exec(meta);
-            if (m) return m[1];
-            m = /StreamTitle=([^;]*);/i.exec(meta);
-            if (m) return m[1].trim();
-            return null;
+            const s = String(meta || "");
+            // The quoted-value form is the normal ICY format. Accept either
+            // quote style and escaped quote characters in station titles.
+            const single = /(?:^|;)\s*StreamTitle\s*=\s*'((?:\\.|[^'\\])*)'/i.exec(s);
+            const dbl = single ? null : /(?:^|;)\s*StreamTitle\s*=\s*"((?:\\.|[^"\\])*)"/i.exec(s);
+            const value = single ? single[1] : dbl ? dbl[1] : "";
+            return value ? value.replace(/\\(['"\\])/g, "$1") : null;
         }
-        // When CORS hides icy-metaint, recover the interval by scanning the first
-        // chunk for the repeating audio / length-byte / metadata pattern.
-        // Common intervals are tried first; a light brute scan covers odd values.
-        function detectIcyMetaInt(bytes) {
-            if (!bytes || bytes.length < 2048) return 0;
-            const tryMi = (mi) => {
-                if (mi < 256 || mi > 65536 || bytes.length < mi + 1 + 16) return false;
-                let pos = 0, checks = 0, hits = 0;
-                while (pos + mi + 1 <= bytes.length && checks < 5) {
-                    const lenByte = bytes[pos + mi];
-                    if (lenByte > 255) return false;
-                    const metaLen = lenByte * 16;
-                    if (metaLen > 4080) return false;
-                    if (pos + mi + 1 + metaLen > bytes.length) break;
-                    if (metaLen === 0) {
-                        hits++;
-                    } else {
-                        const raw = decodeIcyBytes(bytes.subarray(pos + mi + 1, pos + mi + 1 + metaLen));
-                        if (/StreamTitle\s*=/i.test(raw) || /StreamUrl\s*=/i.test(raw)) hits += 2;
-                        else if (/^[\x09\x0a\x0d\x20-\x7e]*$/.test(raw.replace(/\0/g, ""))) hits++;
-                        else return false;
-                    }
-                    pos += mi + 1 + metaLen;
-                    checks++;
-                }
-                return checks >= 2 && hits >= 2;
-            };
-            const common = [16000, 8000, 32000, 16384, 8192, 12000, 24000, 48000, 4096, 6000, 10000, 15000, 20000];
-            for (const mi of common) if (tryMi(mi)) return mi;
-            for (let mi = 1000; mi <= 40000; mi += 500) {
-                if (common.includes(mi)) continue;
-                if (tryMi(mi)) return mi;
+        async function npFetchPayload(url, signal, timeout) {
+            const res = await fetchWithTimeout(url, {
+                cache: "no-store",
+                credentials: "omit",
+                headers: { Accept: "application/json, text/plain, application/xml, text/xml;q=0.9, */*;q=0.5" }
+            }, timeout || 6000, signal);
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const raw = (await readTextLimited(res, 128 * 1024)).trim();
+            if (!raw) return null;
+            // Some legacy radio APIs wrap JSON in a JSONP callback.
+            const jsonText = raw.replace(/^\s*[\w$.]+\s*\(/, "").replace(/\)\s*;?\s*$/, "");
+            if (jsonText !== raw || /^[\[{]/.test(raw)) {
+                try { return JSON.parse(jsonText); } catch (e) {}
             }
-            // Last resort: locate StreamTitle= and infer interval from the preceding length byte
-            const text = typeof TextDecoder !== "undefined" ? new TextDecoder("latin1").decode(bytes.subarray(0, Math.min(bytes.length, 96000))) : "";
-            const idx = text.search(/StreamTitle\s*=/i);
-            if (idx > 1) {
-                // length byte sits just before the metadata payload
-                for (let back = 1; back <= 16; back++) {
-                    const lenByte = bytes[idx - back];
-                    if (lenByte > 0 && lenByte * 16 >= back - 1 && lenByte * 16 < 4096) {
-                        const mi = idx - back;
-                        if (mi >= 256 && mi <= 65536 && tryMi(mi)) return mi;
+            if (raw[0] === "<") {
+                try {
+                    const doc = new DOMParser().parseFromString(raw, "application/xml");
+                    if (!doc.querySelector("parsererror")) {
+                        const pick = (names) => {
+                            for (const name of names) {
+                                const node = doc.getElementsByTagName(name)[0];
+                                if (node && node.textContent && node.textContent.trim()) return node.textContent.trim();
+                            }
+                            return "";
+                        };
+                        const obj = {
+                            songtitle: pick(["songtitle", "SONGTITLE", "currenttrack", "CURRENTTRACK", "currentsong", "CURRENTSONG", "current_song", "song", "SONG", "streamtitle", "STREAMTITLE"]),
+                            title: pick(["title", "TITLE"]),
+                            artist: pick(["artist", "ARTIST"])
+                        };
+                        if (obj.songtitle || obj.artist || obj.title) return obj;
                     }
-                }
+                } catch (e) {}
             }
-            return 0;
+            return raw;
         }
-        // Streaming ICY demuxer: feed raw response bytes, get clean audio + titles.
-        // State: 0 = reading audio (left bytes of mi), 1 = reading length byte, 2 = reading meta.
-        function createIcyDemux(mi, onTitle) {
-            let st = 0, left = mi, mlen = 0, mbuf = [];
-            const concat = (arrs) => {
-                let n = 0;
-                for (const a of arrs) n += a.length;
-                const out = new Uint8Array(n);
-                let o = 0;
-                for (const a of arrs) { out.set(a, o); o += a.length; }
-                return out;
-            };
-            return function demux(chunk) {
-                if (!chunk || !chunk.length) return new Uint8Array(0);
-                let v = chunk;
-                const audio = [];
-                while (v.length) {
-                    if (st === 0) {
-                        const n = Math.min(left, v.length);
-                        if (n) audio.push(v.subarray(0, n));
-                        v = v.subarray(n);
-                        left -= n;
-                        if (!left) st = 1;
-                    } else if (st === 1) {
-                        mlen = v[0] * 16;
-                        v = v.subarray(1);
-                        mbuf = [];
-                        if (mlen) { st = 2; left = mlen; }
-                        else { st = 0; left = mi; }
-                    } else {
-                        const n = Math.min(left, v.length);
-                        mbuf.push(v.subarray(0, n));
-                        v = v.subarray(n);
-                        left -= n;
-                        if (!left) {
-                            const t = streamTitleFromIcy(decodeIcyBytes(concat(mbuf)));
-                            if (t && onTitle) onTitle(t);
-                            st = 0;
-                            left = mi;
-                            mbuf = [];
-                        }
-                    }
-                }
-                return concat(audio);
-            };
+        function npCsvSong(raw) {
+            const t = String(raw || "").trim();
+            if (!t || /<html|<!doctype/i.test(t)) return null;
+            const line = t.split(/\r?\n/).find((x) => x.trim()) || "";
+            const fields = line.split(",");
+            // SHOUTcast v1's 7.html is a comma-separated status row whose
+            // final field is the current title (which itself may contain commas).
+            const title = fields.length >= 7 ? fields.slice(6).join(",").replace(/^\s*["']|["']\s*$/g, "").trim() : "";
+            return title || null;
         }
         let somaCache = { at: 0, data: null };
         async function somaNowPlaying(streamUrl, signal) {
@@ -6296,60 +6322,201 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             const id = first.replace(/\.[a-z0-9]+$/i, "").split("-")[0].toLowerCase();
             if (!id) throw new Error("no channel");
             if (!somaCache.data || Date.now() - somaCache.at > 10000) {
-                const res = await fetchWithTimeout("https://somafm.com/channels.json", { cache: "no-store" }, 6000, signal);
-                if (!res.ok) throw new Error("http");
+                const res = await fetchWithTimeout("https://somafm.com/channels.json", { cache: "no-store", credentials: "omit" }, 6000, signal);
+                if (!res.ok) throw new Error("HTTP " + res.status);
                 somaCache = { at: Date.now(), data: await res.json() };
             }
             const ch = (somaCache.data.channels || []).find((c) => String(c.id).toLowerCase() === id);
             if (!ch) throw new Error("unknown channel");
-            return ch.lastPlaying || null;
+            return npTrackFromData(ch.lastPlaying, "SomaFM");
+        }
+        function myRadio24Login(streamUrl) {
+            try {
+                const u = new URL(streamUrl);
+                if (!/(^|\.)myradio24\.(com|org)$/i.test(u.hostname)) return "";
+                const first = u.pathname.split("/").filter(Boolean)[0] || "";
+                return /^[a-z0-9_-]{2,40}$/i.test(first) ? first : "";
+            } catch (e) { return ""; }
+        }
+        async function myRadio24NowPlaying(streamUrl, signal) {
+            const login = myRadio24Login(streamUrl);
+            if (!login) throw new Error("no station login in stream path");
+            const data = await npFetchPayload("https://myradio24.com/users/" + encodeURIComponent(login) + "/status.json", signal);
+            const hit = npTrackFromData(data, "MyRadio24");
+            if (!hit) return null;
+            // status.json documents separate artist/songtitle fields, as well
+            // as a full `song` field and playback history.
+            if (data && typeof data === "object") {
+                const artist = npFirstText(data, ["artist"]);
+                const title = npFirstText(data, ["songtitle", "song"]);
+                if (artist && title && !title.includes(" - ")) hit.title = artist + " - " + title;
+            }
+            return hit;
+        }
+        function azuraCastSlug(streamUrl) {
+            try {
+                const u = new URL(streamUrl), p = u.pathname.split("/").filter(Boolean);
+                const i = p.findIndex((x) => x.toLowerCase() === "listen");
+                if (i >= 0 && p[i + 1]) return p[i + 1];
+                return "";
+            } catch (e) { return ""; }
+        }
+        async function azuraCastNowPlaying(streamUrl, signal) {
+            const u = new URL(streamUrl), slug = azuraCastSlug(streamUrl);
+            const endpoints = slug
+                ? [u.origin + "/api/nowplaying/" + encodeURIComponent(slug), u.origin + "/api/nowplaying_static/" + encodeURIComponent(slug) + ".json", u.origin + "/api/nowplaying_static/" + encodeURIComponent(slug) + ".txt"]
+                : [u.origin + "/api/nowplaying"];
+            for (const endpoint of endpoints) {
+                try {
+                    const data = await npFetchPayload(endpoint, signal);
+                    let candidate = data;
+                    if (!slug && Array.isArray(data) && data.length > 1) {
+                        const currentPath = u.pathname;
+                        const matches = data.filter((entry) => {
+                            const station = entry && (entry.station || entry);
+                            const urls = [station && station.listen_url, station && station.url, entry && entry.listen_url];
+                            if (Array.isArray(station && station.mounts)) {
+                                for (const mount of station.mounts) urls.push(mount && (mount.url || mount.path));
+                            }
+                            return urls.some((value) => {
+                                if (!value) return false;
+                                try { return new URL(value, u.origin).pathname === currentPath; } catch (e) { return String(value) === currentPath; }
+                            });
+                        });
+                        candidate = matches.length === 1 ? matches[0] : null;
+                    }
+                    const hit = npTrackFromData(candidate, "AzuraCast");
+                    if (hit) return hit;
+                    if (typeof candidate === "string") {
+                        const title = cleanSongTitle(data);
+                        if (title) return { title, source: "AzuraCast", playedAt: 0, exact: false };
+                    }
+                } catch (e) { if (signal && signal.aborted) throw e; }
+            }
+            return null;
+        }
+        function radioCoStationId(streamUrl) {
+            try {
+                const u = new URL(streamUrl), parts = u.pathname.split("/").filter(Boolean);
+                const i = parts.findIndex((x) => x.toLowerCase() === "listen");
+                if (i > 0) return parts[i - 1];
+                if (/(^|\.)radio\.co$/i.test(u.hostname) && parts.length) return parts[0];
+            } catch (e) {}
+            return "";
+        }
+        async function radioCoNowPlaying(streamUrl, signal) {
+            const id = radioCoStationId(streamUrl);
+            if (!id) throw new Error("no Radio.co station ID in stream path");
+            const endpoints = [
+                "https://public.radio.co/stations/" + encodeURIComponent(id) + "/status",
+                "https://public.radio.co/api/v2/" + encodeURIComponent(id) + "/track/current"
+            ];
+            for (const endpoint of endpoints) {
+                try {
+                    const data = await npFetchPayload(endpoint, signal);
+                    const hit = npTrackFromData(data, "Radio.co");
+                    if (hit) return hit;
+                } catch (e) { if (signal && signal.aborted) throw e; }
+            }
+            return null;
         }
         async function icecastNowPlaying(streamUrl, signal) {
             const u = new URL(streamUrl);
-            const res = await fetchWithTimeout(u.origin + "/status-json.xsl", { cache: "no-store" }, 6000, signal);
-            if (!res.ok) throw new Error("http");
-            return icecastTitleFromJson(await res.json(), u.pathname);
+            const base = u.origin + "/status-json.xsl";
+            const endpoints = [base + "?mount=" + encodeURIComponent(u.pathname), base];
+            for (const endpoint of endpoints) {
+                try {
+                    const data = await npFetchPayload(endpoint, signal);
+                    const title = icecastTitleFromJson(data, u.pathname);
+                    if (title) return npTrackFromData(title, "Icecast JSON");
+                } catch (e) { if (signal && signal.aborted) throw e; }
+            }
+            return null;
+        }
+        function centovaProxyBase(streamUrl) {
+            try {
+                const u = new URL(streamUrl), parts = u.pathname.split("/").filter(Boolean);
+                const i = parts.findIndex((x) => x.toLowerCase() === "proxy");
+                if (i >= 0 && parts[i + 1]) return u.origin + "/" + parts.slice(0, i + 2).map(encodeURIComponent).join("/");
+            } catch (e) {}
+            return "";
+        }
+        async function centovaNowPlaying(streamUrl, signal) {
+            const base = centovaProxyBase(streamUrl);
+            if (!base) throw new Error("not a Centova proxy URL");
+            const endpoints = [base + "/stats?json=1", base + "/stats", base + "/currentsong", base + "/statistics?json=1"];
+            for (const endpoint of endpoints) {
+                try {
+                    const data = await npFetchPayload(endpoint, signal);
+                    const hit = npTrackFromData(data, "Centova Cast");
+                    if (hit) return hit;
+                } catch (e) { if (signal && signal.aborted) throw e; }
+            }
+            return null;
         }
         async function shoutcastNowPlaying(streamUrl, signal) {
             const u = new URL(streamUrl);
-            const res = await fetchWithTimeout(u.origin + "/currentsong?sid=1", { cache: "no-store" }, 6000, signal);
-            if (!res.ok) throw new Error("http");
-            const t = (await readTextLimited(res, 2048)).trim();
-            if (/[<>]/.test(t)) throw new Error("not text");
-            return t || null;
+            const sid = u.searchParams.get("sid") || "1";
+            const endpoints = [
+                u.origin + "/currentsong?sid=" + encodeURIComponent(sid),
+                u.origin + "/currentsong",
+                u.origin + "/7.html?sid=" + encodeURIComponent(sid),
+                u.origin + "/7.html",
+                u.origin + "/stats?sid=" + encodeURIComponent(sid) + "&json=1",
+                u.origin + "/stats?json=1",
+                u.origin + "/statistics?sid=" + encodeURIComponent(sid) + "&json=1",
+                u.origin + "/statistics?json=1"
+            ];
+            for (const endpoint of endpoints) {
+                try {
+                    const data = await npFetchPayload(endpoint, signal);
+                    if (typeof data === "string") {
+                        const csv = npCsvSong(data);
+                        const hit = npTrackFromData(csv || data, "SHOUTcast / Centova");
+                        if (hit) return hit;
+                    } else {
+                        const hit = npTrackFromData(data, "SHOUTcast / Centova");
+                        if (hit) return hit;
+                    }
+                } catch (e) { if (signal && signal.aborted) throw e; }
+            }
+            return null;
         }
-        // Reads the first in-stream ICY metadata block.
-        // Works even when CORS hides icy-metaint: the interval is recovered by
-        // scanning the first response bytes for the audio/length/meta pattern.
+        async function libreTimeNowPlaying(streamUrl, signal) {
+            const u = new URL(streamUrl);
+            const endpoints = [u.origin + "/api/live-info", u.origin + "/api/live-info-v2"];
+            for (const endpoint of endpoints) {
+                try {
+                    const data = await npFetchPayload(endpoint, signal);
+                    const hit = npTrackFromData(data && (data.current || data.data && data.data.current) || data, "LibreTime / Airtime");
+                    if (hit) return hit;
+                } catch (e) { if (signal && signal.aborted) throw e; }
+            }
+            return null;
+        }
+        // Reads one short window from the stream itself. This is separate from
+        // playback because HTMLMediaElement does not expose ICY blocks to JS.
+        // It requires CORS permission and an exposed icy-metaint response header.
         async function icyNowPlaying(streamUrl, signal) {
             const ctl = new AbortController();
             const onAbort = () => ctl.abort();
             if (signal) signal.addEventListener("abort", onAbort, { once: true });
-            const timer = setTimeout(() => ctl.abort(), 10000);
+            const timer = setTimeout(() => ctl.abort(), 8000);
+            let reader = null;
             try {
                 const res = await fetch(streamUrl, { headers: { "Icy-MetaData": "1" }, signal: ctl.signal, cache: "no-store", credentials: "omit" });
-                if (!res.ok || !res.body) throw new Error("no body");
-                let mi = parseInt(res.headers.get("icy-metaint"), 10);
-                if (!(mi >= 256 && mi <= 65536)) mi = 0;
-                const reader = res.body.getReader();
+                const mi = parseInt(res.headers.get("icy-metaint"), 10);
+                if (!res.ok || !mi || mi < 256 || mi > 65536 || !res.body || !res.body.getReader) throw new Error("ICY metadata not exposed");
+                reader = res.body.getReader();
                 let buf = new Uint8Array(0);
                 const fill = async (len) => {
                     while (buf.length < len) {
                         const { value, done } = await reader.read();
-                        if (done) throw new Error("eof");
+                        if (done) throw new Error("stream ended");
                         const nb = new Uint8Array(buf.length + value.length);
-                        nb.set(buf);
-                        nb.set(value, buf.length);
-                        buf = nb;
+                        nb.set(buf); nb.set(value, buf.length); buf = nb;
                     }
                 };
-                // Need enough bytes to either use the header interval or detect it
-                const need = mi ? mi * 2 + 64 : 48000;
-                await fill(Math.min(need, 96000));
-                if (!mi) {
-                    mi = detectIcyMetaInt(buf);
-                    if (!mi) throw new Error("no icy-metaint");
-                }
                 let pos = 0;
                 for (let block = 0; block < 6; block++) {
                     await fill(pos + mi + 1);
@@ -6357,7 +6524,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                     if (len > 0) {
                         await fill(pos + mi + 1 + len);
                         const title = streamTitleFromIcy(decodeIcyBytes(buf.subarray(pos + mi + 1, pos + mi + 1 + len)));
-                        if (title) return title;
+                        if (title) return { title, source: "ICY in-stream metadata", playedAt: 0, exact: false };
                     }
                     pos += mi + 1 + len;
                 }
@@ -6365,17 +6532,23 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             } finally {
                 clearTimeout(timer);
                 ctl.abort();
+                if (reader) try { await reader.cancel(); } catch (e) {}
                 if (signal) signal.removeEventListener("abort", onAbort);
             }
         }
         function npSourceList(url, usesHls) {
             const out = [];
             let host = "";
-            try {
-                host = new URL(url).hostname;
-            } catch (e) {}
+            try { host = new URL(url).hostname; } catch (e) {}
+            if (/(^|\.)myradio24\.(com|org)$/i.test(host)) out.push(["myradio24", myRadio24NowPlaying]);
             if (/(^|\.)somafm\.com$/i.test(host)) out.push(["soma", somaNowPlaying]);
-            if (!usesHls) out.push(["icecast", icecastNowPlaying], ["shoutcast", shoutcastNowPlaying], ["icy", icyNowPlaying]);
+            if (/(^|\.)radio\.co$/i.test(host)) out.push(["radio-co", radioCoNowPlaying]);
+            if (centovaProxyBase(url)) out.push(["centova", centovaNowPlaying]);
+            // AzuraCast streams conventionally contain /listen/<station-shortcode>/.
+            // Do not probe every unrelated radio host for this endpoint.
+            if (azuraCastSlug(url)) out.push(["azuracast", azuraCastNowPlaying]);
+            out.push(["icecast", icecastNowPlaying], ["shoutcast-centova", shoutcastNowPlaying], ["libretime", libreTimeNowPlaying]);
+            if (!usesHls) out.push(["icy", icyNowPlaying]);
             return out;
         }
         function stopNowPlaying() {
@@ -6385,7 +6558,9 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (npJob.ctl) npJob.ctl.abort();
             npJob = null;
         }
-        // Polls the first source that works for this station's server.
+        // Poll every available provider in priority order. A successful HTTP
+        // response without a title is NOT a successful metadata source: keep
+        // looking, rather than suppressing the other readers.
         function startNowPlaying(session) {
             stopNowPlaying();
             setTimeout(recSync, 0);
@@ -6393,44 +6568,86 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             npJob = job;
             const url = session.cands[session.candIdx];
             let origin = "";
-            try {
-                origin = new URL(url).origin;
-            } catch (e) {}
+            try { origin = new URL(url).origin; } catch (e) {}
+            const sources = npSourceList(url, session.usesHls);
             const tick = async () => {
                 if (job.stopped || playSession !== session) return;
                 if (!document.hidden) {
-                    for (const [id, fn] of npSourceList(url, session.usesHls)) {
+                    for (const [id, fn] of sources) {
                         const key = id + "|" + origin;
                         if (npBad.has(key)) continue;
                         try {
-                            const title = await fn(url, job.ctl.signal);
-                            if (job.stopped) return;
+                            const result = await fn(url, job.ctl.signal);
+                            if (job.stopped || playSession !== session) return;
                             npFails.delete(key);
-                            if (title) npSetTitle(session, title);
-                            break; // this source works; don't bother the others
+                            const track = result && typeof result === "object" && result.title
+                                ? result
+                                : typeof result === "string" ? npTrackFromData(result, id) : null;
+                            if (track && track.title) {
+                                npSetTitle(session, track);
+                                break;
+                            }
                         } catch (e) {
                             if (job.stopped) return;
-                            // one dropped request must not end title updates for the whole page session
                             const n = (npFails.get(key) || 0) + 1;
                             npFails.set(key, n);
                             if (n >= 3) npBad.add(key);
                         }
                     }
                 }
-                if (!npSourceList(url, session.usesHls).some(([id]) => !npBad.has(id + "|" + origin))) return;
-                job.timer = setTimeout(tick, NP_POLL_MS);
+                const available = sources.some(([id]) => !npBad.has(id + "|" + origin));
+                job.timer = setTimeout(() => {
+                    if (!available) {
+                        // Failure suppression is temporary: radio hosts and
+                        // CORS policies can recover while a page stays open.
+                        for (const [id] of sources) npBad.delete(id + "|" + origin);
+                        npFails.clear();
+                    }
+                    tick();
+                }, available ? NP_POLL_MS : 60000);
             };
             tick();
         }
-        // A title as the station reports it right now. The recording follows the live stream, so it gets it at once;
-        // what is shown under the glyph (and logged as heard) waits until the playhead reaches that point in the cached audio.
+        // Try provider APIs immediately when the user opens the recording
+        // panel before the regular 15-second poll has had a chance to run.
+        async function npDiscoverTitle(session, maxMs) {
+            const url = session.cands[session.candIdx];
+            const sources = npSourceList(url, session.usesHls).filter(([id]) => id !== "icy");
+            const ctl = new AbortController();
+            const timer = setTimeout(() => ctl.abort(), maxMs || 6500);
+            try {
+                for (const [id, fn] of sources) {
+                    if (ctl.signal.aborted || playSession !== session) break;
+                    try {
+                        const result = await fn(url, ctl.signal);
+                        const track = result && typeof result === "object" && result.title
+                            ? result
+                            : typeof result === "string" ? npTrackFromData(result, id) : null;
+                        if (track && track.title) {
+                            npSetTitle(session, track);
+                            return true;
+                        }
+                    } catch (e) { if (ctl.signal.aborted) break; }
+                }
+            } finally {
+                clearTimeout(timer);
+                ctl.abort();
+            }
+            return false;
+        }
+        // A title from any source. This call is deliberately made immediately,
+        // not when a cached playhead later catches up: the recorder is reading
+        // the live bytes, so its split decision must follow the live metadata.
         function npSetTitle(session, raw) {
             if (playSession !== session) return;
-            const title = cleanSongTitle(raw, session.item.title);
-            if (!title) return;
-            recTitle(title);
-            if (title === session.songLive) return;
+            const track = raw && typeof raw === "object" && raw.title
+                ? raw
+                : npTrackFromData(raw, "stream metadata");
+            const title = cleanSongTitle(track && track.title, session.item.title);
+            if (!title || title === session.songLive) return;
             session.songLive = title;
+            recTitle(title, track || {});
+            if (REC.cap && !REC.st) recRender();
             const el = session.el;
             const ahead = el && session.everPlayed ? bufferedAheadSec(el) : 0;
             if (ahead >= 3) {
@@ -6465,9 +6682,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             const i = song.indexOf(" - ");
             const meta = i > 0 ? { artist: song.slice(0, i), title: song.slice(i + 3) } : { title: song, artist: station };
             meta.album = station;
-            try {
-                navigator.mediaSession.metadata = new MediaMetadata(meta);
-            } catch (e) {}
+            try { navigator.mediaSession.metadata = new MediaMetadata(meta); } catch (e) {}
         }
 
         // ---- songs heard ---------------------------------------------------
@@ -6757,9 +6972,10 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (due) {
                 const o = recFrame(v, r.ext);
                 if (o >= 0) {
+                    const nextTitle = r.mode === "songs" ? (typeof due === "string" ? due : due.title) : null;
                     s.add(v.subarray(0, o));
                     recFinish(r, s);
-                    r.song = s = recNew(r.mode === "songs" ? due : null, false);
+                    r.song = s = recNew(nextTitle, false);
                     r.cut = null;
                     v = v.subarray(o);
                 }
@@ -6769,13 +6985,27 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
         }
         // A new title from the in-band stream or the poller. The cut is applied
         // at the next frame boundary in recPush.
-        function recTitle(raw) {
+        function recTitle(raw, meta) {
             const r = REC.st;
             if (!r || r.mode !== "songs") return;
             const t = cleanSongTitle(raw, r.station);
             if (!t) return;
-            if (!r.song.title) r.song.title = t;
-            else if (t !== r.song.title) r.cut = t;
+            meta = meta || {};
+            // When the recorder's own stream response includes ICY framing,
+            // its title block marks the real byte boundary. Ignore less precise
+            // API polls so they cannot move that boundary early or late.
+            if (r.inband && !meta.exact) return;
+            if (!r.song.title) { r.song.title = t; return; }
+            if (t === r.song.title || (r.cut && (r.cut.title || r.cut) === t) || (r.captureNextTitle === t)) return;
+            if (r.capture) {
+                r.captureNextTitle = t;
+                if (!r.captureRotating && r.captureMr && r.captureMr.state !== "inactive") {
+                    r.captureRotating = true;
+                    try { r.captureMr.stop(); } catch (e) { r.captureRotating = false; }
+                }
+                return;
+            }
+            r.cut = { title: t, source: meta.source || "metadata", playedAt: meta.playedAt || 0, exact: !!meta.exact };
         }
         function recStat(r) {
             const time = recFmt(Math.floor((Date.now() - r.t0) / 1000));
@@ -6815,11 +7045,17 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 const op = await recOpen(ses.cands[ses.candIdx], true, ctl.signal);
                 out.why = op.why || [];
                 if (op.res) {
-                    const ct = (op.res.headers.get("content-type") || "").toLowerCase();
-                    let mi = parseInt(op.res.headers.get("icy-metaint"), 10) || 0;
-                    if (!(mi >= 256 && mi <= 65536)) mi = 0;
-                    // Header may be hidden by CORS; still offer song-split for mp3/aac — record path auto-detects.
-                    out = { ok: !/html/.test(ct), split: !/ogg|opus|flac/.test(ct), exact: mi > 0, why: ["not audio"] };
+                    const ct = (op.res.headers.get("content-type") || "").toLowerCase(), mi = parseInt(op.res.headers.get("icy-metaint"), 10) || 0;
+                    // Headers are enough for the probe; cancel the probe body so
+                    // it does not keep an extra listener connection open.
+                    try {
+                        if (op.res.body) {
+                            const cancelled = op.res.body.cancel();
+                            if (cancelled && cancelled.catch) cancelled.catch(() => {});
+                        }
+                    } catch (e) {}
+                    if (!mi && !(ses.songLive || ses.song)) await npDiscoverTitle(ses, 6500);
+                    out = { ok: !/html/.test(ct), split: !/ogg|opus|flac/.test(ct) && (mi > 0 || !!(ses.songLive || ses.song)), exact: mi > 0, why: ["not audio"] };
                 }
             } catch (e) {} finally { clearTimeout(timer); ctl.abort(); }
             return out;
@@ -6875,9 +7111,94 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
         }
         function recCapBtn() {
             if (!recCanCapture()) return "";
-            return '<button class="playlist-btn" data-rec="capture" aria-label="Record tab audio" title="Records what this tab plays (re-encoded to WebM/Opus). Works for any stream. Choose this tab and tick Share tab audio."><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="6"/></svg><span class="lbl-long">Record tab audio</span><span class="lbl-short">Tab audio</span></button>';
+            const whole = '<button class="playlist-btn" data-rec="capture" aria-label="Record tab audio" title="Records what this tab plays (re-encoded to WebM/Opus). Choose this tab and tick Share tab audio."><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="6"/></svg><span class="lbl-long">Record tab audio</span><span class="lbl-short">Tab audio</span></button>';
+            const ses = playSession;
+            const songs = ses && (ses.songLive || ses.song)
+                ? '<button class="playlist-btn" data-rec="capture-songs" aria-label="Record each song separately" title="Starts a separate browser recording whenever the station reports a new song. Files are approximate to the metadata update."><svg class="bico-x" viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="lbl-long">Each song separately</span><span class="lbl-short">Each song</span></button>'
+                : "";
+            return whole + songs;
         }
-        async function recStartCapture() {
+        function recCaptureStartChunk(r) {
+            if (!r || r.captureStopRequested || REC.st !== r) return;
+            let mr;
+            try {
+                const audioTracks = r.captureStream.getAudioTracks();
+                if (!audioTracks.length) throw new Error("No audio tracks");
+                mr = new MediaRecorder(new MediaStream(audioTracks), r.captureOptions);
+            } catch (e) {
+                if (REC.st === r) recStop("The tab audio recorder could not be restarted.");
+                return;
+            }
+            r.captureMr = mr;
+            mr.ondataavailable = (e) => {
+                if (e.data && e.data.size && r.song) {
+                    r.song.parts.push(e.data);
+                    r.song.bytes += e.data.size;
+                    r.bytes += e.data.size;
+                }
+            };
+            mr.onerror = () => {
+                if (REC.st === r) recStop("Tab audio recording failed.");
+            };
+            mr.onstop = () => {
+                if (r.captureMr === mr) r.captureMr = null;
+                const completed = r.song;
+                const nextTitle = r.captureNextTitle;
+                r.captureNextTitle = "";
+                r.captureRotating = false;
+                const tracksStillLive = r.captureStream.getAudioTracks().some((track) => track.readyState === "live");
+                const stopping = r.captureStopRequested || REC.st !== r || !tracksStillLive;
+                if (stopping) {
+                    r.captureStopRequested = true;
+                    if (REC.st === r) REC.st = null;
+                    clearInterval(r.timer);
+                    if (!r.captureStopMessage && !tracksStillLive) r.captureStopMessage = "Sharing stopped.";
+                }
+                if (stopping && r.mode === "songs") completed.partial = true;
+                // recFinish adds the finished segment to the save list before
+                // its optional disk write awaits, so the next segment can start
+                // immediately without leaving a gap in the captured audio.
+                const finish = recFinish(r, completed);
+                if (stopping) {
+                    Promise.resolve(finish).finally(() => {
+                        r.captureStream.getTracks().forEach((track) => { try { track.stop(); } catch (e) {} });
+                        if (r.wake) r.wake.release().catch(() => {});
+                        REC.msg = (r.captureStopMessage ? r.captureStopMessage + " " : "") + "Recording stopped. " + (r.count ? r.count + (r.count === 1 ? " file is" : " files are") + " ready to save." : "Nothing was long enough to keep.") + (r.skipped ? " (" + r.skipped + " short clips skipped)" : "");
+                        recRender();
+                    });
+                    return;
+                }
+                if (r.mode === "songs" && nextTitle) {
+                    r.song = recNew(nextTitle, false);
+                    recCaptureStartChunk(r);
+                } else if (r.mode === "songs") {
+                    // A defensive recovery for a browser that stops a segment
+                    // without a metadata change: continue under the same title.
+                    r.song = recNew(completed.title, false);
+                    recCaptureStartChunk(r);
+                } else {
+                    // A whole-stream capture should remain one file. An
+                    // unexpected MediaRecorder stop ends it rather than silently
+                    // starting a second file.
+                    r.captureStopRequested = true;
+                    if (REC.st === r) REC.st = null;
+                    clearInterval(r.timer);
+                    Promise.resolve(finish).finally(() => {
+                        r.captureStream.getTracks().forEach((track) => { try { track.stop(); } catch (e) {} });
+                        if (r.wake) r.wake.release().catch(() => {});
+                        REC.msg = "Recording stopped. " + (r.count ? r.count + (r.count === 1 ? " file is" : " files are") + " ready to save." : "Nothing was long enough to keep.");
+                        recRender();
+                    });
+                }
+            };
+            try { mr.start(250); }
+            catch (e) {
+                if (r.captureMr === mr) r.captureMr = null;
+                if (REC.st === r) recStop("The tab audio recorder could not start.");
+            }
+        }
+        async function recStartCapture(mode) {
+            mode = mode === "songs" ? "songs" : "whole";
             const ses = playSession;
             if (!ses || REC.st) return;
             if (!recCanCapture()) return recMsg(recWhy([]));
@@ -6889,12 +7210,20 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             ms.getVideoTracks().forEach((v) => v.stop());
             if (!at.length || typeof MediaRecorder === "undefined") { ms.getTracks().forEach((v) => v.stop()); REC.cap = true; return recMsg("No audio was shared. Choose this tab and tick “Share tab audio”."); }
             const mime = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
-            const mr = new MediaRecorder(new MediaStream(at), mime ? { mimeType: mime, audioBitsPerSecond: 192000 } : {});
-            const ext = /mp4/.test(mr.mimeType) ? "m4a" : /ogg/.test(mr.mimeType) ? "ogg" : "webm";
-            const ctl = { abort() { try { if (mr.state !== "inactive") mr.stop(); } catch (e) {} ms.getTracks().forEach((v) => v.stop()); } };
-            const r = (REC.st = { mode: "whole", ext, mime: mr.mimeType || "audio/webm", station: ses.item.title, ctl, dir: null, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: false, noTitles: true });
-            r.song = recNew(null, false);
-            mr.ondataavailable = (e) => { if (e.data && e.data.size) { r.song.parts.push(e.data); r.song.bytes += e.data.size; r.bytes += e.data.size; } };
+            const options = mime ? { mimeType: mime, audioBitsPerSecond: 192000 } : {};
+            let probe;
+            try { probe = new MediaRecorder(new MediaStream(at), options); }
+            catch (e) { ms.getTracks().forEach((v) => v.stop()); REC.cap = true; return recMsg("This browser could not create an audio recording."); }
+            const ext = /mp4/i.test(probe.mimeType) ? "m4a" : /ogg/i.test(probe.mimeType) ? "ogg" : "webm";
+            const r = (REC.st = {
+                mode, ext, mime: probe.mimeType || "audio/webm", station: ses.item.title,
+                ctl: { abort() {} }, dir: null, t0: Date.now(), bytes: 0, count: 0,
+                skipped: 0, cut: null, inband: false, noTitles: mode !== "songs",
+                capture: true, captureStream: ms, captureOptions: options,
+                captureMr: null, captureNextTitle: "", captureRotating: false,
+                captureStopRequested: false, captureStopMessage: ""
+            });
+            r.song = recNew(mode === "songs" ? (ses.songLive || ses.song || null) : null, false);
             at[0].onended = () => { if (REC.st === r) recStop("Sharing stopped."); };
             r.timer = setInterval(() => {
                 const st = recStat(r), t = document.querySelector("#recPanel .rec-time"), m = document.querySelector("#recPanel .rec-meta"), bt = document.querySelector("#playlistRec .btn-txt");
@@ -6905,9 +7234,9 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { r.wake = w; if (REC.st !== r) w.release(); }).catch(() => {});
             REC.msg = "";
             recRender();
-            mr.start(250);
+            recCaptureStartChunk(r);
         }
-        function recMsg(t) { REC.msg = t; recRender(); }
+                function recMsg(t) { REC.msg = t; recRender(); }
         function recBlocked() {
             return false; // never pre-judged: every station is tried, then the fallbacks run
         }
@@ -6953,8 +7282,31 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             const r = REC.st;
             if (!r) return;
             REC.st = null;
-            r.ctl.abort();
             clearInterval(r.timer);
+            if (r.capture) {
+                r.captureStopRequested = true;
+                r.captureStopMessage = msg || "";
+                if (r.captureMr) {
+                    if (r.captureMr.state === "inactive") return; // its final onstop event is already queued
+                    try { r.captureMr.stop(); } catch (e) {
+                        r.captureStream.getTracks().forEach((track) => { try { track.stop(); } catch (e) {} });
+                        if (r.mode === "songs") r.song.partial = true;
+                        recFinish(r, r.song);
+                        if (r.wake) r.wake.release().catch(() => {});
+                        REC.msg = (msg ? msg + " " : "") + "Recording stopped. " + (r.count ? r.count + (r.count === 1 ? " file is" : " files are") + " ready to save." : "Nothing was long enough to keep.") + (r.skipped ? " (" + r.skipped + " short clips skipped)" : "");
+                        recRender();
+                    }
+                } else {
+                    r.captureStream.getTracks().forEach((track) => { try { track.stop(); } catch (e) {} });
+                    if (r.mode === "songs") r.song.partial = true;
+                    recFinish(r, r.song);
+                    if (r.wake) r.wake.release().catch(() => {});
+                    REC.msg = (msg ? msg + " " : "") + "Recording stopped. " + (r.count ? r.count + (r.count === 1 ? " file is" : " files are") + " ready to save." : "Nothing was long enough to keep.") + (r.skipped ? " (" + r.skipped + " short clips skipped)" : "");
+                    recRender();
+                }
+                return;
+            }
+            r.ctl.abort();
             if (r.wake) r.wake.release().catch(() => {});
             if (r.mode === "songs") r.song.partial = true;
             recFinish(r, r.song);
@@ -6962,7 +7314,8 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             recRender();
         }
         async function recStart(mode, noTitles) {
-            if (mode === "capture") return recStartCapture();
+            if (mode === "capture") return recStartCapture("whole");
+            if (mode === "capture-songs") return recStartCapture("songs");
             const ses = playSession;
             if (!ses || REC.st) return;
             const dir = REC.dir || null;
@@ -6973,16 +7326,34 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             recMsg("Connecting…");
             const ctl = new AbortController(), tag = mode === "songs";
             const op = await recOpen(ses.cands[ses.candIdx], tag, ctl.signal);
-            const res = op.res;
+            let res = op.res;
             if (!res) { REC.cap = true; return recMsg(recWhy(op.why)); }
-            const ct = (res.headers.get("content-type") || "").toLowerCase();
+            let ct = (res.headers.get("content-type") || "").toLowerCase();
+            let mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;
+            // If the browser cannot read icy-metaint, retry without asking for
+            // ICY framing. Otherwise a cross-origin response could hide the
+            // interval header while still inserting metadata bytes into the
+            // audio body, corrupting the saved file. The API poller can still
+            // provide approximate song cuts on this plain-audio connection.
+            if (tag && !mi) {
+                const plain = await recOpen(ses.cands[ses.candIdx], false, ctl.signal);
+                if (plain.res) {
+                    try {
+                        if (res.body) {
+                            const cancelled = res.body.cancel();
+                            if (cancelled && cancelled.catch) cancelled.catch(() => {});
+                        }
+                    } catch (e) {}
+                    res = plain.res;
+                    ct = (res.headers.get("content-type") || "").toLowerCase();
+                    mi = 0;
+                }
+            }
             if (/html/.test(ct)) { ctl.abort(); REC.cap = true; return recMsg(recWhy(["not audio"])); }
             const ext = /aac|mp4/.test(ct) ? "aac" : /ogg|opus|flac/.test(ct) ? "ogg" : "mp3";
             if (tag && ext === "ogg") { ctl.abort(); return recMsg("This station can only be recorded as one long file. Choose “One long recording”."); }
-            let mi = tag ? parseInt(res.headers.get("icy-metaint"), 10) || 0 : 0;
-            if (tag && !(mi >= 256 && mi <= 65536)) mi = 0;
-            const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: false, noTitles: !!noTitles, _detect: tag && !mi });
-            r.song = recNew(tag && !mi && (ses.songLive || ses.song) ? ses.songLive || ses.song : null, tag);
+            const r = (REC.st = { mode, ext, mime: ext === "aac" ? "audio/aac" : ext === "ogg" ? "audio/ogg" : "audio/mpeg", station: ses.item.title, ctl, dir, t0: Date.now(), bytes: 0, count: 0, skipped: 0, cut: null, inband: !!mi, noTitles: !!noTitles });
+            r.song = recNew(tag && (ses.songLive || ses.song) ? ses.songLive || ses.song : null, tag);
             REC.msg = "";
             r.timer = setInterval(() => {
                 const st = recStat(r), t = document.querySelector("#recPanel .rec-time"), m = document.querySelector("#recPanel .rec-meta"), bt = document.querySelector("#playlistRec .btn-txt");
@@ -6993,44 +7364,25 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { r.wake = w; if (REC.st !== r) w.release(); }).catch(() => {});
             recRender();
             // In-band ICY: audio / length byte / metadata block, repeating.
-            // If the header hid icy-metaint (CORS), detect from the first ~48 KB then demux.
-            let demux = mi ? createIcyDemux(mi, (t) => { recTitle(t); npSetTitle(ses, t); }) : null;
-            if (mi) r.inband = true;
-            let detectBuf = r._detect ? new Uint8Array(0) : null;
+            let st = 0, left = mi, mlen = 0, mbuf = [];
+            const eat = (v) => {
+                while (v.length) {
+                    if (st === 0) { const n = Math.min(left, v.length); recPush(r, v.subarray(0, n)); v = v.subarray(n); left -= n; if (!left) st = 1; }
+                    else if (st === 1) { mlen = v[0] * 16; v = v.subarray(1); mbuf = []; if (mlen) { st = 2; left = mlen; } else { st = 0; left = mi; } }
+                    else {
+                        const n = Math.min(left, v.length); mbuf.push(v.slice(0, n)); v = v.subarray(n); left -= n;
+                        if (!left) { const t = streamTitleFromIcy(decodeIcyBytes(new Uint8Array(await0(mbuf)))); if (t) { recTitle(t, { source: "recording ICY", exact: true }); npSetTitle(ses, { title: t, source: "recording ICY", exact: true }); } st = 0; left = mi; }
+                    }
+                }
+            };
+            const await0 = (a) => { const out = []; a.forEach((x) => out.push(...x)); return out; };
             try {
                 const rd = res.body.getReader();
                 for (;;) {
                     const { value, done } = await rd.read();
                     if (done) break;
-                    if (!value || !value.length) continue;
-                    if (detectBuf) {
-                        const nb = new Uint8Array(detectBuf.length + value.length);
-                        nb.set(detectBuf);
-                        nb.set(value, detectBuf.length);
-                        detectBuf = nb;
-                        if (detectBuf.length >= 48000) {
-                            mi = detectIcyMetaInt(detectBuf);
-                            if (mi) {
-                                demux = createIcyDemux(mi, (t) => { recTitle(t); npSetTitle(ses, t); });
-                                r.inband = true;
-                                const audio = demux(detectBuf);
-                                if (audio.length) recPush(r, audio);
-                            } else {
-                                recPush(r, detectBuf);
-                            }
-                            detectBuf = null;
-                            r._detect = false;
-                        }
-                        continue;
-                    }
-                    if (demux) {
-                        const audio = demux(value);
-                        if (audio.length) recPush(r, audio);
-                    } else {
-                        recPush(r, value);
-                    }
+                    if (mi) eat(value); else recPush(r, value);
                 }
-                if (detectBuf && detectBuf.length) recPush(r, detectBuf);
             } catch (e) {}
             if (REC.st === r) recStop("Stream ended.");
         }
@@ -7539,10 +7891,8 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 if (playSession === session) fallback();
             };
             let res;
-            // Ask for ICY metadata so titles can be stripped from the same byte stream we play.
-            // If the server ignores the header, we still get plain audio (mi stays 0).
             try {
-                res = await fetch(url, { headers: { "Icy-MetaData": "1" }, signal: m.ctl.signal, cache: "no-store", credentials: "omit" });
+                res = await fetch(url, { signal: m.ctl.signal, cache: "no-store", credentials: "omit" });
             } catch (e) {
                 return bail("fetch"); // no CORS, mixed content or a network error: use the plain element
             }
@@ -7553,10 +7903,6 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             if (!mime) return bail("format");
             if (!MediaSource.isTypeSupported(mime)) return bail("codec");
             session.mseLive = !res.headers.get("content-length"); // a live stream has no length; a plain file does
-            let icyMi = parseInt(res.headers.get("icy-metaint"), 10) || 0;
-            if (!(icyMi >= 256 && icyMi <= 65536)) icyMi = 0;
-            let icyDemux = null; // set once interval is known (header or auto-detect)
-            const onIcyTitle = (t) => { if (playSession === session) npSetTitle(session, t); };
             const ms = new MediaSource();
             m.objUrl = URL.createObjectURL(ms);
             session.usesMse = true;
@@ -7624,7 +7970,6 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 if (m.alive && !session.everPlayed) bail("append");
             });
             const rd = res.body.getReader();
-            let detectBuf = icyMi ? null : new Uint8Array(0);
             try {
                 for (;;) {
                     // the only reasons to wait: a very long cache, or the player not taking data (should be rare)
@@ -7636,41 +7981,11 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                     const { value, done } = await rd.read();
                     if (done) break;
                     if (value && value.length) {
-                        let audioChunk = value;
-                        // Auto-detect metaint from the first ~48 KB when CORS hid the header
-                        if (!icyMi && detectBuf) {
-                            const nb = new Uint8Array(detectBuf.length + value.length);
-                            nb.set(detectBuf);
-                            nb.set(value, detectBuf.length);
-                            detectBuf = nb;
-                            if (detectBuf.length >= 48000) {
-                                icyMi = detectIcyMetaInt(detectBuf);
-                                if (icyMi) {
-                                    icyDemux = createIcyDemux(icyMi, onIcyTitle);
-                                    audioChunk = icyDemux(detectBuf);
-                                }
-                                detectBuf = null; // detection done (success or give up)
-                            } else {
-                                continue; // hold bytes until we can decide
-                            }
-                        } else if (icyMi) {
-                            if (!icyDemux) icyDemux = createIcyDemux(icyMi, onIcyTitle);
-                            audioChunk = icyDemux(value);
-                        }
-                        if (audioChunk && audioChunk.length) {
-                            q.push(audioChunk);
-                            qBytes += audioChunk.length;
-                            m.rxBytes += audioChunk.length;
-                            pump();
-                        }
+                        q.push(value);
+                        qBytes += value.length;
+                        m.rxBytes += value.length;
+                        pump();
                     }
-                }
-                // If the stream ended before we gathered enough for detection, flush what we held as plain audio
-                if (detectBuf && detectBuf.length) {
-                    q.push(detectBuf);
-                    qBytes += detectBuf.length;
-                    m.rxBytes += detectBuf.length;
-                    pump();
                 }
             } catch (e) {
                 // the connection dropped: what is cached still plays out below
@@ -7737,7 +8052,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                             const tags = parseId3Text(smp.data);
                             if (!tags) continue;
                             const t = tags.artist && tags.title ? `${tags.artist} - ${tags.title}` : tags.title || tags.streamTitle || "";
-                            if (t) npSetTitle(session, t);
+                            if (t) npSetTitle(session, { title: t, source: "HLS ID3", exact: true });
                         }
                     });
                 }

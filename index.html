@@ -470,6 +470,13 @@
         .file-icon.font { color: color-mix(in srgb, #e0a85f var(--icon-keep, 100%), #000); background: rgba(224, 168, 95, 0.16); }
         .file-icon.playlist { color: color-mix(in srgb, #e08fb0 var(--icon-keep, 100%), #000); background: rgba(224, 143, 176, 0.2); }
         .file-icon.other { color: color-mix(in srgb, #9a9a9a var(--icon-keep, 100%), #000); background: rgba(154, 154, 154, 0.14); }
+        /* Per-extension icon colors: every distinct extension in the folder gets its own slot from this palette
+           (alphabetical, so colors stay put when the sort order changes), like zebra striping but with twelve colors. */
+        :root { --x0:#e2765c; --x1:#6fa8dc; --x2:#e08fb0; --x3:#8fc25a; --x4:#e0994f; --x5:#c58ce0; --x6:#4fc3a1; --x7:#e5675b; --x8:#dcae4e; --x9:#7c8cf0; --x10:#5dd0d8; --x11:#b8cfe0; }
+        html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xc) var(--icon-keep, 100%), #000); background: color-mix(in srgb, var(--xc) 18%, transparent); }
+        /* Player glyph is always two-toned: body in --glyph-1, holes/details in --glyph-2 (glyphs without holes get a split fill). */
+        :root { --glyph-1: var(--on-control); --glyph-2: var(--stat-fill, var(--accent)); }
+        .audio-icon svg.duo-split, .audio-icon svg.duo-split [fill="currentColor"] { fill: url(#glyphSplit); }
         /* Icon colors are fixed per file category, so a given type always looks the same. */
         .file-name { font-weight: 500; word-break: break-word; font-size: 0.8rem; max-width: 100%; line-height: 1.2; }
         .file-meta { font-size: var(--data-size); color: var(--text-muted); }
@@ -608,7 +615,7 @@
         .preview-media-container { width: 100%; max-width: 900px; height: 100%; min-height: 0; padding: 0.5rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
         .preview-video { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; background: #000; border-radius: var(--radius); }
         .preview-audio-container { width: 100%; max-width: 500px; padding: 0.6rem 0.75rem 0.5rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; position: relative; }
-        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--on-control); --bg-tertiary: var(--control-surface); }
+        .audio-icon { width: 80px; height: 80px; background: var(--control-surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--glyph-1); --bg-tertiary: var(--glyph-2); }
         .audio-icon svg { width: 54px; height: 54px; }
         .playlist-now-playing { font-weight: 500; text-align: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
         .preview-audio { width: 100%; height: 40px; display: none; }
@@ -1507,12 +1514,30 @@ html[data-theme="concrete"] .player-seek { height: 14px; background: var(--ink);
 html[data-theme="concrete"] .player-seek::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -1px; background: var(--yellow); border: 2px solid var(--ink); }
 html[data-theme="concrete"] .player-seek::-moz-range-thumb { width: 8px; height: 8px; background: var(--yellow); border: 2px solid var(--ink); }
 html[data-theme="concrete"] .rec-dot { background: var(--red); }
+/* Concrete: twelve-color icon palette built from the role colors, so it follows the custom color too */
+html[data-theme="concrete"] {
+            --x0: var(--yellow); --x1: var(--blue); --x2: var(--pink); --x3: var(--green); --x4: var(--orange); --x5: var(--violet);
+            --x6: color-mix(in srgb, var(--blue) 50%, var(--green)); --x7: var(--red);
+            --x8: color-mix(in srgb, var(--green) 55%, var(--yellow)); --x9: color-mix(in srgb, var(--blue) 55%, var(--violet));
+            --x10: color-mix(in srgb, var(--orange) 55%, var(--yellow)); --x11: color-mix(in srgb, var(--violet) 50%, var(--pink));
+            --glyph-1: #ffffff; --glyph-2: var(--yellow);
+        }
+html:not(.no-xc)[data-theme="concrete"] .file-icon.xc { background: var(--xc); color: var(--ink); }
+/* Concrete: the controls row used to clip the play button's hard shadow (and grew a scrollbar when pressed) */
+html[data-theme="concrete"] .player-controls-row { box-sizing: border-box; overflow-x: auto; overflow-y: hidden; padding: 3px 6px 6px 3px; scrollbar-width: none; }
+html[data-theme="concrete"] .player-controls-row::-webkit-scrollbar { display: none; }
+/* Concrete: record button = black key, red icon/label, red edge */
+html[data-theme="concrete"] #playlistRec,
+html[data-theme="concrete"] #playlistRec.rec-on { --c: var(--ink); color: var(--red) !important; border-color: var(--red) !important; -webkit-text-stroke: 0; }
+html[data-theme="concrete"] #playlistRec .ico-c { color: var(--red); }
+html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(--panel) !important; filter: none; }
 </style>
 </head>
 <body>
     <svg style="display:none" aria-hidden="true">
         <symbol id="icon-x" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
     </svg>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><linearGradient id="glyphSplit" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="24"><stop offset="0" style="stop-color:var(--glyph-1)"/><stop offset="0.54" style="stop-color:var(--glyph-1)"/><stop offset="0.54" style="stop-color:var(--glyph-2)"/><stop offset="1" style="stop-color:var(--glyph-2)"/></linearGradient></defs></svg>
     <a class="skip-link" id="skipLink" href="#main">Skip to files</a>
     <header class="header">
         <div class="header-content">
@@ -1598,6 +1623,15 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                                         <span class="settings-label">Zebra striping</span>
                                         <label class="switch">
                                             <input type="checkbox" id="zebraStripingToggle" checked aria-label="Alternate card/row background shading in grid and list view" />
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="settings-section" style="border-top: var(--bw) solid var(--border-color)">
+                                    <div class="settings-row">
+                                        <span class="settings-label">Icon color per file type</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="extColorsToggle" checked aria-label="Give each file extension its own icon color" />
                                             <span class="switch-slider"></span>
                                         </label>
                                     </div>
@@ -2458,6 +2492,11 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 return; // element not renderable yet (e.g. detached/hidden)
             }
             if (!bbox || (!bbox.width && !bbox.height)) return;
+            if (!svg.querySelector('[fill="var(--bg-tertiary)"]')) {
+                svg.classList.add("duo-split");
+                const g = document.getElementById("glyphSplit");
+                if (g) { g.setAttribute("y1", bbox.y); g.setAttribute("y2", bbox.y + bbox.height); }
+            }
             const cx = bbox.x + bbox.width / 2;
             const cy = bbox.y + bbox.height / 2;
             const PADDING = 1.15; // slight margin so glyphs don't touch the edges
@@ -2585,6 +2624,10 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             document.documentElement.classList.toggle("no-zebra", !zebraOn);
             const zebraToggle = document.getElementById("zebraStripingToggle");
             if (zebraToggle) zebraToggle.checked = zebraOn;
+            const extOn = store.getItem("extColors") !== "0";
+            document.documentElement.classList.toggle("no-xc", !extOn);
+            const extToggle = document.getElementById("extColorsToggle");
+            if (extToggle) extToggle.checked = extOn;
             const storedDepth = parseInt(store.getItem(DEPTH_KEY), 10);
             uiDepth = [1, 2, 3, 4, 5].includes(storedDepth) ? storedDepth : 1;
             applyDepth(uiDepth, false);
@@ -2854,6 +2897,11 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 root.setProperty("--cc-muted", hslToHex(h, clampNum(activeS * 0.3, 0, 30), 75));
                 root.setProperty("--cc-text", "#ffffff");
                 root.setProperty("--cc-accent", hslToHex(h, Math.min(90, activeS), 62));
+                // Role colors keep their stock distance from the accent hue, so buttons, icons and glyph details all follow the pick.
+                const k = Math.min(1, activeS / 85);
+                for (const [n, o, rs, rl] of [["--orange", -29, 100, 55], ["--pink", -79, 100, 65], ["--violet", 209, 100, 74], ["--green", 96, 70, 55], ["--blue", 167, 100, 62]]) {
+                    root.setProperty(n, hslToHex((((h + o) % 360) + 360) % 360, rs * k, rl));
+                }
             } else {
                 const cs = getComputedStyle(rootEl);
                 const stock = (name, fb) => parseCssColor(cs.getPropertyValue(name)) || fb || null;
@@ -2987,6 +3035,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
                 "--skeleton-base", "--skeleton-shine",
                 "--cc-page", "--cc-panel", "--cc-line", "--cc-muted", "--cc-text", "--cc-accent",
+                "--orange", "--pink", "--violet", "--green", "--blue",
             ];
             for (const key of keys) root.removeProperty(key);
         }
@@ -3894,6 +3943,10 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
                 document.documentElement.classList.toggle("no-zebra", !e.target.checked);
                 store.setItem("zebraStriping", e.target.checked ? "1" : "0");
             });
+            document.getElementById("extColorsToggle").addEventListener("change", (e) => {
+                document.documentElement.classList.toggle("no-xc", !e.target.checked);
+                store.setItem("extColors", e.target.checked ? "1" : "0");
+            });
             const depthControl = document.getElementById("depthControl");
             if (depthControl) depthControl.addEventListener("click", (e) => {
                 const btn = e.target.closest("button[data-depth]");
@@ -4761,8 +4814,13 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             </div>
           `;
             }
+            const extSlot = new Map();
+            [...new Set(all.filter((i) => i.type !== "directory").map((i) => getFileExtension(i.name).toLowerCase()).filter(Boolean))]
+                .sort().forEach((x, i) => extSlot.set(x, i % 12));
             for (const item of visibleItems) {
                 const iconType = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other";
+                const xSlot = item.type === "directory" ? undefined : extSlot.get(getFileExtension(item.name).toLowerCase());
+                const xcAttr = xSlot === undefined ? "" : ` xc" style="--xc:var(--x${xSlot})`;
                 const iconSvg = icons[iconType] || icons.other;
 
                 let clickPath, fullDisplayPath, parentDisplayPath, parentPathArr;
@@ -4814,7 +4872,7 @@ html[data-theme="concrete"] .rec-dot { background: var(--red); }
             <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">
               ${renderStarButton("file", clickPath)}
               ${thumbnailHtml}
-              <div class="file-icon ${iconType}">${iconSvg}</div>
+              <div class="file-icon ${iconType}${xcAttr}">${iconSvg}</div>
               <div class="file-info">
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">

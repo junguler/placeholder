@@ -315,9 +315,11 @@
         .depth-seg[data-depth="3"] .depth-seg-preview { border-radius: 4px; }
         .depth-seg[data-depth="4"] .depth-seg-preview { border-radius: 6px; }
         .depth-seg[data-depth="5"] .depth-seg-preview { border-radius: 8px; }
-        .theme-toggle { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
+        .theme-toggle { display: grid; width: 100%; grid-template-columns: repeat(3, 1fr); background: var(--bg-tertiary); border-radius: var(--radius); padding: 2px; gap: 2px; }
         .theme-btn { padding: 0.25rem 0.5rem; background: 0 0; border: none; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
         .theme-btn:hover { background: var(--bg-hover); }
+        /* Seven buttons in three columns: the odd one out (Vivid) takes the whole last row instead of sitting alone on the left. */
+        .theme-toggle .theme-btn:last-child:nth-child(3n+1) { grid-column: 1 / -1; }
         .theme-btn.active { background: var(--bg-primary); }
         .theme-btn svg { width: 12px; height: 12px; }
         /* Label text is forced to a single uniform color (the current theme's own text color) on
@@ -367,6 +369,7 @@
         .view-btn:hover { color: var(--text-primary); }
         .view-btn.active { background: var(--bg-primary); color: var(--text-primary); }
         .view-btn svg { width: 16px; height: 16px; }
+        html[data-theme="hc-dark"] .view-toggle, html[data-theme="hc-light"] .view-toggle { border: var(--bw) solid var(--border-color); }
         .app-container { flex: 1; display: flex; overflow: hidden; }
         .tree-panel { width: 240px; background: var(--bg-secondary); border-right: var(--bw) solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
         .tree-panel.visible { display: flex; }
@@ -720,7 +723,8 @@
                widths, not just desktop), and image/pdf/text previews size
                themselves via their own max-height rules, so nothing else
                needs a forced height here. */
-            .modal { width: 100vw; max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
+            .modal { width: 100vw; max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; position: relative; }
+            .modal > .rec-panel { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px); z-index: 3; }
             .modal-header { padding: 0.5rem 0.5rem; gap: 0.375rem; }
             .modal-title { font-size: 0.8rem; }
             .modal-actions { gap: 0.15rem; flex-shrink: 0; }
@@ -812,7 +816,12 @@
             #playlistBar .playlist-controls { margin-right: auto; }
         }
         /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
-        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; min-height: 2.55rem; box-sizing: border-box; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); }
+        .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; min-height: 2.55rem; box-sizing: border-box; background: var(--bg-tertiary); border-top: var(--bw) solid var(--border-color); flex-shrink: 0; }
+        /* The recording row sits BELOW the player so opening it never pushes the glyph or player. On desktop the player window keeps its top edge fixed
+           (the row only adds height at the bottom); on phones the row overlays the empty space under the controls instead of resizing the stage. */
+        @media (min-width: 641px) {
+            .modal-overlay:has(.playlist-bar.active) { align-items: flex-start; padding-top: clamp(0.5rem, calc(50vh - 12.5rem), calc(100vh - 32rem)); padding-top: clamp(0.5rem, calc(50dvh - 12.5rem), calc(100dvh - 32rem)); }
+        }
         .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
         .rec-panel[hidden], .settings-row[hidden] { display: none; }
         .rec-panel .playlist-btn { height: var(--ctl); box-sizing: border-box; padding: 0 0.65rem; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
@@ -1632,8 +1641,6 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                                             <span class="switch-slider"></span>
                                         </label>
                                     </div>
-                                </div>
-                                <div class="settings-section" style="border-top: var(--bw) solid var(--border-color)">
                                     <div class="settings-row">
                                         <span class="settings-label">Icon color per file type</span>
                                         <label class="switch">
@@ -1841,11 +1848,11 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 <button class="playlist-btn" id="playlistSongs" hidden title="Songs you heard" aria-label="Songs you heard"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg><span class="btn-txt">Songs</span></button>
                 <button class="playlist-btn" id="playlistRec" hidden title="Record this station and save it as audio files" aria-label="Record this station"><svg class="ico-c" viewBox="0 0 24 24" fill="currentcolor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentcolor" stroke-width="2"/><circle class="rec-core" cx="12" cy="12" r="5"/></svg><span class="btn-txt">Record</span></button>
             </div>
-            <div class="rec-panel" id="recPanel" hidden></div>
             <div class="modal-main" id="modalMain">
                 <aside class="gallery-rail" id="galleryRail" aria-label="Files in this folder" hidden></aside>
                 <div class="modal-body" id="modalBody"></div>
             </div>
+            <div class="rec-panel" id="recPanel" hidden></div>
         </div>
     </div>
     <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">

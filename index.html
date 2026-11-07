@@ -473,7 +473,13 @@
         /* Per-extension icon colors: every distinct extension in the folder gets its own slot from this palette
            (alphabetical, so colors stay put when the sort order changes), like zebra striping but with twelve colors. */
         :root { --x0:#e2765c; --x1:#6fa8dc; --x2:#e08fb0; --x3:#8fc25a; --x4:#e0994f; --x5:#c58ce0; --x6:#4fc3a1; --x7:#e5675b; --x8:#dcae4e; --x9:#7c8cf0; --x10:#5dd0d8; --x11:#b8cfe0; }
-        html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xc) var(--icon-keep, 100%), #000); background: color-mix(in srgb, var(--xc) 18%, transparent); }
+        html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xcv, var(--xc)) var(--icon-keep, 100%), #000); background: color-mix(in srgb, var(--xcv, var(--xc)) 18%, transparent); }
+        /* Same-extension variation: consecutive files of one extension cycle through four hue shifts of its color (zig-zag), so neighbors are easy to tell apart. */
+        @supports (color: hsl(from red h s l)) {
+            .file-icon.xv1 { --xcv: hsl(from var(--xc) calc(h + 32) s l); }
+            .file-icon.xv2 { --xcv: hsl(from var(--xc) calc(h - 32) s l); }
+            .file-icon.xv3 { --xcv: hsl(from var(--xc) calc(h + 64) s l); }
+        }
         /* Player glyph is always two-toned: body in --glyph-1, holes/details in --glyph-2 (glyphs without holes get a split fill). */
         :root { --glyph-1: var(--on-control); --glyph-2: var(--stat-fill, var(--accent)); }
         .audio-icon svg.duo-split, .audio-icon svg.duo-split [fill="currentColor"] { fill: url(#glyphSplit); }
@@ -1522,7 +1528,7 @@ html[data-theme="concrete"] {
             --x10: color-mix(in srgb, var(--orange) 55%, var(--yellow)); --x11: color-mix(in srgb, var(--violet) 50%, var(--pink));
             --glyph-1: #ffffff; --glyph-2: var(--yellow);
         }
-html:not(.no-xc)[data-theme="concrete"] .file-icon.xc { background: var(--xc); color: var(--ink); }
+html:not(.no-xc)[data-theme="concrete"] .file-icon.xc { background: var(--xcv, var(--xc)); color: var(--ink); }
 /* Concrete: the controls row used to clip the play button's hard shadow (and grew a scrollbar when pressed) */
 html[data-theme="concrete"] .player-controls-row { box-sizing: border-box; overflow-x: auto; overflow-y: hidden; padding: 3px 6px 6px 3px; scrollbar-width: none; }
 html[data-theme="concrete"] .player-controls-row::-webkit-scrollbar { display: none; }
@@ -4814,13 +4820,18 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             </div>
           `;
             }
-            const extSlot = new Map();
+            const extSlot = new Map(), extSeen = new Map();
             [...new Set(all.filter((i) => i.type !== "directory").map((i) => getFileExtension(i.name).toLowerCase()).filter(Boolean))]
                 .sort().forEach((x, i) => extSlot.set(x, i % 12));
             for (const item of visibleItems) {
                 const iconType = item.type === "directory" ? "folder" : getFileIconType(item.name) || item.category || "other";
                 const xSlot = item.type === "directory" ? undefined : extSlot.get(getFileExtension(item.name).toLowerCase());
-                const xcAttr = xSlot === undefined ? "" : ` xc" style="--xc:var(--x${xSlot})`;
+                let xcAttr = "";
+                if (xSlot !== undefined) {
+                    const xe = getFileExtension(item.name).toLowerCase(), xn = extSeen.get(xe) || 0;
+                    extSeen.set(xe, xn + 1);
+                    xcAttr = ` xc xv${xn % 4}" style="--xc:var(--x${xSlot})`;
+                }
                 const iconSvg = icons[iconType] || icons.other;
 
                 let clickPath, fullDisplayPath, parentDisplayPath, parentPathArr;

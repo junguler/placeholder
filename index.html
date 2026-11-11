@@ -650,6 +650,22 @@
         .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: var(--bw) solid var(--border-color); border-radius: var(--radius); color: var(--on-control); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         .player-info-btn:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .player-info-btn svg { width: 16px; height: 16px; }
+        .player-eq-btn { right: auto; left: 0.5rem; }
+        .player-eq-btn.eq-on { border-color: var(--accent); color: var(--accent-text, var(--accent)); }
+        .eq-panel { position: absolute; top: 2.9rem; left: 0.5rem; right: 0.5rem; z-index: 6; max-height: calc(100% - 3.4rem); overflow-y: auto; box-sizing: border-box; padding: 0.5rem 0.6rem 0.6rem; background: var(--bg-secondary); border: var(--bw) solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-primary); display: flex; flex-direction: column; gap: 0.5rem; }
+        .eq-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        .eq-title { font-size: var(--label-size); font-weight: 600; text-transform: uppercase; letter-spacing: var(--label-track); color: var(--text-muted); margin-right: auto; }
+        .eq-chip, .eq-close { font: inherit; font-size: var(--data-size); line-height: 1.2; padding: 0.25rem 0.55rem; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius); cursor: pointer; }
+        .eq-chip:hover, .eq-close:hover { background: var(--control-surface-hover); border-color: var(--accent); }
+        .eq-chip[aria-pressed="true"] { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
+        .eq-chip:disabled, .eq-preset:disabled, .eq-slider:disabled { opacity: 0.45; cursor: not-allowed; }
+        .eq-preset { font: inherit; font-size: 0.85rem; padding: 0.3rem 0.4rem; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius); width: 100%; }
+        .eq-bands { display: flex; justify-content: space-between; gap: 0.1rem; }
+        .eq-band { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; flex: 1 1 0; min-width: 0; }
+        .eq-val, .eq-freq { font-size: 0.65rem; line-height: 1; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+        .eq-slider { writing-mode: vertical-lr; direction: rtl; -webkit-appearance: slider-vertical; appearance: auto; height: 110px; width: 1.5rem; margin: 0; accent-color: var(--accent); cursor: pointer; }
+        .eq-note { font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); }
+        .eq-note:empty { display: none; }
         .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         /* Preview text has its own size (Settings > Font Size > Preview text), independent of the interface size. */
@@ -2038,7 +2054,9 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         let currentVolume = 0.25, // Default volume 25% (on the player's own scale, see volToEl)
             audioCtx = null,
             normalizedElements = new WeakSet(),
-            compressor = null;
+            compressor = null,
+            eqNodes = null,
+            eqState = null;
         // The volume shown to the user is not the raw element volume: it is squared on the way in, so the low
         // end is much quieter and fine-grained, and Web Audio adds make-up gain so the top end is louder.
         const volToEl = (u) => Math.pow(Math.max(0, Math.min(1, u)), 2);
@@ -2095,6 +2113,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             nextCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
             shuffleCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`,
             volDownCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>`,
+            eq: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 20h4V4h-4v16zm-6 0h4v-8H4v8zM16 9v11h4V9h-4z"/></svg>`,
             volUpCtl: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`,
             other: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`,
             chevron: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
@@ -3518,8 +3537,18 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                     limiter.attack.value = 0.001;
                     limiter.release.value = 0.1;
                     compressor.connect(makeup);
-                    makeup.connect(limiter);
+                    // Equalizer sits after the leveler so its boosts are really heard; the limiter still catches peaks.
+                    try {
+                        eqNodes = buildEqChain(audioCtx);
+                        makeup.connect(eqNodes.input);
+                        eqNodes.output.connect(limiter);
+                    } catch (eqErr) {
+                        eqNodes = null;
+                        try { makeup.disconnect(); } catch (e2) {}
+                        makeup.connect(limiter);
+                    }
                     limiter.connect(audioCtx.destination);
+                    applyEq();
                 }
 
                 // Browser policy requires user interaction to resume audio context
@@ -3536,6 +3565,183 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 // Fails quietly if CORS blocks it or AudioContext not supported
                 console.warn("Audio Normalization setup failed:", e);
             }
+        }
+
+
+        // ======================================================================
+        // Equalizer. 10 bands (low shelf, 8 peaking, high shelf), presets, a mono switch. It works on the same Web Audio
+        // chain as the leveler, so it only exists for streams and files that are routed through it (CORS-enabled ones).
+        // The preamp drops by the largest boost so boosting can never clip.
+        const EQ_FREQS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+        const EQ_LABELS = ["32", "64", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
+        const EQ_MIN = -12, EQ_MAX = 12, EQ_KEY = "eqState";
+        const EQ_FLAT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const EQ_PRESETS = {
+            "Flat": EQ_FLAT,
+            "Bass boost": [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
+            "Bass reducer": [-6, -5, -4, -2, 0, 0, 0, 0, 0, 0],
+            "Treble boost": [0, 0, 0, 0, 0, 1, 2, 4, 5, 6],
+            "Vocal boost": [-2, -2, -1, 1, 3, 4, 4, 2, 0, -1],
+            "Loudness": [5, 4, 1, 0, -1, -1, 0, 2, 4, 5],
+            "Rock": [5, 4, 3, 1, -1, -1, 1, 3, 4, 5],
+            "Pop": [-1, 1, 3, 4, 3, 0, -1, -1, 1, 2],
+            "Jazz": [3, 2, 1, 2, -2, -2, 0, 1, 2, 3],
+            "Classical": [0, 0, 0, 0, 0, 0, -3, -3, -3, -4],
+            "Electronic": [5, 4, 1, 0, -2, 2, 1, 1, 4, 5],
+            "Hip-hop": [5, 4, 1, 3, -1, -1, 1, -1, 2, 3],
+            "Acoustic": [4, 4, 3, 1, 2, 2, 3, 3, 3, 2],
+        };
+        function buildEqChain(ctx) {
+            const input = ctx.createGain();
+            const bands = EQ_FREQS.map((f, i) => {
+                const b = ctx.createBiquadFilter();
+                b.type = i === 0 ? "lowshelf" : i === EQ_FREQS.length - 1 ? "highshelf" : "peaking";
+                b.frequency.value = f;
+                if (b.type === "peaking") b.Q.value = 1.41; // about one octave wide
+                b.gain.value = 0;
+                return b;
+            });
+            // Fixed at 2 channels, or 1 when mono is on (then spread back to both speakers).
+            const mono = ctx.createGain();
+            mono.channelCountMode = "explicit";
+            mono.channelCount = 2;
+            mono.channelInterpretation = "speakers";
+            let node = input;
+            for (const b of bands) { node.connect(b); node = b; }
+            node.connect(mono);
+            return { input, bands, mono, output: mono };
+        }
+        function getEqState() {
+            if (eqState) return eqState;
+            let s = null;
+            try { s = JSON.parse(store.getItem(EQ_KEY) || "null"); } catch (e) {}
+            const gains = s && Array.isArray(s.gains) && s.gains.length === EQ_FREQS.length
+                ? s.gains.map((v) => Math.max(EQ_MIN, Math.min(EQ_MAX, Math.round(Number(v)) || 0)))
+                : EQ_FLAT.slice();
+            const preset = s && typeof s.preset === "string" && (s.preset === "Custom" || EQ_PRESETS[s.preset]) ? s.preset : "Flat";
+            eqState = { on: !!(s && s.on), preset, gains, mono: !!(s && s.mono) };
+            return eqState;
+        }
+        function saveEqState() {
+            try { store.setItem(EQ_KEY, JSON.stringify(eqState)); } catch (e) {}
+        }
+        function applyEq() {
+            const btn = document.getElementById("eqBtn");
+            const s = getEqState();
+            if (btn) btn.classList.toggle("eq-on", s.on || s.mono);
+            if (!eqNodes || !audioCtx) return;
+            const t = audioCtx.currentTime;
+            const gains = s.on ? s.gains : EQ_FLAT;
+            const boost = Math.max(0, ...gains);
+            eqNodes.bands.forEach((b, i) => b.gain.setTargetAtTime(gains[i], t, 0.03));
+            eqNodes.input.gain.setTargetAtTime(Math.pow(10, -boost / 20), t, 0.03);
+            eqNodes.mono.channelCount = s.mono ? 1 : 2;
+        }
+        function closeEqPanel() {
+            const panel = document.getElementById("eqPanel");
+            const btn = document.getElementById("eqBtn");
+            if (panel) panel.remove();
+            if (btn) { btn.setAttribute("aria-expanded", "false"); btn.focus(); }
+        }
+        function openEqPanel(mediaEl, host) {
+            const s = getEqState();
+            const ready = !!eqNodes && normalizedElements.has(mediaEl);
+            if (ready && audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+            const panel = document.createElement("div");
+            panel.id = "eqPanel";
+            panel.className = "eq-panel";
+            panel.setAttribute("role", "dialog");
+            panel.setAttribute("aria-label", "Equalizer");
+            panel.innerHTML = `
+                <div class="eq-head">
+                    <span class="eq-title">Equalizer</span>
+                    <button type="button" class="eq-chip" id="eqOnBtn" aria-pressed="false">Off</button>
+                    <button type="button" class="eq-chip" id="eqMonoBtn" aria-pressed="false" title="Play stereo as mono">Mono</button>
+                    <button type="button" class="eq-chip" id="eqResetBtn" title="Set every band back to 0">Reset</button>
+                    <button type="button" class="eq-close" id="eqCloseBtn" aria-label="Close equalizer">&times;</button>
+                </div>
+                <select class="eq-preset" id="eqPreset" aria-label="Preset">
+                    ${Object.keys(EQ_PRESETS).map((n) => `<option value="${n}">${n}</option>`).join("")}
+                    <option value="Custom" hidden>Custom</option>
+                </select>
+                <div class="eq-bands">
+                    ${EQ_LABELS.map((l, i) => `<div class="eq-band"><span class="eq-val" id="eqVal${i}">0</span><input type="range" class="eq-slider" id="eqBand${i}" data-band="${i}" min="${EQ_MIN}" max="${EQ_MAX}" step="1" value="0" aria-label="${l} hertz"><span class="eq-freq">${l}</span></div>`).join("")}
+                </div>
+                <div class="eq-note" id="eqNote"></div>`;
+            host.appendChild(panel);
+            const q = (id) => panel.querySelector("#" + id);
+            const sliders = Array.from(panel.querySelectorAll(".eq-slider"));
+            const fmt = (v) => (v > 0 ? "+" + v : String(v));
+            function sync() {
+                q("eqOnBtn").textContent = s.on ? "On" : "Off";
+                q("eqOnBtn").setAttribute("aria-pressed", String(s.on));
+                q("eqMonoBtn").setAttribute("aria-pressed", String(s.mono));
+                q("eqPreset").value = s.preset;
+                sliders.forEach((sl, i) => {
+                    sl.value = s.gains[i];
+                    sl.setAttribute("aria-valuetext", fmt(s.gains[i]) + " dB");
+                    q("eqVal" + i).textContent = fmt(s.gains[i]);
+                });
+            }
+            function changed(preset) {
+                s.preset = preset;
+                s.on = true;
+                saveEqState();
+                applyEq();
+                sync();
+            }
+            q("eqOnBtn").addEventListener("click", () => { s.on = !s.on; saveEqState(); applyEq(); sync(); });
+            q("eqMonoBtn").addEventListener("click", () => { s.mono = !s.mono; saveEqState(); applyEq(); sync(); });
+            q("eqResetBtn").addEventListener("click", () => { s.gains = EQ_FLAT.slice(); s.preset = "Flat"; saveEqState(); applyEq(); sync(); });
+            q("eqCloseBtn").addEventListener("click", closeEqPanel);
+            q("eqPreset").addEventListener("change", (e) => {
+                const name = e.target.value;
+                if (EQ_PRESETS[name]) { s.gains = EQ_PRESETS[name].slice(); changed(name); }
+            });
+            sliders.forEach((sl) => sl.addEventListener("input", () => {
+                s.gains[Number(sl.dataset.band)] = Number(sl.value);
+                const match = Object.keys(EQ_PRESETS).find((n) => EQ_PRESETS[n].every((v, i) => v === s.gains[i]));
+                changed(match || "Custom");
+            }));
+            if (!ready) {
+                panel.querySelectorAll("button:not(#eqCloseBtn), select, input").forEach((el) => { el.disabled = true; });
+                q("eqNote").textContent = "The equalizer can't be used on this stream: the station doesn't allow its audio to be processed in the browser.";
+            }
+            // The page's own shortcuts (arrows, space, / and ?) must not act while the panel's controls have focus.
+            panel.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeEqPanel(); return; }
+                if (e.key !== "Tab") e.stopPropagation();
+            });
+            const onOutside = (e) => {
+                if (!document.getElementById("eqPanel")) { document.removeEventListener("pointerdown", onOutside, true); return; }
+                if (panel.contains(e.target) || (e.target.closest && e.target.closest("#eqBtn"))) return;
+                document.removeEventListener("pointerdown", onOutside, true);
+                closeEqPanel();
+            };
+            document.addEventListener("pointerdown", onOutside, true);
+            const btn = document.getElementById("eqBtn");
+            if (btn) btn.setAttribute("aria-expanded", "true");
+            sync();
+            (ready ? q("eqPreset") : q("eqCloseBtn")).focus();
+        }
+        // Adds the Equalizer button next to the stream-info button (top left of the audio player).
+        function attachEqButton(mediaEl) {
+            if (!mediaEl || mediaEl.tagName !== "AUDIO") return;
+            const info = document.getElementById("streamInfoBtn");
+            const host = info && info.parentElement;
+            if (!host || host.querySelector("#eqBtn")) return;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.id = "eqBtn";
+            btn.className = "player-info-btn player-eq-btn";
+            btn.title = "Equalizer";
+            btn.setAttribute("aria-label", "Equalizer");
+            btn.setAttribute("aria-haspopup", "dialog");
+            btn.setAttribute("aria-expanded", "false");
+            btn.innerHTML = icons.eq;
+            btn.addEventListener("click", () => (document.getElementById("eqPanel") ? closeEqPanel() : openEqPanel(mediaEl, host)));
+            host.appendChild(btn);
+            applyEq();
         }
 
         // Media Session API: surfaces play/pause/prev/next on the lock screen,
@@ -8664,6 +8870,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                     store.setItem(VOL_KEY, currentVolume);
                 };
                 if (cors) setupAudioNormalization(el);
+                attachEqButton(el);
                 setupMediaSession(el, title);
                 maybeWireMediaControls(el);
                 document.getElementById("streamInfoBtn").addEventListener("click", copyStreamInfo);
@@ -10089,6 +10296,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                             singleAudio.volume = volToEl(currentVolume);
                             singleAudio.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); store.setItem(VOL_KEY, currentVolume); };
                             setupAudioNormalization(singleAudio);
+                            attachEqButton(singleAudio);
                             setupMediaSession(singleAudio, fileName);
                             maybeWireMediaControls(singleAudio);
                             if (!useNativePlayer) wireGalleryStep();

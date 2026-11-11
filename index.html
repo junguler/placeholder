@@ -652,21 +652,22 @@
         .player-info-btn svg { width: 16px; height: 16px; }
         .player-eq-btn { right: auto; left: 0.5rem; }
         .player-eq-btn.eq-on { border-color: var(--accent); color: var(--accent-text, var(--accent)); }
-        .eq-panel { position: absolute; top: 2.9rem; left: 0.5rem; right: 0.5rem; z-index: 6; max-height: calc(100% - 3.4rem); overflow-y: auto; box-sizing: border-box; padding: 0.5rem 0.6rem 0.6rem; background: var(--bg-secondary); border: var(--bw) solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-primary); display: flex; flex-direction: column; gap: 0.5rem; }
+        .eq-panel { position: absolute; top: 2.9rem; left: 0.5rem; right: 0.5rem; z-index: 6; max-height: min(calc(100% - 3.4rem), calc(100dvh - 8rem)); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; padding: 0.4rem 0.5rem 0.5rem; background: var(--bg-secondary); border: var(--bw) solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-primary); display: flex; flex-direction: column; gap: 0.35rem; }
         .eq-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
         .eq-title { font-size: var(--label-size); font-weight: 600; text-transform: uppercase; letter-spacing: var(--label-track); color: var(--text-muted); margin-right: auto; }
-        .eq-chip, .eq-close { font: inherit; font-size: var(--data-size); line-height: 1.2; padding: 0.25rem 0.55rem; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius); cursor: pointer; }
+        .eq-chip, .eq-close { font: inherit; font-size: var(--data-size); line-height: 1.2; padding: 0.2rem 0.5rem; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius); cursor: pointer; }
         .eq-chip:hover, .eq-close:hover { background: var(--control-surface-hover); border-color: var(--accent); }
         .eq-chip[aria-pressed="true"] { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
         .eq-chip:disabled, .eq-preset:disabled, .eq-slider:disabled { opacity: 0.45; cursor: not-allowed; }
-        .eq-preset { font: inherit; font-size: 0.85rem; padding: 0.3rem 0.4rem; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius); width: 100%; }
+        .eq-preset { font: inherit; font-size: 0.8rem; padding: 0.2rem 0.3rem; min-width: 0; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius); width: 100%; box-sizing: border-box; }
         .eq-bands { display: flex; justify-content: space-between; gap: 0.1rem; }
         .eq-band { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; flex: 1 1 0; min-width: 0; }
         .eq-val, .eq-freq { font-size: 0.65rem; line-height: 1; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-        .eq-slider { writing-mode: vertical-lr; direction: rtl; -webkit-appearance: slider-vertical; appearance: auto; height: 110px; width: 1.5rem; margin: 0; accent-color: var(--accent); cursor: pointer; }
-        .eq-level { display: flex; align-items: center; gap: 0.5rem; }
-        .eq-level-label { font-size: 0.85rem; color: var(--text-secondary); flex-shrink: 0; }
-        .eq-note { font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); }
+        .eq-slider { writing-mode: vertical-lr; direction: rtl; -webkit-appearance: slider-vertical; appearance: auto; height: clamp(60px, 12vh, 100px); width: 1.5rem; margin: 0; accent-color: var(--accent); cursor: pointer; }
+        .eq-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+        .eq-sel { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+        .eq-sel-label { font-size: 0.65rem; line-height: 1; font-weight: 600; text-transform: uppercase; letter-spacing: var(--label-track); color: var(--text-muted); }
+        .eq-note { font-size: 0.72rem; line-height: 1.3; color: var(--text-muted); }
         .eq-note:empty { display: none; }
         .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
@@ -2053,7 +2054,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             fetchCache = new Map();
 
         // -- Audio pipeline state --
-        let currentVolume = 0.45, // Default volume 45% (on the player's own scale, see volToEl); with the loudness leveler this lands at roughly -26 LUFS
+        let currentVolume = 0.25, // Default volume 25% (on the player's own scale, see volToEl)
             audioCtx = null,
             normalizedElements = new WeakSet(),
             audioPost = null, // shared: make-up gain after the levelers, then equalizer, then limiter
@@ -3523,7 +3524,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         // its dynamics unless Smooth or Night is chosen. The element's own volume is applied BEFORE the audio
         // reaches Web Audio, so the meter divides it back out; otherwise the volume slider would be "corrected".
         const LEVEL_TARGET_LUFS = 16;   // stream loudness at the level gain's output, as -LUFS (-16 LUFS)
-        const LEVEL_POST_DB = 4;        // make-up gain after it: slider at 100% is about -12 LUFS, the limiter takes any peaks
+        const LEVEL_POST_DB = 14;       // make-up gain after it, tuned so the 25% slider sounds as loud as the old chain did (about -26 LUFS); above ~50% the limiter starts catching peaks
         const LEVEL_GAIN_MIN = -18, LEVEL_GAIN_MAX = 12; // dB the level gain may move
         const LEVEL_KEY = "levelMode";
         const LEVEL_MODES = {
@@ -3791,15 +3792,16 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                     <button type="button" class="eq-chip" id="eqResetBtn" title="Set every band back to 0">Reset</button>
                     <button type="button" class="eq-close" id="eqCloseBtn" aria-label="Close equalizer">&times;</button>
                 </div>
-                <div class="eq-level">
-                    <label class="eq-level-label" for="eqLevel">Leveling</label>
-                    <select class="eq-preset" id="eqLevel">${Object.keys(LEVEL_MODES).map((k) => `<option value="${k}">${LEVEL_MODES[k].label}</option>`).join("")}</select>
+                <div class="eq-selects">
+                    <div class="eq-sel"><label class="eq-sel-label" for="eqLevel">Leveling</label>
+                        <select class="eq-preset" id="eqLevel">${Object.keys(LEVEL_MODES).map((k) => `<option value="${k}">${LEVEL_MODES[k].label}</option>`).join("")}</select></div>
+                    <div class="eq-sel"><label class="eq-sel-label" for="eqPreset">Equalizer</label>
+                        <select class="eq-preset" id="eqPreset">
+                            ${Object.keys(EQ_PRESETS).map((n) => `<option value="${n}">${n}</option>`).join("")}
+                            <option value="Custom" hidden>Custom</option>
+                        </select></div>
                 </div>
                 <div class="eq-note" id="eqLevelNote"></div>
-                <select class="eq-preset" id="eqPreset" aria-label="Equalizer preset">
-                    ${Object.keys(EQ_PRESETS).map((n) => `<option value="${n}">${n}</option>`).join("")}
-                    <option value="Custom" hidden>Custom</option>
-                </select>
                 <div class="eq-bands">
                     ${EQ_LABELS.map((l, i) => `<div class="eq-band"><span class="eq-val" id="eqVal${i}">0</span><input type="range" class="eq-slider" id="eqBand${i}" data-band="${i}" min="${EQ_MIN}" max="${EQ_MAX}" step="1" value="0" aria-label="${l} hertz"><span class="eq-freq">${l}</span></div>`).join("")}
                 </div>
@@ -3950,7 +3952,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             <button class="playlist-btn shuffle-btn" id="playlistShuffle" title="Shuffle" aria-label="Toggle shuffle" aria-pressed="false" disabled>${icons.shuffleCtl}</button>
             <span class="player-divider"></span>
             <button class="playlist-btn" id="volDownBtn" title="Volume down" aria-label="Decrease volume">${icons.volDownCtl}</button>
-            <span class="player-vol" id="playerVolLabel" aria-live="polite">45%</span>
+            <span class="player-vol" id="playerVolLabel" aria-live="polite">25%</span>
             <button class="playlist-btn" id="volUpBtn" title="Volume up" aria-label="Increase volume">${icons.volUpCtl}</button>
           </div>
         </div>

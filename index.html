@@ -664,6 +664,8 @@
         .eq-band { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; flex: 1 1 0; min-width: 0; }
         .eq-val, .eq-freq { font-size: 0.65rem; line-height: 1; color: var(--text-muted); font-variant-numeric: tabular-nums; }
         .eq-slider { writing-mode: vertical-lr; direction: rtl; -webkit-appearance: slider-vertical; appearance: auto; height: 110px; width: 1.5rem; margin: 0; accent-color: var(--accent); cursor: pointer; }
+        .eq-level { display: flex; align-items: center; gap: 0.5rem; }
+        .eq-level-label { font-size: 0.85rem; color: var(--text-secondary); flex-shrink: 0; }
         .eq-note { font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); }
         .eq-note:empty { display: none; }
         .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
@@ -2051,10 +2053,13 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             fetchCache = new Map();
 
         // -- Audio pipeline state --
-        let currentVolume = 0.25, // Default volume 25% (on the player's own scale, see volToEl)
+        let currentVolume = 0.45, // Default volume 45% (on the player's own scale, see volToEl); with the loudness leveler this lands at roughly -26 LUFS
             audioCtx = null,
             normalizedElements = new WeakSet(),
-            compressor = null,
+            audioPost = null, // shared: make-up gain after the levelers, then equalizer, then limiter
+            audioLimiter = null,
+            levelers = new WeakMap(), // media element -> its loudness leveler
+            activeLevelers = new Set(),
             eqNodes = null,
             eqState = null;
         // The volume shown to the user is not the raw element volume: it is squared on the way in, so the low
@@ -3509,7 +3514,165 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             return scored.map((s) => s.item);
         }
         
-        // Initialize Web Audio API for Normalization
+        // ======================================================================
+        // Loudness leveler. Every stream goes through the same stages:
+        //   source -> [optional compressor] -> level gain -> make-up gain -> equalizer -> limiter -> speakers
+        // The level gain is the normalizer: the loudness of what comes out of the compressor is measured the way
+        // EBU R128 / ITU-R BS.1770 does it (K-weighting, mean square, a 3 s short-term window, silence ignored)
+        // and the gain moves slowly toward the target. Peaks are only ever caught by the limiter, so music keeps
+        // its dynamics unless Smooth or Night is chosen. The element's own volume is applied BEFORE the audio
+        // reaches Web Audio, so the meter divides it back out; otherwise the volume slider would be "corrected".
+        const LEVEL_TARGET_LUFS = 16;   // stream loudness at the level gain's output, as -LUFS (-16 LUFS)
+        const LEVEL_POST_DB = 4;        // make-up gain after it: slider at 100% is about -12 LUFS, the limiter takes any peaks
+        const LEVEL_GAIN_MIN = -18, LEVEL_GAIN_MAX = 12; // dB the level gain may move
+        const LEVEL_KEY = "levelMode";
+        const LEVEL_MODES = {
+            off:    { label: "Off",    hint: "The stream plays exactly as sent.", comp: { ratio: 1, threshold: 0, knee: 0, attack: 0.01, release: 0.25 } },
+            level:  { label: "Level",  hint: "Stations are matched to the same loudness. The music itself is not compressed.", comp: { ratio: 1, threshold: 0, knee: 0, attack: 0.01, release: 0.25 } },
+            smooth: { label: "Smooth", hint: "Matched loudness plus gentle compression for steadier levels.", comp: { ratio: 2.2, threshold: -22, knee: 14, attack: 0.03, release: 0.4 } },
+            night:  { label: "Night",  hint: "Matched loudness plus strong compression: loud parts come down, quiet parts come up.", comp: { ratio: 4, threshold: -30, knee: 12, attack: 0.01, release: 0.3 } },
+        };
+        let levelMode = null;
+        function getLevelMode() {
+            if (levelMode) return levelMode;
+            let m = null;
+            try { m = store.getItem(LEVEL_KEY); } catch (e) {}
+            levelMode = LEVEL_MODES[m] ? m : "level";
+            return levelMode;
+        }
+        function setLevelMode(m) {
+            if (!LEVEL_MODES[m]) return;
+            levelMode = m;
+            try { store.setItem(LEVEL_KEY, m); } catch (e) {}
+            applyLevelModeAll();
+        }
+        function applyLevelMode(lv) {
+            const mode = getLevelMode(), p = LEVEL_MODES[mode].comp, t = audioCtx.currentTime;
+            lv.comp.ratio.setTargetAtTime(p.ratio, t, 0.05);
+            lv.comp.threshold.setTargetAtTime(p.threshold, t, 0.05);
+            lv.comp.knee.setTargetAtTime(p.knee, t, 0.05);
+            lv.comp.attack.setTargetAtTime(p.attack, t, 0.05);
+            lv.comp.release.setTargetAtTime(p.release, t, 0.05);
+            if (mode === "off") { lv.gainDb = 0; lv.gain.gain.setTargetAtTime(1, t, 0.08); }
+        }
+        function applyLevelModeAll() {
+            if (!audioCtx || !audioPost) return;
+            const off = getLevelMode() === "off";
+            audioPost.gain.setTargetAtTime(off ? 1 : Math.pow(10, LEVEL_POST_DB / 20), audioCtx.currentTime, 0.08);
+            activeLevelers.forEach((lv) => applyLevelMode(lv));
+        }
+        // Pure control law, no Web Audio in it (so it can be tested). `e` is the block's energy summed over the channels,
+        // already divided by volume squared; `now` is in ms. Returns the dB the level gain should move toward, or null
+        // when it should hold (silence, paused, not enough data yet).
+        function levelUpdate(lv, e, now) {
+            const blocks = lv.blocks;
+            blocks.push({ t: now, e });
+            // About 3 s of blocks; at least the last 12 so a throttled background tab still has something to average.
+            while (blocks.length > 12 && blocks[0].t < now - 3000) blocks.shift();
+            const lufs = (x) => -0.691 + 10 * Math.log10(x);
+            const mean = (list) => list.reduce((s, b) => s + b.e, 0) / list.length;
+            const loud = blocks.filter((b) => b.e > 0 && lufs(b.e) > -70); // absolute gate: silence never moves the gain
+            lv.lufs = null;
+            if (loud.length < 3 || now - loud[0].t < 900) return null;
+            const short = lufs(mean(loud));
+            lv.lufs = short;
+            const recent = loud.filter((b) => b.t > now - 400);
+            const momentary = recent.length ? lufs(mean(recent)) : short;
+            const clamp = (g) => Math.max(LEVEL_GAIN_MIN, Math.min(LEVEL_GAIN_MAX, g));
+            let want = clamp(-LEVEL_TARGET_LUFS - short), tau;
+            if (momentary + lv.gainDb > -LEVEL_TARGET_LUFS + 4 && want < lv.gainDb) {
+                want = clamp(-LEVEL_TARGET_LUFS - momentary); // a sudden loud passage (an ad break, say): come down quickly
+                tau = 0.25;
+            } else if (now < lv.fastUntil) {
+                tau = 0.3; // just started: get to the right level quickly
+            } else {
+                tau = want < lv.gainDb ? 1.2 : 6; // down fairly fast, up slowly so quiet passages are not pumped up
+                if (Math.abs(want - lv.gainDb) < 0.6) return lv.gainDb; // close enough: leave it alone
+            }
+            const dt = Math.min(1, Math.max(0, (now - lv.lastUpdate) / 1000));
+            lv.lastUpdate = now;
+            lv.gainDb += (want - lv.gainDb) * (1 - Math.exp(-dt / tau));
+            return lv.gainDb;
+        }
+        function newLevelState(now) {
+            return { blocks: [], gainDb: 0, lufs: null, lastUpdate: now, fastUntil: now + 6000 };
+        }
+        function stopLeveler(lv) {
+            if (lv.timer) { clearInterval(lv.timer); lv.timer = null; }
+            activeLevelers.delete(lv);
+            try { lv.source.disconnect(); } catch (e) {}
+        }
+        function buildLeveler(ctx, source, el) {
+            const comp = ctx.createDynamicsCompressor();
+            const gain = ctx.createGain();
+            source.connect(comp);
+            comp.connect(gain);
+            gain.connect(audioPost);
+            // Measurement tap after the compressor, before the level gain, so what it reads never depends on the gain it sets.
+            const split = ctx.createChannelSplitter(2);
+            comp.connect(split);
+            const an = [0, 1].map((ch) => {
+                const shelf = ctx.createBiquadFilter(); // K-weighting stage 1: shelving boost around 1.7 kHz
+                shelf.type = "highshelf"; shelf.frequency.value = 1682; shelf.gain.value = 4;
+                const hp = ctx.createBiquadFilter();    // stage 2: high-pass at 38 Hz (Q is in dB for Web Audio: 0.5 linear = -6 dB)
+                hp.type = "highpass"; hp.frequency.value = 38; hp.Q.value = -6.02;
+                const a = ctx.createAnalyser();
+                a.fftSize = 2048; a.smoothingTimeConstant = 0;
+                split.connect(shelf, ch);
+                shelf.connect(hp); hp.connect(a);
+                return a;
+            });
+            const lv = Object.assign(newLevelState(performance.now()), {
+                el, source, comp, gain, an,
+                bufs: [new Float32Array(an[0].fftSize), new Float32Array(an[1].fftSize)],
+                timer: null,
+            });
+            activeLevelers.add(lv);
+            applyLevelMode(lv);
+            lv.timer = setInterval(() => {
+                if (!el.isConnected) { stopLeveler(lv); return; }
+                if (getLevelMode() === "off") { lv.lufs = null; return; }
+                const v = el.muted ? 0 : el.volume;
+                if (el.paused || v < 0.003) { lv.lufs = null; return; }
+                let sum = 0;
+                for (let c = 0; c < 2; c++) {
+                    an[c].getFloatTimeDomainData(lv.bufs[c]);
+                    let s = 0;
+                    const b = lv.bufs[c];
+                    for (let i = 0; i < b.length; i++) s += b[i] * b[i];
+                    sum += s / b.length;
+                }
+                const g = levelUpdate(lv, sum / (v * v), performance.now());
+                if (g !== null) lv.gain.gain.setTargetAtTime(Math.pow(10, g / 20), ctx.currentTime, 0.08);
+            }, 40);
+            return lv;
+        }
+        // Builds the shared part of the graph once: make-up gain -> equalizer -> limiter -> speakers.
+        function ensureAudioGraph() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioPost = audioCtx.createGain();
+            audioLimiter = audioCtx.createDynamicsCompressor();
+            audioLimiter.threshold.value = -2;
+            audioLimiter.knee.value = 0;
+            audioLimiter.ratio.value = 20;
+            audioLimiter.attack.value = 0.001;
+            audioLimiter.release.value = 0.1;
+            // Equalizer sits after the leveler so its boosts are really heard; the limiter still catches peaks.
+            try {
+                eqNodes = buildEqChain(audioCtx);
+                audioPost.connect(eqNodes.input);
+                eqNodes.output.connect(audioLimiter);
+            } catch (eqErr) {
+                eqNodes = null;
+                try { audioPost.disconnect(); } catch (e2) {}
+                audioPost.connect(audioLimiter);
+            }
+            audioLimiter.connect(audioCtx.destination);
+            applyLevelModeAll();
+            applyEq();
+        }
+        // Routes a media element through the leveler / equalizer / limiter chain.
         function setupAudioNormalization(mediaElement) {
             // A media element can only ever connect to one MediaElementSourceNode;
             // skip if it's already wired up (elements are reused across tracks).
@@ -3517,56 +3680,24 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             try {
                 // Ensure CORS is handled for Web Audio
                 mediaElement.crossOrigin = "anonymous";
-                
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    // Settings for a "broadcast style" leveling
-                    compressor = audioCtx.createDynamicsCompressor();
-                    compressor.threshold.value = -30; // Start leveling earlier so quiet and loud stations land close together
-                    compressor.knee.value = 24;
-                    compressor.ratio.value = 18;      // Strong leveler
-                    compressor.attack.value = 0.003;
-                    compressor.release.value = 0.25;
-                    // Make-up gain gives the top of the volume range real headroom; the limiter keeps it from clipping.
-                    const makeup = audioCtx.createGain();
-                    makeup.gain.value = 2.4;
-                    const limiter = audioCtx.createDynamicsCompressor();
-                    limiter.threshold.value = -2;
-                    limiter.knee.value = 0;
-                    limiter.ratio.value = 20;
-                    limiter.attack.value = 0.001;
-                    limiter.release.value = 0.1;
-                    compressor.connect(makeup);
-                    // Equalizer sits after the leveler so its boosts are really heard; the limiter still catches peaks.
-                    try {
-                        eqNodes = buildEqChain(audioCtx);
-                        makeup.connect(eqNodes.input);
-                        eqNodes.output.connect(limiter);
-                    } catch (eqErr) {
-                        eqNodes = null;
-                        try { makeup.disconnect(); } catch (e2) {}
-                        makeup.connect(limiter);
-                    }
-                    limiter.connect(audioCtx.destination);
-                    applyEq();
-                }
-
+                ensureAudioGraph();
                 // Browser policy requires user interaction to resume audio context
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-
-                // Connect source to compressor
-                // Note: creating a new source for a new element is standard
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 const source = audioCtx.createMediaElementSource(mediaElement);
-                source.connect(compressor);
                 normalizedElements.add(mediaElement);
+                // From here on the element is only heard through the graph, so a failure below must not leave it unplugged.
+                try {
+                    levelers.set(mediaElement, buildLeveler(audioCtx, source, mediaElement));
+                } catch (levelErr) {
+                    console.warn("Loudness leveler setup failed:", levelErr);
+                    try { source.disconnect(); } catch (e2) {}
+                    source.connect(audioPost);
+                }
             } catch (e) {
                 // Fails quietly if CORS blocks it or AudioContext not supported
                 console.warn("Audio Normalization setup failed:", e);
             }
         }
-
 
         // ======================================================================
         // Equalizer. 10 bands (low shelf, 8 peaking, high shelf), presets, a mono switch. It works on the same Web Audio
@@ -3645,22 +3776,27 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         }
         function openEqPanel(mediaEl, host) {
             const s = getEqState();
-            const ready = !!eqNodes && normalizedElements.has(mediaEl);
+            const ready = !!audioCtx && normalizedElements.has(mediaEl);
             if (ready && audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
             const panel = document.createElement("div");
             panel.id = "eqPanel";
             panel.className = "eq-panel";
             panel.setAttribute("role", "dialog");
-            panel.setAttribute("aria-label", "Equalizer");
+            panel.setAttribute("aria-label", "Sound: leveling and equalizer");
             panel.innerHTML = `
                 <div class="eq-head">
-                    <span class="eq-title">Equalizer</span>
+                    <span class="eq-title">Sound</span>
                     <button type="button" class="eq-chip" id="eqOnBtn" aria-pressed="false">Off</button>
                     <button type="button" class="eq-chip" id="eqMonoBtn" aria-pressed="false" title="Play stereo as mono">Mono</button>
                     <button type="button" class="eq-chip" id="eqResetBtn" title="Set every band back to 0">Reset</button>
                     <button type="button" class="eq-close" id="eqCloseBtn" aria-label="Close equalizer">&times;</button>
                 </div>
-                <select class="eq-preset" id="eqPreset" aria-label="Preset">
+                <div class="eq-level">
+                    <label class="eq-level-label" for="eqLevel">Leveling</label>
+                    <select class="eq-preset" id="eqLevel">${Object.keys(LEVEL_MODES).map((k) => `<option value="${k}">${LEVEL_MODES[k].label}</option>`).join("")}</select>
+                </div>
+                <div class="eq-note" id="eqLevelNote"></div>
+                <select class="eq-preset" id="eqPreset" aria-label="Equalizer preset">
                     ${Object.keys(EQ_PRESETS).map((n) => `<option value="${n}">${n}</option>`).join("")}
                     <option value="Custom" hidden>Custom</option>
                 </select>
@@ -3694,6 +3830,16 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             q("eqMonoBtn").addEventListener("click", () => { s.mono = !s.mono; saveEqState(); applyEq(); sync(); });
             q("eqResetBtn").addEventListener("click", () => { s.gains = EQ_FLAT.slice(); s.preset = "Flat"; saveEqState(); applyEq(); sync(); });
             q("eqCloseBtn").addEventListener("click", closeEqPanel);
+            const levelNote = () => {
+                const m = getLevelMode(), lv = levelers.get(mediaEl);
+                let live = "";
+                if (m !== "off" && lv) live = lv.lufs === null ? " Measuring…" : ` Stream ${lv.lufs.toFixed(1)} LUFS, gain ${lv.gainDb >= 0 ? "+" : ""}${lv.gainDb.toFixed(1)} dB.`;
+                q("eqLevelNote").textContent = LEVEL_MODES[m].hint + live;
+            };
+            q("eqLevel").value = getLevelMode();
+            q("eqLevel").addEventListener("change", (e) => { setLevelMode(e.target.value); levelNote(); });
+            levelNote();
+            const noteTimer = setInterval(() => { if (!document.getElementById("eqPanel")) clearInterval(noteTimer); else levelNote(); }, 500);
             q("eqPreset").addEventListener("change", (e) => {
                 const name = e.target.value;
                 if (EQ_PRESETS[name]) { s.gains = EQ_PRESETS[name].slice(); changed(name); }
@@ -3705,7 +3851,8 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             }));
             if (!ready) {
                 panel.querySelectorAll("button:not(#eqCloseBtn), select, input").forEach((el) => { el.disabled = true; });
-                q("eqNote").textContent = "The equalizer can't be used on this stream: the station doesn't allow its audio to be processed in the browser.";
+                q("eqNote").textContent = "Leveling and the equalizer can't be used on this stream: the station doesn't allow its audio to be processed in the browser.";
+                q("eqLevelNote").textContent = "";
             }
             // The page's own shortcuts (arrows, space, / and ?) must not act while the panel's controls have focus.
             panel.addEventListener("keydown", (e) => {
@@ -3734,8 +3881,8 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             btn.type = "button";
             btn.id = "eqBtn";
             btn.className = "player-info-btn player-eq-btn";
-            btn.title = "Equalizer";
-            btn.setAttribute("aria-label", "Equalizer");
+            btn.title = "Sound: leveling and equalizer";
+            btn.setAttribute("aria-label", "Sound: leveling and equalizer");
             btn.setAttribute("aria-haspopup", "dialog");
             btn.setAttribute("aria-expanded", "false");
             btn.innerHTML = icons.eq;
@@ -3803,7 +3950,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             <button class="playlist-btn shuffle-btn" id="playlistShuffle" title="Shuffle" aria-label="Toggle shuffle" aria-pressed="false" disabled>${icons.shuffleCtl}</button>
             <span class="player-divider"></span>
             <button class="playlist-btn" id="volDownBtn" title="Volume down" aria-label="Decrease volume">${icons.volDownCtl}</button>
-            <span class="player-vol" id="playerVolLabel" aria-live="polite">25%</span>
+            <span class="player-vol" id="playerVolLabel" aria-live="polite">45%</span>
             <button class="playlist-btn" id="volUpBtn" title="Volume up" aria-label="Increase volume">${icons.volUpCtl}</button>
           </div>
         </div>

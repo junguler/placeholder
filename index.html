@@ -1098,6 +1098,7 @@
 
         /* folder tree: header actions */
         .tree-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+        .tree-title { margin: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
         .tree-header-actions { display: flex; align-items: center; gap: 0.25rem; }
         .tree-hdr-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; background: none; border: none; border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; text-transform: none; }
         .tree-hdr-btn svg { width: 14px; height: 14px; }
@@ -1577,6 +1578,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
     <a class="skip-link" id="skipLink" href="#main">Skip to files</a>
     <header class="header">
         <div class="header-content">
+            <h1 class="sr-only">File Viewer</h1>
             <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="Go to home folder">
                 <svg viewBox="0 0 24 24" fill="currentcolor"><rect x="2" y="5" width="20" height="14"/><circle cx="8" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="16" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="8" cy="12" r="0.8"/><circle cx="16" cy="12" r="0.8"/><rect x="10" y="15.6" width="4" height="1.6" fill="var(--bg-secondary)"/></svg>
                 <span>File Viewer</span>
@@ -1822,10 +1824,11 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         <aside class="tree-panel visible" id="treePanel">
             <div class="tree-pinned" id="treePinned"></div>
             <div class="tree-pinned" id="treeFavorites"></div>
-            <div class="tree-header"><span>Folders</span><span class="tree-header-actions"><button type="button" class="tree-hdr-btn" id="treeCollapseAll" title="Collapse all folders" aria-label="Collapse all folders"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 13H5v-2h14v2z"/></svg></button></span></div>
-            <div class="tree-content" id="treeContent"></div>
+            <div class="tree-header"><h2 class="tree-title">Folders</h2><span class="tree-header-actions"><button type="button" class="tree-hdr-btn" id="treeCollapseAll" title="Collapse all folders" aria-label="Collapse all folders"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 13H5v-2h14v2z"/></svg></button></span></div>
+            <div class="tree-content" id="treeContent" role="tree" aria-label="Folders"></div>
         </aside>
-        <main class="main" id="main" tabindex="-1">
+        <h2 class="sr-only" id="mainHeading">Files</h2>
+        <main class="main" id="main" tabindex="-1" aria-labelledby="mainHeading">
             <div class="skeleton-list" aria-hidden="true">
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name"></div><div class="skeleton-block skeleton-meta"></div></div>
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:60%"></div><div class="skeleton-block skeleton-meta"></div></div>
@@ -2691,7 +2694,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 : document.documentElement.removeAttribute("data-theme");
             const t = store.getItem("fontSize");
             t &&
-                ((currentFontSize = Math.max(12, Math.min(20, parseInt(t) || 16))),
+                ((currentFontSize = Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, parseInt(t) || 16))),
                 document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px")),
                 updateThemeButtons(),
                 updateFontSizeLabel();
@@ -3291,18 +3294,20 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             const toggle = document.getElementById("themeToggle");
             if (toggle) toggle.classList.toggle("custom-color-active", customActive);
         }
+        // Interface text size range in px (the A- / A+ buttons in Settings).
+        const FONT_SIZE_MIN = 10, FONT_SIZE_MAX = 26;
         function updateFontSizeLabel() {
             document.getElementById("fontSizeLabel").textContent = currentFontSize + "px";
         }
         function changeFontSize(e) {
-            (currentFontSize = Math.max(12, Math.min(20, currentFontSize + e))),
+            (currentFontSize = Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, currentFontSize + e))),
                 document.documentElement.style.setProperty("--font-size-base", currentFontSize + "px"),
                 store.setItem("fontSize", currentFontSize),
                 updateFontSizeLabel();
         }
         // Preview text (code / text file previews) has its own size, in rem, so it can sit
         // smaller than the interface text. Default 0.8rem; stored as "previewFontSize".
-        const PREVIEW_FONT_DEFAULT = 0.8, PREVIEW_FONT_MIN = 0.6, PREVIEW_FONT_MAX = 1.6, PREVIEW_FONT_STEP = 0.1;
+        const PREVIEW_FONT_DEFAULT = 0.8, PREVIEW_FONT_MIN = 0.5, PREVIEW_FONT_MAX = 2.4, PREVIEW_FONT_STEP = 0.1;
         let previewFontSize = PREVIEW_FONT_DEFAULT;
         function clampPreviewFont(v) {
             return Math.max(PREVIEW_FONT_MIN, Math.min(PREVIEW_FONT_MAX, Math.round(v * 10) / 10));
@@ -4219,6 +4224,9 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         function handleGridKeydown(e) {
             const card = e.target.closest(".file-card");
             if (!card) return;
+            // Enter/Space on the star (or any other button inside the card)
+            // belongs to that button, not to the card around it.
+            if ((e.key === "Enter" || e.key === " ") && e.target.closest("button")) return;
             const cards = Array.from(document.querySelectorAll("#main .file-card"));
             const idx = cards.indexOf(card);
             const cols = getGridColumnCount();
@@ -4521,7 +4529,12 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         function hashToPath() {
             const raw = location.hash.replace(/^#\/?/, "");
             if (!raw) return [];
-            return raw.split("/").filter(Boolean).map(decodeURIComponent);
+            return raw.split("/").filter(Boolean).map(safeDecode);
+        }
+        // decodeURIComponent throws on a malformed escape (a stray "%"); keep
+        // the text as it is instead.
+        function safeDecode(s) {
+            try { return decodeURIComponent(s); } catch (err) { return s; }
         }
         // Keeps the URL hash in sync with currentPath so folders are
         // linkable/bookmarkable and the browser back/forward buttons retrace
@@ -4860,7 +4873,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                     const isActive = JSON.stringify(pathArr) === JSON.stringify(currentPath);
                     const hasSubfolders = folder.children?.some((child) => child.type === "directory");
                     html += `
-            <div class="tree-item${isActive ? " active" : ""}" data-path="${escapeHtml(JSON.stringify(pathArr))}" style="padding-left: ${depth * 12 + 8}px" tabindex="0" role="treeitem" aria-label="Folder ${escapeHtml(folder.name)}">
+            <div class="tree-item${isActive ? " active" : ""}" data-path="${escapeHtml(JSON.stringify(pathArr))}" style="padding-left: ${depth * 12 + 8}px" tabindex="0" role="treeitem" aria-level="${depth + 2}"${hasSubfolders ? ` aria-expanded="${isExpanded}"` : ""}${isActive ? ' aria-current="page"' : ""} aria-label="Folder ${escapeHtml(folder.name)}">
               <span class="tree-toggle${hasSubfolders ? (isExpanded ? " expanded" : "") : " empty"}" data-path="${escapeHtml(folderPath)}">
                 ${icons.chevron}
               </span>
@@ -4869,7 +4882,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             </div>
           `;
                     if (isExpanded && folder.children) {
-                        html += `<div class="tree-children">${renderFolderList(folder.children, folderPath, depth + 1)}</div>`;
+                        html += `<div class="tree-children" role="group">${renderFolderList(folder.children, folderPath, depth + 1)}</div>`;
                     }
                 }
                 return html;
@@ -4878,7 +4891,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             const isAtRoot = currentPath.length === 0;
             const rootHasSubfolders = fileIndex.root.some((item) => item.type === "directory");
             let html = `
-        <div class="tree-item${isAtRoot ? " active" : ""}" data-path="[]" style="padding-left: 8px" tabindex="0" role="treeitem" aria-label="Root folder">
+        <div class="tree-item${isAtRoot ? " active" : ""}" data-path="[]" style="padding-left: 8px" tabindex="0" role="treeitem" aria-level="1"${rootHasSubfolders ? ' aria-expanded="true"' : ""}${isAtRoot ? ' aria-current="page"' : ""} aria-label="Root folder">
           <span class="tree-toggle${rootHasSubfolders ? " expanded" : " empty"}" data-path="">
             ${icons.chevron}
           </span>
@@ -5135,7 +5148,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                         currentHeaderLines.push(line);
                     } else {
                         const url = (line.startsWith("http://") || line.startsWith("https://")) ? line : o + line;
-                        const title = currentTitle || decodeURIComponent(url.split('/').pop());
+                        const title = currentTitle || safeDecode(url.split('/').pop());
                         const header = currentHeaderLines.join("\n");
                         playlistItems.push({ url, title, header });
                         currentTitle = null;
@@ -5326,11 +5339,13 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         }
         async function startPlaylistMode() {
             if (!isPlaylistFile || !currentFilePath) return;
+            const startedFor = currentFilePath;
             const e = await urlForPath(currentFilePath),
                 t = await parsePlaylistForCurrent(e);
+            if (currentFilePath !== startedFor) return; // another file was opened while loading
             failStreak = 0;
             await Promise.race([streamHealth.open(), new Promise((r) => setTimeout(r, 1200))]);
-            if (!currentFilePath) return; // closed while loading
+            if (currentFilePath !== startedFor) return; // closed or switched while loading
             t.length > 0
                 ? ((currentPlaylist = t),
                   (currentPlaylistIndex = 0),
@@ -5382,6 +5397,8 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         function fetchCacheSet(url, text) {
             if (fetchCache.has(url)) fetchCacheChars -= fetchCache.get(url).length;
             fetchCache.delete(url);
+            // Too big for the cache on its own: use it once, don't keep it.
+            if (text.length > FETCH_CACHE_MAX_CHARS) return;
             fetchCache.set(url, text);
             fetchCacheChars += text.length;
             while (fetchCache.size > 1 && (fetchCache.size > FETCH_CACHE_MAX_ENTRIES || fetchCacheChars > FETCH_CACHE_MAX_CHARS)) {
@@ -6573,7 +6590,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             const byPath = list.find((s) => {
                 try {
                     const listen = s.listenurl || s.listen_url || "";
-                    return listen && new URL(listen).pathname === pathname;
+                    return listen && new URL(listen, "http://localhost").pathname === pathname; // listenurl can be relative
                 } catch (e) {
                     return false;
                 }
@@ -7057,7 +7074,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 npDebug.lastPollAt = new Date().toISOString();
                 let round = sources;
                 // the playback connection already reads ICY titles: don't open a second stream
-                if (session.ownIcy) round = round.filter(([id]) => id !== "icy");
+                if (session.ownIcy && currentOwnBuffer && currentOwnBuffer.alive) round = round.filter(([id]) => id !== "icy");
                 if (good) {
                     const one = round.filter(([id]) => id === good.id && !npBad.has(id + "|" + url));
                     if (one.length) round = one; else good = null;
@@ -8930,6 +8947,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
             const bail = (why) => {
                 if (!m.alive) return;
+                session.ownIcy = false; // the own buffer is gone: the separate ICY reader must take over again
                 destroyMse();
                 noOwnBuffer(session, why || "error");
                 session.mseFailed = true;
@@ -10248,7 +10266,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             if (e.key !== "Tab") return;
             const modal = document.getElementById(containerId);
             const focusable = modal.querySelectorAll(
-                'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+                'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
             );
             if (focusable.length === 0) return;
             const first = focusable[0],
@@ -11087,10 +11105,30 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             return httpSource(url, f.size);
         }
 
-        async function arInflateRaw(bytes) {
+        // Counts the bytes that really come out of the decompressor instead of
+        // trusting the size written in the zip header: stops as soon as the
+        // output passes `max` or the declared size, and rejects an entry whose
+        // real size differs from the declared one.
+        async function arInflateRaw(bytes, max, expected) {
             if (typeof DecompressionStream === "undefined") throw new Error("This browser cannot decompress archive entries (no DecompressionStream).");
-            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-            return new Response(stream).blob();
+            const reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+            const parts = [];
+            let n = 0, problem = null;
+            try {
+                for (;;) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    n += value.length;
+                    if (n > max) { problem = `This file is larger than ${formatFileSize(max)}.`; break; }
+                    if (n > expected) { problem = "This zip entry is damaged (it unpacks to more than its header says)."; break; }
+                    parts.push(value);
+                }
+            } catch (err) {
+                problem = "This zip entry is damaged and could not be unpacked.";
+            }
+            if (problem) { reader.cancel().catch(() => {}); throw new Error(problem); }
+            if (n !== expected) throw new Error("This zip entry is damaged (its unpacked size does not match its header).");
+            return new Blob(parts);
         }
 
         // ---- ZIP ----
@@ -11147,12 +11185,12 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             }
             const readEntry = async (e, max) => {
                 if (e.flags & 1) throw new Error("This entry is password protected.");
-                if (e.usize > max) throw new Error(`This file is larger than ${formatFileSize(max)}.`);
+                if (e.usize > max || e.csize > max) throw new Error(`This file is larger than ${formatFileSize(max)}.`);
                 const h = await src.read(e.lho, e.lho + 30), hd = new DataView(h.buffer, h.byteOffset, h.byteLength);
                 if (hd.getUint32(0, true) !== 0x04034b50) throw new Error("Damaged zip entry.");
                 const start = e.lho + 30 + hd.getUint16(26, true) + hd.getUint16(28, true), raw = await src.read(start, start + e.csize);
                 if (e.method === 0) return new Blob([raw]);
-                if (e.method === 8) return arInflateRaw(raw);
+                if (e.method === 8) return arInflateRaw(raw, max, e.usize);
                 throw new Error("Unsupported compression method (" + e.method + ").");
             };
             return { kind: "zip", entries, readEntry, packed: true, fileSize: size };

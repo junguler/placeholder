@@ -669,6 +669,12 @@
         .eq-sel-label { font-size: 0.65rem; line-height: 1; font-weight: 600; text-transform: uppercase; letter-spacing: var(--label-track); color: var(--text-muted); }
         .eq-note { font-size: 0.72rem; line-height: 1.3; color: var(--text-muted); }
         .eq-note:empty { display: none; }
+        /* Every leveling hint sits in the same grid cell, so the cell is always as tall as the longest one and the
+           panel (and the sliders under it) never changes height when the mode or the live reading changes. */
+        .eq-hints { display: grid; }
+        .eq-hints > .eq-hint { grid-area: 1 / 1; visibility: hidden; }
+        .eq-hints > .eq-hint.on { visibility: visible; }
+        .eq-live { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; min-height: 1.3em; }
         .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
         .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
         /* Preview text has its own size (Settings > Font Size > Preview text), independent of the interface size. */
@@ -3516,7 +3522,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         }
         
         // ======================================================================
-        // Loudness leveler. Every stream goes through the same stages:
+        // Loudness leveler (on by default). Every stream goes through the same stages:
         //   source -> [optional compressor] -> level gain -> make-up gain -> equalizer -> limiter -> speakers
         // The level gain is the normalizer: the loudness of what comes out of the compressor is measured the way
         // EBU R128 / ITU-R BS.1770 does it (K-weighting, mean square, a 3 s short-term window, silence ignored)
@@ -3526,12 +3532,17 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         const LEVEL_TARGET_LUFS = 16;   // stream loudness at the level gain's output, as -LUFS (-16 LUFS)
         const LEVEL_POST_DB = 14;       // make-up gain after it, tuned so the 25% slider sounds as loud as the old chain did (about -26 LUFS); above ~50% the limiter starts catching peaks
         const LEVEL_GAIN_MIN = -18, LEVEL_GAIN_MAX = 12; // dB the level gain may move
-        const LEVEL_KEY = "levelMode";
+        // Where the level gain sits before the first measurement of a stream (and again whenever a new stream starts).
+        // Loud stations need about -7 to -11 dB, so starting this low means nothing can come in louder than it will
+        // end up; quiet stations simply swell up to their level in the first second or two.
+        const LEVEL_START_DB = -14;
+        const LEVEL_KEY = "levelMode2"; // 2nd key: the leveler is on (Level) by default for everyone, whatever an older build saved
         const LEVEL_MODES = {
             off:    { label: "Off",    hint: "The stream plays exactly as sent.", comp: { ratio: 1, threshold: 0, knee: 0, attack: 0.01, release: 0.25 } },
             level:  { label: "Level",  hint: "Stations are matched to the same loudness. The music itself is not compressed.", comp: { ratio: 1, threshold: 0, knee: 0, attack: 0.01, release: 0.25 } },
             smooth: { label: "Smooth", hint: "Matched loudness plus gentle compression for steadier levels.", comp: { ratio: 2.2, threshold: -22, knee: 14, attack: 0.03, release: 0.4 } },
             night:  { label: "Night",  hint: "Matched loudness plus strong compression: loud parts come down, quiet parts come up.", comp: { ratio: 4, threshold: -30, knee: 12, attack: 0.01, release: 0.3 } },
+            speech: { label: "Speech", hint: "Matched loudness plus firm compression that keeps voices even. Best for talk radio and podcasts.", comp: { ratio: 3, threshold: -28, knee: 8, attack: 0.005, release: 0.2 } },
         };
         let levelMode = null;
         function getLevelMode() {
@@ -3554,7 +3565,8 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             lv.comp.knee.setTargetAtTime(p.knee, t, 0.05);
             lv.comp.attack.setTargetAtTime(p.attack, t, 0.05);
             lv.comp.release.setTargetAtTime(p.release, t, 0.05);
-            if (mode === "off") { lv.gainDb = 0; lv.gain.gain.setTargetAtTime(1, t, 0.08); }
+            // Off plays the stream untouched, but the meter keeps running, so switching a mode on lands on the right gain at once.
+            lv.gain.gain.setTargetAtTime(mode === "off" ? 1 : Math.pow(10, lv.gainDb / 20), t, 0.08);
         }
         function applyLevelModeAll() {
             if (!audioCtx || !audioPost) return;
@@ -3596,16 +3608,28 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             return lv.gainDb;
         }
         function newLevelState(now) {
-            return { blocks: [], gainDb: 0, lufs: null, lastUpdate: now, fastUntil: now + 6000 };
+            return { blocks: [], gainDb: LEVEL_START_DB, lufs: null, lastUpdate: now, fastUntil: now + 6000 };
+        }
+        // A new stream on a reused element: forget the previous station's measurement and gain, so the new one
+        // starts quietly instead of inheriting a gain that was right for another station.
+        function resetLeveler(lv) {
+            Object.assign(lv, newLevelState(performance.now()));
+            if (!audioCtx) return;
+            const t = audioCtx.currentTime;
+            lv.gain.gain.cancelScheduledValues(t);
+            lv.gain.gain.setTargetAtTime(getLevelMode() === "off" ? 1 : Math.pow(10, lv.gainDb / 20), t, 0.02);
         }
         function stopLeveler(lv) {
             if (lv.timer) { clearInterval(lv.timer); lv.timer = null; }
             activeLevelers.delete(lv);
+            if (lv.el && lv.onNewSrc) { lv.el.removeEventListener("loadstart", lv.onNewSrc); lv.el.removeEventListener("emptied", lv.onNewSrc); }
             try { lv.source.disconnect(); } catch (e) {}
         }
         function buildLeveler(ctx, source, el) {
             const comp = ctx.createDynamicsCompressor();
             const gain = ctx.createGain();
+            // Set before anything is connected: the very first samples already go through the safe starting gain.
+            gain.gain.value = getLevelMode() === "off" ? 1 : Math.pow(10, LEVEL_START_DB / 20);
             source.connect(comp);
             comp.connect(gain);
             gain.connect(audioPost);
@@ -3630,9 +3654,11 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             });
             activeLevelers.add(lv);
             applyLevelMode(lv);
+            lv.onNewSrc = () => resetLeveler(lv);
+            el.addEventListener("loadstart", lv.onNewSrc);
+            el.addEventListener("emptied", lv.onNewSrc);
             lv.timer = setInterval(() => {
                 if (!el.isConnected) { stopLeveler(lv); return; }
-                if (getLevelMode() === "off") { lv.lufs = null; return; }
                 const v = el.muted ? 0 : el.volume;
                 if (el.paused || v < 0.003) { lv.lufs = null; return; }
                 let sum = 0;
@@ -3644,7 +3670,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                     sum += s / b.length;
                 }
                 const g = levelUpdate(lv, sum / (v * v), performance.now());
-                if (g !== null) lv.gain.gain.setTargetAtTime(Math.pow(10, g / 20), ctx.currentTime, 0.08);
+                if (g !== null && getLevelMode() !== "off") lv.gain.gain.setTargetAtTime(Math.pow(10, g / 20), ctx.currentTime, 0.08);
             }, 40);
             return lv;
         }
@@ -3653,6 +3679,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             audioPost = audioCtx.createGain();
+            audioPost.gain.value = getLevelMode() === "off" ? 1 : Math.pow(10, LEVEL_POST_DB / 20);
             audioLimiter = audioCtx.createDynamicsCompressor();
             audioLimiter.threshold.value = -2;
             audioLimiter.knee.value = 0;
@@ -3722,7 +3749,19 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             "Electronic": [5, 4, 1, 0, -2, 2, 1, 1, 4, 5],
             "Hip-hop": [5, 4, 1, 3, -1, -1, 1, -1, 2, 3],
             "Acoustic": [4, 4, 3, 1, 2, 2, 3, 3, 3, 2],
+            "Treble reducer": [0, 0, 0, 0, 0, -1, -2, -4, -5, -6],
+            "Warm": [3, 3, 2, 1, 0, 0, -1, -2, -3, -4],
+            "Small speakers": [-9, -7, -3, 2, 3, 2, 1, 0, 0, 0],
+            "Speech": [-8, -6, -3, 0, 3, 4, 4, 2, -2, -5],
+            "Metal": [5, 4, 2, 0, -2, -3, 0, 3, 4, 5],
+            "Country": [-1, 0, 1, 2, 2, 1, 2, 3, 3, 2],
+            "R&B": [5, 6, 3, 1, -1, -1, 1, 1, 2, 3],
         };
+        const EQ_GROUPS = [
+            ["General", ["Flat", "Bass boost", "Bass reducer", "Treble boost", "Treble reducer", "Vocal boost", "Loudness", "Warm"]],
+            ["Speakers and speech", ["Small speakers", "Speech"]],
+            ["Genre", ["Rock", "Pop", "Jazz", "Classical", "Electronic", "Hip-hop", "Acoustic", "Metal", "Country", "R&B"]],
+        ];
         function buildEqChain(ctx) {
             const input = ctx.createGain();
             const bands = EQ_FREQS.map((f, i) => {
@@ -3750,8 +3789,10 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             const gains = s && Array.isArray(s.gains) && s.gains.length === EQ_FREQS.length
                 ? s.gains.map((v) => Math.max(EQ_MIN, Math.min(EQ_MAX, Math.round(Number(v)) || 0)))
                 : EQ_FLAT.slice();
-            const preset = s && typeof s.preset === "string" && (s.preset === "Custom" || EQ_PRESETS[s.preset]) ? s.preset : "Flat";
-            eqState = { on: !!(s && s.on), preset, gains, mono: !!(s && s.mono) };
+            let preset = s && typeof s.preset === "string" && (s.preset === "Custom" || EQ_PRESETS[s.preset]) ? s.preset : "Flat";
+            // Older builds had an On/Off switch. A curve that was saved while it was off stays off: back to Flat.
+            if (s && s.on === false) { gains.fill(0); preset = "Flat"; }
+            eqState = { preset, gains, mono: !!(s && s.mono) };
             return eqState;
         }
         function saveEqState() {
@@ -3760,10 +3801,10 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
         function applyEq() {
             const btn = document.getElementById("eqBtn");
             const s = getEqState();
-            if (btn) btn.classList.toggle("eq-on", s.on || s.mono);
+            if (btn) btn.classList.toggle("eq-on", s.gains.some((g) => g !== 0) || s.mono);
             if (!eqNodes || !audioCtx) return;
             const t = audioCtx.currentTime;
-            const gains = s.on ? s.gains : EQ_FLAT;
+            const gains = s.gains;
             const boost = Math.max(0, ...gains);
             eqNodes.bands.forEach((b, i) => b.gain.setTargetAtTime(gains[i], t, 0.03));
             eqNodes.input.gain.setTargetAtTime(Math.pow(10, -boost / 20), t, 0.03);
@@ -3787,7 +3828,6 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             panel.innerHTML = `
                 <div class="eq-head">
                     <span class="eq-title">Sound</span>
-                    <button type="button" class="eq-chip" id="eqOnBtn" aria-pressed="false">Off</button>
                     <button type="button" class="eq-chip" id="eqMonoBtn" aria-pressed="false" title="Play stereo as mono">Mono</button>
                     <button type="button" class="eq-chip" id="eqResetBtn" title="Set every band back to 0">Reset</button>
                     <button type="button" class="eq-close" id="eqCloseBtn" aria-label="Close equalizer">&times;</button>
@@ -3797,11 +3837,12 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                         <select class="eq-preset" id="eqLevel">${Object.keys(LEVEL_MODES).map((k) => `<option value="${k}">${LEVEL_MODES[k].label}</option>`).join("")}</select></div>
                     <div class="eq-sel"><label class="eq-sel-label" for="eqPreset">Equalizer</label>
                         <select class="eq-preset" id="eqPreset">
-                            ${Object.keys(EQ_PRESETS).map((n) => `<option value="${n}">${n}</option>`).join("")}
+                            ${EQ_GROUPS.map(([g, names]) => `<optgroup label="${g}">${names.map((n) => `<option value="${n}">${n.replace("&", "&amp;")}</option>`).join("")}</optgroup>`).join("")}
                             <option value="Custom" hidden>Custom</option>
                         </select></div>
                 </div>
-                <div class="eq-note" id="eqLevelNote"></div>
+                <div class="eq-hints" id="eqHints">${Object.keys(LEVEL_MODES).map((k) => `<span class="eq-note eq-hint" data-mode="${k}">${LEVEL_MODES[k].hint}</span>`).join("")}</div>
+                <div class="eq-note eq-live" id="eqLive">&nbsp;</div>
                 <div class="eq-bands">
                     ${EQ_LABELS.map((l, i) => `<div class="eq-band"><span class="eq-val" id="eqVal${i}">0</span><input type="range" class="eq-slider" id="eqBand${i}" data-band="${i}" min="${EQ_MIN}" max="${EQ_MAX}" step="1" value="0" aria-label="${l} hertz"><span class="eq-freq">${l}</span></div>`).join("")}
                 </div>
@@ -3811,8 +3852,6 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             const sliders = Array.from(panel.querySelectorAll(".eq-slider"));
             const fmt = (v) => (v > 0 ? "+" + v : String(v));
             function sync() {
-                q("eqOnBtn").textContent = s.on ? "On" : "Off";
-                q("eqOnBtn").setAttribute("aria-pressed", String(s.on));
                 q("eqMonoBtn").setAttribute("aria-pressed", String(s.mono));
                 q("eqPreset").value = s.preset;
                 sliders.forEach((sl, i) => {
@@ -3823,20 +3862,22 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             }
             function changed(preset) {
                 s.preset = preset;
-                s.on = true;
                 saveEqState();
                 applyEq();
                 sync();
             }
-            q("eqOnBtn").addEventListener("click", () => { s.on = !s.on; saveEqState(); applyEq(); sync(); });
             q("eqMonoBtn").addEventListener("click", () => { s.mono = !s.mono; saveEqState(); applyEq(); sync(); });
             q("eqResetBtn").addEventListener("click", () => { s.gains = EQ_FLAT.slice(); s.preset = "Flat"; saveEqState(); applyEq(); sync(); });
             q("eqCloseBtn").addEventListener("click", closeEqPanel);
             const levelNote = () => {
                 const m = getLevelMode(), lv = levelers.get(mediaEl);
-                let live = "";
-                if (m !== "off" && lv) live = lv.lufs === null ? " Measuring…" : ` Stream ${lv.lufs.toFixed(1)} LUFS, gain ${lv.gainDb >= 0 ? "+" : ""}${lv.gainDb.toFixed(1)} dB.`;
-                q("eqLevelNote").textContent = LEVEL_MODES[m].hint + live;
+                panel.querySelectorAll(".eq-hint").forEach((h) => h.classList.toggle("on", ready && h.dataset.mode === m));
+                let live = "\u00a0";
+                if (ready && lv) {
+                    if (lv.lufs === null) live = m === "off" ? "\u00a0" : "Measuring…";
+                    else live = m === "off" ? `Stream ${lv.lufs.toFixed(1)} LUFS.` : `Stream ${lv.lufs.toFixed(1)} LUFS, gain ${lv.gainDb >= 0 ? "+" : ""}${lv.gainDb.toFixed(1)} dB.`;
+                }
+                q("eqLive").textContent = live;
             };
             q("eqLevel").value = getLevelMode();
             q("eqLevel").addEventListener("change", (e) => { setLevelMode(e.target.value); levelNote(); });
@@ -3854,7 +3895,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             if (!ready) {
                 panel.querySelectorAll("button:not(#eqCloseBtn), select, input").forEach((el) => { el.disabled = true; });
                 q("eqNote").textContent = "Leveling and the equalizer can't be used on this stream: the station doesn't allow its audio to be processed in the browser.";
-                q("eqLevelNote").textContent = "";
+                levelNote();
             }
             // The page's own shortcuts (arrows, space, / and ?) must not act while the panel's controls have focus.
             panel.addEventListener("keydown", (e) => {

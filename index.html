@@ -699,12 +699,12 @@
         .eq-bal input:disabled { opacity: 0.45; cursor: not-allowed; }
         .eq-live { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; min-height: 1.3em; }
         .player-info-btn.copied { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
-        .preview-code { width: 100%; min-height: 100%; padding: 0.5rem; background: var(--bg-primary); }
+        .preview-code { width: 100%; min-height: 100%; flex: 0 0 auto; box-sizing: border-box; padding: 0.5rem; background: var(--bg-primary); }
         /* Preview text has its own size (Settings > Font Size > Preview text), independent of the interface size. */
         .preview-code pre { font-family: var(--font-mono); font-size: var(--preview-font-size, 0.8rem); line-height: 1.4; tab-size: 4; }
         .preview-code pre code { font-family: inherit; font-size: inherit; line-height: inherit; }
         .preview-code.line-numbers pre { counter-reset: line; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; }
-        .preview-code.line-numbers pre .line { display: block; counter-increment: line; }
+        .preview-code.line-numbers pre .line { display: block; counter-increment: line; padding-left: 3.6em; text-indent: -3.6em; }
         .preview-code.line-numbers pre .line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; text-align: right; color: var(--text-muted); user-select: none; font-size: 0.9em; }
         .preview-pdf { width: 100%; height: 90vh; border: none; }
         /* Skip link: off-screen until a keyboard user tabs to it. */
@@ -4690,6 +4690,11 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 const songsOpen = document.getElementById("songsModal").classList.contains("active");
                 const plistOpen = document.getElementById("playlistModal").classList.contains("active");
                 if (e.key === "Escape") {
+                    if (document.activeElement && document.activeElement.id === "search" && !document.querySelector(".modal-overlay.active")) {
+                        const si = document.activeElement;
+                        if (si.value) clearSearch(); else si.blur();
+                        return;
+                    }
                     if (document.getElementById("localModal").classList.contains("active")) { closeLocalModal(); return; }
                     const settingsMenuEl = document.getElementById("settingsMenu");
                     const themeMenuEl = document.getElementById("themeColorMenu");
@@ -5648,6 +5653,30 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);
             }
 
+            if (visibleItems.length === 0 && !searchQuery && currentPath.length > 0 && !fileIndex.partial && !LOCAL.active) {
+                // The address points at something that is not a folder: open the file if it is one, otherwise say so.
+                const parent = currentPath.slice(0, -1), leaf = currentPath[currentPath.length - 1];
+                let dir = fileIndex.root;
+                for (const n of parent) { const t = dir && dir.find((x) => x.name === n && x.type === "directory"); dir = t ? t.children : null; }
+                const hit = dir && dir.find((x) => x.name === leaf);
+                if (hit && hit.type === "file") {
+                    const fp = parent.concat(leaf).join("/");
+                    navigateTo(parent);
+                    setTimeout(() => openFile(fp, hit.category, hit.name), 0);
+                    return;
+                }
+                if (!hit) {
+                    mainEl.innerHTML = `
+          <div class="empty-state">
+            ${emptyStateIllustrations.folder}
+            <h2>Not found</h2>
+            <p>"${escapeHtml(currentPath.join("/"))}" does not exist here.</p>
+            <p><button type="button" class="theme-reset-btn empty-action" data-act="go-home">Go to the home folder</button></p>
+          </div>
+        `;
+                    return;
+                }
+            }
             if (visibleItems.length === 0) {
                 mainEl.innerHTML = `
           <div class="empty-state">
@@ -12437,7 +12466,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
             const $ = (id) => document.getElementById(id);
             $("treeCollapseAll").addEventListener("click", collapseAllFolders);
             $("breadcrumb").addEventListener("click", (e) => { if (e.target.closest("#zipFolderBtn")) downloadFolderZip(); });
-            $("main").addEventListener("click", (e) => { if (e.target.closest('[data-act="open-local"]')) openLocalFolder(); });
+            $("main").addEventListener("click", (e) => { if (e.target.closest('[data-act="open-local"]')) openLocalFolder(); else if (e.target.closest('[data-act="go-home"]')) navigateTo([]); });
             $("localBtn").addEventListener("click", openLocalFolder);
             $("localOpenBtn").addEventListener("click", () => { $("settingsMenu").classList.remove("active"); $("settingsBtn").setAttribute("aria-expanded", "false"); openLocalFolder(); });
             $("localCloseBtn").addEventListener("click", closeLocalFolder);

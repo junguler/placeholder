@@ -73,61 +73,63 @@ const EXCLUDED_FILES = new Set([
 ]);
 
 // File type categories. The FIRST category listing an extension wins, so keep
-// each extension in exactly one place.
-function getFileCategory(filename) {
-  const ext = path.extname(filename).toLowerCase();
+// each extension in exactly one place. Built once into a Map so large repos
+// don't re-allocate the arrays and run .includes() on every file.
+const FILE_CATEGORIES = {
+  image: [
+    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico",
+    ".tiff", ".tif", ".avif", ".heic", ".heif",
+  ],
+  video: [
+    // .ogg is audio in practice (Vorbis/Opus); video-in-Ogg uses .ogv.
+    ".mp4", ".webm", ".ogv", ".mov", ".avi", ".mkv", ".m4v",
+    ".3gp", ".flv",
+  ],
+  audio: [
+    ".mp3", ".wav", ".ogg", ".oga", ".flac", ".aac", ".m4a", ".wma",
+    ".opus", ".aiff",
+  ],
+  document: [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"],
+  code: [
+    ".js", ".ts", ".jsx", ".tsx", ".py", ".rb", ".java", ".c", ".cpp",
+    ".h", ".hpp", ".cs", ".go", ".rs", ".php", ".swift", ".kt", ".scala",
+    ".r", ".m", ".mm", ".pl", ".pm", ".lua", ".sh", ".bash", ".zsh",
+    ".fish", ".ps1", ".psm1", ".vue", ".svelte", ".elm", ".clj", ".cljs",
+    ".ex", ".exs", ".erl", ".hrl", ".hs", ".fs", ".fsx", ".ml", ".mli",
+    ".nim", ".cr", ".v", ".zig", ".d", ".pas", ".pp", ".asm", ".s",
+    ".sql", ".graphql", ".gql",
+  ],
+  markup: [
+    ".html", ".htm", ".xml", ".xhtml", ".xaml", ".wxml", ".jsp",
+    ".asp", ".aspx", ".erb", ".ejs", ".haml", ".slim", ".pug", ".jade",
+    ".twig", ".hbs", ".mustache", ".njk", ".liquid",
+  ],
+  style: [".css", ".scss", ".sass", ".less", ".styl", ".stylus", ".postcss"],
+  data: [
+    ".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
+    ".properties", ".env", ".csv", ".tsv",
+    // Playlist files (plain text)
+    ".m3u", ".m3u8", ".pls", ".xspf", ".wpl", ".asx", ".cue",
+  ],
+  text: [
+    ".txt", ".md", ".markdown", ".rst", ".rtf", ".log", ".nfo", ".diz",
+    ".srt", ".vtt", ".sub", ".ass", ".ssa", // Subtitle files
+  ],
+  font: [".ttf", ".otf", ".woff", ".woff2", ".eot"],
+  archive: [
+    ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".tgz", ".tbz2",
+  ],
+};
 
-  const categories = {
-    image: [
-      ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico",
-      ".tiff", ".tif", ".avif", ".heic", ".heif",
-    ],
-    video: [
-      // .ogg is audio in practice (Vorbis/Opus); video-in-Ogg uses .ogv.
-      ".mp4", ".webm", ".ogv", ".mov", ".avi", ".mkv", ".m4v",
-      ".3gp", ".flv",
-    ],
-    audio: [
-      ".mp3", ".wav", ".ogg", ".oga", ".flac", ".aac", ".m4a", ".wma",
-      ".opus", ".aiff",
-    ],
-    document: [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"],
-    code: [
-      ".js", ".ts", ".jsx", ".tsx", ".py", ".rb", ".java", ".c", ".cpp",
-      ".h", ".hpp", ".cs", ".go", ".rs", ".php", ".swift", ".kt", ".scala",
-      ".r", ".m", ".mm", ".pl", ".pm", ".lua", ".sh", ".bash", ".zsh",
-      ".fish", ".ps1", ".psm1", ".vue", ".svelte", ".elm", ".clj", ".cljs",
-      ".ex", ".exs", ".erl", ".hrl", ".hs", ".fs", ".fsx", ".ml", ".mli",
-      ".nim", ".cr", ".v", ".zig", ".d", ".pas", ".pp", ".asm", ".s",
-      ".sql", ".graphql", ".gql",
-    ],
-    markup: [
-      ".html", ".htm", ".xml", ".xhtml", ".xaml", ".wxml", ".jsp",
-      ".asp", ".aspx", ".erb", ".ejs", ".haml", ".slim", ".pug", ".jade",
-      ".twig", ".hbs", ".mustache", ".njk", ".liquid",
-    ],
-    style: [".css", ".scss", ".sass", ".less", ".styl", ".stylus", ".postcss"],
-    data: [
-      ".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
-      ".properties", ".env", ".csv", ".tsv",
-      // Playlist files (plain text)
-      ".m3u", ".m3u8", ".pls", ".xspf", ".wpl", ".asx", ".cue",
-    ],
-    text: [
-      ".txt", ".md", ".markdown", ".rst", ".rtf", ".log", ".nfo", ".diz",
-      ".srt", ".vtt", ".sub", ".ass", ".ssa", // Subtitle files
-    ],
-    font: [".ttf", ".otf", ".woff", ".woff2", ".eot"],
-    archive: [
-      ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".tgz", ".tbz2",
-    ],
-  };
-
-  for (const [category, extensions] of Object.entries(categories)) {
-    if (extensions.includes(ext)) return category;
+const CATEGORY_BY_EXTENSION = new Map();
+for (const [category, extensions] of Object.entries(FILE_CATEGORIES)) {
+  for (const ext of extensions) {
+    if (!CATEGORY_BY_EXTENSION.has(ext)) CATEGORY_BY_EXTENSION.set(ext, category);
   }
+}
 
-  return "other";
+function getFileCategory(filename) {
+  return CATEGORY_BY_EXTENSION.get(path.extname(filename).toLowerCase()) || "other";
 }
 
 // Check if file is binary/executable

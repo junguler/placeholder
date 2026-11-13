@@ -555,6 +555,12 @@
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: var(--bw) solid var(--border-color); }
         .modal.video-modal { height: 95vh; height: 95dvh; }
+        /* Video "clean view": the button only exists while a video is open and hides the folder side panel,
+           the player buttons and the details bar, so just the picture is left. */
+        #focusBtn { display: none; }
+        .modal.video-modal #focusBtn { display: flex; }
+        .modal.video-modal.focus-view .gallery-rail, .modal.video-modal.focus-view .player-bar, .modal.video-modal.focus-view .player-info-btn,
+        .modal.video-modal.focus-view .playlist-bar, .modal.video-modal.focus-view .meta-bar { display: none !important; }
         /* Audio preview content tops out at 500px (.preview-audio-container's
            own max-width), but the modal defaults to 95vw regardless of
            content type — on a wide screen that leaves large empty gutters
@@ -1899,6 +1905,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 <span class="modal-title" id="modalTitle">File Preview</span>
                 <div class="modal-actions">
                     <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist" aria-label="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg><span class="btn-label">Play</span></button>
+                    <button class="modal-btn" id="focusBtn" aria-pressed="false" title="Hide the side panel and player buttons" aria-label="Hide the side panel and player buttons"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
                     <button class="modal-btn" id="infoBtn" hidden aria-pressed="false" title="Show file details" aria-label="File details"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16"/><path d="M3 14h18M7 17.2h4M14 17.2h3"/></svg></button>
                     <button class="modal-btn favorite-btn" id="favoriteBtn" title="Add to favorites" aria-label="Add file to favorites" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
                     <button class="modal-btn" id="copyLinkBtn" title="Copy link" aria-label="Copy raw file link"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>
@@ -4684,6 +4691,21 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
                 btn.addEventListener("click", () => setView(btn.dataset.view));
             });
             document.getElementById("closeBtn").addEventListener("click", closeModal);
+            const focusBtn = document.getElementById("focusBtn");
+            const setFocusView = (on, save) => {
+                document.getElementById("modalContent").classList.toggle("focus-view", on);
+                focusBtn.setAttribute("aria-pressed", on ? "true" : "false");
+                const label = on ? "Show the side panel and player buttons" : "Hide the side panel and player buttons";
+                focusBtn.title = label;
+                focusBtn.setAttribute("aria-label", label);
+                if (save) store.setItem("videoFocusView", on ? "1" : "0");
+            };
+            setFocusView(store.getItem("videoFocusView") === "1", false);
+            focusBtn.addEventListener("click", (e) => {
+                setFocusView(!document.getElementById("modalContent").classList.contains("focus-view"), true);
+                // After a mouse click, hand the spacebar back to play/pause (a focused button would take it); keyboard users keep focus here.
+                if (e.detail > 0) focusBtn.blur();
+            });
             document.getElementById("modal").addEventListener("click", (e) => {
                 if (e.target === e.currentTarget) closeModal();
             });

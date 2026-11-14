@@ -71,6 +71,8 @@ jobs:
             const minified = await minify(original, {
               collapseWhitespace: true,
               conservativeCollapse: true,
+              // Keep the document shell explicit; the validation below checks it.
+              removeOptionalTags: false,
               removeComments: true,
               normalizeAttributeValues: false,
               minifyCSS: true,

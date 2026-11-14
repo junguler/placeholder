@@ -36,12 +36,102 @@ jobs:
         with:
           node-version: "22"
 
+      # Minify only the temporary deployment copy of index.html. The repository
+      # source remains untouched. This page is self-contained, so the HTML
+      # minifier also handles its embedded CSS and JavaScript. Keep JS identifiers
+      # intact to avoid breaking any dynamic or string-based name references.
+      - name: Minify viewer HTML
+        run: |
+          set -euo pipefail
+          export HTML_MINIFIER_DIR="$RUNNER_TEMP/html-minifier-terser"
+          mkdir -p "$HTML_MINIFIER_DIR"
+          npm install \
+            --prefix "$HTML_MINIFIER_DIR" \
+            --no-save \
+            --package-lock=false \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund \
+            html-minifier-terser@7.2.0
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const { minify } = require(path.join(
+            process.env.HTML_MINIFIER_DIR,
+            "node_modules",
+            "html-minifier-terser"
+          ));
+
+          (async () => {
+            const file = "index.html";
+            const temporaryFile = `${file}.min`;
+            const original = fs.readFileSync(file, "utf8");
+            const originalBytes = Buffer.byteLength(original, "utf8");
+
+            const minified = await minify(original, {
+              collapseWhitespace: true,
+              conservativeCollapse: true,
+              removeComments: true,
+              normalizeAttributeValues: false,
+              minifyCSS: true,
+              minifyJS: {
+                compress: true,
+                mangle: false,
+                keep_fnames: true,
+                keep_classnames: true,
+                format: { comments: false },
+              },
+            });
+
+            if (!minified || !minified.trim()) {
+              throw new Error("HTML minifier produced an empty file");
+            }
+
+            // Catch accidental loss of document/script/style elements.
+            const count = (source, expression) =>
+              (source.match(expression) || []).length;
+            for (const [name, openTag, closeTag] of [
+              ["html", /<html(?:\s|>)/gi, /<\/html\s*>/gi],
+              ["head", /<head(?:\s|>)/gi, /<\/head\s*>/gi],
+              ["body", /<body(?:\s|>)/gi, /<\/body\s*>/gi],
+              ["script", /<script(?:\s|>)/gi, /<\/script\s*>/gi],
+              ["style", /<style(?:\s|>)/gi, /<\/style\s*>/gi],
+            ]) {
+              if (
+                count(original, openTag) !== count(minified, openTag) ||
+                count(original, closeTag) !== count(minified, closeTag)
+              ) {
+                throw new Error(`HTML minification changed the number of ${name} tags`);
+              }
+            }
+
+            fs.writeFileSync(temporaryFile, minified, "utf8");
+            fs.renameSync(temporaryFile, file);
+
+            const minifiedBytes = Buffer.byteLength(minified, "utf8");
+            const savedBytes = originalBytes - minifiedBytes;
+            const percent = originalBytes
+              ? ((savedBytes / originalBytes) * 100).toFixed(1)
+              : "0.0";
+            console.log(
+              `index.html: ${(originalBytes / 1024).toFixed(1)} KB -> ` +
+              `${(minifiedBytes / 1024).toFixed(1)} KB ` +
+              `(${savedBytes >= 0 ? "saved " : "increased "}` +
+              `${(Math.abs(savedBytes) / 1024).toFixed(1)} KB, ${percent}%)`
+            );
+          })().catch((error) => {
+            console.error("HTML minification failed:", error);
+            process.exitCode = 1;
+          });
+          NODE
+
       # Writes file_index_lean.json (root names, loaded first) and file_index.json
       # (whole tree with sizes and dates). --apply-layout also rearranges this
       # throwaway checkout as the index shows it: where a folder has a "checked"
       # folder, the normal files are removed and the checked files move up.
       # The repository itself is untouched. To turn collapsing off, change
       # COLLAPSE_CHECKED at the top of generate_index.js.
+      # This runs after minification so the index records the deployed HTML size.
       - name: Generate file index
         run: node generate_index.js --apply-layout
 

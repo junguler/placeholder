@@ -19,8 +19,9 @@ jobs:
     # Pinned: ubuntu-latest is migrating to 26.04 in stages and can resolve to
     # different images between runs. Move to ubuntu-26.04 once tested.
     runs-on: ubuntu-24.04
-    # Runs take ~4 minutes; 10 leaves headroom and makes a stalled run fail fast.
-    timeout-minutes: 10
+    # Runs take ~4 minutes. 15 leaves room for the big repo's checkout and upload while
+    # still failing a stalled run fast; tighten it once a few real runs show their duration.
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -127,6 +128,29 @@ jobs:
             console.error("HTML minification failed:", error);
             process.exitCode = 1;
           });
+          NODE
+
+      # The checks above only look at the document shell. This one compiles every inline
+      # script of the minified page (nothing is run), so a minifier problem fails the
+      # build here instead of shipping a page whose JavaScript does not load.
+      - name: Check minified viewer scripts
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const vm = require("node:vm");
+          const html = fs.readFileSync("index.html", "utf8");
+          const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+          let m, n = 0;
+          while ((m = re.exec(html))) {
+            const attrs = m[1], code = m[2];
+            if (/\bsrc\s*=/i.test(attrs) || !code.trim()) continue;
+            const type = (attrs.match(/\btype\s*=\s*["']?([^"'\s>]+)/i) || [])[1];
+            if (type && !/^(text|application)\/(javascript|ecmascript)$/i.test(type)) continue;
+            try { new vm.Script(code, { filename: `inline-script-${++n}.js` }); }
+            catch (error) { console.error(`Inline script ${n} does not compile:`, error.message); process.exit(1); }
+          }
+          if (n === 0) { console.error("No inline scripts found in the minified page"); process.exit(1); }
+          console.log(`${n} inline scripts compile`);
           NODE
 
       # Writes file_index_lean.json (root names, loaded first) and file_index.json

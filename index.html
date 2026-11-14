@@ -815,7 +815,7 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
 .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
 /* File details bar: two lines at a fixed height on every screen, so opening it or stepping to the next file never moves the window. The facts fill it two to a column
    and the rest scrolls sideways (wheel, swipe, arrow keys; dragging still selects text); a soft shadow on an edge shows there is more that way. */
-.meta-bar { display: flex; flex-flow: column wrap; align-content: flex-start; gap: 0.1rem 1.1rem; height: calc(var(--ml, 2) * 1.45 * var(--data-size) + 0.8rem + var(--bw)); box-sizing: border-box; padding: 0.4rem 0.75rem; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; flex-shrink: 0; border-top: var(--bw) solid var(--border-color); font-size: var(--data-size); line-height: 1.45;
+.meta-bar { display: flex; flex-flow: row nowrap; align-items: center; gap: 0.1rem 1.1rem; height: calc(var(--ml, 2) * 1.45 * var(--data-size) + 0.8rem + var(--bw)); box-sizing: border-box; padding: 0.4rem 0.75rem; overflow: hidden; scrollbar-width: none; flex-shrink: 0; border-top: var(--bw) solid var(--border-color); font-size: var(--data-size); line-height: 1.45;
     background:
         linear-gradient(to right, var(--bg-tertiary), var(--bg-tertiary)) left center / 1.2rem 100% no-repeat local,
         linear-gradient(to left, var(--bg-tertiary), var(--bg-tertiary)) right center / 1.2rem 100% no-repeat local,
@@ -826,7 +826,7 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
 .meta-bar:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .meta-bar[hidden], #infoBtn[hidden] { display: none; }
 /* The number of text lines the bar shows is set on the modal (not the bar), so the recording panel can sit exactly above it on phones. */
-.modal.meta-on { --ml: 2; }
+.modal.meta-on, .tw-view { --ml: 1; }
 .meta-bar .mi { white-space: nowrap; user-select: text; }
 .meta-bar .ml { color: var(--text-muted); }
 .meta-bar .mv { color: var(--text-primary); user-select: text; }
@@ -1772,6 +1772,18 @@ body.compact-density .tw-pane .file-grid .file-card { padding: 0.25rem; gap: 0.1
 body.compact-density .tw-pane .file-grid .file-icon { width: 26px; height: 26px; }
 /* While a player fills a panel, the sort / zip / list / grid controls of that panel have nothing to act on. */
 .tw-pane[data-mode="media"] .tw-tools { display: none; }
+
+/* The preview header of a panel looks like the player window's header. */
+.tw-vhead .modal-btn.vb-close { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.5rem 0.9rem; }
+.tw-vhead .modal-btn.vb-close svg { width: 22px; height: 22px; }
+@media (max-width: 640px) { .tw-vhead .modal-btn.vb-close { padding: 0.5rem; min-width: 44px; min-height: 44px; } .tw-vhead .modal-btn.vb-close svg { width: 24px; height: 24px; } }
+.modal-btn.vb-fav.favorited, .vb-info[aria-pressed="true"] { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+.tw-view .meta-bar { flex-shrink: 0; }
+html[data-theme="concrete"] .vb-close { --c: var(--red); }
+html[data-theme="concrete"] .vb-dl, html[data-theme="concrete"] .modal-btn.copied { --c: var(--green); }
+html[data-theme="concrete"] .vb-copy { --c: var(--pink); }
+html[data-theme="concrete"] .vb-fav { --c: var(--yellow); }
+html[data-theme="concrete"] .vb-fav.favorited { --c: var(--orange); }
 </style>
 </head>
 <body>
@@ -2067,7 +2079,7 @@ body.compact-density .tw-pane .file-grid .file-icon { width: 26px; height: 26px;
                 <div class="modal-actions">
                     <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist" aria-label="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg><span class="btn-label">Play</span></button>
                     <button class="modal-btn" id="focusBtn" aria-pressed="false" title="Hide the side panel and player buttons" aria-label="Hide the side panel and player buttons"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
-                    <button class="modal-btn" id="infoBtn" hidden aria-pressed="false" title="Show file details" aria-label="File details"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16"/><path d="M3 14h18M7 17.2h4M14 17.2h3"/></svg></button>
+                    <button class="modal-btn" id="infoBtn" aria-pressed="false" title="Show file details" aria-label="File details"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16"/><path d="M3 14h18M7 17.2h4M14 17.2h3"/></svg></button>
                     <button class="modal-btn favorite-btn" id="favoriteBtn" title="Add to favorites" aria-label="Add file to favorites" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
                     <button class="modal-btn" id="copyLinkBtn" title="Copy link" aria-label="Copy raw file link"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>
                     <a class="modal-btn" id="downloadBtn" title="Download" aria-label="Download file" download><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg></a>
@@ -10521,7 +10533,7 @@ function metaPaint() {
         }, { passive: false });
     }
     const keys = (META.extra.length ? META_ORDER[META.kind].concat(META.extra) : META_ORDER[META.kind]).filter((k) => META.vals[k]);
-    const emb = document.getElementById("modal").classList.contains("tw-embedded");
+    const emb = true; // the bar is always one line; a line wider than the bar scrolls
     const sig = (emb ? "tw:" : "") + keys.join("|"), tip = (k) => META.tips[k] || META.vals[k];
     if (emb && typeof ResizeObserver === "function" && !bar._ro) { bar._ro = new ResizeObserver(() => Marquee.fitBar(bar)); bar._ro.observe(bar); }
     if (bar._sig === sig) {
@@ -10543,7 +10555,8 @@ function metaPaint() {
 // Button and bar follow the one saved choice (open or closed), for every picture, video and song until it is changed.
 function metaSync() {
     const btn = document.getElementById("infoBtn"), bar = document.getElementById("metaBar"), on = !!META.kind && META.open;
-    btn.hidden = !META.kind;
+    btn.hidden = false;
+    btn.disabled = !META.kind;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     const what = META.kind === "stream" ? "station" : "file";
     btn.title = (on ? "Hide " : "Show ") + what + " details";
@@ -12552,6 +12565,8 @@ const Marquee = (() => {
     const HOLD_MS = 1800;   // rest at the start of every lap
     const GAP_EM = 3;       // empty space between the end of a title and its next copy (keep equal to the CSS padding)
     const FADE_EM = 0.9;    // width of the soft edge on both sides (keep equal to --mq-fade in the CSS)
+    const BAR_SPEED_EM = 5.5; // the details bar moves about twice as fast as a title and only rests a moment
+    const BAR_HOLD_MS = 500;
     const LETTER = /\p{L}/u;
     const RTL_LETTER = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
     const states = new WeakMap();
@@ -12691,7 +12706,7 @@ const Marquee = (() => {
         const t1 = run.children[0], t2 = run.children[1];
         let s = bar._mq;
         if (!s) {
-            s = bar._mq = { anim: null, w: 0, cw: 0, html: "", holds: new Set() };
+            s = bar._mq = { anim: null, run: null, w: 0, cw: 0, html: "", holds: new Set() };
             const hold = (why, on) => {
                 if (on) s.holds.add(why); else s.holds.delete(why);
                 const a = bar._mq.anim;
@@ -12703,6 +12718,7 @@ const Marquee = (() => {
             bar.addEventListener("pointerup", () => hold("touch", false));
             bar.addEventListener("pointercancel", () => hold("touch", false));
         }
+        if (s.run !== run) { if (s.anim) s.anim.cancel(); s.anim = null; s.run = run; s.html = ""; } // the bar was rebuilt: the old lap belonged to the old line
         const cs = getComputedStyle(bar), fs = parseFloat(cs.fontSize) || 16;
         const cw = bar.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
         const w = t1.offsetWidth - (parseFloat(getComputedStyle(t1).paddingInlineEnd) || 0);
@@ -12720,7 +12736,7 @@ const Marquee = (() => {
         bar.classList.add("mb-fade");
         if (s.anim && Math.abs(s.w - w) < 0.5 && Math.abs(s.cw - cw) < 0.5) return;
         const gap = GAP_EM * fs, inset = FADE_EM * fs, lap = w + gap;
-        const total = HOLD_MS + (lap / (SPEED_EM * fs)) * 1000, hf = HOLD_MS / total;
+        const total = BAR_HOLD_MS + (lap / (BAR_SPEED_EM * fs)) * 1000, hf = BAR_HOLD_MS / total;
         const frames = [{ transform: "translateX(" + inset + "px)" }, { transform: "translateX(" + inset + "px)", offset: hf }, { transform: "translateX(" + (inset - lap) + "px)" }];
         s.w = w; s.cw = cw;
         if (s.anim) { s.anim.effect.setKeyframes(frames); s.anim.effect.updateTiming({ duration: total }); return; }
@@ -13235,6 +13251,9 @@ const TWIN = (() => {
         p.gal = null;
         body.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
         updateStepButtons(p);
+        p.metaRows = metaRowsFor(p, item, full);
+        paintMeta(p);
+        syncFav(p);
         view.focus({ preventScroll: true });
         renderInline(p, item, full, body, mySeq);
         announce(`Previewing ${item.name} in panel ${p.id + 1}`);
@@ -13325,10 +13344,75 @@ const TWIN = (() => {
                 default:
                     showUnavailable(body, item.name, url);
             }
+            if (kind === "image") {
+                const im = body.querySelector("img.preview-image"), dims = () => {
+                    if (stale() || !im.naturalWidth || !p.metaRows) return;
+                    p.metaRows = p.metaRows.filter((r) => r[0] !== "Dimensions");
+                    p.metaRows.unshift(["Dimensions", im.naturalWidth + " \u00d7 " + im.naturalHeight + " px \u00b7 " + metaAspect(im.naturalWidth, im.naturalHeight)]);
+                    paintMeta(p);
+                };
+                if (im) { im.addEventListener("load", dims); if (im.complete) dims(); }
+            }
         } catch (err) {
             console.error(err);
             if (!stale()) showUnavailable(body, item.name, url, err);
         }
+    }
+    // ---- The preview header carries the same buttons as the player window: details, favorite, copy link, download, open raw, close ----
+    function metaRowsFor(p, item, full) {
+        const c = ctxOf(p.source), node = c && c.filesByPath.get(full), ext = item.name.slice(item.name.lastIndexOf(".") + 1).toLowerCase();
+        const rows = [["Type", META_MIME[ext] || ext.toUpperCase()]];
+        if (node && typeof node.size === "number") rows.push(["Size", formatFileSize(node.size)]);
+        const d = node && getItemDate(node);
+        if (d) rows.push(["Modified", metaDate(d.getTime())]);
+        rows.push(["Source", p.source === "local" ? "Local" : node && node.external ? "GitHub raw" : "Hosted"]);
+        return rows;
+    }
+    function paintMeta(p) {
+        const view = paneEl(p.id).querySelector(".tw-view"), bar = view.querySelector(".tw-meta"), btn = view.querySelector(".vb-info");
+        const on = META.open && !!p.metaRows;
+        btn.setAttribute("aria-pressed", String(!!META.open));
+        btn.title = (META.open ? "Hide" : "Show") + " file details";
+        bar.hidden = !on;
+        if (!on) return;
+        const items = p.metaRows.map(([l, v]) => '<span class="mi" title="' + escapeHtml(v) + '"><span class="ml">' + escapeHtml(l) + '</span> <span class="mv">' + escapeHtml(v) + "</span></span>").join("");
+        if (bar._sig === items) return;
+        bar._sig = items;
+        bar.innerHTML = '<div class="mb-run"><div class="mb-t">' + items + '</div><div class="mb-t" aria-hidden="true" hidden></div></div>';
+        if (!bar._ro && typeof ResizeObserver === "function") { bar._ro = new ResizeObserver(() => Marquee.fitBar(bar)); bar._ro.observe(bar); }
+        Marquee.fitBar(bar);
+    }
+    function toggleMeta() {
+        META.open = !META.open;
+        try { store.setItem(META_KEY, META.open ? "1" : "0"); } catch (err) { /* ignore */ }
+        metaSync();
+        T.panes.forEach((q) => { if (q.mode === "view") paintMeta(q); });
+    }
+    function syncFav(p) {
+        const btn = paneEl(p.id).querySelector(".vb-fav"), c = ctxOf(p.source);
+        if (!btn || !p.viewItem) return;
+        const on = !!(c && (c.favorites || []).includes(p.viewItem.path));
+        btn.classList.toggle("favorited", on);
+        btn.setAttribute("aria-pressed", String(on));
+        btn.title = on ? "Remove from favorites" : "Add to favorites";
+        btn.setAttribute("aria-label", on ? "Remove file from favorites" : "Add file to favorites");
+        btn.innerHTML = on ? icons.starFilled : icons.starOutline;
+    }
+    function toggleFav(p) {
+        if (!p.viewItem) return;
+        if (T.media !== null && T.panes[T.media].source !== p.source) { announce("Close the player first, then use favorites"); return; }
+        if (!useSource(p.source)) return;
+        toggleFavoriteFile(p.viewItem.path);
+        T.panes.forEach((q) => { if (q.mode === "view" && q.source === p.source) syncFav(q); });
+    }
+    function copyLink(p, btn) {
+        if (!p.viewItem) return;
+        const c = ctxOf(p.source);
+        const url = p.source === "local" ? p.viewItem.path : c ? new URL(hostedUrlIn(c, p.viewItem.path), window.location.href).href : "";
+        if (!url) return;
+        const done = () => { btn.classList.add("copied"); setTimeout(() => btn.classList.remove("copied"), 1200); };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
+        else fallbackCopy(url, done);
     }
     function closeInline(p, quiet) {
         const name = p.viewItem && p.viewItem.name;
@@ -13337,6 +13421,8 @@ const TWIN = (() => {
         p.backHook = null;
         p.viewItem = null;
         p.gal = null;
+        p.metaRows = null;
+        paintMeta(p);
         paneEl(p.id).querySelector(".tw-vbody").innerHTML = "";
         setMode(p, "list");
         revealAfterClose(p, name, quiet);
@@ -13384,7 +13470,7 @@ const TWIN = (() => {
         T.swallow = -1;
         if (T.active !== p.id) setActive(p.id);
         const va = t.closest("[data-vact]");
-        if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); return; }
+        if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); else if (k === "info") toggleMeta(); else if (k === "fav") toggleFav(p); else if (k === "copy") copyLink(p, va); return; }
         const gi = t.closest(".tw-rail .gal-item[data-rn]");
         if (gi) { const it = p.map.get(gi.dataset.rn); if (it && !(p.viewItem && p.viewItem.name === it.name)) openInline(p, it); return; }
         if (t.closest(".tw-view, .tw-media")) return;
@@ -13615,11 +13701,15 @@ const TWIN = (() => {
                     <div class="modal-header tw-vhead"><div class="modal-title tw-vtitle"></div><div class="modal-actions">
                         <button type="button" class="modal-btn" data-vact="prev" title="Previous file (\u2190)" aria-label="Previous file">${ICON.prev}</button>
                         <button type="button" class="modal-btn" data-vact="next" title="Next file (\u2192)" aria-label="Next file">${ICON.next}</button>
-                        <a class="modal-btn" data-vlink="raw" target="_blank" rel="noopener" title="Open the file by itself" aria-label="Open the file by itself">${ICON.ext}</a>
-                        <a class="modal-btn" data-vlink="download" title="Download" aria-label="Download">${ICON.zip}</a>
-                        <button type="button" class="modal-btn" data-vact="close" title="Close the preview (Esc)" aria-label="Close the preview">${ICON.close}</button>
+                        <button type="button" class="modal-btn vb-info" data-vact="info" aria-pressed="false" title="Show file details" aria-label="File details">${$("infoBtn").innerHTML}</button>
+                        <button type="button" class="modal-btn favorite-btn vb-fav" data-vact="fav" aria-pressed="false" title="Add to favorites" aria-label="Add file to favorites">${icons.starOutline}</button>
+                        <button type="button" class="modal-btn vb-copy" data-vact="copy" title="Copy link" aria-label="Copy raw file link">${$("copyLinkBtn").innerHTML}</button>
+                        <a class="modal-btn vb-dl" data-vlink="download" title="Download" aria-label="Download file">${$("downloadBtn").innerHTML}</a>
+                        <a class="modal-btn vb-raw" data-vlink="raw" target="_blank" rel="noopener" title="Open raw" aria-label="Open raw file in new tab">${$("rawBtn").innerHTML}</a>
+                        <button type="button" class="modal-btn vb-close" data-vact="close" title="Close the preview (Esc)" aria-label="Close the preview">${$("closeBtn").innerHTML}</button>
                     </div></div>
                     <div class="modal-body tw-vbody"></div>
+                    <div class="meta-bar tw-meta" tabindex="0" role="region" aria-label="File details" hidden></div>
                 </div>
                 <div class="tw-media"></div></section>`;
             tw.innerHTML = shell(0) + `<div class="tw-split" role="separator" tabindex="0" aria-label="Resize the panels" aria-valuemin="15" aria-valuemax="85" aria-valuenow="50" title="Drag to resize (it snaps to 50/50 near the middle), double-click to reset">

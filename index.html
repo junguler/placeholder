@@ -1604,6 +1604,25 @@ body.twin-on .header-actions { margin-left: auto; }
     .tw-head { padding: 0.2rem 0.3rem; gap: 0.25rem; }
     body.twin-on .header-content { row-gap: 0.25rem; }
 }
+
+/* --- Twin panels: previews inside a panel --- */
+.tw-view, .tw-media { display: none; flex: 1; min-height: 0; }
+.tw-view { flex-direction: column; outline: none; }
+.tw-media { position: relative; }
+.tw-pane[data-mode="view"] .tw-view { display: flex; }
+.tw-pane[data-mode="media"] .tw-media { display: block; }
+.tw-pane[data-mode="view"] .tw-scroll, .tw-pane[data-mode="view"] .tw-status, .tw-pane[data-mode="media"] .tw-scroll, .tw-pane[data-mode="media"] .tw-status { display: none; }
+.tw-vhead { padding: 0.35rem 0.5rem; }
+.tw-vhead a.modal-btn { text-decoration: none; }
+.tw-vbody .preview-image { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; margin: auto; }
+.tw-vbody .preview-pdf { width: 100%; height: 100%; flex: 1; border: none; }
+#modal.tw-embedded { position: absolute; inset: 0; z-index: 5; padding: 0; background: var(--bg-secondary); transition: none; touch-action: auto; }
+#modal.tw-embedded .modal, #modal.tw-embedded .modal.compact-modal, #modal.tw-embedded .modal.video-modal { width: 100%; max-width: none; height: 100%; max-height: none; border: none; border-radius: 0; transform: none; transition: none; }
+.tw-pane[data-i="0"] { order: 1; }
+.tw-split { order: 2; }
+.tw-pane[data-i="1"] { order: 3; }
+.twin[data-flip] .tw-pane[data-i="0"] { order: 3; }
+.twin[data-flip] .tw-pane[data-i="1"] { order: 1; }
 </style>
 </head>
 <body>
@@ -4480,7 +4499,7 @@ function setupSkipLink() {
 // While a dialog is open the page behind it is inert (no Tab, screen-reader browsing or clicks). Called right after each dialog opens/closes
 // (not via an observer) so focus returns to the page the instant it closes.
 function syncBackgroundInert() {
-    const open = !!document.querySelector(".modal-overlay.active");
+    const open = !!document.querySelector(".modal-overlay.active:not(.tw-embedded)");
     document.querySelectorAll(".header, .app-container").forEach((el) => { el.inert = open; });
 }
 // Chooses how many list columns fit in the file area: all, no time, ext + size, or size only.
@@ -4616,7 +4635,7 @@ function setupEventListeners() {
         const songsOpen = document.getElementById("songsModal").classList.contains("active");
         const plistOpen = document.getElementById("playlistModal").classList.contains("active");
         if (e.key === "Escape") {
-            if (document.activeElement && document.activeElement.id === "search" && !document.querySelector(".modal-overlay.active")) {
+            if (document.activeElement && document.activeElement.id === "search" && !document.querySelector(".modal-overlay.active:not(.tw-embedded)")) {
                 const si = document.activeElement;
                 if (si.value) clearSearch(); else si.blur();
                 return;
@@ -4638,11 +4657,11 @@ function setupEventListeners() {
             else if (plistOpen) closePlaylistModal();
             else if (statsOpen) closeStatsModal();
             else if (shortcutsOpen) closeShortcutsModal();
-            else closeModal();
+            else if (TWIN.modalKeys()) closeModal();
             return;
         }
         if (songsOpen || plistOpen) return; // typing / arrows belong to the songs / playlist list while it is open
-        if ((e.key === "t" || e.key === "T") && !e.ctrlKey && !e.metaKey && !e.altKey && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !document.querySelector(".modal-overlay.active")) {
+        if ((e.key === "t" || e.key === "T") && !e.ctrlKey && !e.metaKey && !e.altKey && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName) && !document.querySelector(".modal-overlay.active:not(.tw-embedded)")) {
             e.preventDefault();
             TWIN.toggle();
             return;
@@ -4657,7 +4676,7 @@ function setupEventListeners() {
             document.getElementById("search").focus();
         }
         if (e.key === " ") {
-            const modalOpen = document.getElementById("modal").classList.contains("active");
+            const modalOpen = document.getElementById("modal").classList.contains("active") && TWIN.modalKeys();
             const activeEl = document.activeElement;
             // Skip when a button or form field already owns the spacebar, so the browser's native activation doesn't double-toggle.
             const ownsSpace = ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(activeEl.tagName);
@@ -4668,7 +4687,7 @@ function setupEventListeners() {
             }
         }
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-            const modalOpen = document.getElementById("modal").classList.contains("active");
+            const modalOpen = document.getElementById("modal").classList.contains("active") && TWIN.modalKeys();
             const activeEl = document.activeElement;
             const isFormField = ["INPUT", "SELECT", "TEXTAREA"].includes(activeEl.tagName);
             if (modalOpen && !isFormField) {
@@ -10540,6 +10559,7 @@ function metaInit() {
 }
 
 async function openFile(filePath, fileType, fileName) {
+    if (TWIN.routeOpen(filePath, fileType, fileName)) return;
     if (!recLeaveOk()) return;
     endPlaySession();
     cancelHealthTest();
@@ -10802,6 +10822,7 @@ function closeModal() {
     document.getElementById("playlistBar").classList.remove("active");
     document.getElementById("playPlaylistBtn").classList.add("hidden");
     restoreModalFocus("modal");
+    TWIN.onModalClosed();
 }
 // Shared focus save/restore for all modals, keyed by modal element id.
 function rememberModalFocus(modalId) {
@@ -10814,6 +10835,8 @@ function restoreModalFocus(modalId) {
 }
 function trapModalFocus(e, containerId = "modalContent") {
     if (e.key !== "Tab") return;
+    // A player mounted inside a twin panel is part of the page, not a dialog: Tab is free to move on.
+    if (containerId === "modalContent" && document.getElementById("modal").classList.contains("tw-embedded")) return;
     const modal = document.getElementById(containerId);
     const focusable = modal.querySelectorAll(
         'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -11095,7 +11118,7 @@ function runModalCleanups() {
 }
 function trackBlobUrl(blob) {
     const u = URL.createObjectURL(blob);
-    modalCleanups.push(() => URL.revokeObjectURL(u));
+    (TWIN.cleanupList() || modalCleanups).push(() => URL.revokeObjectURL(u));
     return u;
 }
 
@@ -12462,7 +12485,7 @@ async function twinLocalUrl(path) {
     return u;
 }
 const TWIN = (() => {
-    const T = { on: false, active: 0, r: 50, max: -1, panes: [], menu: null, localTarget: null, ready: false };
+    const T = { on: false, active: 0, r: 50, max: -1, flip: false, panes: [], menu: null, localTarget: null, ready: false, media: null, opening: false, quiet: false };
     const $ = (id) => document.getElementById(id);
     const ICON = {
         repo: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c-1.7 1.73-4.77 2.8-8 2.8S5.7 10.73 4 9zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c-1.7 1.73-4.77 2.8-8 2.8S5.7 15.73 4 14z"/></svg>',
@@ -12473,9 +12496,13 @@ const TWIN = (() => {
         swap: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>',
         same: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M5 9h14v2H5zm0 4h14v2H5z"/></svg>',
         max: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>',
+        prev: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>',
+        next: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>',
+        ext: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>',
+        close: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
     };
     const isStacked = () => !!(TWIN_STACK_MQ && TWIN_STACK_MQ.matches);
-    const mkPane = (i, source) => ({ id: i, source, path: [], memo: { hosted: [], local: [] }, view: "list", sort: sortBy, filter: "", map: new Map(), cur: "", reveal: null, focusIt: false, summary: "" });
+    const mkPane = (i, source) => ({ id: i, source, path: [], memo: { hosted: [], local: [] }, view: "list", sort: sortBy, filter: "", map: new Map(), cur: "", reveal: null, focusIt: false, summary: "", mode: "list", viewItem: null, cleanups: [], backHook: null, seq: 0, order: [], mediaName: "" });
 
     // ---- Sources: the hosted repo and the local folder can both be loaded; the page-wide globals point at one of them at a time ----
     const ctxNow = () => ({ fileIndex, allFiles, filesByPath, pinned: pinnedFolders, favorites: favoriteFiles, expanded: expandedFolders, path: currentPath, search: searchQuery });
@@ -12532,7 +12559,7 @@ const TWIN = (() => {
 
     const paneEl = (i) => $("twin").querySelector(`.tw-pane[data-i="${i}"]`);
     function save() {
-        try { store.setItem(TWIN_KEY, JSON.stringify({ on: T.on, r: T.r, active: T.active, panes: T.panes.map((p) => ({ source: p.source, path: p.path, view: p.view, sort: p.sort, hosted: p.memo.hosted })) })); } catch (err) { /* ignore */ }
+        try { store.setItem(TWIN_KEY, JSON.stringify({ on: T.on, r: T.r, flip: T.flip, active: T.active, panes: T.panes.map((p) => ({ source: p.source, path: p.path, view: p.view, sort: p.sort, hosted: p.memo.hosted })) })); } catch (err) { /* ignore */ }
     }
     function load() {
         let s = null;
@@ -12613,6 +12640,7 @@ const TWIN = (() => {
         let all = sortItems(items, p.sort);
         const f = p.filter.trim().toLowerCase();
         if (f) all = all.filter((i) => i.name.toLowerCase().includes(f));
+        p.order = all.map((i) => i.name);
         const nf = all.filter((i) => i.type === "file").length, nd = all.length - nf;
         const bytes = all.reduce((a, i) => a + (i.type === "file" ? getItemSize(i) : 0), 0);
         p.summary = `${nf} ${nf === 1 ? "file" : "files"}, ${nd} ${nd === 1 ? "folder" : "folders"}${nf ? " \u00b7 " + formatFileSize(bytes) : ""}`;
@@ -12674,6 +12702,7 @@ const TWIN = (() => {
         tw.style.setProperty("--tw-a", T.r + "fr");
         tw.style.setProperty("--tw-b", 100 - T.r + "fr");
         if (T.max === 0 || T.max === 1) tw.dataset.max = String(T.max); else delete tw.dataset.max;
+        if (T.flip) tw.dataset.flip = "1"; else delete tw.dataset.flip;
         sp.setAttribute("aria-valuenow", String(Math.round(T.r)));
         sp.setAttribute("aria-orientation", isStacked() ? "horizontal" : "vertical");
         const mx = sp.querySelector('[data-act="max"]');
@@ -12692,7 +12721,6 @@ const TWIN = (() => {
         if (T.max !== -1 && T.max !== i) T.max = i;
         if (T.active === i && quiet) return;
         T.active = i;
-        T.localTarget = null;
         T.panes.forEach((p) => { const pn = paneEl(p.id); if (pn) pn.classList.toggle("active", p.id === i); });
         const input = $("search");
         input.value = T.panes[i].filter;
@@ -12703,6 +12731,7 @@ const TWIN = (() => {
     }
     function go(p, path, o) {
         o = o || {};
+        if (p.mode !== "list") { closePreview(p, true); if (p.mode !== "list") return; }
         p.path = path;
         p.memo[p.source] = path;
         p.filter = "";
@@ -12722,12 +12751,12 @@ const TWIN = (() => {
         const item = p.map.get(name);
         if (!item) return;
         if (item.type === "directory") { go(p, [...p.path, item.name]); return; }
-        // The preview window reads the page-wide state, so point it at this panel's source first.
-        if (!useSource(p.source)) return;
-        openFile((p.path.length ? p.path.join("/") + "/" : "") + item.name, item.category, item.name);
+        openFileItem(p, item);
     }
     function setSource(p, kind) {
         T.menu = null;
+        closePreview(p, true);
+        if (p.mode !== "list") return;
         if (kind === "local" && !localLoaded()) { T.localTarget = p.id; openLocalFolder(); renderHead(p); return; }
         if (kind === p.source) { renderHead(p); return; }
         p.memo[p.source] = p.path;
@@ -12755,18 +12784,16 @@ const TWIN = (() => {
         setActive(1 - T.active);
         focusCursor(T.panes[T.active]);
     }
+    // Swapping is only visual (the panels trade places), so nothing is moved in the page: a track that is playing in one keeps playing.
     function swap() {
-        const a = T.panes[0], b = T.panes[1];
-        ["source", "path", "memo", "view", "sort", "filter", "cur"].forEach((k) => { const t = a[k]; a[k] = b[k]; b[k] = t; });
-        T.active = 1 - T.active;
-        T.menu = null;
-        renderAll();
-        $("search").value = T.panes[T.active].filter;
-        syncHash();
+        T.flip = !T.flip;
+        applyLayout();
         save();
     }
     function same() {
         const s = T.panes[T.active], o = T.panes[1 - T.active];
+        closePreview(o, true);
+        if (o.mode !== "list") return;
         o.memo[o.source] = o.path;
         o.source = s.source;
         o.path = s.path.slice();
@@ -12800,6 +12827,11 @@ const TWIN = (() => {
         if (on === T.on) return;
         if (on && !T.ready) return;
         if (on && !fromInit) seedFromPage();
+        if (!on) {
+            T.panes.forEach((q) => closePreview(q, true));
+            if ($("modal").classList.contains("active")) return; // the player stayed open (a recording prompt), so stay in twin mode
+            unmountModal();
+        }
         T.on = on;
         T.menu = null;
         document.body.classList.toggle("twin-on", on);
@@ -12825,6 +12857,211 @@ const TWIN = (() => {
         announce(on ? "Twin panels on" : "Twin panels off");
     }
 
+    // ---- Previews inside the panels ----
+    // Audio, video and playlists use the real player window, mounted inside the panel that opened them: one player at a time, with every feature it has.
+    // Everything else (images, text and code, markdown, PDFs, fonts, archives) is shown inline, so both panels can preview at once, next to a playing track.
+    const MEDIA_KINDS = new Set(["audio", "video", "playlist"]);
+    const kindOf = (item) => previewKindOverride(item.name) || item.category;
+    const fullOf = (p, name) => (p.path.length ? p.path.join("/") + "/" : "") + name;
+    const findCard = (p, name) => { const pn = paneEl(p.id); return pn ? Array.from(pn.querySelectorAll(".file-card")).find((el) => el.dataset.n === name) : null; };
+    function setMode(p, m) { p.mode = m; const pn = paneEl(p.id); if (pn) pn.dataset.mode = m; }
+    function runCleanups(p) { while (p.cleanups.length) { try { p.cleanups.pop()(); } catch (err) { /* ignore */ } } }
+    function unmountModal() {
+        const m = $("modal");
+        if (m.parentNode !== document.body) document.body.appendChild(m);
+        m.classList.remove("tw-embedded");
+    }
+    function closePreview(p, quiet) {
+        if (p.mode === "media") { T.quiet = !!quiet; try { closeModal(); } finally { T.quiet = false; } return; }
+        if (p.mode === "view") closeInline(p, quiet);
+    }
+    function revealAfterClose(p, name, quiet) {
+        if (quiet || !name) return;
+        const el = findCard(p, name);
+        if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "nearest" }); } else focusCursor(p);
+    }
+    function openFileItem(p, item) {
+        if (MEDIA_KINDS.has(kindOf(item))) openMedia(p, item); else openInline(p, item);
+    }
+    function openMedia(p, item) {
+        const modalEl = $("modal");
+        if (T.media !== null && T.media !== p.id) {
+            closePreview(T.panes[T.media], true);
+            if (modalEl.classList.contains("active")) return; // a recording prompt kept the other player open
+        }
+        if (p.mode === "view") closeInline(p, true);
+        if (!useSource(p.source)) return;
+        const slot = paneEl(p.id).querySelector(".tw-media");
+        if (modalEl.parentNode !== slot) slot.appendChild(modalEl);
+        modalEl.classList.add("tw-embedded");
+        T.media = p.id;
+        p.mediaName = item.name;
+        T.menu = null;
+        setMode(p, "media");
+        T.opening = true;
+        const done = () => {
+            T.opening = false;
+            if (!modalEl.classList.contains("active") && T.media === p.id) { T.media = null; setMode(p, "list"); }
+        };
+        Promise.resolve(openFile(fullOf(p, item.name), item.category, item.name)).then(done, done);
+    }
+    function findStep(p, dir) {
+        if (!p.viewItem) return null;
+        let i = p.order.indexOf(p.viewItem.name);
+        if (i < 0) return null;
+        for (i += dir; i >= 0 && i < p.order.length; i += dir) {
+            const it = p.map.get(p.order[i]);
+            if (it && it.type === "file" && !MEDIA_KINDS.has(kindOf(it))) return it;
+        }
+        return null;
+    }
+    function updateStepButtons(p) {
+        const v = paneEl(p.id).querySelector(".tw-view");
+        v.querySelector('[data-vact="prev"]').disabled = !findStep(p, -1);
+        v.querySelector('[data-vact="next"]').disabled = !findStep(p, 1);
+    }
+    function stepInline(p, dir) {
+        const it = findStep(p, dir);
+        if (it) openInline(p, it);
+    }
+    function openInline(p, item) {
+        if (p.mode === "media") { closePreview(p, true); if (p.mode !== "list") return; }
+        const pn = paneEl(p.id), view = pn.querySelector(".tw-view"), body = pn.querySelector(".tw-vbody");
+        runCleanups(p);
+        p.backHook = null;
+        const mySeq = ++p.seq, full = fullOf(p, item.name);
+        p.viewItem = { name: item.name, path: full };
+        setMode(p, "view");
+        T.menu = null;
+        const title = view.querySelector(".tw-vtitle");
+        title.textContent = item.name;
+        title.title = full;
+        view.querySelectorAll("[data-vlink]").forEach((a) => a.removeAttribute("href"));
+        body.className = "modal-body tw-vbody";
+        body.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+        updateStepButtons(p);
+        view.focus({ preventScroll: true });
+        renderInline(p, item, full, body, mySeq);
+        announce(`Previewing ${item.name} in panel ${p.id + 1}`);
+    }
+    function mdEnv(p, c, full) {
+        const local = p.source === "local";
+        return {
+            dir: dirOfPath(full),
+            remoteImages: !local,
+            assetSync: local ? null : (q) => hostedUrlIn(c, q),
+            loadAsset: (q) => (local && LOCAL.files.has(q) ? twinLocalUrl(q).catch(() => null) : Promise.resolve(null)),
+            openPath: (q) => openPathIn(p, q),
+        };
+    }
+    async function renderInline(p, item, full, body, mySeq) {
+        const stale = () => p.seq !== mySeq;
+        const c = ctxOf(p.source);
+        let url = "";
+        try {
+            if (!c) throw new Error("source unavailable");
+            url = p.source === "local" ? await twinLocalUrl(full) : hostedUrlIn(c, full);
+        } catch (err) { if (!stale()) showUnavailable(body, item.name, "", err); return; }
+        if (stale()) return;
+        const view = paneEl(p.id).querySelector(".tw-view");
+        view.querySelector('[data-vlink="raw"]').href = url;
+        const dl = view.querySelector('[data-vlink="download"]');
+        dl.href = url;
+        dl.download = item.name;
+        const kind = kindOf(item);
+        try {
+            switch (kind) {
+                case "image":
+                    body.innerHTML = `<img class="preview-image" src="${escapeHtml(url)}" alt="${escapeHtml(item.name)}">`;
+                    break;
+                case "md-view": {
+                    const res = await fetchTextPreview(url);
+                    if (stale()) return;
+                    mountMarkdown(body, res.text, res.truncated, item.name, mdEnv(p, c, full));
+                    body.classList.add("scrollable");
+                    break;
+                }
+                case "archive-view": {
+                    const f = c.filesByPath.get(full);
+                    const src = p.source === "local" ? blobSource(await getLocalFile(full)) : !f || !f.size ? blobSource(await httpSource(url, 0).blob()) : httpSource(url, f.size);
+                    body.innerHTML = '<div class="loading"><div class="spinner"></div><div class="ar-status">Reading archive\u2026</div></div>';
+                    const status = body.querySelector(".ar-status");
+                    const first = await arOpen(item.name, src, (n) => { if (status && status.isConnected) status.textContent = `Reading archive\u2026 ${n.toLocaleString()} entries`; });
+                    if (stale()) return;
+                    const prevHook = modalBackHook;
+                    runArchiveViewer(body, item.name, first);
+                    p.backHook = modalBackHook;
+                    modalBackHook = prevHook;
+                    body.classList.add("scrollable");
+                    break;
+                }
+                case "document":
+                    if (item.name.toLowerCase().endsWith(".pdf")) body.innerHTML = `<iframe class="preview-pdf" src="${escapeHtml(url)}"></iframe>`;
+                    else showUnavailable(body, item.name, url);
+                    break;
+                case "code": case "markup": case "style": case "data": case "text": {
+                    const { text, truncated } = await fetchTextPreview(url);
+                    if (stale()) return;
+                    renderTextPreview(body, text, item.name, truncated);
+                    body.classList.add("scrollable");
+                    break;
+                }
+                case "font": {
+                    const fam = "PreviewFont" + Date.now();
+                    const face = new FontFace(fam, `url("${url}")`);
+                    await face.load();
+                    if (stale()) return;
+                    document.fonts.add(face);
+                    body.innerHTML = `<div style="padding: 1.5rem; text-align: center; font-family: '${fam}', sans-serif;"><p style="font-size: 2rem; margin-bottom: 0.75rem;">The quick brown fox jumps over the lazy dog</p><p style="font-size: 1.5rem; margin-bottom: 0.5rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p><p style="font-size: 1.5rem; margin-bottom: 0.5rem;">abcdefghijklmnopqrstuvwxyz</p><p style="font-size: 1.5rem;">0123456789!@#$%^&amp;*()</p></div>`;
+                    break;
+                }
+                default:
+                    showUnavailable(body, item.name, url);
+            }
+        } catch (err) {
+            console.error(err);
+            if (!stale()) showUnavailable(body, item.name, url, err);
+        }
+    }
+    function closeInline(p, quiet) {
+        const name = p.viewItem && p.viewItem.name;
+        p.seq++;
+        runCleanups(p);
+        p.backHook = null;
+        p.viewItem = null;
+        paneEl(p.id).querySelector(".tw-vbody").innerHTML = "";
+        setMode(p, "list");
+        revealAfterClose(p, name, quiet);
+    }
+    // Opens a path of this panel's source in the panel (a link inside a markdown file, a deep link in the address bar). A folder is just browsed to.
+    function openPathIn(p, path) {
+        const c = ctxOf(p.source);
+        if (!c) return false;
+        const segs = path.split("/").filter(Boolean);
+        const f = c.filesByPath.get(path);
+        if (f) {
+            const dir = segs.slice(0, -1);
+            if (dir.join("/") !== p.path.join("/")) { p.path = dir; p.memo[p.source] = dir; p.filter = ""; renderList(p); renderHead(p); save(); }
+            const item = p.map.get(f.name);
+            if (!item) return false;
+            openFileItem(p, item);
+            return true;
+        }
+        if (walk(c, segs)) { closePreview(p, true); go(p, segs); return true; }
+        return false;
+    }
+    function viewKey(e, p) {
+        const typing = e.target.closest && e.target.closest("input, textarea, select, [contenteditable]");
+        if (typing || e.ctrlKey || e.altKey || e.metaKey) return;
+        const hook = () => !!(p.backHook && p.backHook());
+        switch (e.key) {
+            case "Tab": if (e.target.classList && e.target.classList.contains("tw-view")) { e.preventDefault(); switchPane(); } return;
+            case "Escape": case "Backspace": e.preventDefault(); e.stopPropagation(); if (!hook()) closeInline(p); return;
+            case "ArrowLeft": e.preventDefault(); if (!hook()) stepInline(p, -1); return;
+            case "ArrowRight": e.preventDefault(); stepInline(p, 1); return;
+        }
+    }
+
     // ---- Events ----
     function onClick(e) {
         const t = e.target;
@@ -12836,16 +13073,20 @@ const TWIN = (() => {
         }
         const p = T.panes[Number(pn.dataset.i)];
         if (T.active !== p.id) setActive(p.id);
+        const va = t.closest("[data-vact]");
+        if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); return; }
+        if (t.closest(".tw-view, .tw-media")) return;
         const act = t.closest("[data-act]");
         if (t.closest(".tw-src")) { T.menu = T.menu === p.id ? null : p.id; renderHead(p); return; }
         if (act && act.closest(".tw-menu")) { menuAct(p, act.dataset.act); return; }
         if (act && act.dataset.act === "open-local") { T.localTarget = p.id; openLocalFolder(); return; }
         if (T.menu !== null) { T.menu = null; renderHead(T.panes[T.active]); renderAllHeads(); }
         const crumb = t.closest(".tw-crumb");
-        if (crumb) { const i = Number(crumb.dataset.i); if (i !== p.path.length) go(p, p.path.slice(0, i)); return; }
+        if (crumb) { const i = Number(crumb.dataset.i); if (i !== p.path.length) go(p, p.path.slice(0, i)); else if (p.mode !== "list") closePreview(p); return; }
         const vb = t.closest(".tw-vbtn");
         if (vb) { setView(p, vb.dataset.v); return; }
         if (t.closest(".tw-zip")) {
+            if (T.media !== null && T.panes[T.media].source !== p.source) { announce("Close the player first, then download this folder"); return; }
             if (useSource(p.source)) { currentPath = p.path.slice(); downloadFolderZip(); }
             return;
         }
@@ -12874,6 +13115,7 @@ const TWIN = (() => {
     function closeLocal() {
         if (LOCAL.active) closeLocalFolder();
         else if (LOCAL.parkedLocal) {
+            T.panes.forEach((q) => { if (q.source === "local") closePreview(q, true); });
             revokeLocalUrls();
             LOCAL.parkedLocal = null;
             LOCAL.files = new Map();
@@ -12894,6 +13136,8 @@ const TWIN = (() => {
         const pn = e.target.closest(".tw-pane");
         if (!pn) return;
         const p = T.panes[Number(pn.dataset.i)];
+        if (e.target.closest(".tw-view")) { viewKey(e, p); return; }
+        if (e.target.closest(".tw-media")) return;
         const card = e.target.closest(".file-card");
         const scroller = e.target.classList && e.target.classList.contains("tw-scroll");
         const plain = !e.ctrlKey && !e.altKey && !e.metaKey;
@@ -12953,6 +13197,38 @@ const TWIN = (() => {
         toggle() { setOn(!T.on); },
         setFilter,
         focusActive() { focusCursor(T.panes[T.active]); },
+        // The preview window's player was closed: its panel goes back to the list.
+        onModalClosed() {
+            if (T.media === null) return;
+            const p = T.panes[T.media], name = p.mediaName;
+            T.media = null;
+            setMode(p, "list");
+            revealAfterClose(p, name, T.quiet);
+        },
+        // Page-wide keys (Esc, Space, arrows) belong to an embedded player only while focus is inside it.
+        modalKeys() {
+            const m = $("modal");
+            return !(m.classList.contains("tw-embedded") && m.classList.contains("active") && !m.contains(document.activeElement));
+        },
+        // Blob URLs made by an inline preview are released when that preview closes.
+        cleanupList() {
+            if (!T.on) return null;
+            const a = document.activeElement, pn = a && a.closest ? a.closest(".tw-pane") : null;
+            if (!pn) return null;
+            const p = T.panes[Number(pn.dataset.i)];
+            return p.mode === "view" ? p.cleanups : null;
+        },
+        // Something outside the panels asked to open a file (a markdown link, an address with a file in it): show it in a panel.
+        routeOpen(path, type, name) {
+            if (!T.on || T.opening) return false;
+            const kind = previewKindOverride(name) || type;
+            if (MEDIA_KINDS.has(kind) && T.media !== null) return false;
+            const source = LOCAL.active ? "local" : "hosted";
+            let p = T.panes[T.active];
+            if (p.source !== source) p = T.panes.find((q) => q.source === source) || p;
+            if (p.source !== source) { setSource(p, source); if (p.source !== source) return false; }
+            return openPathIn(p, path);
+        },
         refresh() { if (T.on) renderAll(true); },
         // The index of the hosted repo changed (the full index arrived).
         onHash() {
@@ -12972,15 +13248,16 @@ const TWIN = (() => {
             }
             if (T.active !== target.id) setActive(target.id);
             go(target, dir);
-            if (file && useSource("hosted")) openFile(dir.concat(file.name).join("/"), file.category, file.name);
+            if (file) openPathIn(target, dir.concat(file.name).join("/"));
         },
         onLocalEntered() {
             if (!T.ready) return;
             const idx = T.localTarget !== null ? T.localTarget : T.active;
             T.localTarget = null;
-            T.panes.forEach((p) => { p.memo.local = []; if (p.source === "local") p.path = []; });
+            T.panes.forEach((p) => { p.memo.local = []; if (p.source === "local") { closePreview(p, true); p.path = []; } });
             if (!T.on) return;
             const p = T.panes[idx];
+            closePreview(p, true);
             p.memo[p.source] = p.path;
             p.source = "local";
             p.path = [];
@@ -12993,6 +13270,7 @@ const TWIN = (() => {
         onLocalClosed() {
             if (!T.ready) return;
             T.localTarget = null;
+            T.panes.forEach((p) => { if (p.source === "local") closePreview(p, true); });
             T.panes.forEach((p) => { p.memo.local = []; if (p.source === "local") { p.source = "hosted"; p.path = p.memo.hosted.slice(); } });
             if (!T.on) return;
             T.menu = null;
@@ -13003,7 +13281,18 @@ const TWIN = (() => {
         init() {
             if (T.ready) return;
             const tw = $("twin");
-            const shell = (i) => `<section class="tw-pane" data-i="${i}" role="region" aria-label="Panel ${i + 1}"><div class="tw-head"></div><div class="tw-scroll" tabindex="0" aria-label="Files in panel ${i + 1}"></div><div class="tw-status" aria-hidden="true"></div></section>`;
+            const shell = (i) => `<section class="tw-pane" data-i="${i}" data-mode="list" role="region" aria-label="Panel ${i + 1}"><div class="tw-head"></div><div class="tw-scroll" tabindex="0" aria-label="Files in panel ${i + 1}"></div><div class="tw-status" aria-hidden="true"></div>
+                <div class="tw-view" tabindex="-1" aria-label="Preview in panel ${i + 1}">
+                    <div class="modal-header tw-vhead"><div class="modal-title tw-vtitle"></div><div class="modal-actions">
+                        <button type="button" class="modal-btn" data-vact="prev" title="Previous file (\u2190)" aria-label="Previous file">${ICON.prev}</button>
+                        <button type="button" class="modal-btn" data-vact="next" title="Next file (\u2192)" aria-label="Next file">${ICON.next}</button>
+                        <a class="modal-btn" data-vlink="raw" target="_blank" rel="noopener" title="Open the file by itself" aria-label="Open the file by itself">${ICON.ext}</a>
+                        <a class="modal-btn" data-vlink="download" title="Download" aria-label="Download">${ICON.zip}</a>
+                        <button type="button" class="modal-btn" data-vact="close" title="Close the preview (Esc)" aria-label="Close the preview">${ICON.close}</button>
+                    </div></div>
+                    <div class="modal-body tw-vbody"></div>
+                </div>
+                <div class="tw-media"></div></section>`;
             tw.innerHTML = shell(0) + `<div class="tw-split" role="separator" tabindex="0" aria-label="Resize the panels" aria-valuemin="15" aria-valuemax="85" aria-valuenow="50" title="Drag to resize, double-click to make both panels equal">
                 <span class="tw-split-tools">
                     <button type="button" data-act="swap" title="Swap the two panels" aria-label="Swap the two panels">${ICON.swap}</button>
@@ -13015,6 +13304,7 @@ const TWIN = (() => {
             if (s) {
                 if (typeof s.r === "number") T.r = Math.max(15, Math.min(85, s.r));
                 if (s.active === 1) T.active = 1;
+                if (s.flip === true) T.flip = true;
             }
             T.ready = true;
             const hp = hashToPath();

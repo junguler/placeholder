@@ -1655,6 +1655,7 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
 .tw-pane[data-mode="view"] .tw-scroll, .tw-pane[data-mode="view"] .tw-status, .tw-pane[data-mode="media"] .tw-scroll, .tw-pane[data-mode="media"] .tw-status { display: none; }
 .tw-vhead { padding: 0.35rem 0.5rem; }
 .tw-vhead a.modal-btn { text-decoration: none; }
+.tw-vhead [data-vact][hidden] { display: none; }
 .tw-vbody .preview-image { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; margin: auto; }
 .tw-vbody .preview-pdf { width: 100%; height: 100%; flex: 1; border: none; }
 #modal.tw-embedded { position: absolute; inset: 0; z-index: 5; padding: 0; background: var(--bg-secondary); transition: none; touch-action: auto; }
@@ -12973,8 +12974,10 @@ const TWIN = (() => {
         };
         Promise.resolve(openFile(fullOf(p, item.name), item.category, item.name)).then(done, done);
     }
+    // Previous / next file only exist for a local folder's files; hosted repo files never get them. Media (audio, video, playlists) is always skipped, since it opens in the player.
+    const canStep = (p) => p.source === "local";
     function findStep(p, dir) {
-        if (!p.viewItem) return null;
+        if (!canStep(p) || !p.viewItem) return null;
         let i = p.order.indexOf(p.viewItem.name);
         if (i < 0) return null;
         for (i += dir; i >= 0 && i < p.order.length; i += dir) {
@@ -12984,9 +12987,11 @@ const TWIN = (() => {
         return null;
     }
     function updateStepButtons(p) {
-        const v = paneEl(p.id).querySelector(".tw-view");
-        v.querySelector('[data-vact="prev"]').disabled = !findStep(p, -1);
-        v.querySelector('[data-vact="next"]').disabled = !findStep(p, 1);
+        const v = paneEl(p.id).querySelector(".tw-view"), on = canStep(p);
+        const prev = v.querySelector('[data-vact="prev"]'), next = v.querySelector('[data-vact="next"]');
+        prev.hidden = next.hidden = !on;
+        prev.disabled = !findStep(p, -1);
+        next.disabled = !findStep(p, 1);
     }
     function stepInline(p, dir) {
         const it = findStep(p, dir);
@@ -13125,8 +13130,8 @@ const TWIN = (() => {
         switch (e.key) {
             case "Tab": if (e.target.classList && e.target.classList.contains("tw-view")) { e.preventDefault(); switchPane(); } return;
             case "Escape": case "Backspace": e.preventDefault(); e.stopPropagation(); if (!hook()) closeInline(p); return;
-            case "ArrowLeft": e.preventDefault(); if (!hook()) stepInline(p, -1); return;
-            case "ArrowRight": e.preventDefault(); stepInline(p, 1); return;
+            case "ArrowLeft": if (hook()) { e.preventDefault(); return; } if (!canStep(p)) return; e.preventDefault(); stepInline(p, -1); return;
+            case "ArrowRight": if (!canStep(p)) return; e.preventDefault(); stepInline(p, 1); return;
         }
     }
 

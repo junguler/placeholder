@@ -1,0 +1,108 @@
+name: Deploy File Viewer
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    # Pinned: ubuntu-latest is migrating to 26.04 in stages and can resolve to
+    # different images between runs. Move to ubuntu-26.04 once tested.
+    runs-on: ubuntu-24.04
+    # Runs take ~4 minutes; 10 leaves headroom and makes a stalled run fail fast.
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Full history: generate_index.js reads it for each file's last-modified date.
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      # Writes file_index_lean.json (root names, loaded first) and file_index.json
+      # (whole tree with sizes and dates). --apply-layout also rearranges this
+      # throwaway checkout as the index shows it: where a folder has a "checked"
+      # folder, the normal files are removed and the checked files move up.
+      # The repository itself is untouched. To turn collapsing off, change
+      # COLLAPSE_CHECKED at the top of generate_index.js.
+      - name: Generate file index
+        run: node generate_index.js --apply-layout
+
+      - name: Check file index
+        run: |
+          node -e '
+            const fs = require("fs");
+            const i = JSON.parse(fs.readFileSync("file_index.json", "utf8"));
+            const l = JSON.parse(fs.readFileSync("file_index_lean.json", "utf8"));
+            if (!i.stats || i.stats.files < 1) { console.error("file_index.json has no files"); process.exit(1); }
+            if (!l.stats || l.stats.files !== i.stats.files || l.stats.dirs !== i.stats.dirs) { console.error("file_index_lean.json does not match file_index.json"); process.exit(1); }
+            console.log("file indexes OK:", i.stats.files, "files,", i.stats.dirs, "folders");
+          '
+
+      # Files starting with "---" are flagged `external` in file_index.json: they
+      # stay listed (the viewer links to them on GitHub) but are removed from this
+      # throwaway checkout so they are not uploaded or deployed.
+      - name: Leave large files out of the site
+        run: |
+          node -e '
+            const fs = require("fs");
+            const idx = JSON.parse(fs.readFileSync("file_index.json", "utf8"));
+            let n = 0, bytes = 0;
+            (function walk(items, prefix) {
+              for (const it of items) {
+                const p = prefix ? prefix + "/" + it.name : it.name;
+                if (it.type === "directory") walk(it.children, p);
+                else if (it.external) { fs.rmSync(p); n++; bytes += it.size; }
+              }
+            })(idx.root, "");
+            console.log("Left out " + n + " files (" + (bytes / 1048576).toFixed(1) + " MB) from the site");
+          '
+
+      # Informational only: shows what is about to be uploaded. Safe to delete.
+      - name: Report upload size
+        run: |
+          echo "Files to upload (excluding .git and .github):"
+          find . -type f -not -path "./.git/*" -not -path "./.github/*" | wc -l
+          echo "Total size (actual bytes, not disk blocks):"
+          du -sh --apparent-size --exclude=.git --exclude=.github . || true
+          echo "Ten largest files:"
+          # awk picks the top 10 itself, so no pipe closes early (`sort | head` printed "Broken pipe").
+          find . -type f -not -path "./.git/*" -not -path "./.github/*" -printf '%s %p\n' \
+            | sort -nr \
+            | awk 'NR <= 10 { printf "%8.1f MB  %s\n", $1/1048576, $2 }'
+          # GitHub's published-site limit is 1 GB: this only warns, never fails the build.
+          bytes=$(find . -type f -not -path "./.git/*" -not -path "./.github/*" -printf '%s\n' | awk '{ s += $1 } END { print s + 0 }')
+          if [ "$bytes" -gt 1073741824 ]; then
+            echo "::warning title=Site is over GitHub Pages' 1 GB limit::The upload is $((bytes / 1048576)) MB"
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        # A stalled upload fails after 8 minutes instead of eating the whole job.
+        timeout-minutes: 8
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

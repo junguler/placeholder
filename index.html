@@ -358,7 +358,11 @@ body {
 .view-btn svg { width: 16px; height: 16px; }
 html[data-theme="hc-dark"] .view-toggle, html[data-theme="hc-light"] .view-toggle { border: var(--bw) solid var(--border-color); }
 .app-container { flex: 1; display: flex; overflow: hidden; }
-.tree-panel { width: 240px; background: var(--bg-secondary); border-right: var(--bw) solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
+.tree-panel { --tree-def: 240px; width: var(--tree-w, var(--tree-def)); position: relative; background: var(--bg-secondary); border-right: var(--bw) solid var(--border-color); display: none; flex-shrink: 0; flex-direction: column; }
+.tree-resize { position: absolute; top: 0; bottom: 0; right: -5px; width: 10px; z-index: 6; cursor: col-resize; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+.tree-resize::after { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px; background: transparent; transition: background 0.12s ease; }
+.tree-resize:hover::after, .tree-resize:focus-visible::after, .tree-resize.dragging::after { background: var(--accent); }
+.tree-resize.dragging.at-default::after { left: 3px; width: 4px; }
 .tree-panel.visible { display: flex; }
 .tree-header { padding: 0.5rem 0.75rem; font-size: var(--label-size); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--label-track); border-bottom: var(--bw) solid var(--border-color); flex-shrink: 0; }
 .tree-content { padding: 0.25rem 0; overflow-y: auto; flex: 1; min-height: 0; }
@@ -481,13 +485,13 @@ html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xcv, var(--xc))
 .file-list.list-columns .card-star-btn:hover, .file-list.list-columns .card-star-btn:focus-visible, .file-list.list-columns .card-star-btn.starred { opacity: 1; background: none; border: none; }
 /* Progressive column thinning as the window narrows. Each band is bounded on both ends so bands can't conflict regardless of source order. */
 @media (max-width: 1024px) and (min-width: 769px) {
-    .tree-panel { width: 200px; }
+    .tree-panel { --tree-def: 200px; }
     /* Which list columns show is decided by the width of the file area itself, see the
        #main[data-cols] rules below. */
 }
 @media (max-width: 768px) and (min-width: 641px) {
     .search-container { width: 150px; }
-    .tree-panel { width: 170px; }
+    .tree-panel { --tree-def: 170px; }
     .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
 }
 /* List columns thin out with the width of the file area (which shrinks with the window, folder tree and text size, so a window breakpoint can't see it).
@@ -685,7 +689,7 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
         overflow-y: auto;
         flex-shrink: 0;
     }
-    .tree-panel .tree-header, .tree-panel .tree-content { display: none; }
+    .tree-panel .tree-header, .tree-panel .tree-content, .tree-resize { display: none; }
     .search-container { width: 120px; }
     /* header-content's gap applies to both axes; once the search + icons wrap to their own row the gap is too much dead space, so only the row gap is tightened. */
     .header-content { row-gap: 0.375rem; }
@@ -902,6 +906,18 @@ mark.search-highlight { background: color-mix(in srgb, var(--accent) 30%, transp
 .file-list .file-thumbnail:not(.file-thumbnail-inline) { display: none; }
 .file-thumbnail-inline { width: 24px; height: 24px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
 .file-list .file-card:has(.file-thumbnail-inline.loaded) .file-icon { display: none; }
+/* Grid view, like a desktop file manager: every tile has the same 4:3 picture box. An image fills it with its thumbnail (the icon shows until the
+   thumbnail has loaded); everything else gets a big icon centered in it. The name and size always start at the same height, so neighbors stay even. */
+.file-grid { --gi: 4rem; }
+.file-grid .file-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; justify-items: center; align-content: start; }
+.file-grid .file-card::before { content: ""; grid-area: 1 / 1; width: 100%; aspect-ratio: 4 / 3; }
+.file-grid .file-card > .file-icon { grid-area: 1 / 1; align-self: center; width: var(--gi); height: var(--gi); }
+.file-grid .file-card > .file-icon svg { width: 50%; height: 50%; }
+.file-grid .file-card > .file-thumbnail { grid-area: 1 / 1; width: 100%; height: 0; min-height: 100%; aspect-ratio: auto; }
+.file-grid .file-card:has(> .file-thumbnail.loaded) > .file-icon { display: none; }
+.file-grid .file-card > .file-info { grid-area: 2 / 1; align-self: start; justify-self: stretch; min-width: 0; }
+@media (max-width: 768px) { .file-grid { --gi: 3rem; } }
+.tw-pane .file-grid { --gi: 3.25rem; }
 
 /* --- File card hover: tone and border only, no movement --- */
 .file-card { transition: border-color var(--transition), background-color var(--transition); }
@@ -1591,6 +1607,7 @@ body.twin-on .header-actions { margin-left: auto; }
 @container twp (max-width: 30em) { .tw-tools .tw-sort, .tw-tools .tw-zip { display: none; } }
 .tw-split { position: relative; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); cursor: col-resize; touch-action: none; user-select: none; -webkit-user-select: none; }
 .tw-split:hover, .tw-split.dragging, .tw-split:focus-visible { background: var(--accent); outline: none; }
+.tw-split.centered.dragging { box-shadow: inset 0 0 0 2px var(--bg-primary); }
 .tw-split-tools { display: flex; flex-direction: column; gap: 2px; }
 .tw-split-tools button { width: 1.25rem; height: 1.25rem; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; }
 .tw-split-tools button:hover, .tw-split-tools button[aria-pressed="true"] { border-color: var(--accent); }
@@ -1604,6 +1621,13 @@ body.twin-on .header-actions { margin-left: auto; }
     .tw-head { padding: 0.2rem 0.3rem; gap: 0.25rem; }
     body.twin-on .header-content { row-gap: 0.25rem; }
 }
+
+/* Desktop top/bottom layout (the same rules the phone layout uses, switched on by the layout button) */
+.twin[data-stack] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--tw-a)) 1.5rem minmax(0, var(--tw-b)); }
+.twin[data-stack][data-max] { grid-template-rows: minmax(0, 1fr); }
+.twin[data-stack] .tw-split { cursor: row-resize; }
+.twin[data-stack] .tw-split-tools { flex-direction: row; }
+@media (max-width: 640px) { .tw-split-tools [data-act="layout"] { display: none; } }
 
 /* --- Twin panels: previews inside a panel --- */
 .tw-view, .tw-media { display: none; flex: 1; min-height: 0; }
@@ -1881,6 +1905,7 @@ body.twin-on .header-actions { margin-left: auto; }
             <div class="tree-pinned" id="treeFavorites"></div>
             <div class="tree-header"><h2 class="tree-title">Folders</h2><span class="tree-header-actions"><button type="button" class="tree-hdr-btn" id="treeCollapseAll" title="Collapse all folders" aria-label="Collapse all folders"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 13H5v-2h14v2z"/></svg></button></span></div>
             <div class="tree-content" id="treeContent" role="tree" aria-label="Folders"></div>
+            <div class="tree-resize" id="treeResize" role="separator" aria-orientation="vertical" aria-label="Resize the folder tree" tabindex="0" title="Drag to resize, double-click to reset"></div>
         </aside>
         <h2 class="sr-only" id="mainHeading">Files</h2>
         <main class="main" id="main" tabindex="-1" aria-labelledby="mainHeading">
@@ -12485,7 +12510,7 @@ async function twinLocalUrl(path) {
     return u;
 }
 const TWIN = (() => {
-    const T = { on: false, active: 0, r: 50, max: -1, flip: false, panes: [], menu: null, localTarget: null, ready: false, media: null, opening: false, quiet: false };
+    const T = { on: false, active: 0, r: 50, max: -1, flip: false, vert: false, panes: [], menu: null, localTarget: null, ready: false, media: null, opening: false, quiet: false };
     const $ = (id) => document.getElementById(id);
     const ICON = {
         repo: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c-1.7 1.73-4.77 2.8-8 2.8S5.7 10.73 4 9zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c-1.7 1.73-4.77 2.8-8 2.8S5.7 15.73 4 14z"/></svg>',
@@ -12496,12 +12521,14 @@ const TWIN = (() => {
         swap: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>',
         same: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M5 9h14v2H5zm0 4h14v2H5z"/></svg>',
         max: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>',
+        cols: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 4h8v16H3V4zm10 0h8v16h-8V4z"/></svg>',
+        rows: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M4 3h16v8H4V3zm0 10h16v8H4v-8z"/></svg>',
         prev: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>',
         next: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>',
         ext: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>',
         close: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
     };
-    const isStacked = () => !!(TWIN_STACK_MQ && TWIN_STACK_MQ.matches);
+    const isStacked = () => T.vert || !!(TWIN_STACK_MQ && TWIN_STACK_MQ.matches);
     const mkPane = (i, source) => ({ id: i, source, path: [], memo: { hosted: [], local: [] }, view: "list", sort: sortBy, filter: "", map: new Map(), cur: "", reveal: null, focusIt: false, summary: "", mode: "list", viewItem: null, cleanups: [], backHook: null, seq: 0, order: [], mediaName: "" });
 
     // ---- Sources: the hosted repo and the local folder can both be loaded; the page-wide globals point at one of them at a time ----
@@ -12559,7 +12586,7 @@ const TWIN = (() => {
 
     const paneEl = (i) => $("twin").querySelector(`.tw-pane[data-i="${i}"]`);
     function save() {
-        try { store.setItem(TWIN_KEY, JSON.stringify({ on: T.on, r: T.r, flip: T.flip, active: T.active, panes: T.panes.map((p) => ({ source: p.source, path: p.path, view: p.view, sort: p.sort, hosted: p.memo.hosted })) })); } catch (err) { /* ignore */ }
+        try { store.setItem(TWIN_KEY, JSON.stringify({ on: T.on, r: T.r, flip: T.flip, vert: T.vert, active: T.active, panes: T.panes.map((p) => ({ source: p.source, path: p.path, view: p.view, sort: p.sort, hosted: p.memo.hosted })) })); } catch (err) { /* ignore */ }
     }
     function load() {
         let s = null;
@@ -12703,6 +12730,14 @@ const TWIN = (() => {
         tw.style.setProperty("--tw-b", 100 - T.r + "fr");
         if (T.max === 0 || T.max === 1) tw.dataset.max = String(T.max); else delete tw.dataset.max;
         if (T.flip) tw.dataset.flip = "1"; else delete tw.dataset.flip;
+        if (T.vert) tw.dataset.stack = "1"; else delete tw.dataset.stack;
+        const lb = sp.querySelector('[data-act="layout"]');
+        if (lb) {
+            const t = T.vert ? "Put the panels side by side" : "Stack the panels top and bottom";
+            lb.innerHTML = T.vert ? ICON.cols : ICON.rows;
+            lb.title = t; lb.setAttribute("aria-label", t);
+        }
+        sp.classList.toggle("centered", Math.abs(T.r - 50) < 0.05);
         sp.setAttribute("aria-valuenow", String(Math.round(T.r)));
         sp.setAttribute("aria-orientation", isStacked() ? "horizontal" : "vertical");
         const mx = sp.querySelector('[data-act="max"]');
@@ -13068,7 +13103,7 @@ const TWIN = (() => {
         const pn = t.closest(".tw-pane");
         if (!pn) {
             const b = t.closest(".tw-split-tools button");
-            if (b) { const a = b.dataset.act; if (a === "swap") swap(); else if (a === "same") same(); else if (a === "max") toggleMax(); }
+            if (b) { const a = b.dataset.act; if (a === "swap") swap(); else if (a === "same") same(); else if (a === "max") toggleMax(); else if (a === "layout") toggleLayout(); }
             return;
         }
         const p = T.panes[Number(pn.dataset.i)];
@@ -13164,6 +13199,12 @@ const TWIN = (() => {
             case "End": move(cards.length - 1); return;
         }
     }
+    function toggleLayout() {
+        T.vert = !T.vert;
+        applyLayout();
+        save();
+        announce(T.vert ? "Panels stacked top and bottom" : "Panels side by side");
+    }
     function splitKey(e) {
         const stacked = isStacked();
         const dec = stacked ? "ArrowUp" : "ArrowLeft", inc = stacked ? "ArrowDown" : "ArrowRight";
@@ -13178,9 +13219,17 @@ const TWIN = (() => {
             sp.setPointerCapture(e.pointerId);
             sp.classList.add("dragging");
             const rect = tw.getBoundingClientRect();
+            let wasSnapped = Math.abs(T.r - 50) < 0.05;
             const move = (ev) => {
-                const r = isStacked() ? (ev.clientY - rect.top) / rect.height : (ev.clientX - rect.left) / rect.width;
-                T.r = Math.round(Math.max(15, Math.min(85, r * 100)) * 10) / 10;
+                const size = isStacked() ? rect.height : rect.width;
+                const r = (isStacked() ? ev.clientY - rect.top : ev.clientX - rect.left) / size;
+                let v = Math.round(Math.max(15, Math.min(85, r * 100)) * 10) / 10;
+                // Magnet: within ~18px of the middle the divider locks to exactly 50/50, so resetting is just a nudge.
+                const snapped = Math.abs(v - 50) <= (18 / size) * 100;
+                if (snapped) v = 50;
+                if (snapped && !wasSnapped && navigator.vibrate) { try { navigator.vibrate(8); } catch (err) { /* ignore */ } }
+                wasSnapped = snapped;
+                T.r = v;
                 applyLayout();
             };
             const end = () => { sp.classList.remove("dragging"); sp.removeEventListener("pointermove", move); sp.removeEventListener("pointerup", end); sp.removeEventListener("pointercancel", end); save(); };
@@ -13293,9 +13342,10 @@ const TWIN = (() => {
                     <div class="modal-body tw-vbody"></div>
                 </div>
                 <div class="tw-media"></div></section>`;
-            tw.innerHTML = shell(0) + `<div class="tw-split" role="separator" tabindex="0" aria-label="Resize the panels" aria-valuemin="15" aria-valuemax="85" aria-valuenow="50" title="Drag to resize, double-click to make both panels equal">
+            tw.innerHTML = shell(0) + `<div class="tw-split" role="separator" tabindex="0" aria-label="Resize the panels" aria-valuemin="15" aria-valuemax="85" aria-valuenow="50" title="Drag to resize (it snaps to 50/50 near the middle), double-click to reset">
                 <span class="tw-split-tools">
                     <button type="button" data-act="swap" title="Swap the two panels" aria-label="Swap the two panels">${ICON.swap}</button>
+                    <button type="button" data-act="layout" title="Stack the panels top and bottom" aria-label="Stack the panels top and bottom">${ICON.rows}</button>
                     <button type="button" data-act="same" title="Show this panel\u2019s folder in the other panel" aria-label="Show this panel\u2019s folder in the other panel">${ICON.same}</button>
                     <button type="button" data-act="max" aria-pressed="false" title="Fill the window with this panel" aria-label="Fill the window with this panel">${ICON.max}</button>
                 </span></div>` + shell(1);
@@ -13305,6 +13355,7 @@ const TWIN = (() => {
                 if (typeof s.r === "number") T.r = Math.max(15, Math.min(85, s.r));
                 if (s.active === 1) T.active = 1;
                 if (s.flip === true) T.flip = true;
+                if (s.vert === true) T.vert = true;
             }
             T.ready = true;
             const hp = hashToPath();
@@ -13338,6 +13389,51 @@ const TWIN = (() => {
         },
     };
     return api;
+})();
+
+// ---- Folder tree: draggable width with a magnet at its default size ----
+(() => {
+    const panel = document.getElementById("treePanel"), grip = document.getElementById("treeResize");
+    if (!panel || !grip) return;
+    const KEY = "treeWidth", MIN = 140, SNAP = 14;
+    const defW = () => { const had = panel.style.getPropertyValue("--tree-w"); panel.style.removeProperty("--tree-w"); const w = panel.getBoundingClientRect().width; if (had) panel.style.setProperty("--tree-w", had); return Math.round(w); };
+    const maxW = () => Math.max(MIN + 40, Math.round(panel.parentElement.getBoundingClientRect().width * 0.5));
+    const clamp = (w) => Math.max(MIN, Math.min(maxW(), Math.round(w)));
+    const mark = () => { const w = panel.getBoundingClientRect().width; grip.classList.toggle("at-default", !panel.style.getPropertyValue("--tree-w") || Math.abs(w - defW()) < 1); grip.setAttribute("aria-valuenow", String(Math.round(w))); };
+    function set(w, persist) {
+        const d = defW();
+        if (w === null || Math.abs(w - d) <= SNAP) { panel.style.removeProperty("--tree-w"); if (persist) { try { store.removeItem(KEY); } catch (err) { /* ignore */ } } }
+        else { panel.style.setProperty("--tree-w", clamp(w) + "px"); if (persist) { try { store.setItem(KEY, String(clamp(w))); } catch (err) { /* ignore */ } } }
+        mark();
+    }
+    try { const v = parseInt(store.getItem(KEY) || "", 10); if (v >= MIN) panel.style.setProperty("--tree-w", clamp(v) + "px"); } catch (err) { /* ignore */ }
+    grip.setAttribute("aria-valuemin", String(MIN));
+    grip.addEventListener("pointerdown", (e) => {
+        if (e.button > 0) return;
+        e.preventDefault();
+        grip.setPointerCapture(e.pointerId);
+        grip.classList.add("dragging");
+        const left = panel.getBoundingClientRect().left, d = defW();
+        let wasSnapped = !panel.style.getPropertyValue("--tree-w");
+        const move = (ev) => {
+            const w = ev.clientX - left, snapped = Math.abs(w - d) <= SNAP;
+            if (snapped && !wasSnapped && navigator.vibrate) { try { navigator.vibrate(8); } catch (err) { /* ignore */ } }
+            wasSnapped = snapped;
+            set(w, false);
+        };
+        const end = () => { grip.classList.remove("dragging"); grip.removeEventListener("pointermove", move); grip.removeEventListener("pointerup", end); grip.removeEventListener("pointercancel", end); set(panel.getBoundingClientRect().width, true); };
+        grip.addEventListener("pointermove", move);
+        grip.addEventListener("pointerup", end);
+        grip.addEventListener("pointercancel", end);
+    });
+    grip.addEventListener("dblclick", () => set(null, true));
+    grip.addEventListener("keydown", (e) => {
+        const w = panel.getBoundingClientRect().width;
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); const n = w + (e.key === "ArrowRight" ? 16 : -16); const d = defW(); set(Math.abs(n - d) < 16 ? d : n, true); }
+        else if (e.key === "Home" || e.key === "Enter") { e.preventDefault(); set(null, true); }
+    });
+    window.addEventListener("resize", mark);
+    mark();
 })();
 
 init();

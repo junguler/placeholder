@@ -13017,7 +13017,8 @@ const TWIN = (() => {
     // Audio, video and playlists use the real player window, mounted inside the panel that opened them: one player at a time, with every feature it has.
     // Everything else (images, text and code, markdown, PDFs, fonts, archives) is shown inline, so both panels can preview at once, next to a playing track.
     const MEDIA_KINDS = new Set(["audio", "video", "playlist"]);
-    const kindOf = (item) => previewKindOverride(item.name) || item.category;
+    // The hosted index may classify M3U/M3U8 files as generic text; the extension is authoritative for twin-panel routing.
+    const kindOf = (item) => previewKindOverride(item.name) || (isPlaylistExtension(item.name) ? "playlist" : item.category);
     const fullOf = (p, name) => (p.path.length ? p.path.join("/") + "/" : "") + name;
     const findCard = (p, name) => { const pn = paneEl(p.id); return pn ? Array.from(pn.querySelectorAll(".file-card")).find((el) => el.dataset.n === name) : null; };
     function setMode(p, m) { p.mode = m; const pn = paneEl(p.id); if (pn) pn.dataset.mode = m; }

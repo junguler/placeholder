@@ -1702,8 +1702,26 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
     .tw-rail .gal-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
     .tw-rail[data-kind="image"] .gal-item { width: 4.25rem; }
 }
-#modal.tw-embedded { position: absolute; inset: 0; z-index: 5; padding: 0; background: var(--bg-secondary); transition: none; touch-action: auto; }
-#modal.tw-embedded .modal, #modal.tw-embedded .modal.compact-modal, #modal.tw-embedded .modal.video-modal { width: 100%; max-width: none; height: 100%; max-height: none; border: none; border-radius: 0; transform: none; transition: none; }
+#modal.tw-embedded { position: absolute; inset: 0; z-index: 5; padding: 0; background: var(--bg-secondary); transition: none; touch-action: auto; display: flex; align-items: center; justify-content: center; }
+/* Audio / playlist: keep a compact centered player (header, controls, glyph, meta, rec) like the normal overlay, not stretched to the panel edges. */
+#modal.tw-embedded .modal, #modal.tw-embedded .modal.compact-modal { width: 100%; max-width: none; height: auto; max-height: 100%; border: none; border-radius: 0; transform: none; transition: none; }
+#modal.tw-embedded .modal.video-modal { width: 100%; max-width: none; height: 100%; max-height: none; border: none; border-radius: 0; transform: none; transition: none; }
+/* One-line details bar in the embedded player; overflow scrolls / marquees like other player titles. */
+#modal.tw-embedded .modal.meta-on { --ml: 1; }
+#modal.tw-embedded .meta-bar { height: calc(1.45 * var(--data-size) + 0.8rem + var(--bw)); flex-flow: row nowrap; align-content: center; align-items: center; }
+/* Hide grid/list toggle, sort, and folder-zip while a media player fills the panel. */
+.tw-pane[data-mode="media"] .tw-tools .view-toggle,
+.tw-pane[data-mode="media"] .tw-tools .tw-zip,
+.tw-pane[data-mode="media"] .tw-tools .tw-sort { display: none; }
+/* Compact density applies inside twin panels too (panel rules are more specific than the global ones). */
+body.compact-density .tw-pane .file-list.list-columns .file-card { padding: 0.15rem 0.4rem; gap: 0.3rem; }
+body.compact-density .tw-pane .file-list .file-icon { width: 18px; height: 18px; }
+body.compact-density .tw-pane .file-list .file-icon svg { width: 11px; height: 11px; }
+body.compact-density .tw-pane .file-list-header { padding: 0.15rem calc(0.4rem + var(--bw)); }
+body.compact-density .tw-pane .file-grid { gap: 0.25rem; }
+body.compact-density .tw-pane .file-grid .file-card { padding: 0.25rem; gap: 0.15rem; }
+body.compact-density .tw-pane .file-name { font-size: 0.72rem; }
+body.compact-density .tw-status { padding: 0.1rem 0.4rem; }
 .tw-pane[data-i="0"] { order: 1; }
 .tw-split { order: 2; }
 .tw-pane[data-i="1"] { order: 3; }
@@ -10445,6 +10463,43 @@ function metaDerive() {
     if (a && a.kbps && !a.vbr) v.bitrate = (a.approx ? "~" : "") + a.kbps + " kbps";
     else if (META.dur && META.size) v.bitrate = (a && a.vbr ? "VBR · ~" : "~") + Math.round((META.size * 8) / META.dur / 1000) + " kbps";
 }
+function metaStopScroll(bar) {
+    if (bar._mqRaf) { cancelAnimationFrame(bar._mqRaf); bar._mqRaf = 0; }
+    if (bar._mqHold) { clearTimeout(bar._mqHold); bar._mqHold = 0; }
+}
+function metaStartScroll(bar) {
+    metaStopScroll(bar);
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const run = () => {
+        if (!bar.isConnected || bar.hidden) return;
+        const max = bar.scrollWidth - bar.clientWidth;
+        if (max <= 2 || reduce) { bar.scrollLeft = 0; return; }
+        // Hold at the start, drift to the end, hold, jump back — same rhythm as the title marquees.
+        bar.scrollLeft = 0;
+        bar._mqHold = setTimeout(() => {
+            const start = performance.now(), dur = Math.max(4000, max * 28);
+            const step = (now) => {
+                if (!bar.isConnected || bar.hidden) return;
+                const t = Math.min(1, (now - start) / dur);
+                bar.scrollLeft = max * t;
+                if (t < 1) bar._mqRaf = requestAnimationFrame(step);
+                else bar._mqHold = setTimeout(run, 1600);
+            };
+            bar._mqRaf = requestAnimationFrame(step);
+        }, 1800);
+    };
+    // Pause while the user is interacting with the bar.
+    if (!bar._mqWired) {
+        bar._mqWired = true;
+        const pause = () => metaStopScroll(bar);
+        const resume = () => { if (!bar.matches(":hover") && !bar.matches(":focus-within")) metaStartScroll(bar); };
+        bar.addEventListener("pointerenter", pause);
+        bar.addEventListener("pointerleave", resume);
+        bar.addEventListener("focusin", pause);
+        bar.addEventListener("focusout", resume);
+    }
+    run();
+}
 function metaPaint() {
     const bar = document.getElementById("metaBar");
     if (!META.kind || bar.hidden) return;
@@ -10466,10 +10521,13 @@ function metaPaint() {
             if (mv.textContent !== META.vals[keys[i]]) mv.textContent = META.vals[keys[i]];
             if (row.title !== t) row.title = t;
         }
+        // Content length may have changed slightly; keep the scroller in sync.
+        requestAnimationFrame(() => metaStartScroll(bar));
         return;
     }
     bar._sig = sig;
     bar.innerHTML = keys.map((k) => '<span class="mi" title="' + escapeHtml(tip(k)) + '"><span class="ml">' + escapeHtml(META.labels[k] || META_LABELS[k]) + '</span> <span class="mv">' + escapeHtml(META.vals[k]) + "</span></span>").join("");
+    requestAnimationFrame(() => metaStartScroll(bar));
 }
 // Button and bar follow the one saved choice (open or closed), for every picture, video and song until it is changed.
 function metaSync() {
@@ -10481,6 +10539,7 @@ function metaSync() {
     btn.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.hidden = !on;
+    if (!on) metaStopScroll(bar);
     const modalEl = document.getElementById("modalContent");
     modalEl.classList.toggle("meta-on", on);
     modalEl.classList.toggle("meta-stream", on && META.kind === "stream");
@@ -10491,6 +10550,7 @@ function metaReset() {
     META.ctl = null; META.kind = ""; META.vals = {}; META.tips = {}; META.size = 0; META.dur = 0; META.audio = null; META.started = false; META.seq++;
     META.session = null; META.base = {}; META.labels = {}; META.extra = [];
     const bar = document.getElementById("metaBar");
+    metaStopScroll(bar);
     bar._sig = ""; bar.innerHTML = "";
     metaSync();
 }
@@ -12631,7 +12691,7 @@ async function twinLocalUrl(path) {
     return u;
 }
 const TWIN = (() => {
-    const T = { on: false, active: 0, r: 50, max: -1, flip: false, vert: false, panes: [], menu: null, localTarget: null, ready: false, media: null, opening: false, quiet: false };
+    const T = { on: false, active: 0, r: 50, max: -1, flip: false, vert: false, panes: [], menu: null, localTarget: null, ready: false, media: null, opening: false, quiet: false, focusClick: null };
     const $ = (id) => document.getElementById(id);
     const ICON = {
         repo: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c-1.7 1.73-4.77 2.8-8 2.8S5.7 10.73 4 9zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c-1.7 1.73-4.77 2.8-8 2.8S5.7 15.73 4 14z"/></svg>',
@@ -13254,7 +13314,9 @@ const TWIN = (() => {
             return;
         }
         const p = T.panes[Number(pn.dataset.i)];
+        const focusOnly = T.focusClick === p.id;
         if (T.active !== p.id) setActive(p.id);
+        if (focusOnly) T.focusClick = null;
         const va = t.closest("[data-vact]");
         if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); return; }
         const gi = t.closest(".tw-rail .gal-item[data-rn]");
@@ -13284,8 +13346,15 @@ const TWIN = (() => {
         }
         const card = t.closest(".file-card");
         if (!card) return;
-        if (card.dataset.up) { up(p, false); return; }
+        if (card.dataset.up) {
+            if (focusOnly) { p.cur = null; setStatus(p, null); return; }
+            up(p, false);
+            return;
+        }
         p.cur = card.dataset.n;
+        setStatus(p, p.map.get(card.dataset.n));
+        // First click on an inactive panel only focuses it; a second click opens the file.
+        if (focusOnly) return;
         openItem(p, card.dataset.n);
     }
     function renderAllHeads() { T.panes.forEach((p) => renderHead(p)); }
@@ -13512,7 +13581,13 @@ const TWIN = (() => {
             tw.addEventListener("click", onClick);
             tw.addEventListener("change", onChange);
             tw.addEventListener("keydown", onKey);
-            tw.addEventListener("pointerdown", (e) => { const pn = e.target.closest(".tw-pane"); if (pn && T.active !== Number(pn.dataset.i)) setActive(Number(pn.dataset.i), true); });
+            tw.addEventListener("pointerdown", (e) => {
+                const pn = e.target.closest(".tw-pane");
+                if (!pn) return;
+                const i = Number(pn.dataset.i);
+                if (T.active !== i) { T.focusClick = i; setActive(i, true); }
+                else T.focusClick = null;
+            });
             tw.addEventListener("focusin", (e) => {
                 const pn = e.target.closest(".tw-pane");
                 if (!pn) return;

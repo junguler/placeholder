@@ -813,14 +813,21 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
     .modal-overlay:has(.playlist-bar.active) { align-items: flex-start; padding-top: clamp(0.5rem, calc(50vh - 12.5rem), calc(100vh - 32rem)); padding-top: clamp(0.5rem, calc(50dvh - 12.5rem), calc(100dvh - 32rem)); }
 }
 .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
-/* File details bar: two lines (three on a phone) at a fixed height (it scrolls for more), so opening it or stepping to the next file never moves the window. */
-.meta-bar { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.1rem 1.1rem; height: calc(var(--ml, 2) * 1.45 * var(--data-size) + 0.8rem + var(--bw)); box-sizing: border-box; padding: 0.4rem 0.75rem; overflow-y: auto; flex-shrink: 0; background: var(--bg-tertiary); border-top: var(--bw) solid var(--border-color); font-size: var(--data-size); line-height: 1.45; }
+/* File details bar: two lines at a fixed height on every screen, so opening it or stepping to the next file never moves the window. The facts fill it two to a column
+   and the rest scrolls sideways (wheel, swipe, arrow keys; dragging still selects text); a soft shadow on an edge shows there is more that way. */
+.meta-bar { display: flex; flex-flow: column wrap; align-content: flex-start; gap: 0.1rem 1.1rem; height: calc(var(--ml, 2) * 1.45 * var(--data-size) + 0.8rem + var(--bw)); box-sizing: border-box; padding: 0.4rem 0.75rem; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; flex-shrink: 0; border-top: var(--bw) solid var(--border-color); font-size: var(--data-size); line-height: 1.45;
+    background:
+        linear-gradient(to right, var(--bg-tertiary), var(--bg-tertiary)) left center / 1.2rem 100% no-repeat local,
+        linear-gradient(to left, var(--bg-tertiary), var(--bg-tertiary)) right center / 1.2rem 100% no-repeat local,
+        linear-gradient(to right, rgba(0, 0, 0, 0.32), transparent) left center / 0.8rem 100% no-repeat scroll,
+        linear-gradient(to left, rgba(0, 0, 0, 0.32), transparent) right center / 0.8rem 100% no-repeat scroll,
+        var(--bg-tertiary); }
+.meta-bar::-webkit-scrollbar { display: none; }
+.meta-bar:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .meta-bar[hidden], #infoBtn[hidden] { display: none; }
 /* The number of text lines the bar shows is set on the modal (not the bar), so the recording panel can sit exactly above it on phones. */
 .modal.meta-on { --ml: 2; }
-.modal.meta-on.meta-stream { --ml: 3; }
-@media (max-width: 640px) { .modal.meta-on { --ml: 3; } .modal.meta-on.meta-stream { --ml: 4; } }
-.meta-bar .mi { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta-bar .mi { white-space: nowrap; user-select: text; }
 .meta-bar .ml { color: var(--text-muted); }
 .meta-bar .mv { color: var(--text-primary); user-select: text; }
 #infoBtn[aria-pressed="true"] { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
@@ -921,6 +928,26 @@ mark.search-highlight { background: color-mix(in srgb, var(--accent) 30%, transp
 .file-grid .file-card > .file-thumbnail { grid-area: 1 / 1; width: 100%; height: 0; min-height: 100%; aspect-ratio: auto; }
 .file-grid .file-card:has(> .file-thumbnail.loaded) > .file-icon { display: none; }
 .file-grid .file-card > .file-info { grid-area: 2 / 1; align-self: start; justify-self: stretch; min-width: 0; }
+/* The size / item count is a label on the bottom edge of the icon or preview, so it sits in the same place on every card whatever the name's length or the row's height.
+   (Search results keep it in the text, because they also show the folder path there.) */
+.file-grid .file-card > .file-info:not(:has(.file-path)) { display: contents; }
+.file-grid .file-card > .file-info:not(:has(.file-path)) > .file-name { grid-area: 2 / 1; align-self: start; justify-self: stretch; min-width: 0; }
+.file-grid .file-card > .file-info:not(:has(.file-path)) > .file-meta { grid-area: 1 / 1; align-self: end; justify-self: center; max-width: calc(100% - 0.5rem); margin-bottom: 0.3rem; padding: 0.05rem 0.45rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.35; color: var(--text-secondary); background: color-mix(in srgb, var(--bg-primary) 84%, transparent); border-radius: var(--radius-sm); pointer-events: none; }
+.file-grid .file-card > .file-info > .file-meta:empty { display: none; }
+/* Thumbnail sizes (Settings > Density, or Ctrl + wheel over a grid). Medium is the original look and needs no rules. */
+html[data-thumb="s"] .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); --gi: 2.75rem; }
+html[data-thumb="l"] .file-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); --gi: 6.5rem; }
+html[data-thumb="s"] .file-grid .file-name { font-size: 0.72rem; }
+html[data-thumb="l"] .file-grid .file-name { font-size: 0.9rem; }
+html[data-thumb="l"] .file-grid .file-card { contain-intrinsic-size: auto 240px; }
+html[data-thumb="s"] .file-grid .file-card { contain-intrinsic-size: auto 120px; }
+html[data-thumb="s"] .tw-pane .file-grid { grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr)); --gi: 2.25rem; }
+html[data-thumb="l"] .tw-pane .file-grid { grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr)); --gi: 5.5rem; }
+@media (max-width: 768px) {
+    html[data-thumb="s"] .file-grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); --gi: 2.25rem; }
+    html[data-thumb="l"] .file-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); --gi: 5rem; }
+}
+.settings-control button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-text, var(--accent)); }
 @media (max-width: 768px) { .file-grid { --gi: 3rem; } }
 .tw-pane .file-grid { --gi: 3.25rem; }
 
@@ -1573,9 +1600,14 @@ body.twin-on .header-actions { margin-left: auto; }
 .twin[data-max] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .twin[data-max="0"] .tw-pane[data-i="1"], .twin[data-max="1"] .tw-pane[data-i="0"], .twin[data-max] .tw-split { display: none; }
 .tw-pane { container: twp / inline-size; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-primary); border: var(--bw) solid var(--border-color); border-top: 2px solid var(--border-color); }
-.tw-pane.active { border-top-color: var(--accent); }
+/* The active panel (the target of Tab, the keyboard and the copy-folder button) is framed in the accent colour with a tinted header; the other one is quieter. */
+.tw-pane { transition: opacity 0.12s ease; }
+.tw-pane.active { border-top-color: var(--accent); outline: 2px solid var(--accent); outline-offset: calc(-1 * var(--bw) - 1px); z-index: 1; }
+.tw-pane:not(.active) .tw-scroll, .tw-pane:not(.active) .tw-status { opacity: 0.72; }
+.tw-pane:not(.active) .tw-head { background: var(--bg-secondary); color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) { .tw-pane { transition: none; } }
 .tw-head { position: relative; display: flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.4rem; background: var(--bg-secondary); border-bottom: var(--bw) solid var(--border-color); flex-shrink: 0; min-width: 0; }
-.tw-pane.active .tw-head { background: var(--bg-tertiary); }
+.tw-pane.active .tw-head { background: color-mix(in srgb, var(--accent) 20%, var(--bg-tertiary)); border-bottom-color: var(--accent); }
 .tw-src { display: inline-flex; align-items: center; gap: 0.3rem; flex-shrink: 0; padding: 0.2rem 0.4rem; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius-sm); font: inherit; font-size: var(--data-size); cursor: pointer; }
 .tw-src:hover, .tw-src[aria-expanded="true"] { border-color: var(--accent); }
 .tw-src svg { width: 14px; height: 14px; flex-shrink: 0; }
@@ -1658,6 +1690,18 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
 .tw-vhead [data-vact][hidden] { display: none; }
 .tw-vbody .preview-image { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; margin: auto; }
 .tw-vbody .preview-pdf { width: 100%; height: 100%; flex: 1; border: none; }
+/* A picture with its rail: the rail on the left, the picture filling the rest (the rail drops to a strip along the bottom in a narrow panel or on a phone). */
+.tw-vbody.tw-has-rail { display: flex; flex-direction: row; padding: 0; overflow: hidden; }
+.tw-vbody.tw-has-rail > .tw-rail { height: auto; }
+.tw-gal-main { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; padding: 0.5rem; box-sizing: border-box; }
+.tw-gal-main .preview-image { flex: 1 1 0; min-width: 0; min-height: 0; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; margin: 0; }
+@container twp (max-width: 32em) {
+    .tw-vbody.tw-has-rail { flex-direction: column-reverse; }
+    .tw-rail { width: auto; border-right: 0; border-top: var(--bw) solid var(--border-color); }
+    .tw-rail .gal-head { display: none; }
+    .tw-rail .gal-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
+    .tw-rail[data-kind="image"] .gal-item { width: 4.25rem; }
+}
 #modal.tw-embedded { position: absolute; inset: 0; z-index: 5; padding: 0; background: var(--bg-secondary); transition: none; touch-action: auto; }
 #modal.tw-embedded .modal, #modal.tw-embedded .modal.compact-modal, #modal.tw-embedded .modal.video-modal { width: 100%; max-width: none; height: 100%; max-height: none; border: none; border-radius: 0; transform: none; transition: none; }
 .tw-pane[data-i="0"] { order: 1; }
@@ -1749,6 +1793,14 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
                                             <input type="checkbox" id="compactDensityToggle" aria-label="Use compact row density for grid and list views" />
                                             <span class="switch-slider"></span>
                                         </label>
+                                    </div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Thumbnail size <span id="thumbSizeLabel">Medium</span></span>
+                                        <div class="settings-control" id="thumbSizeControl" role="group" aria-label="Thumbnail size (Ctrl + mouse wheel over a grid does the same)">
+                                            <button type="button" data-ts="s" aria-pressed="false" title="Small thumbnails" aria-label="Small thumbnails">S</button>
+                                            <button type="button" data-ts="m" aria-pressed="true" title="Medium thumbnails" aria-label="Medium thumbnails">M</button>
+                                            <button type="button" data-ts="l" aria-pressed="false" title="Big thumbnails" aria-label="Big thumbnails">L</button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="settings-section" style="border-top: var(--bw) solid var(--border-color)">
@@ -1984,7 +2036,7 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
                 <aside class="gallery-rail" id="galleryRail" aria-label="Files in this folder" hidden></aside>
                 <div class="modal-body" id="modalBody"></div>
             </div>
-            <div class="meta-bar" id="metaBar" role="region" aria-label="File details" hidden></div>
+            <div class="meta-bar" id="metaBar" tabindex="0" role="region" aria-label="File details" hidden></div>
             <div class="rec-panel" id="recPanel" hidden></div>
         </div>
     </div>
@@ -2826,6 +2878,7 @@ function loadSettings() {
     document.body.classList.toggle("compact-density", compactDensity);
     const compactToggle = document.getElementById("compactDensityToggle");
     if (compactToggle) compactToggle.checked = compactDensity;
+    applyThumbSize(store.getItem("thumbSize"));
     const zebraOn = store.getItem("zebraStriping") !== "0";
     document.documentElement.classList.toggle("no-zebra", !zebraOn);
     const zebraToggle = document.getElementById("zebraStripingToggle");
@@ -3381,6 +3434,35 @@ function changeFontSize(e) {
 // smaller than the interface text. Default 0.8rem; stored as "previewFontSize".
 const PREVIEW_FONT_DEFAULT = 0.8, PREVIEW_FONT_MIN = 0.5, PREVIEW_FONT_MAX = 2.4, PREVIEW_FONT_STEP = 0.1;
 let previewFontSize = PREVIEW_FONT_DEFAULT;
+// Thumbnail size (small / medium / big) for the grid view, in the main view and in both twin panels: medium is the original size.
+const THUMB_SIZES = ["s", "m", "l"], THUMB_NAMES = { s: "Small", m: "Medium", l: "Big" };
+let thumbSize = "m";
+function applyThumbSize(v) {
+    thumbSize = THUMB_SIZES.includes(v) ? v : "m";
+    document.documentElement.dataset.thumb = thumbSize;
+    document.querySelectorAll("#thumbSizeControl [data-ts]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ts === thumbSize)));
+    const label = document.getElementById("thumbSizeLabel");
+    if (label) label.textContent = THUMB_NAMES[thumbSize];
+}
+function setThumbSize(v) {
+    applyThumbSize(v);
+    try { store.setItem("thumbSize", thumbSize); } catch (e) {}
+}
+function wireThumbSize() {
+    const ctl = document.getElementById("thumbSizeControl");
+    if (ctl) ctl.addEventListener("click", (e) => { const b = e.target.closest("[data-ts]"); if (b) setThumbSize(b.dataset.ts); });
+    // Ctrl + mouse wheel over a grid, as in a file manager (a pinch on a trackpad arrives the same way).
+    let last = 0;
+    document.addEventListener("wheel", (e) => {
+        if (!e.ctrlKey || !e.target.closest || !e.target.closest(".file-grid")) return;
+        e.preventDefault();
+        const now = Date.now();
+        if (now - last < 160) return;
+        last = now;
+        const i = THUMB_SIZES.indexOf(thumbSize) + (e.deltaY < 0 ? 1 : -1);
+        if (i >= 0 && i < THUMB_SIZES.length) setThumbSize(THUMB_SIZES[i]);
+    }, { passive: false });
+}
 function clampPreviewFont(v) {
     return Math.max(PREVIEW_FONT_MIN, Math.min(PREVIEW_FONT_MAX, Math.round(v * 10) / 10));
 }
@@ -4806,6 +4888,7 @@ function setupEventListeners() {
         closeOnOutsideClick = e.target.checked;
         try { store.setItem(CLOSE_OUTSIDE_KEY, closeOnOutsideClick ? "1" : "0"); } catch (err) {}
     });
+    wireThumbSize();
     document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
         document.body.classList.toggle("compact-density", e.target.checked);
         store.setItem("compactDensity", e.target.checked ? "1" : "0");
@@ -5754,10 +5837,7 @@ function render() {
               <div class="file-icon folder">${icons.folder}</div>
               <div class="file-info">
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
-                <span class="file-meta">
-                    ${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} items`}
-                    ${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}
-                </span>
+                <span class="file-meta">${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} items`}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
               </div>
               ${
           isColumnView && !searchQuery
@@ -5782,10 +5862,7 @@ function render() {
               <div class="file-icon ${iconType}${xcAttr}">${iconSvg}</div>
               <div class="file-info">
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
-                <span class="file-meta">
-                    ${isColumnView && !searchQuery ? "" : item.sizeFormatted}
-                    ${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}
-                </span>
+                <span class="file-meta">${isColumnView && !searchQuery ? "" : item.sizeFormatted}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
               </div>
               ${
           isColumnView && !searchQuery
@@ -10084,6 +10161,7 @@ function syncGallery(filePath, kind) {
     const count = document.getElementById("galCount");
     if (count) count.textContent = `${idx + 1} / ${gallery.items.length}`;
     if (btns[idx]) btns[idx].scrollIntoView({ block: "nearest", inline: "nearest" });
+    try { Marquee.refresh(); } catch (e) { /* the scroller is not ready yet */ }
     return true;
 }
 function galleryStep(delta) {
@@ -10371,6 +10449,14 @@ function metaPaint() {
     const bar = document.getElementById("metaBar");
     if (!META.kind || bar.hidden) return;
     metaDerive();
+    if (!bar._wheel) {
+        bar._wheel = true;
+        bar.addEventListener("wheel", (e) => {
+            if (bar.scrollWidth <= bar.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+            e.preventDefault();
+            bar.scrollLeft += e.deltaY;
+        }, { passive: false });
+    }
     const keys = (META.extra.length ? META_ORDER[META.kind].concat(META.extra) : META_ORDER[META.kind]).filter((k) => META.vals[k]);
     const sig = keys.join("|"), tip = (k) => META.tips[k] || META.vals[k];
     if (bar._sig === sig) {
@@ -12392,7 +12478,7 @@ function setupNewFeatureListeners() {
 // resting at the start of every lap and looping seamlessly. Hovering (or holding a finger on) a title stops it; titles that fit are untouched.
 // Nothing calls this: it watches the player window and picks up every title written there. Tune the feel with the four numbers below.
 const Marquee = (() => {
-    const SELECTOR = ".np-song, .playlist-now-playing, #modalTitle";
+    const SELECTOR = ".np-song, .playlist-now-playing, #modalTitle, .playlist-track, .playlist-health, #eqLive, .ar-path, .gal-item.active .gal-name";
     const SPEED_EM = 2.8;   // scroll speed in letter heights per second (about 45 px on a 16 px title)
     const HOLD_MS = 1800;   // rest at the start of every lap
     const GAP_EM = 3;       // empty space between the end of a title and its next copy (keep equal to the CSS padding)
@@ -12431,7 +12517,7 @@ const Marquee = (() => {
         return s;
     }
     function queueEl(el) { queue.add(el); if (!raf) raf = requestAnimationFrame(flush); }
-    function queueAll() { document.querySelectorAll(SELECTOR).forEach(queueEl); }
+    function queueAll() { document.querySelectorAll(SELECTOR + ", .mq-on").forEach(queueEl); }
 
     // Three passes so the layout is read once for all titles: tidy up, measure, apply.
     function flush() {
@@ -12442,6 +12528,7 @@ const Marquee = (() => {
         for (const el of batch) {
             const s = stateOf(el);
             if (!el.isConnected) { if (ro) ro.unobserve(el); if (s.anim) s.anim.cancel(); s.anim = null; s.track = null; continue; }
+            if (s.track && !el.matches(SELECTOR)) { release(el, s, el.textContent); continue; } // no longer a scrolling target (a gallery item that stopped being the open one)
             if (s.track && s.track.parentNode !== el) { // the page wrote a new title over the scrolling one
                 if (s.anim) s.anim.cancel();
                 s.anim = null; s.track = null;
@@ -12993,6 +13080,13 @@ const TWIN = (() => {
         prev.disabled = !findStep(p, -1);
         next.disabled = !findStep(p, 1);
     }
+    // With a picture rail open, the arrow keys walk the pictures (hosted or local); the rail is how hosted files are stepped through.
+    function stepGallery(p, dir) {
+        if (!p.gal || !p.viewItem) return false;
+        const i = p.gal.indexOf(p.viewItem.name) + dir, it = p.map.get(p.gal[i]);
+        if (it) openInline(p, it);
+        return true;
+    }
     function stepInline(p, dir) {
         const it = findStep(p, dir);
         if (it) openInline(p, it);
@@ -13011,6 +13105,7 @@ const TWIN = (() => {
         title.title = full;
         view.querySelectorAll("[data-vlink]").forEach((a) => a.removeAttribute("href"));
         body.className = "modal-body tw-vbody";
+        p.gal = null;
         body.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
         updateStepButtons(p);
         view.focus({ preventScroll: true });
@@ -13044,9 +13139,21 @@ const TWIN = (() => {
         const kind = kindOf(item);
         try {
             switch (kind) {
-                case "image":
-                    body.innerHTML = `<img class="preview-image" src="${escapeHtml(url)}" alt="${escapeHtml(item.name)}">`;
+                case "image": {
+                    const img = `<img class="preview-image" src="${escapeHtml(url)}" alt="${escapeHtml(item.name)}">`;
+                    // Like music and video in the player window, an open picture gets a rail of the other pictures of its folder.
+                    const names = p.order.filter((n) => { const it = p.map.get(n); return it && it.type === "file" && kindOf(it) === "image"; });
+                    if (names.length < 2 || !names.includes(item.name)) { body.innerHTML = img; break; }
+                    p.gal = names;
+                    const idx = names.indexOf(item.name);
+                    const thumb = (n) => `<img class="gal-thumb lazy" ${p.source === "local" ? `data-tlocal="${escapeHtml(fullOf(p, n))}"` : `data-src="${escapeHtml(hostedUrlIn(c, fullOf(p, n)))}"`} alt="" decoding="async">`;
+                    body.classList.add("tw-has-rail");
+                    body.innerHTML = `<aside class="gallery-rail tw-rail" data-kind="image" aria-label="Pictures in this folder"><div class="gal-head"><span>Images</span><span class="gal-count">${idx + 1} / ${names.length}</span></div><div class="gal-list">${names.map((n, i) => `<button type="button" class="gal-item${i === idx ? " active" : ""}" data-rn="${escapeHtml(n)}" title="${escapeHtml(n)}" aria-label="${escapeHtml(n)}"${i === idx ? ' aria-current="true"' : ""}><span class="gal-ico">${icons.image}</span>${thumb(n)}</button>`).join("")}</div></aside><div class="tw-gal-main">${img}</div>`;
+                    if (intersectionObserver) body.querySelectorAll(".gal-thumb.lazy").forEach((im) => intersectionObserver.observe(im));
+                    const act = body.querySelector(".gal-item.active");
+                    if (act) act.scrollIntoView({ block: "center", inline: "center" });
                     break;
+                }
                 case "md-view": {
                     const res = await fetchTextPreview(url);
                     if (stale()) return;
@@ -13102,6 +13209,7 @@ const TWIN = (() => {
         runCleanups(p);
         p.backHook = null;
         p.viewItem = null;
+        p.gal = null;
         paneEl(p.id).querySelector(".tw-vbody").innerHTML = "";
         setMode(p, "list");
         revealAfterClose(p, name, quiet);
@@ -13130,8 +13238,8 @@ const TWIN = (() => {
         switch (e.key) {
             case "Tab": if (e.target.classList && e.target.classList.contains("tw-view")) { e.preventDefault(); switchPane(); } return;
             case "Escape": case "Backspace": e.preventDefault(); e.stopPropagation(); if (!hook()) closeInline(p); return;
-            case "ArrowLeft": if (hook()) { e.preventDefault(); return; } if (!canStep(p)) return; e.preventDefault(); stepInline(p, -1); return;
-            case "ArrowRight": if (!canStep(p)) return; e.preventDefault(); stepInline(p, 1); return;
+            case "ArrowLeft": if (hook()) { e.preventDefault(); return; } if (p.gal) { e.preventDefault(); stepGallery(p, -1); return; } if (!canStep(p)) return; e.preventDefault(); stepInline(p, -1); return;
+            case "ArrowRight": if (p.gal) { e.preventDefault(); stepGallery(p, 1); return; } if (!canStep(p)) return; e.preventDefault(); stepInline(p, 1); return;
         }
     }
 
@@ -13148,6 +13256,8 @@ const TWIN = (() => {
         if (T.active !== p.id) setActive(p.id);
         const va = t.closest("[data-vact]");
         if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); return; }
+        const gi = t.closest(".tw-rail .gal-item[data-rn]");
+        if (gi) { const it = p.map.get(gi.dataset.rn); if (it && !(p.viewItem && p.viewItem.name === it.name)) openInline(p, it); return; }
         if (t.closest(".tw-view, .tw-media")) return;
         const act = t.closest("[data-act]");
         if (t.closest(".tw-src")) { T.menu = T.menu === p.id ? null : p.id; renderHead(p); return; }

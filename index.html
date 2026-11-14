@@ -1636,6 +1636,21 @@ body.twin-on .header-actions { margin-left: auto; }
 .tw-pane .file-list .file-icon { width: 22px; height: 22px; }
 .tw-pane .file-grid { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 0.35rem; padding-top: 0.25rem; }
 .tw-pane .file-grid .file-card { padding: 0.4rem; gap: 0.25rem; }
+/* Compact density also applies inside twin panels. These selectors intentionally
+   outrank the panel's regular row/card sizing, so the setting has a visible effect. */
+body.compact-density .tw-pane .file-card { padding: 0.3rem; gap: 0.15rem; }
+body.compact-density .tw-pane .file-name,
+body.compact-density .tw-pane .file-meta { font-size: 0.75rem; }
+body.compact-density .tw-pane .file-icon { width: 26px; height: 26px; }
+body.compact-density .tw-pane .file-icon svg { width: 18px; height: 18px; }
+body.compact-density .tw-pane .file-list .file-icon { width: 20px; height: 20px; }
+body.compact-density .tw-pane .file-list .file-icon svg { width: 12px; height: 12px; }
+body.compact-density .tw-pane .file-grid { gap: 0.3rem; }
+body.compact-density .tw-pane .file-grid .file-card { padding: 0.3rem; gap: 0.15rem; }
+body.compact-density .tw-pane .file-list.list-columns .file-card { padding: 0.1rem 0.4rem; gap: 0.3rem; }
+body.compact-density .tw-pane .file-list .file-icon { width: 20px; height: 20px; }
+body.compact-density .tw-pane .file-list .file-icon svg { width: 12px; height: 12px; }
+body.compact-density .tw-pane .file-list-header { padding: 0.2rem calc(0.5rem + var(--bw)); }
 .tw-pane.active .file-card:focus { border-color: var(--accent); }
 .tw-pane .skeleton-list { padding: 0.5rem 0; }
 @container twp (max-width: 40em) { .tw-pane .list-columns { --list-cols: 24px 1fr 56px 84px 96px; } .tw-pane .col-time { display: none; } }
@@ -1702,26 +1717,30 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
     .tw-rail .gal-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
     .tw-rail[data-kind="image"] .gal-item { width: 4.25rem; }
 }
-#modal.tw-embedded { position: absolute; inset: 0; z-index: 5; padding: 0; background: var(--bg-secondary); transition: none; touch-action: auto; display: flex; align-items: center; justify-content: center; }
-/* Audio / playlist: keep a compact centered player (header, controls, glyph, meta, rec) like the normal overlay, not stretched to the panel edges. */
-#modal.tw-embedded .modal, #modal.tw-embedded .modal.compact-modal { width: 100%; max-width: none; height: auto; max-height: 100%; border: none; border-radius: 0; transform: none; transition: none; }
-#modal.tw-embedded .modal.video-modal { width: 100%; max-width: none; height: 100%; max-height: none; border: none; border-radius: 0; transform: none; transition: none; }
-/* One-line details bar in the embedded player; overflow scrolls / marquees like other player titles. */
+#modal.tw-embedded { position: absolute; inset: 0; z-index: 5; padding: 0; background: var(--bg-secondary); transition: none; touch-action: auto; }
+#modal.tw-embedded .modal, #modal.tw-embedded .modal.compact-modal, #modal.tw-embedded .modal.video-modal { width: 100%; max-width: none; height: 100%; max-height: none; border: none; border-radius: 0; transform: none; transition: none; }
+/* In a twin panel the dialog fills the panel, unlike the content-sized normal preview.
+   Keep its player stage flexible, center the audio player in that stage, and leave the
+   metadata / recording bars in the modal's normal bottom-of-column positions. */
+#modal.tw-embedded .modal { display: flex; flex-direction: column; min-height: 0; }
+#modal.tw-embedded .modal-body { flex: 1 1 0; min-height: 0; }
+#modal.tw-embedded .modal-body > .preview-audio-container { margin-block: auto; flex: 0 0 auto; }
+/* The playlist toolbar should read as one centered control group in the narrower panel. */
+#modal.tw-embedded .playlist-bar { justify-content: center; }
+#modal.tw-embedded .playlist-bar .playlist-controls { justify-content: center; flex: 0 0 auto; margin: 0; }
+#modal.tw-embedded .playlist-bar .playlist-info { order: 1; flex: 0 0 100%; min-width: 0; justify-content: center; text-align: center; }
+#modal.tw-embedded .playlist-bar .bar-break { display: none !important; }
+/* The embedded details strip has one fixed-height line; the marquee takes over when
+   the complete row is wider than the panel. Normal previews keep their two-line layout. */
 #modal.tw-embedded .modal.meta-on { --ml: 1; }
-#modal.tw-embedded .meta-bar { height: calc(1.45 * var(--data-size) + 0.8rem + var(--bw)); flex-flow: row nowrap; align-content: center; align-items: center; }
-/* Hide grid/list toggle, sort, and folder-zip while a media player fills the panel. */
-.tw-pane[data-mode="media"] .tw-tools .view-toggle,
-.tw-pane[data-mode="media"] .tw-tools .tw-zip,
-.tw-pane[data-mode="media"] .tw-tools .tw-sort { display: none; }
-/* Compact density applies inside twin panels too (panel rules are more specific than the global ones). */
-body.compact-density .tw-pane .file-list.list-columns .file-card { padding: 0.15rem 0.4rem; gap: 0.3rem; }
-body.compact-density .tw-pane .file-list .file-icon { width: 18px; height: 18px; }
-body.compact-density .tw-pane .file-list .file-icon svg { width: 11px; height: 11px; }
-body.compact-density .tw-pane .file-list-header { padding: 0.15rem calc(0.4rem + var(--bw)); }
-body.compact-density .tw-pane .file-grid { gap: 0.25rem; }
-body.compact-density .tw-pane .file-grid .file-card { padding: 0.25rem; gap: 0.15rem; }
-body.compact-density .tw-pane .file-name { font-size: 0.72rem; }
-body.compact-density .tw-status { padding: 0.1rem 0.4rem; }
+#modal.tw-embedded .meta-bar { flex-flow: row nowrap; align-items: center; height: calc(1.45 * var(--data-size) + 0.8rem + var(--bw)); gap: 1.1rem; overflow: hidden; }
+#modal.tw-embedded .meta-bar .mi { display: inline-flex; flex: 0 0 auto; }
+#modal.tw-embedded .meta-bar.mq-on > .mq-t { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 1.1rem; }
+/* These panel-only controls are not useful while that panel is showing its player. */
+.tw-pane[data-mode="media"][data-media-kind="audio"] .tw-tools > .tw-zip,
+.tw-pane[data-mode="media"][data-media-kind="audio"] .tw-tools > .view-toggle,
+.tw-pane[data-mode="media"][data-media-kind="playlist"] .tw-tools > .tw-zip,
+.tw-pane[data-mode="media"][data-media-kind="playlist"] .tw-tools > .view-toggle { display: none !important; }
 .tw-pane[data-i="0"] { order: 1; }
 .tw-split { order: 2; }
 .tw-pane[data-i="1"] { order: 3; }
@@ -10463,43 +10482,6 @@ function metaDerive() {
     if (a && a.kbps && !a.vbr) v.bitrate = (a.approx ? "~" : "") + a.kbps + " kbps";
     else if (META.dur && META.size) v.bitrate = (a && a.vbr ? "VBR · ~" : "~") + Math.round((META.size * 8) / META.dur / 1000) + " kbps";
 }
-function metaStopScroll(bar) {
-    if (bar._mqRaf) { cancelAnimationFrame(bar._mqRaf); bar._mqRaf = 0; }
-    if (bar._mqHold) { clearTimeout(bar._mqHold); bar._mqHold = 0; }
-}
-function metaStartScroll(bar) {
-    metaStopScroll(bar);
-    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const run = () => {
-        if (!bar.isConnected || bar.hidden) return;
-        const max = bar.scrollWidth - bar.clientWidth;
-        if (max <= 2 || reduce) { bar.scrollLeft = 0; return; }
-        // Hold at the start, drift to the end, hold, jump back — same rhythm as the title marquees.
-        bar.scrollLeft = 0;
-        bar._mqHold = setTimeout(() => {
-            const start = performance.now(), dur = Math.max(4000, max * 28);
-            const step = (now) => {
-                if (!bar.isConnected || bar.hidden) return;
-                const t = Math.min(1, (now - start) / dur);
-                bar.scrollLeft = max * t;
-                if (t < 1) bar._mqRaf = requestAnimationFrame(step);
-                else bar._mqHold = setTimeout(run, 1600);
-            };
-            bar._mqRaf = requestAnimationFrame(step);
-        }, 1800);
-    };
-    // Pause while the user is interacting with the bar.
-    if (!bar._mqWired) {
-        bar._mqWired = true;
-        const pause = () => metaStopScroll(bar);
-        const resume = () => { if (!bar.matches(":hover") && !bar.matches(":focus-within")) metaStartScroll(bar); };
-        bar.addEventListener("pointerenter", pause);
-        bar.addEventListener("pointerleave", resume);
-        bar.addEventListener("focusin", pause);
-        bar.addEventListener("focusout", resume);
-    }
-    run();
-}
 function metaPaint() {
     const bar = document.getElementById("metaBar");
     if (!META.kind || bar.hidden) return;
@@ -10516,18 +10498,17 @@ function metaPaint() {
     const sig = keys.join("|"), tip = (k) => META.tips[k] || META.vals[k];
     if (bar._sig === sig) {
         // Same facts as before: only change the texts that changed, so a selection in the bar survives the once-a-second refresh.
+        // Metadata can be wrapped in the twin-panel marquee track, so address the .mi rows by class rather than bar.children.
+        const rows = bar.querySelectorAll(".mi");
         for (let i = 0; i < keys.length; i++) {
-            const row = bar.children[i], mv = row.lastElementChild, t = tip(keys[i]);
-            if (mv.textContent !== META.vals[keys[i]]) mv.textContent = META.vals[keys[i]];
-            if (row.title !== t) row.title = t;
+            const row = rows[i], mv = row && row.querySelector(".mv"), t = tip(keys[i]);
+            if (mv && mv.textContent !== META.vals[keys[i]]) mv.textContent = META.vals[keys[i]];
+            if (row && row.title !== t) row.title = t;
         }
-        // Content length may have changed slightly; keep the scroller in sync.
-        requestAnimationFrame(() => metaStartScroll(bar));
         return;
     }
     bar._sig = sig;
     bar.innerHTML = keys.map((k) => '<span class="mi" title="' + escapeHtml(tip(k)) + '"><span class="ml">' + escapeHtml(META.labels[k] || META_LABELS[k]) + '</span> <span class="mv">' + escapeHtml(META.vals[k]) + "</span></span>").join("");
-    requestAnimationFrame(() => metaStartScroll(bar));
 }
 // Button and bar follow the one saved choice (open or closed), for every picture, video and song until it is changed.
 function metaSync() {
@@ -10539,7 +10520,6 @@ function metaSync() {
     btn.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.hidden = !on;
-    if (!on) metaStopScroll(bar);
     const modalEl = document.getElementById("modalContent");
     modalEl.classList.toggle("meta-on", on);
     modalEl.classList.toggle("meta-stream", on && META.kind === "stream");
@@ -10550,7 +10530,6 @@ function metaReset() {
     META.ctl = null; META.kind = ""; META.vals = {}; META.tips = {}; META.size = 0; META.dur = 0; META.audio = null; META.started = false; META.seq++;
     META.session = null; META.base = {}; META.labels = {}; META.extra = [];
     const bar = document.getElementById("metaBar");
-    metaStopScroll(bar);
     bar._sig = ""; bar.innerHTML = "";
     metaSync();
 }
@@ -12538,7 +12517,7 @@ function setupNewFeatureListeners() {
 // resting at the start of every lap and looping seamlessly. Hovering (or holding a finger on) a title stops it; titles that fit are untouched.
 // Nothing calls this: it watches the player window and picks up every title written there. Tune the feel with the four numbers below.
 const Marquee = (() => {
-    const SELECTOR = ".np-song, .playlist-now-playing, #modalTitle, .playlist-track, .playlist-health, #eqLive, .ar-path, .gal-item.active .gal-name";
+    const SELECTOR = ".np-song, .playlist-now-playing, #modalTitle, .playlist-track, .playlist-health, #eqLive, .ar-path, .gal-item.active .gal-name, .tw-embedded .meta-bar";
     const SPEED_EM = 2.8;   // scroll speed in letter heights per second (about 45 px on a 16 px title)
     const HOLD_MS = 1800;   // rest at the start of every lap
     const GAP_EM = 3;       // empty space between the end of a title and its next copy (keep equal to the CSS padding)
@@ -12578,6 +12557,12 @@ const Marquee = (() => {
     }
     function queueEl(el) { queue.add(el); if (!raf) raf = requestAnimationFrame(flush); }
     function queueAll() { document.querySelectorAll(SELECTOR + ", .mq-on").forEach(queueEl); }
+    function textOf(el) {
+        if (el.classList.contains("meta-bar")) {
+            return Array.from(el.querySelectorAll(".mi"), (item) => item.textContent.trim()).join("   ·   ");
+        }
+        return el.textContent;
+    }
 
     // Three passes so the layout is read once for all titles: tidy up, measure, apply.
     function flush() {
@@ -12588,7 +12573,7 @@ const Marquee = (() => {
         for (const el of batch) {
             const s = stateOf(el);
             if (!el.isConnected) { if (ro) ro.unobserve(el); if (s.anim) s.anim.cancel(); s.anim = null; s.track = null; continue; }
-            if (s.track && !el.matches(SELECTOR)) { release(el, s, el.textContent); continue; } // no longer a scrolling target (a gallery item that stopped being the open one)
+            if (s.track && !el.matches(SELECTOR)) { release(el, s, textOf(el)); continue; } // no longer a scrolling target (a gallery item that stopped being the open one)
             if (s.track && s.track.parentNode !== el) { // the page wrote a new title over the scrolling one
                 if (s.anim) s.anim.cancel();
                 s.anim = null; s.track = null;
@@ -12598,8 +12583,8 @@ const Marquee = (() => {
         }
         for (const p of plan) {
             const { el, s } = p;
-            p.text = el.textContent;
-            if (!p.text) continue;
+            p.text = textOf(el);
+            if (!p.text) { if (s.track) release(el, s, p.text); continue; }
             const cs = getComputedStyle(el);
             const fs = parseFloat(cs.fontSize) || 16;
             const box = el.getBoundingClientRect();
@@ -12622,9 +12607,17 @@ const Marquee = (() => {
     }
     function release(el, s, text) {
         if (s.anim) s.anim.cancel();
-        s.anim = null; s.track = null;
+        s.anim = null;
+        const track = s.track;
+        if (el.classList.contains("meta-bar") && track && track.parentNode === el) {
+            // Keep the metadata labels and values intact when the marquee is no longer needed.
+            while (track.firstChild) el.insertBefore(track.firstChild, track);
+            track.remove();
+        } else if (text && el.firstElementChild) {
+            el.textContent = text; // back to plain text
+        }
+        s.track = null;
         el.classList.remove("mq-on");
-        if (text && el.firstElementChild) el.textContent = text; // back to plain text
     }
     function start(el, s, text, rtl, p) {
         if (s.anim) s.anim.cancel();
@@ -12632,8 +12625,12 @@ const Marquee = (() => {
         if (!track) {
             track = document.createElement("span");
             track.className = "mq-t";
-            track.textContent = text;
-            el.textContent = "";
+            if (el.classList.contains("meta-bar")) {
+                // Move, rather than flatten, the .mi nodes so the original label/value styling survives.
+                while (el.firstChild) track.appendChild(el.firstChild);
+            } else {
+                track.textContent = text;
+            }
             el.appendChild(track);
         }
         track.dir = rtl ? "rtl" : "ltr";
@@ -12691,7 +12688,7 @@ async function twinLocalUrl(path) {
     return u;
 }
 const TWIN = (() => {
-    const T = { on: false, active: 0, r: 50, max: -1, flip: false, vert: false, panes: [], menu: null, localTarget: null, ready: false, media: null, opening: false, quiet: false, focusClick: null };
+    const T = { on: false, active: 0, r: 50, max: -1, flip: false, vert: false, panes: [], menu: null, localTarget: null, ready: false, media: null, opening: false, quiet: false, pointerStart: null };
     const $ = (id) => document.getElementById(id);
     const ICON = {
         repo: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c-1.7 1.73-4.77 2.8-8 2.8S5.7 10.73 4 9zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c-1.7 1.73-4.77 2.8-8 2.8S5.7 15.73 4 14z"/></svg>',
@@ -13081,7 +13078,16 @@ const TWIN = (() => {
     const kindOf = (item) => previewKindOverride(item.name) || (isPlaylistExtension(item.name) ? "playlist" : item.category);
     const fullOf = (p, name) => (p.path.length ? p.path.join("/") + "/" : "") + name;
     const findCard = (p, name) => { const pn = paneEl(p.id); return pn ? Array.from(pn.querySelectorAll(".file-card")).find((el) => el.dataset.n === name) : null; };
-    function setMode(p, m) { p.mode = m; const pn = paneEl(p.id); if (pn) pn.dataset.mode = m; }
+    function setMode(p, m) {
+        p.mode = m;
+        const pn = paneEl(p.id);
+        if (pn) {
+            pn.dataset.mode = m;
+            if (m === "media" && p.mediaKind) pn.dataset.mediaKind = p.mediaKind;
+            else delete pn.dataset.mediaKind;
+        }
+        if (m !== "media") p.mediaKind = "";
+    }
     function runCleanups(p) { while (p.cleanups.length) { try { p.cleanups.pop()(); } catch (err) { /* ignore */ } } }
     function unmountModal() {
         const m = $("modal");
@@ -13113,6 +13119,7 @@ const TWIN = (() => {
         modalEl.classList.add("tw-embedded");
         T.media = p.id;
         p.mediaName = item.name;
+        p.mediaKind = kindOf(item);
         T.menu = null;
         setMode(p, "media");
         T.opening = true;
@@ -13307,6 +13314,10 @@ const TWIN = (() => {
     // ---- Events ----
     function onClick(e) {
         const t = e.target;
+        // pointerdown activates a panel before click bubbles here; remember which panel was
+        // active at the start of the gesture so the first file click only focuses that panel.
+        const pointerStart = e.detail > 0 ? T.pointerStart : null;
+        if (e.detail > 0) T.pointerStart = null;
         const pn = t.closest(".tw-pane");
         if (!pn) {
             const b = t.closest(".tw-split-tools button");
@@ -13314,9 +13325,7 @@ const TWIN = (() => {
             return;
         }
         const p = T.panes[Number(pn.dataset.i)];
-        const focusOnly = T.focusClick === p.id;
         if (T.active !== p.id) setActive(p.id);
-        if (focusOnly) T.focusClick = null;
         const va = t.closest("[data-vact]");
         if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); return; }
         const gi = t.closest(".tw-rail .gal-item[data-rn]");
@@ -13346,15 +13355,14 @@ const TWIN = (() => {
         }
         const card = t.closest(".file-card");
         if (!card) return;
-        if (card.dataset.up) {
-            if (focusOnly) { p.cur = null; setStatus(p, null); return; }
-            up(p, false);
+        if (pointerStart && pointerStart.id === p.id && !pointerStart.wasActive) {
+            p.cur = card.dataset.up ? "" : card.dataset.n;
+            card.focus({ preventScroll: true });
+            setStatus(p, card.dataset.up ? null : p.map.get(card.dataset.n));
             return;
         }
+        if (card.dataset.up) { up(p, false); return; }
         p.cur = card.dataset.n;
-        setStatus(p, p.map.get(card.dataset.n));
-        // First click on an inactive panel only focuses it; a second click opens the file.
-        if (focusOnly) return;
         openItem(p, card.dataset.n);
     }
     function renderAllHeads() { T.panes.forEach((p) => renderHead(p)); }
@@ -13583,11 +13591,12 @@ const TWIN = (() => {
             tw.addEventListener("keydown", onKey);
             tw.addEventListener("pointerdown", (e) => {
                 const pn = e.target.closest(".tw-pane");
-                if (!pn) return;
+                if (!pn) { T.pointerStart = null; return; }
                 const i = Number(pn.dataset.i);
-                if (T.active !== i) { T.focusClick = i; setActive(i, true); }
-                else T.focusClick = null;
+                T.pointerStart = { id: i, wasActive: T.active === i };
+                if (T.active !== i) setActive(i, true);
             });
+            tw.addEventListener("pointercancel", () => { T.pointerStart = null; });
             tw.addEventListener("focusin", (e) => {
                 const pn = e.target.closest(".tw-pane");
                 if (!pn) return;

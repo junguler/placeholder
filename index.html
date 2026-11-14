@@ -532,6 +532,9 @@ html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xcv, var(--xc))
 .modal-btn.play-playlist-btn:hover { color: var(--text-primary); }
 .modal-btn.play-playlist-btn svg { width: 22px; height: 22px; }
 .modal-btn.hidden { display: none; }
+/* The close button is easy to hit: the same size as the Play as playlist button. */
+#modalContent .modal-actions .modal-btn#closeBtn { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.5rem 0.9rem; }
+#modalContent .modal-actions .modal-btn#closeBtn svg { width: 22px; height: 22px; }
 .playlist-bar { --bar-btn-h: var(--ctl); --bar-btn-w: var(--ctl); display: none; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.5rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); position: relative; }
 .playlist-bar.active { display: flex; }
 .playlist-controls { display: flex; gap: 0.25rem; align-items: center; }
@@ -720,6 +723,8 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
     .modal-btn.play-playlist-btn .btn-label { display: none; }
     .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
     .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
+    #modalContent .modal-actions .modal-btn#closeBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
+    #modalContent .modal-actions .modal-btn#closeBtn svg { width: 24px; height: 24px; }
     .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
     .playlist-btn span:not(.btn-txt):not(.blabel):not(.lbl-long):not(.lbl-short) { display: none; }
     .preview-image { max-height: 80vh; max-height: 80dvh; }
@@ -1622,6 +1627,18 @@ body.twin-on .header-actions { margin-left: auto; }
     body.twin-on .header-content { row-gap: 0.25rem; }
 }
 
+/* Vivid under Windows high contrast ("forced colors" in Brave/Edge/Chrome): like Concrete, Vivid keeps its own picked-color palette instead of having every surface
+   replaced by the Windows palette (which turned the flat color into plain black and hid the controls). Its colors are already contrast-checked (text, icon controls,
+   accent text), and in forced-colors mode the edges get a stronger 2px width and the focus ring switches to the text color, since the flat accent equals the background. */
+html[data-vivid],
+html[data-vivid] *,
+html[data-vivid] *::before,
+html[data-vivid] *::after { forced-color-adjust: none !important; }
+@media (forced-colors: active) {
+    html[data-vivid] { --bw: 2px; }
+    html[data-vivid] :focus-visible { outline: 2px solid var(--text-primary); outline-offset: -2px; }
+}
+
 /* Desktop top/bottom layout (the same rules the phone layout uses, switched on by the layout button) */
 .twin[data-stack] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--tw-a)) 1.5rem minmax(0, var(--tw-b)); }
 .twin[data-stack][data-max] { grid-template-rows: minmax(0, 1fr); }
@@ -1769,6 +1786,13 @@ body.twin-on .header-actions { margin-left: auto; }
                                     <div class="settings-row">
                                         <span class="settings-label">Player buttons</span>
                                         <select class="sort-select" id="btnStyleSel" aria-label="Show the playlist and recording buttons with their usual icons and labels, with labels only, or with icons only"><option value="default">Default</option><option value="labels">All labels</option><option value="icons">All icons</option></select>
+                                    </div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Close player on outside click</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="closeOutsideToggle" aria-label="Close the player and file preview when you click on the dark area outside it" />
+                                            <span class="switch-slider"></span>
+                                        </label>
                                     </div>
                                 </details>
                                 <details class="settings-section settings-collapsible" style="border-top: var(--bw) solid var(--border-color)">
@@ -2793,6 +2817,9 @@ function loadSettings() {
     if (btnStyleSel) btnStyleSel.value = btnStyle;
     const skipDeadToggle = document.getElementById("skipDeadToggle");
     if (skipDeadToggle) skipDeadToggle.checked = skipDeadStreams;
+    closeOnOutsideClick = store.getItem(CLOSE_OUTSIDE_KEY) === "1";
+    const closeOutsideToggle = document.getElementById("closeOutsideToggle");
+    if (closeOutsideToggle) closeOutsideToggle.checked = closeOnOutsideClick;
     document.body.classList.toggle("native-player-mode", useNativePlayer);
     const compactDensity = store.getItem("compactDensity") === "1";
     document.body.classList.toggle("compact-density", compactDensity);
@@ -4633,7 +4660,7 @@ function setupEventListeners() {
         if (e.detail > 0) focusBtn.blur();
     });
     document.getElementById("modal").addEventListener("click", (e) => {
-        if (e.target === e.currentTarget) closeModal();
+        if (e.target === e.currentTarget && closeOnOutsideClick) closeModal();
     });
     document.getElementById("modalContent").addEventListener("click", (e) => e.stopPropagation());
     document.getElementById("modal").addEventListener("keydown", trapModalFocus);
@@ -4773,6 +4800,10 @@ function setupEventListeners() {
     document.getElementById("skipDeadToggle").addEventListener("change", (e) => {
         skipDeadStreams = e.target.checked;
         store.setItem(SKIPDEAD_KEY, skipDeadStreams ? "1" : "0");
+    });
+    document.getElementById("closeOutsideToggle").addEventListener("change", (e) => {
+        closeOnOutsideClick = e.target.checked;
+        try { store.setItem(CLOSE_OUTSIDE_KEY, closeOnOutsideClick ? "1" : "0"); } catch (err) {}
     });
     document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
         document.body.classList.toggle("compact-density", e.target.checked);
@@ -6178,6 +6209,8 @@ const SKIPDEAD_KEY = "skipDeadStreams";
 const BTNSTYLE_KEY = "playerBtnStyle";
 
 let skipDeadStreams = true;
+let closeOnOutsideClick = false; // off by default: a stray click outside the player no longer closes it
+const CLOSE_OUTSIDE_KEY = "closeOnOutsideClick";
 let playSession = null; // state of the track that is playing right now
 let failStreak = 0; // consecutive tracks that failed to start
 let npJob = null; // now-playing poller for the current track

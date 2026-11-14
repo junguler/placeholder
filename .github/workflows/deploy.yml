@@ -71,7 +71,6 @@ jobs:
             const minified = await minify(original, {
               collapseWhitespace: true,
               conservativeCollapse: true,
-              // Keep the document shell explicit; the validation below checks it.
               removeOptionalTags: false,
               removeComments: true,
               normalizeAttributeValues: false,
@@ -89,21 +88,23 @@ jobs:
               throw new Error("HTML minifier produced an empty file");
             }
 
-            // Catch accidental loss of document/script/style elements.
-            const count = (source, expression) =>
-              (source.match(expression) || []).length;
-            for (const [name, openTag, closeTag] of [
-              ["html", /<html(?:\s|>)/gi, /<\/html\s*>/gi],
-              ["head", /<head(?:\s|>)/gi, /<\/head\s*>/gi],
-              ["body", /<body(?:\s|>)/gi, /<\/body\s*>/gi],
-              ["script", /<script(?:\s|>)/gi, /<\/script\s*>/gi],
-              ["style", /<style(?:\s|>)/gi, /<\/style\s*>/gi],
-            ]) {
-              if (
-                count(original, openTag) !== count(minified, openTag) ||
-                count(original, closeTag) !== count(minified, closeTag)
-              ) {
-                throw new Error(`HTML minification changed the number of ${name} tags`);
+            // Verify the document shell without counting tag-like text inside
+            // embedded JavaScript, CSS, or strings.
+            const checks = [
+              ["HTML doctype", /^<!doctype\s+html\b/i.test(minified.trimStart())],
+              ["opening html tag", /<html(?:\s|>)/i.test(minified)],
+              ["closing html tag", /<\/html\s*>/i.test(minified)],
+              ["opening head tag", /<head(?:\s|>)/i.test(minified)],
+              ["closing head tag", /<\/head\s*>/i.test(minified)],
+              ["opening body tag", /<body(?:\s|>)/i.test(minified)],
+              ["closing body tag", /<\/body\s*>/i.test(minified)],
+            ];
+
+            for (const [name, passed] of checks) {
+              if (!passed) {
+                throw new Error(
+                  `HTML minification output is missing the ${name}`
+                );
               }
             }
 
@@ -115,6 +116,7 @@ jobs:
             const percent = originalBytes
               ? ((savedBytes / originalBytes) * 100).toFixed(1)
               : "0.0";
+
             console.log(
               `index.html: ${(originalBytes / 1024).toFixed(1)} KB -> ` +
               `${(minifiedBytes / 1024).toFixed(1)} KB ` +

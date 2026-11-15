@@ -1639,6 +1639,15 @@ body.twin-on .header-actions { margin-left: auto; }
 .tw-tools { display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0; }
 .tw-tools .tw-zip { padding: 0.25rem; }
 .tw-tools .tw-sort { width: auto; max-width: 9rem; }
+.tw-tools .tw-favtab { padding: 0.25rem; }
+.tw-tools .tw-favtab[aria-pressed="true"] { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+/* The Favorites tab replaces the file list of one panel; the view/sort/zip tools mean nothing there, so only the tab button stays. */
+.tw-pane[data-tab="fav"] .tw-tools > :not(.tw-favtab) { display: none; }
+.tw-fav-head { padding: 0.5rem 0.5rem 0.25rem; font-size: var(--label-size); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--label-track); }
+.tw-fav-list .card-star-btn { position: relative; top: 0; right: auto; opacity: 1; flex-shrink: 0; width: 24px; height: 24px; background: none; border: none; color: var(--accent-text, var(--accent)); }
+.tw-fav-list .file-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tw-pane .file-list.list-columns .card-star-btn { width: 22px; height: 22px; }
+.tw-pane .file-list-header .col-star-spacer { width: 24px; }
 .tw-menu { position: absolute; top: 100%; left: 0.4rem; z-index: 30; min-width: 14rem; max-width: calc(100% - 0.8rem); display: flex; flex-direction: column; background: var(--bg-secondary); border: var(--bw) solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
 .tw-menu-item { text-align: left; padding: 0.4rem 0.6rem; background: none; border: none; color: var(--text-primary); font: inherit; font-size: 0.85rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tw-menu-item:hover, .tw-menu-item:focus-visible { background: var(--bg-hover); }
@@ -1648,7 +1657,7 @@ body.twin-on .header-actions { margin-left: auto; }
 .tw-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .tw-empty { padding: 1.25rem 0.75rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
 .tw-status { flex-shrink: 0; padding: 0.2rem 0.5rem; border-top: var(--bw) solid var(--border-color); background: var(--bg-secondary); color: var(--text-muted); font-size: var(--data-size); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.4em; box-sizing: content-box; }
-.tw-pane .list-columns { --list-cols: 24px 1fr 56px 84px 96px 72px; }
+.tw-pane .list-columns { --list-cols: 24px 24px 1fr 56px 84px 96px 72px; }
 .tw-pane .file-list-header { padding: 0.25rem calc(0.5rem + var(--bw)); gap: 0.4rem; }
 .tw-pane .file-list.list-columns .file-card { padding: 0.25rem 0.5rem; gap: 0.4rem; }
 .tw-pane .file-list-header .col-icon-spacer { width: 24px; }
@@ -1657,9 +1666,9 @@ body.twin-on .header-actions { margin-left: auto; }
 .tw-pane .file-grid .file-card { padding: 0.4rem; gap: 0.25rem; }
 .tw-pane.active .file-card:focus { border-color: var(--accent); }
 .tw-pane .skeleton-list { padding: 0.5rem 0; }
-@container twp (max-width: 40em) { .tw-pane .list-columns { --list-cols: 24px 1fr 56px 84px 96px; } .tw-pane .col-time { display: none; } }
-@container twp (max-width: 32em) { .tw-pane .list-columns { --list-cols: 24px 1fr 56px 84px; } .tw-pane .col-time, .tw-pane .col-date { display: none; } }
-@container twp (max-width: 24em) { .tw-pane .list-columns { --list-cols: 24px 1fr 80px; } .tw-pane .col-time, .tw-pane .col-date, .tw-pane .col-ext { display: none; } .tw-src-text { display: none; } }
+@container twp (max-width: 40em) { .tw-pane .list-columns { --list-cols: 24px 24px 1fr 56px 84px 96px; } .tw-pane .col-time { display: none; } }
+@container twp (max-width: 32em) { .tw-pane .list-columns { --list-cols: 24px 24px 1fr 56px 84px; } .tw-pane .col-time, .tw-pane .col-date { display: none; } }
+@container twp (max-width: 24em) { .tw-pane .list-columns { --list-cols: 24px 24px 1fr 80px; } .tw-pane .col-time, .tw-pane .col-date, .tw-pane .col-ext { display: none; } .tw-src-text { display: none; } }
 @container twp (max-width: 30em) { .tw-tools .tw-sort, .tw-tools .tw-zip { display: none; } }
 .tw-split { position: relative; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); cursor: col-resize; touch-action: none; user-select: none; -webkit-user-select: none; }
 .tw-split:hover, .tw-split.dragging, .tw-split:focus-visible { background: var(--accent); outline: none; }
@@ -1786,8 +1795,8 @@ body.compact-density .tw-pane .file-list .file-icon { width: 18px; height: 18px;
 body.compact-density .tw-pane .file-list .file-icon svg { width: 11px; height: 11px; }
 body.compact-density .tw-pane .file-list-header { padding: 0.15rem calc(0.5rem + var(--bw)); }
 body.compact-density .tw-pane .file-list-header .col-icon-spacer { width: 18px; }
-body.compact-density .tw-pane .list-columns { --list-cols: 18px 1fr 56px 84px 96px 72px; }
-@container twp (max-width: 40em) { body.compact-density .tw-pane .list-columns { --list-cols: 18px 1fr 56px 84px 96px; } }
+body.compact-density .tw-pane .list-columns { --list-cols: 18px 24px 1fr 56px 84px 96px 72px; }
+@container twp (max-width: 40em) { body.compact-density .tw-pane .list-columns { --list-cols: 18px 24px 1fr 56px 84px 96px; } }
 @container twp (max-width: 32em) { body.compact-density .tw-pane .list-columns { --list-cols: 18px 1fr 56px 84px; } }
 @container twp (max-width: 24em) { body.compact-density .tw-pane .list-columns { --list-cols: 18px 1fr 80px; } }
 body.compact-density .tw-pane .file-name, body.compact-density .tw-pane .file-meta { font-size: 0.75rem; }
@@ -11049,10 +11058,7 @@ async function openFile(filePath, fileType, fileName) {
                 }
                 break;
             case "playlist":
-                // Start playing right away instead of waiting for a manual
-                // "Play" click — opening the file is the trigger.
-                await startPlaylistMode();
-                break;
+                // A playlist is also plain text: show the text first (like the hosted repo does) and let the Play button start it.
             case "code":
             case "markup":
             case "style":
@@ -13110,7 +13116,7 @@ const TWIN = (() => {
         close: '<svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
     };
     const isStacked = () => T.vert || !!(TWIN_STACK_MQ && TWIN_STACK_MQ.matches);
-    const mkPane = (i, source) => ({ id: i, source, path: [], memo: { hosted: [], local: [] }, view: "list", sort: sortBy, filter: "", map: new Map(), cur: "", reveal: null, focusIt: false, summary: "", mode: "list", viewItem: null, cleanups: [], backHook: null, seq: 0, order: [], mediaName: "" });
+    const mkPane = (i, source) => ({ id: i, source, path: [], memo: { hosted: [], local: [] }, view: "list", sort: sortBy, filter: "", map: new Map(), cur: "", reveal: null, focusIt: false, summary: "", mode: "list", tab: "files", viewItem: null, cleanups: [], backHook: null, seq: 0, order: [], mediaName: "" });
 
     // ---- Sources: the hosted repo and the local folder can both be loaded; the page-wide globals point at one of them at a time ----
     const ctxNow = () => ({ fileIndex, allFiles, filesByPath, pinned: pinnedFolders, favorites: favoriteFiles, expanded: expandedFolders, path: currentPath, search: searchQuery });
@@ -13214,18 +13220,20 @@ const TWIN = (() => {
             <button type="button" class="tw-src" aria-haspopup="menu" aria-expanded="${T.menu === p.id}" title="Choose what this panel shows">${p.source === "local" ? icons.folder : ICON.repo}<span class="tw-src-text">${p.source === "local" ? "Local" : "Repo"}</span>${ICON.caret}</button>
             <nav class="tw-path" aria-label="Folder path of panel ${p.id + 1}">${crumbsHtml(p)}</nav>
             <span class="tw-tools">
+                <button type="button" class="settings-btn tw-favtab" aria-pressed="${p.tab === "fav"}" title="${p.tab === "fav" ? "Back to the files" : "Favorites and pinned folders"}" aria-label="${p.tab === "fav" ? "Back to the files of panel " : "Favorites of panel "}${p.id + 1}">${p.tab === "fav" ? icons.starFilled : icons.starOutline}</button>
+                ${grid ? thumbSizeCtl() : ""}
                 ${grid ? `<select class="sort-select tw-sort" aria-label="Sort panel ${p.id + 1} by">${sorts.map(([v, l]) => `<option value="${v}"${v === p.sort ? " selected" : ""}>${l}</option>`).join("")}</select>` : ""}
                 <button type="button" class="settings-btn tw-zip" title="Download this folder as a zip" aria-label="Download this folder as a zip">${ICON.zip}</button>
                 <span class="view-toggle" role="group" aria-label="View of panel ${p.id + 1}">
                     <button type="button" class="view-btn tw-vbtn${grid ? "" : " active"}" data-v="list" title="List" aria-label="List view" aria-pressed="${!grid}">${ICON.list}</button>
                     <button type="button" class="view-btn tw-vbtn${grid ? " active" : ""}" data-v="grid" title="Grid" aria-label="Grid view" aria-pressed="${grid}">${ICON.grid}</button>
                 </span>
-                ${grid ? thumbSizeCtl() : ""}
             </span>
             ${T.menu === p.id ? menuHtml(p) : ""}`;
         const path = head.querySelector(".tw-path");
         if (path) path.scrollLeft = path.scrollWidth;
         pn.classList.toggle("active", T.active === p.id);
+        pn.dataset.tab = p.tab;
     }
     function emptyHtml(msg, extra) { return `<div class="tw-empty">${msg}${extra || ""}</div>`; }
     function renderList(p, keepScroll) {
@@ -13233,6 +13241,7 @@ const TWIN = (() => {
         if (!pn) return;
         const sc = pn.querySelector(".tw-scroll");
         const top = keepScroll ? sc.scrollTop : 0;
+        if (p.tab === "fav") { renderFavs(p, top); return; }
         const { c, items, partial } = itemsOf(p);
         p.map = new Map();
         p.summary = "";
@@ -13257,9 +13266,9 @@ const TWIN = (() => {
         const [sk, sd] = p.sort.includes("-") ? p.sort.split("-") : [p.sort, "asc"];
         const hcol = (key, label, cls) => `<span class="col ${cls}" data-sort="${key}">${label}<span class="sort-arrow">${sk === key ? (sd === "desc" ? "\u25bc" : "\u25b2") : ""}</span></span>`;
         let html = `<div class="${grid ? "file-grid" : "file-list list-columns"}">`;
-        if (!grid) html += `<div class="file-list-header"><span class="col-icon-spacer" aria-hidden="true"></span>${hcol("name", "Name", "col-name")}${hcol("ext", "Ext", "col-ext")}${hcol("size", "Size", "col-size")}${hcol("date", "Date", "col-date")}${hcol("date", "Time", "col-time")}</div>`;
+        if (!grid) html += `<div class="file-list-header"><span class="col-icon-spacer" aria-hidden="true"></span><span class="col-star-spacer" aria-hidden="true"></span>${hcol("name", "Name", "col-name")}${hcol("ext", "Ext", "col-ext")}${hcol("size", "Size", "col-size")}${hcol("date", "Date", "col-date")}${hcol("date", "Time", "col-time")}</div>`;
         if (p.path.length) {
-            html += `<div class="file-card directory parent-dir" role="button" tabindex="-1" data-up="1" aria-label="Go to parent folder"><div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">..</span><span class="file-meta"></span></div>${grid ? "" : renderColumnCells("", "", "", "")}</div>`;
+            html += `<div class="file-card directory parent-dir" role="button" tabindex="-1" data-up="1" aria-label="Go to parent folder"><div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div>${grid ? "" : '<span aria-hidden="true"></span>'}<div class="file-info"><span class="file-name">..</span><span class="file-meta"></span></div>${grid ? "" : renderColumnCells("", "", "", "")}</div>`;
         }
         const extSlot = new Map(), extSeen = new Map();
         [...new Set(all.filter((i) => i.type !== "directory").map((i) => getFileExtension(i.name).toLowerCase()).filter(Boolean))].sort().forEach((x, i) => extSlot.set(x, i % 12));
@@ -13268,7 +13277,7 @@ const TWIN = (() => {
             p.map.set(item.name, item);
             const name = escapeHtml(item.name);
             if (item.type === "directory") {
-                html += `<div class="file-card directory" role="button" tabindex="-1" data-n="${name}" data-t="d" aria-label="Open folder ${name}"><div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : ""}</span></div>${grid ? "" : renderColumnCells("", "DIR", escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
+                html += `<div class="file-card directory" role="button" tabindex="-1" data-n="${name}" data-t="d" aria-label="Open folder ${name}"><div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div>${starHtml(c, "folder", [...p.path, item.name])}<div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : ""}</span></div>${grid ? "" : renderColumnCells("", "DIR", escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
                 continue;
             }
             const iconType = getFileIconType(item.name) || item.category || "other";
@@ -13278,7 +13287,7 @@ const TWIN = (() => {
             const full = base + item.name;
             const thumb = grid && item.category === "image"
                 ? `<img class="file-thumbnail lazy" ${p.source === "local" ? `data-tlocal="${escapeHtml(full)}"` : `data-src="${escapeHtml(hostedUrlIn(c, full))}"`} alt="" decoding="async">` : "";
-            html += `<div class="file-card" role="button" tabindex="-1" data-n="${name}" data-t="f" aria-label="Open file ${name}">${thumb}<div class="file-icon ${iconType}${xc}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid ? item.sizeFormatted : ""}</span></div>${grid ? "" : renderColumnCells(escapeHtml(getFileExtension(item.name)), item.sizeFormatted, escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
+            html += `<div class="file-card" role="button" tabindex="-1" data-n="${name}" data-t="f" aria-label="Open file ${name}">${thumb}<div class="file-icon ${iconType}${xc}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div>${starHtml(c, "file", full)}<div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid ? item.sizeFormatted : ""}</span></div>${grid ? "" : renderColumnCells(escapeHtml(getFileExtension(item.name)), item.sizeFormatted, escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
         }
         html += "</div>";
         if (!all.length) html += emptyHtml(f ? "No matches in this folder." : "Empty folder.");
@@ -13292,6 +13301,97 @@ const TWIN = (() => {
             else if (p.focusIt) focusCursor(p);
             p.reveal = null; p.focusIt = false;
         }
+    }
+    // ---- Favorites tab: the panel's pinned folders and favorite files (of the source it shows), in place of its file list ----
+    const sameArr = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    function starHtml(c, type, val) {
+        const folder = type === "folder";
+        const on = folder ? (c.pinned || []).some((x) => sameArr(x, val)) : (c.favorites || []).includes(val);
+        const label = folder ? (on ? "Unpin this folder" : "Pin this folder") : (on ? "Remove from favorites (F)" : "Add to favorites (F)");
+        return `<button type="button" class="card-star-btn${on ? " starred" : ""}" tabindex="-1" data-star-type="${type}" data-star-path="${escapeHtml(folder ? JSON.stringify(val) : val)}" title="${label}" aria-label="${label}" aria-pressed="${on}">${on ? icons.starFilled : icons.starOutline}</button>`;
+    }
+    function renderFavs(p, top) {
+        const pn = paneEl(p.id);
+        if (!pn) return;
+        const sc = pn.querySelector(".tw-scroll");
+        const c = ctxOf(p.source);
+        p.map = new Map();
+        p.order = [];
+        if (!c) { sc.innerHTML = emptyHtml("Nothing to show here."); p.summary = ""; setStatus(p, null); return; }
+        const pins = (c.pinned || []).filter((x) => Array.isArray(x) && x.length), favs = c.favorites || [];
+        p.summary = `${pins.length} pinned ${pins.length === 1 ? "folder" : "folders"}, ${favs.length} favorite ${favs.length === 1 ? "file" : "files"}`;
+        let html = "";
+        if (!pins.length && !favs.length) {
+            html = emptyHtml("No favorites yet.", `<p>Click the star on a file or folder in the list (or press F on it), or the star in a file preview.</p>${p.source === "local" ? "<p>Favorites of a local folder are kept until the folder is closed.</p>" : ""}`);
+        }
+        if (pins.length) {
+            html += '<div class="tw-fav-head">Pinned folders</div><div class="file-list tw-fav-list">';
+            for (const arr of pins) {
+                const name = escapeHtml(arr[arr.length - 1]), where = arr.length > 1 ? arr.slice(0, -1).join("/") : (p.source === "local" ? LOCAL.name || "Local folder" : "Home");
+                html += `<div class="file-card directory" role="button" tabindex="-1" data-fav="d" data-fp="${escapeHtml(JSON.stringify(arr))}" aria-label="Open pinned folder ${name}" title="${escapeHtml(arr.join("/"))}"><div class="file-icon folder">${icons.folder}</div>${starHtml(c, "folder", arr)}<div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
+            }
+            html += "</div>";
+        }
+        if (favs.length) {
+            html += '<div class="tw-fav-head">Favorite files</div><div class="file-list tw-fav-list">';
+            for (const path of favs) {
+                const item = c.filesByPath.get(path), name = escapeHtml(item ? item.name : path.substring(path.lastIndexOf("/") + 1));
+                const iconType = item ? getFileIconType(item.name) || item.category || "other" : "other";
+                const segs = path.split("/").slice(0, -1), where = segs.length ? segs.join("/") : (p.source === "local" ? LOCAL.name || "Local folder" : "Home");
+                html += `<div class="file-card" role="button" tabindex="-1" data-fav="f" data-fpath="${escapeHtml(path)}" aria-label="Open favorite file ${name}" title="${escapeHtml(path)}"><div class="file-icon ${iconType}">${icons[iconType] || icons.other}</div>${starHtml(c, "file", path)}<div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
+            }
+            html += "</div>";
+        }
+        sc.innerHTML = html;
+        sc.scrollTop = top || 0;
+        setStatus(p, null);
+    }
+    function setTab(p, tab) {
+        if (p.tab === tab) return;
+        if (p.mode !== "list") { closePreview(p, true); if (p.mode !== "list") return; }
+        p.tab = tab;
+        T.menu = null;
+        renderPane(p.id);
+        focusCursor(p);
+        announce(tab === "fav" ? `Panel ${p.id + 1}: favorites` : `Panel ${p.id + 1}: files`);
+    }
+    // A favorite was clicked: the panel goes back to its files and opens the folder, or the file inside its folder.
+    function openFav(p, card) {
+        if (card.dataset.fav === "d") {
+            const arr = safeJsonParse(card.dataset.fp, null);
+            if (Array.isArray(arr)) go(p, arr);
+            return;
+        }
+        p.tab = "files";
+        renderPane(p.id);
+        if (!openPathIn(p, card.dataset.fpath || "")) announce("That file could not be found any more");
+    }
+    // The star on a card or favorites row: pins a folder or favorites a file of this panel's source, and refreshes everything that shows it.
+    function starClick(p, btn) {
+        if (T.media !== null && T.panes[T.media].source !== p.source) { announce("Close the player first, then use favorites"); return; }
+        if (!useSource(p.source)) return;
+        const folder = btn.dataset.starType === "folder", raw = btn.dataset.starPath;
+        const val = folder ? safeJsonParse(raw, null) : raw;
+        if (!val) return;
+        if (folder) toggleFolderPin(val); else toggleFavoriteFile(val);
+        const on = folder ? isPinned(val) : isFavoriteFile(val);
+        const inFavs = !!btn.closest(".tw-fav-list");
+        if (!inFavs) {
+            const label = folder ? (on ? "Unpin this folder" : "Pin this folder") : (on ? "Remove from favorites (F)" : "Add to favorites (F)");
+            btn.classList.toggle("starred", on);
+            btn.setAttribute("aria-pressed", String(on));
+            btn.title = label;
+            btn.setAttribute("aria-label", label);
+            btn.innerHTML = on ? icons.starFilled : icons.starOutline;
+        }
+        T.panes.forEach((q) => {
+            if (q.source !== p.source) return;
+            if (q.tab === "fav") renderFavs(q, paneEl(q.id).querySelector(".tw-scroll").scrollTop);
+            else if (q.id !== p.id) renderList(q, true);
+            if (q.mode === "view") syncFav(q);
+        });
+        if (inFavs) { const sc = paneEl(p.id).querySelector(".tw-scroll"); if (sc) sc.focus(); }
+        announce(on ? (folder ? "Folder pinned" : "Added to favorites") : (folder ? "Folder unpinned" : "Removed from favorites"));
     }
     function setStatus(p, item) {
         const pn = paneEl(p.id), st = pn && pn.querySelector(".tw-status");
@@ -13351,6 +13451,7 @@ const TWIN = (() => {
         o = o || {};
         if (p.mode !== "list") { closePreview(p, true); if (p.mode !== "list") return; }
         p.path = path;
+        p.tab = "files";
         p.memo[p.source] = path;
         p.filter = "";
         if (p.id === T.active) { $("search").value = ""; updateSearchClearVisibility(); }
@@ -13395,7 +13496,7 @@ const TWIN = (() => {
         const pn = paneEl(p.id);
         if (!pn) return;
         const cards = Array.from(pn.querySelectorAll(".file-card"));
-        const t = cards.find((el) => el.dataset.n === p.cur) || cards[p.path.length ? 1 : 0] || cards[0];
+        const t = cards.find((el) => el.dataset.n === p.cur) || cards[p.tab !== "fav" && p.path.length ? 1 : 0] || cards[0];
         (t || pn.querySelector(".tw-scroll")).focus();
     }
     function switchPane() {
@@ -13413,6 +13514,7 @@ const TWIN = (() => {
         closePreview(o, true);
         if (o.mode !== "list") return;
         o.memo[o.source] = o.path;
+        o.tab = "files";
         o.source = s.source;
         o.path = s.path.slice();
         o.memo[o.source] = o.path;
@@ -13815,9 +13917,12 @@ const TWIN = (() => {
         if (act && act.dataset.act === "open-local") { T.localTarget = p.id; openLocalFolder(); return; }
         if (T.menu !== null) { T.menu = null; renderHead(T.panes[T.active]); renderAllHeads(); }
         const crumb = t.closest(".tw-crumb");
-        if (crumb) { const i = Number(crumb.dataset.i); if (i !== p.path.length) go(p, p.path.slice(0, i)); else if (p.mode !== "list") closePreview(p); return; }
+        if (crumb) { const i = Number(crumb.dataset.i); if (p.tab === "fav" && i === p.path.length) { setTab(p, "files"); return; } if (i !== p.path.length) go(p, p.path.slice(0, i)); else if (p.mode !== "list") closePreview(p); return; }
         const vb = t.closest(".tw-vbtn");
         if (vb) { setView(p, vb.dataset.v); return; }
+        if (t.closest(".tw-favtab")) { setTab(p, p.tab === "fav" ? "files" : "fav"); return; }
+        const sb = t.closest(".card-star-btn");
+        if (sb) { starClick(p, sb); return; }
         if (t.closest(".tw-zip")) {
             if (T.media !== null && T.panes[T.media].source !== p.source) { announce("Close the player first, then download this folder"); return; }
             if (useSource(p.source)) { currentPath = p.path.slice(); downloadFolderZip(); }
@@ -13836,6 +13941,7 @@ const TWIN = (() => {
         // The first click on a panel that did not have the focus only gives it the focus (and the cursor); the next click opens.
         if (focusOnly) { if (!card.dataset.up) { p.cur = card.dataset.n; setStatus(p, p.map.get(card.dataset.n)); } card.focus({ preventScroll: true }); return; }
         if (card.dataset.up) { up(p, false); return; }
+        if (card.dataset.fav) { openFav(p, card); return; }
         p.cur = card.dataset.n;
         openItem(p, card.dataset.n);
     }
@@ -13880,6 +13986,7 @@ const TWIN = (() => {
         if (e.key === "Tab" && plain && (card || scroller)) { e.preventDefault(); switchPane(); return; }
         if (e.key === "Escape" && T.menu !== null) { T.menu = null; renderAllHeads(); e.stopPropagation(); return; }
         if (e.key === "Escape" && card) { e.stopPropagation(); const s = pn.querySelector(".tw-src"); if (s) s.focus(); return; }
+        if (p.tab === "fav" && (card || scroller) && (e.key === "Backspace" || e.key === "ArrowLeft") && plain) { e.preventDefault(); setTab(p, "files"); return; }
         if (e.key === "Backspace" && (card || scroller)) { e.preventDefault(); up(p, true); return; }
         if (scroller && ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End", "Enter"].includes(e.key)) { e.preventDefault(); focusCursor(p); return; }
         if (!card) return;
@@ -13890,6 +13997,7 @@ const TWIN = (() => {
         const move = (to) => { e.preventDefault(); const t = cards[Math.max(0, Math.min(cards.length - 1, to))]; if (t) t.focus(); };
         switch (e.key) {
             case "Enter": case " ": e.preventDefault(); card.click(); return;
+            case "f": case "F": { const sb = plain && card.querySelector(".card-star-btn"); if (sb) { e.preventDefault(); starClick(p, sb); } return; }
             case "ArrowDown": move(idx + cols); return;
             case "ArrowUp": move(idx - cols); return;
             case "ArrowRight": if (grid) move(idx + 1); else { e.preventDefault(); card.click(); } return;

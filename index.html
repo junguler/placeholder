@@ -964,6 +964,12 @@ html[data-theme="concrete"] .file-grid .file-card > .file-icon > svg.ib { width:
 .pv-status.err { color: #e5675b; }
 .pv-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
 
+/* Thumbnail size (S / M / L) in the stats line of the main grid and in the head of a twin panel showing a grid */
+.stats-bar .ts-ctl { margin-left: auto; align-items: center; }
+.ts-ctl button { padding: 0.1rem 0.45rem; line-height: 1.4; }
+.tw-tools .ts-ctl { gap: 0.15rem; }
+.tw-tools .ts-ctl button { padding: 0.15rem 0.35rem; }
+
 /* --- File card hover: tone and border only, no movement --- */
 .file-card { transition: border-color var(--transition), background-color var(--transition); }
 
@@ -1715,6 +1721,11 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
     .tw-rail .gal-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
     .tw-rail[data-kind="image"] .gal-item { width: 4.25rem; }
 }
+/* The windows opened from the player (playlist, songs heard, recordings) follow it: inside a panel they open inside that panel, over the player, with the same normal-window look. */
+.modal-overlay.tw-embedded:not(#modal) { position: absolute; inset: 0; z-index: 6; transition: none; touch-action: auto; }
+.modal-overlay.tw-embedded:not(#modal) .modal { max-width: min(560px, 100%); max-height: 100%; transform: none; transition: none; }
+.modal-overlay.tw-embedded.tw-narrow:not(#modal) { padding: 0; }
+.modal-overlay.tw-embedded.tw-narrow:not(#modal) .modal { width: 100%; max-width: none; height: 100%; max-height: none; border: 0; border-radius: 0; }
 /* The player keeps its normal-window look inside a panel (backdrop, centered card, the same size limits, the playlist window anchored near the top like the page does),
    with the panel taking the place of the browser window. A panel up to 640px wide gets the phone layout (class tw-narrow, set by the page from the panel width). */
 #modal.tw-embedded { position: absolute; inset: 0; z-index: 5; transition: none; touch-action: auto; }
@@ -1881,14 +1892,6 @@ html[data-theme="concrete"] .vb-fav.favorited { --c: var(--orange); }
                                             <input type="checkbox" id="compactDensityToggle" aria-label="Use compact row density for grid and list views" />
                                             <span class="switch-slider"></span>
                                         </label>
-                                    </div>
-                                    <div class="settings-row">
-                                        <span class="settings-label">Thumbnail size <span id="thumbSizeLabel">Medium</span></span>
-                                        <div class="settings-control" id="thumbSizeControl" role="group" aria-label="Thumbnail size (Ctrl + mouse wheel over a grid does the same)">
-                                            <button type="button" data-ts="s" aria-pressed="false" title="Small thumbnails" aria-label="Small thumbnails">S</button>
-                                            <button type="button" data-ts="m" aria-pressed="true" title="Medium thumbnails" aria-label="Medium thumbnails">M</button>
-                                            <button type="button" data-ts="l" aria-pressed="false" title="Big thumbnails" aria-label="Big thumbnails">L</button>
-                                        </div>
                                     </div>
                                 </div>
                                 <div class="settings-section" style="border-top: var(--bw) solid var(--border-color)">
@@ -3607,17 +3610,18 @@ let thumbSize = "m";
 function applyThumbSize(v) {
     thumbSize = THUMB_SIZES.includes(v) ? v : "m";
     document.documentElement.dataset.thumb = thumbSize;
-    document.querySelectorAll("#thumbSizeControl [data-ts]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ts === thumbSize)));
-    const label = document.getElementById("thumbSizeLabel");
-    if (label) label.textContent = THUMB_NAMES[thumbSize];
+    document.querySelectorAll(".ts-ctl [data-ts]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ts === thumbSize)));
+}
+// The S / M / L control sits in the bar of each grid: the stats line of the main view and the head of each twin panel (see thumbSizeCtl()).
+function thumbSizeCtl() {
+    return `<span class="settings-control ts-ctl" role="group" aria-label="Thumbnail size (Ctrl + mouse wheel over a grid does the same)">${THUMB_SIZES.map((k) => `<button type="button" data-ts="${k}" aria-pressed="${k === thumbSize}" title="${THUMB_NAMES[k]} thumbnails" aria-label="${THUMB_NAMES[k]} thumbnails">${k.toUpperCase()}</button>`).join("")}</span>`;
 }
 function setThumbSize(v) {
     applyThumbSize(v);
     try { store.setItem("thumbSize", thumbSize); } catch (e) {}
 }
 function wireThumbSize() {
-    const ctl = document.getElementById("thumbSizeControl");
-    if (ctl) ctl.addEventListener("click", (e) => { const b = e.target.closest("[data-ts]"); if (b) setThumbSize(b.dataset.ts); });
+    document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest(".ts-ctl [data-ts]"); if (b) setThumbSize(b.dataset.ts); });
     // Ctrl + mouse wheel over a grid, as in a file manager (a pinch on a trackpad arrives the same way).
     let last = 0;
     document.addEventListener("wheel", (e) => {
@@ -4943,8 +4947,8 @@ function setupEventListeners() {
     document.addEventListener("keydown", (e) => {
         const shortcutsOpen = document.getElementById("shortcutsModal").classList.contains("active");
         const statsOpen = document.getElementById("statsModal").classList.contains("active");
-        const songsOpen = document.getElementById("songsModal").classList.contains("active");
-        const plistOpen = document.getElementById("playlistModal").classList.contains("active");
+        const songsOpen = windowOwnsKeys("songsModal");
+        const plistOpen = windowOwnsKeys("playlistModal");
         if (e.key === "Escape") {
             if (document.activeElement && document.activeElement.id === "search" && !document.querySelector(".modal-overlay.active:not(.tw-embedded)")) {
                 const si = document.activeElement;
@@ -5946,6 +5950,7 @@ function render() {
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
             ${folderCount} ${folderCount === 1 ? "folder" : "folders"}
           </span>
+          ${currentView === "grid" ? thumbSizeCtl() : ""}
         </div>
         <div class="main-content">
           <div class="${listClass}" id="fileItems">
@@ -8223,11 +8228,43 @@ function playlistRowClick(e) {
     if (isShuffle) recordShuffleJump(idx);
     playPlaylistTrack(idx);
 }
+// Windows opened from the player (playlist, songs heard, recordings). While the player sits inside a twin panel they are mounted in that same panel, so each side stays independent of the other.
+const PLAYER_WINDOWS = ["playlistModal", "songsModal", "recModal"];
+function seatPlayerWindow(id) {
+    const el = document.getElementById(id), m = document.getElementById("modal");
+    const slot = m.classList.contains("tw-embedded") ? m.parentNode : null;
+    if (!slot) { unseatPlayerWindows(); return; }
+    if (el.parentNode !== slot) slot.appendChild(el);
+    el.classList.add("tw-embedded");
+    el.classList.toggle("tw-narrow", m.classList.contains("tw-narrow"));
+}
+function unseatPlayerWindows() {
+    PLAYER_WINDOWS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.parentNode !== document.body) document.body.appendChild(el);
+        el.classList.remove("tw-embedded", "tw-narrow");
+    });
+}
+// The player closed: whatever was open on top of it inside its panel closes with it.
+function closeSeatedWindows() {
+    const seated = (id) => document.getElementById(id).classList.contains("tw-embedded");
+    if (seated("playlistModal")) closePlaylistModal();
+    if (seated("songsModal") && document.getElementById("songsModal").classList.contains("active")) closeSongsModal();
+    if (seated("recModal") && document.getElementById("recModal").classList.contains("active")) closeRecModal();
+    unseatPlayerWindows();
+}
+// Esc / arrow keys belong to a window inside a panel only while focus is inside it.
+function windowOwnsKeys(id) {
+    const el = document.getElementById(id);
+    return el.classList.contains("active") && !(el.classList.contains("tw-embedded") && !el.contains(document.activeElement));
+}
 function openPlaylistModal() {
     if (!currentPlaylist.length) return;
     rememberModalFocus("playlistModal");
     document.getElementById("playlistSearch").value = "";
     renderPlaylistList();
+    seatPlayerWindow("playlistModal");
     document.getElementById("playlistModal").classList.add("active");
     syncBackgroundInert();
     syncPlaylistListCurrent(true);
@@ -8243,6 +8280,7 @@ function closePlaylistModal() {
 function openSongsModal() {
     rememberModalFocus("songsModal");
     renderSongsList();
+    seatPlayerWindow("songsModal");
     document.getElementById("songsModal").classList.add("active");
     syncBackgroundInert();
     focusWhenReady("songsCloseBtn", "songsModal");
@@ -9282,6 +9320,7 @@ function recStoreNote() {
 function openRecModal() {
     rememberModalFocus("recModal");
     renderRecList();
+    seatPlayerWindow("recModal");
     recEl("recModal").classList.add("active");
     syncBackgroundInert();
     focusWhenReady("recCloseBtn", "recModal");
@@ -11163,7 +11202,8 @@ function restoreModalFocus(modalId) {
 function trapModalFocus(e, containerId = "modalContent") {
     if (e.key !== "Tab") return;
     // A player mounted inside a twin panel is part of the page, not a dialog: Tab is free to move on.
-    if (containerId === "modalContent" && document.getElementById("modal").classList.contains("tw-embedded")) return;
+    const host = document.getElementById(containerId);
+    if (host && host.closest(".modal-overlay.tw-embedded")) return;
     const modal = document.getElementById(containerId);
     const focusable = modal.querySelectorAll(
         'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -13180,6 +13220,7 @@ const TWIN = (() => {
                     <button type="button" class="view-btn tw-vbtn${grid ? "" : " active"}" data-v="list" title="List" aria-label="List view" aria-pressed="${!grid}">${ICON.list}</button>
                     <button type="button" class="view-btn tw-vbtn${grid ? " active" : ""}" data-v="grid" title="Grid" aria-label="Grid view" aria-pressed="${grid}">${ICON.grid}</button>
                 </span>
+                ${grid ? thumbSizeCtl() : ""}
             </span>
             ${T.menu === p.id ? menuHtml(p) : ""}`;
         const path = head.querySelector(".tw-path");
@@ -13449,6 +13490,7 @@ const TWIN = (() => {
         if (m.parentNode !== document.body) document.body.appendChild(m);
         m.classList.remove("tw-embedded", "tw-narrow");
         m.style.removeProperty("--tw-pt");
+        unseatPlayerWindows();
     }
     // The panel stands in for the browser window: up to 640px wide it gets the phone layout, and the playlist window keeps the page's anchor near the top.
     function fitEmbedded() {
@@ -13456,7 +13498,8 @@ const TWIN = (() => {
         if (!m.classList.contains("tw-embedded") || !slot || !slot.classList || !slot.classList.contains("tw-media")) return;
         const w = slot.clientWidth, h = slot.clientHeight;
         if (!w || !h) return;
-        m.classList.toggle("tw-narrow", w <= 640);
+        const narrow = w <= 640;
+        slot.querySelectorAll(":scope > .modal-overlay").forEach((el) => el.classList.toggle("tw-narrow", narrow));
         m.style.setProperty("--tw-pt", Math.max(8, Math.min(h - 512, h / 2 - 200)) + "px");
     }
     function closePreview(p, quiet) {
@@ -13906,6 +13949,7 @@ const TWIN = (() => {
         focusActive() { focusCursor(T.panes[T.active]); },
         // The preview window's player was closed: its panel goes back to the list.
         onModalClosed() {
+            closeSeatedWindows();
             if (T.media === null) return;
             const p = T.panes[T.media], name = p.mediaName;
             T.media = null;

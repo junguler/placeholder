@@ -1818,9 +1818,13 @@ html[data-theme="concrete"] .vb-fav.favorited { --c: var(--orange); }
 /* --- Twin panels: one search box per panel (desktop), search results inside a panel --- */
 @media (min-width: 641px) {
     body.twin-on .search-second { display: block; }
-    /* The boxes share the bar in the same proportion as the panels (the page sets --sg0 / --sg1 from the divider). */
-    body.twin-on #searchBox0 { flex: var(--sg0, 1) 1 0; min-width: 6rem; }
-    body.twin-on #searchBox1 { flex: var(--sg1, 1) 1 0; min-width: 6rem; }
+    /* The gap between the two boxes sits over the divider: the page sets the first box's width from the divider's position (see TWIN.alignBoxes), the second fills the rest. */
+    body.twin-on #searchBox0, body.twin-on #searchBox1 { flex: 1 1 0; min-width: 0; }
+    body.twin-on .search-container.sb-off { display: none; }
+    /* In twin panels the bar spans the whole window like the panels do, so the logo sits at the left edge with no empty margin before it. */
+    body.twin-on .header { padding-left: 0.5rem; padding-right: 0.5rem; }
+    body.twin-on .header-content { max-width: none; }
+    body.twin-on .header-tools { margin-left: 0; }
 }
 .tw-res .file-meta { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tw-res.file-list .file-path { display: inline; margin: 0 0 0 0.6em; word-break: normal; }
@@ -1829,6 +1833,9 @@ html[data-theme="concrete"] .vb-fav.favorited { --c: var(--orange); }
 .tw-res.file-list .file-card:hover .card-star-btn, .tw-res.file-list .file-card:focus-within .card-star-btn { opacity: 0.8; }
 .tw-res.file-list .card-star-btn:hover, .tw-res.file-list .card-star-btn:focus-visible, .tw-res.file-list .card-star-btn.starred { opacity: 1; background: none; border: none; }
 .tw-more { margin-top: 0.5rem; }
+body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
+.tw-head .search-container { display: block; flex: 1 1 10rem; max-width: 22rem; min-width: 5rem; }
+.tw-head .search-input { padding-top: 0.25rem; padding-bottom: 0.25rem; }
 
 /* --- Buttons that move when hovered or pressed keep a hit area that does not move ---
    Concrete lifts a button 1px on hover and sinks it 2px on press. At the edge of a button that move slid the button out from under the pointer: the hover ended, the button
@@ -13282,6 +13289,7 @@ const TWIN = (() => {
         const pn = paneEl(p.id);
         if (!pn) return;
         const head = pn.querySelector(".tw-head");
+        head.querySelectorAll(".search-container").forEach((e) => e.remove()); // the boxes live on (placeBoxes puts them back below)
         const grid = p.view === "grid";
         const sorts = [["name-asc", "Name (A-Z)"], ["name-desc", "Name (Z-A)"], ["ext-asc", "Extension"], ["size-desc", "Size (largest)"], ["size-asc", "Size (smallest)"], ["date-desc", "Date (newest)"], ["date-asc", "Date (oldest)"], ["type", "Type"]];
         head.innerHTML = `
@@ -13302,6 +13310,7 @@ const TWIN = (() => {
         if (path) path.scrollLeft = path.scrollWidth;
         pn.classList.toggle("active", T.active === p.id);
         pn.dataset.tab = p.tab;
+        placeBoxes();
     }
     function emptyHtml(msg, extra) { return `<div class="tw-empty">${msg}${extra || ""}</div>`; }
     function renderList(p, keepScroll) {
@@ -13429,6 +13438,39 @@ const TWIN = (() => {
         const it = p.map.get(item.name);
         if (it) openFileItem(p, it); else openPathIn(p, item.fullPath);
     }
+    // Side by side on a wide screen the first box ends where the left panel ends and the second begins where the right one begins, so each box sits over its panel
+    // and both grow and shrink with the divider. Their outer edges are held by the logo and the tool buttons.
+    // Panels stacked top and bottom have no room for two boxes in the top bar's row, so each box moves into the head of its panel (between the path and the tools);
+    // everywhere else they sit in the top bar.
+    function placeBoxes() {
+        const boxes = T.boxes, actions = document.querySelector(".header-actions"), tools = document.querySelector(".header-tools");
+        if (!boxes || !actions || !T.panes.length) return;
+        const inHeads = T.on && T.vert && twoBoxes();
+        boxes.forEach((bx, k) => {
+            if (inHeads) {
+                const pn = paneEl(T.panes[boxPane(k)].id), head = pn && pn.querySelector(".tw-head");
+                if (head && bx.parentNode !== head) head.insertBefore(bx, head.querySelector(".tw-tools"));
+            } else if (bx.parentNode !== actions) actions.insertBefore(bx, tools);
+        });
+        document.body.classList.toggle("tw-boxes-in-heads", inHeads);
+    }
+    function alignBoxes() {
+        placeBoxes();
+        if (document.body.classList.contains("tw-boxes-in-heads")) { T.boxes.forEach((bx) => { bx.style.flex = ""; bx.style.marginLeft = ""; bx.classList.remove("sb-off"); }); return; }
+        const b0 = $("searchBox0"), b1 = $("searchBox1"), sp = $("twin").querySelector(".tw-split"), tools = document.querySelector(".header-tools");
+        if (!b0 || !b1 || !sp || !tools) return;
+        b0.style.flex = ""; b1.style.marginLeft = "";
+        b0.classList.remove("sb-off"); b1.classList.remove("sb-off");
+        if (!T.on || !twoBoxes()) return;
+        const MIN = 112; // a box narrower than this is hidden; the tool buttons never move for it
+        const gap = parseFloat(getComputedStyle(b0.parentElement).columnGap) || 6;
+        const aL = b0.getBoundingClientRect().left, aR = tools.getBoundingClientRect().left - gap;
+        const r = sp.getBoundingClientRect();
+        if (T.vert || T.max !== -1 || !r.width) { if ((aR - aL - gap) / 2 < MIN) b1.classList.add("sb-off"); return; }
+        const c = (r.left + r.right) / 2, w0 = Math.min(c - gap / 2 - aL, aR - aL), w1 = aR - (c + gap / 2);
+        if (w0 < MIN) { b0.classList.add("sb-off"); b1.style.marginLeft = Math.max(0, Math.round(c + gap / 2 - aL)) + "px"; } else b0.style.flex = "0 0 " + Math.round(w0) + "px";
+        if (w1 < MIN) b1.classList.add("sb-off");
+    }
     // Both boxes show the filter of the panel they belong to; the page keeps them in step whenever panels change, swap or restack.
     function syncInputs() {
         const two = twoBoxes();
@@ -13554,10 +13596,7 @@ const TWIN = (() => {
         const tw = $("twin"), sp = tw.querySelector(".tw-split");
         tw.style.setProperty("--tw-a", T.r + "fr");
         tw.style.setProperty("--tw-b", 100 - T.r + "fr");
-        // The search boxes follow the panels (the box over a panel is as wide as the panel, as far as the bar allows).
-        const share = T.vert ? 50 : T.r;
-        document.body.style.setProperty("--sg0", String(T.flip ? 100 - share : share));
-        document.body.style.setProperty("--sg1", String(T.flip ? share : 100 - share));
+        alignBoxes();
         if (T.max === 0 || T.max === 1) tw.dataset.max = String(T.max); else delete tw.dataset.max;
         if (T.flip) tw.dataset.flip = "1"; else delete tw.dataset.flip;
         if (T.vert) tw.dataset.stack = "1"; else delete tw.dataset.stack;
@@ -14208,7 +14247,7 @@ const TWIN = (() => {
         focusActive() { focusCursor(T.panes[T.active]); },
         // The box of a panel was used: that panel becomes the active one.
         focusBox(k) { const p = T.panes[boxPane(k)]; if (p && T.active !== p.id) setActive(p.id, true); },
-        focusSearch() { const bx = boxOf(T.panes[T.active]); if (bx) { bx.focus(); bx.select(); } },
+        focusSearch() { let bx = boxOf(T.panes[T.active]); if (bx && !bx.offsetParent) bx = [$("search"), $("search2")].find((e) => e.offsetParent); if (bx) { bx.focus(); bx.select(); } },
         focusResults(k) {
             const p = T.panes[boxPane(k)], pn = p && paneEl(p.id);
             const card = pn && p.mode === "list" && p.filter.trim() ? pn.querySelector(".tw-scroll .file-card") : null;
@@ -14333,6 +14372,7 @@ const TWIN = (() => {
                 if (s.vert === true) T.vert = true;
             }
             T.ready = true;
+            T.boxes = [$("searchBox0"), $("searchBox1")];
             const hp = hashToPath();
             if (hp.length) { T.panes[0].path = hp; T.panes[0].source = "hosted"; T.active = 0; }
             tw.addEventListener("click", onClick);
@@ -14357,6 +14397,7 @@ const TWIN = (() => {
             document.addEventListener("pointerdown", (e) => { if (T.menu !== null && !e.target.closest(".tw-menu, .tw-src")) { T.menu = null; renderAllHeads(); } }, true);
             document.addEventListener("keydown", (e) => { if (e.key === "Escape" && T.menu !== null && !e.target.closest(".tw-pane")) { T.menu = null; renderAllHeads(); e.stopPropagation(); } }, true);
             wireSplit();
+            if (typeof ResizeObserver === "function") { const ro = new ResizeObserver(() => alignBoxes()); ro.observe($("twin")); ro.observe(document.querySelector(".header-actions")); }
             if (TWIN_STACK_MQ && TWIN_STACK_MQ.addEventListener) TWIN_STACK_MQ.addEventListener("change", applyLayout);
             $("twinBtn").addEventListener("click", () => setOn(!T.on));
             applyLayout();

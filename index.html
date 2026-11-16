@@ -205,8 +205,8 @@ body {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 }
-.header { background: var(--bg-secondary); border-bottom: var(--bw) solid var(--border-color); padding: 0.5rem 1rem; flex-shrink: 0; }
-.header-content { max-width: 1600px; margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.header { background: var(--bg-secondary); border-bottom: var(--bw) solid var(--border-color); padding: 0.5rem 0.5rem; flex-shrink: 0; }
+.header-content { max-width: none; margin: 0; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); cursor: pointer; flex-shrink: 0; }
 .logo svg { width: 20px; height: 20px; }
 .breadcrumb { display: flex; align-items: center; gap: 0.125rem; flex-wrap: wrap; font-size: 0.85rem; flex: 1 1 12rem; min-width: 0; }
@@ -1768,9 +1768,6 @@ html[data-theme="concrete"] .vb-fav.favorited { --c: var(--orange); }
     /* The gap between the two boxes sits over the divider: the page sets the first box's width from the divider's position (see TWIN.alignBoxes), the second fills the rest. */
     body.twin-on #searchBox0, body.twin-on #searchBox1 { flex: 1 1 0; min-width: 0; }
     body.twin-on .search-container.sb-off { display: none; }
-    /* In twin panels the bar spans the whole window like the panels do, so the logo sits at the left edge with no empty margin before it. */
-    body.twin-on .header { padding-left: 0.5rem; padding-right: 0.5rem; }
-    body.twin-on .header-content { max-width: none; }
     body.twin-on .header-tools { margin-left: 0; }
 }
 .tw-res .file-meta { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1781,7 +1778,8 @@ html[data-theme="concrete"] .vb-fav.favorited { --c: var(--orange); }
 .tw-res.file-list .card-star-btn:hover, .tw-res.file-list .card-star-btn:focus-visible, .tw-res.file-list .card-star-btn.starred { opacity: 1; background: none; border: none; }
 .tw-more { margin-top: 0.5rem; }
 body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
-.tw-head .search-container { display: block; flex: 1 1 10rem; max-width: 22rem; min-width: 5rem; }
+.tw-head .search-container { display: block; flex: 8 1 12rem; max-width: none; min-width: 5rem; }
+.tw-head .tw-path { min-width: 6rem; }
 .tw-head .search-input { padding-top: 0.25rem; padding-bottom: 0.25rem; }
 
 /* --- Buttons that move when hovered or pressed keep a hit area that does not move ---
@@ -2086,8 +2084,8 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                 <div class="modal-actions">
                     <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist" aria-label="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg><span class="btn-label">Play</span></button>
                     <button class="modal-btn" id="focusBtn" aria-pressed="false" title="Hide the side panel and player buttons" aria-label="Hide the side panel and player buttons"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
-                    <button class="modal-btn" id="infoBtn" aria-pressed="false" title="Show file details" aria-label="File details"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16"/><path d="M3 14h18M7 17.2h4M14 17.2h3"/></svg></button>
                     <button class="modal-btn favorite-btn" id="favoriteBtn" title="Add to favorites" aria-label="Add file to favorites" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linejoin="round"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
+                    <button class="modal-btn" id="infoBtn" aria-pressed="false" title="Show file details" aria-label="File details"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16"/><path d="M3 14h18M7 17.2h4M14 17.2h3"/></svg></button>
                     <button class="modal-btn" id="copyLinkBtn" title="Copy link" aria-label="Copy raw file link"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>
                     <a class="modal-btn" id="downloadBtn" title="Download" aria-label="Download file" download><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg></a>
                     <a class="modal-btn" id="rawBtn" title="Open raw" aria-label="Open raw file in new tab" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19 19H5V5h7V3H5c-1.11.0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1.0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>
@@ -3129,12 +3127,20 @@ function applyTintColor() {
         root.setProperty("--cc-line", hslToHex(h, clampNum(activeS * 0.5, 0, 45), 90));
         root.setProperty("--cc-muted", hslToHex(h, clampNum(activeS * 0.3, 0, 30), 75));
         root.setProperty("--cc-text", "#ffffff");
-        root.setProperty("--cc-accent", hslToHex(h, Math.min(90, activeS), 62));
+        // Black ink sits on every role-colored button, so each fill is lightened (hue and saturation kept) until black reads on it at 7:1 (WCAG AAA);
+        // dark hues like blue and violet used to land at 3:1 and the icons vanished.
+        const lift = (hh, ss, ll, min) => {
+            let c = hslToHex(hh, ss, ll);
+            for (let L = ll; L <= 97 && contrastRatio(c, "#000000") < min; L++) c = hslToHex(hh, ss, L);
+            return c;
+        };
+        root.setProperty("--cc-accent", lift(h, Math.min(90, activeS), 62, 7));
         // Role colors keep their stock distance from the accent hue, so buttons, icons and glyph details all follow the pick.
         const k = Math.min(1, activeS / 85);
         for (const [n, o, rs, rl] of [["--orange", -29, 100, 55], ["--pink", -79, 100, 65], ["--violet", 209, 100, 74], ["--green", 96, 70, 55], ["--blue", 167, 100, 62]]) {
-            root.setProperty(n, hslToHex((((h + o) % 360) + 360) % 360, rs * k, rl));
+            root.setProperty(n, lift((((h + o) % 360) + 360) % 360, rs * k, rl, 7));
         }
+        root.setProperty("--red", lift(3, 100, 59, 7));
     } else {
         const cs = getComputedStyle(rootEl);
         const stock = (name, fb) => parseCssColor(cs.getPropertyValue(name)) || fb || null;
@@ -3262,7 +3268,7 @@ function clearCustomVars() {
         "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
         "--skeleton-base", "--skeleton-shine",
         "--cc-page", "--cc-panel", "--cc-line", "--cc-muted", "--cc-text", "--cc-accent",
-        "--orange", "--pink", "--violet", "--green", "--blue",
+        "--orange", "--pink", "--violet", "--green", "--blue", "--red",
     ];
     for (const key of keys) root.removeProperty(key);
 }
@@ -14030,8 +14036,8 @@ const TWIN = (() => {
                     <div class="modal-header tw-vhead"><div class="modal-title tw-vtitle"></div><div class="modal-actions">
                         <button type="button" class="modal-btn" data-vact="prev" title="Previous file (\u2190)" aria-label="Previous file">${ICON.prev}</button>
                         <button type="button" class="modal-btn" data-vact="next" title="Next file (\u2192)" aria-label="Next file">${ICON.next}</button>
-                        <button type="button" class="modal-btn vb-info" data-vact="info" aria-pressed="false" title="Show file details" aria-label="File details">${$("infoBtn").innerHTML}</button>
                         <button type="button" class="modal-btn favorite-btn vb-fav" data-vact="fav" aria-pressed="false" title="Add to favorites" aria-label="Add file to favorites">${icons.starOutline}</button>
+                        <button type="button" class="modal-btn vb-info" data-vact="info" aria-pressed="false" title="Show file details" aria-label="File details">${$("infoBtn").innerHTML}</button>
                         <button type="button" class="modal-btn vb-copy" data-vact="copy" title="Copy link" aria-label="Copy raw file link">${$("copyLinkBtn").innerHTML}</button>
                         <a class="modal-btn vb-dl" data-vlink="download" title="Download" aria-label="Download file">${$("downloadBtn").innerHTML}</a>
                         <a class="modal-btn vb-raw" data-vlink="raw" target="_blank" rel="noopener" title="Open raw" aria-label="Open raw file in new tab">${$("rawBtn").innerHTML}</a>

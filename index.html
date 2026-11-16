@@ -266,6 +266,7 @@ body {
 .intensity-bar-label { font-size: var(--label-size); font-weight: 600; color: var(--text-muted); flex-shrink: 0; text-transform: uppercase; letter-spacing: var(--label-track); }
 .intensity-bar-wrap > .intensity-bar-label:first-child { min-width: 3.5rem; }
 .intensity-bar-wrap > .intensity-bar-label:last-child { min-width: 3.5rem; text-align: right; }
+.intensity-bar.idle { opacity: 0.55; }
 .intensity-bar { display: flex; flex: 1; height: 1.6rem; border-radius: var(--radius-full); overflow: hidden; border: var(--bw) solid var(--border-color); }
 /* The five color-intensity stops are fixed square cells, separate from the corner-rounding control, which still stretches. */
 .intensity-bar-wrap.color-intensity-wrap { gap: 0.4rem; justify-content: center; }
@@ -441,6 +442,8 @@ html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xcv, var(--xc))
 .file-thumbnail.loaded { opacity: 1; }
 .file-list .file-card { flex-direction: row; text-align: left; padding: 0.5rem 0.75rem; gap: 0.5rem; border-radius: var(--radius); }
 .file-list .file-card:hover { box-shadow: var(--shadow-sm); border-color: var(--accent); }
+/* Rows in the plain themes rely on the zebra stripe and the gap alone; a border on every row as well was a third signal that made the folder rows look heavier. Hover and focus still draw the accent border. */
+html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="hc-light"]):not([data-vivid]) .file-list .file-card:not(:hover):not(:focus):not(:focus-visible):not(.selected) { border-color: transparent; }
 .file-list .file-icon { width: 24px; height: 24px; }
 .file-list .file-icon svg { width: 14px; height: 14px; }
 .file-list .file-info { flex: 1; min-width: 0; }
@@ -458,7 +461,9 @@ html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xcv, var(--xc))
 .file-list-header .col.active { color: var(--text-primary); }
 .file-list-header .col.active .sort-arrow { color: var(--accent-text, var(--accent)); }
 .file-list-header .sort-arrow { font-size: 0.75rem; width: 0.7em; display: inline-block; }
-.file-list-header .col-ext, .file-list-header .col-size, .file-list-header .col-date, .file-list-header .col-time { justify-content: flex-end; }
+.file-list-header .col-ext, .file-list-header .col-size, .file-list-header .col-date, .file-list-header .col-time { justify-content: flex-end; position: relative; }
+/* Right-aligned columns: the sort arrow hangs off the label's left side instead of reserving room on the right, so each label ends exactly where its values end. */
+.file-list-header .col-ext .sort-arrow, .file-list-header .col-size .sort-arrow, .file-list-header .col-date .sort-arrow, .file-list-header .col-time .sort-arrow { position: absolute; right: 100%; margin-right: 0.2rem; width: auto; }
 .file-list.list-columns .file-card { display: grid; grid-template-columns: var(--list-cols); align-items: center; }
 .file-list.list-columns .col-ext, .file-list.list-columns .col-size, .file-list.list-columns .col-date, .file-list.list-columns .col-time { text-align: right; font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* In list/tree mode the star sits inline as its own grid column
@@ -512,12 +517,12 @@ html:not(.no-xc) .file-icon.xc { color: color-mix(in srgb, var(--xcv, var(--xc))
 .modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .modal-btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
 .modal-btn svg { width: 16px; height: 16px; }
-.modal-btn.play-playlist-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; font-weight: 600; gap: 0.4rem; color: var(--accent-text, var(--accent)); }
+.modal-btn.play-playlist-btn { padding: 0.375rem 0.675rem; font-size: 0.675rem; font-weight: 600; gap: 0.3rem; color: var(--accent-text, var(--accent)); }
 .modal-btn.play-playlist-btn:hover { color: var(--text-primary); }
-.modal-btn.play-playlist-btn svg { width: 22px; height: 22px; }
+.modal-btn.play-playlist-btn svg { width: 16.5px; height: 16.5px; }
 .modal-btn.hidden { display: none; }
-#modalContent .modal-actions .modal-btn#closeBtn { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.5rem 0.9rem; }
-#modalContent .modal-actions .modal-btn#closeBtn svg { width: 22px; height: 22px; }
+#modalContent .modal-actions .modal-btn#closeBtn { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.375rem 0.675rem; }
+#modalContent .modal-actions .modal-btn#closeBtn svg { width: 16.5px; height: 16.5px; }
 .playlist-bar { --bar-btn-h: var(--ctl); --bar-btn-w: var(--ctl); display: none; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.5rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); position: relative; }
 .playlist-bar.active { display: flex; }
 .playlist-controls { display: flex; gap: 0.25rem; align-items: center; }
@@ -584,9 +589,9 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
 .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%; flex-wrap: nowrap; overflow-x: auto; }
 .player-controls-row .playlist-btn { padding: 0.35rem; flex-shrink: 0; border-radius: var(--radius-full); }
 .player-divider { width: var(--bw); height: 1.25rem; background: var(--border-color); flex-shrink: 0; }
-.playlist-btn.player-play-btn { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); border-radius: var(--radius-full); width: 2.4rem; height: 2.4rem; padding: 0; transition: background-color var(--transition), border-color var(--transition); }
+.playlist-btn.player-play-btn { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); border-radius: var(--radius-full); width: 1.8rem; height: 1.8rem; padding: 0; transition: background-color var(--transition), border-color var(--transition); }
 .playlist-btn.player-play-btn:hover { background: var(--accent-solid-hover, var(--accent-hover)); border-color: var(--accent-solid-hover, var(--accent-hover)); }
-.playlist-btn.player-play-btn svg { width: 20px; height: 20px; }
+.playlist-btn.player-play-btn svg { width: 15px; height: 15px; }
 .player-time.is-behind { cursor: pointer; text-decoration: underline dotted; }
 .player-time, .player-vol { font-size: 0.75rem; color: var(--text-secondary); min-width: 2.5rem; text-align: center; user-select: none; }
 .player-info-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.375rem; background: var(--control-surface); border: var(--bw) solid var(--border-color); border-radius: var(--radius); color: var(--on-control); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
@@ -661,6 +666,9 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
 .playlist-track.buffering::after { content: " \00b7 Buffering\2026"; color: var(--text-muted); font-weight: 400; animation: pulse 1s ease-in-out infinite; }
 .preview-audio.buffering, .preview-video.buffering { opacity: 0.6; transition: opacity 0.15s ease; }
 @media (max-width: 480px) {
+    /* On a phone the folder tree is only a strip, so Tree and List look the same: one button is enough (List stands in while Tree is the saved view). */
+    .view-btn[data-view="tree"] { display: none; }
+    .view-toggle:has(.view-btn[data-view="tree"].active) .view-btn[data-view="list"], .view-btn[data-view="list"]:has(~ .view-btn[data-view="tree"].active) { background: var(--bg-primary); color: var(--text-primary); }
     .app-container { flex-direction: column; }
     /* Pinned folders and Favorites stay visible on mobile in all 3 views as a compact strip above the listing; only the redundant nested folder tree is hidden. */
     .tree-panel {
@@ -699,10 +707,10 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
     .modal-btn { padding: 0.4rem; min-width: 32px; min-height: 32px; }
     .modal-btn svg { width: 15px; height: 15px; }
     .modal-btn.play-playlist-btn .btn-label { display: none; }
-    .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
-    .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
-    #modalContent .modal-actions .modal-btn#closeBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
-    #modalContent .modal-actions .modal-btn#closeBtn svg { width: 24px; height: 24px; }
+    .modal-btn.play-playlist-btn { padding: 0.375rem; min-width: 33px; min-height: 33px; }
+    .modal-btn.play-playlist-btn svg { width: 18px; height: 18px; }
+    #modalContent .modal-actions .modal-btn#closeBtn { padding: 0.375rem; min-width: 33px; min-height: 33px; }
+    #modalContent .modal-actions .modal-btn#closeBtn svg { width: 18px; height: 18px; }
     .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
     .playlist-btn span:not(.btn-txt):not(.blabel):not(.lbl-long):not(.lbl-short) { display: none; }
     .preview-image { max-height: 80vh; max-height: 80dvh; }
@@ -711,8 +719,8 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
     .player-bar { padding: 0.3rem 0.5rem; max-width: 100%; gap: 0.2rem; }
     .player-bar .playlist-btn { padding: 0.4rem; }
     .player-bar .playlist-btn svg { width: 12px; height: 12px; }
-    .player-bar .playlist-btn.player-play-btn { width: 2rem; height: 2rem; padding: 0; }
-    .player-bar .playlist-btn.player-play-btn svg { width: 16px; height: 16px; }
+    .player-bar .playlist-btn.player-play-btn { width: 1.5rem; height: 1.5rem; padding: 0; }
+    .player-bar .playlist-btn.player-play-btn svg { width: 12px; height: 12px; }
     .player-time { min-width: 2.2rem; font-size: 0.75rem; }
     .player-vol { min-width: 2.2rem; font-size: 0.75rem; }
     .settings-menu.active { position: fixed; inset: 0; top: 0; right: 0; margin: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); padding: 0.5rem; z-index: 1000; }
@@ -896,18 +904,19 @@ mark.search-highlight { background: color-mix(in srgb, var(--accent) 30%, transp
 /* Grid view, like a desktop file manager: every tile has the same 4:3 picture box. An image fills it with its thumbnail (the icon shows until the
    thumbnail has loaded); everything else gets a big icon centered in it. The name and size always start at the same height, so neighbors stay even. */
 .file-grid { --gi: 4.5rem; }
-.file-grid .file-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; justify-items: center; align-content: start; }
+.file-grid .file-card, body.compact-density .file-grid .file-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr; justify-items: center; align-content: start; gap: 0; }
 .file-grid .file-card::before { content: ""; grid-area: 1 / 1; width: 100%; aspect-ratio: 4 / 3; }
 .file-grid .file-card > .file-icon { grid-area: 1 / 1; align-self: center; width: var(--gi); height: var(--gi); }
 .file-grid .file-card > .file-icon svg { width: 50%; height: 50%; }
 .file-grid .file-card > .file-thumbnail { grid-area: 1 / 1; width: 100%; height: 0; min-height: 100%; aspect-ratio: auto; }
 .file-grid .file-card:has(> .file-thumbnail.loaded) > .file-icon { display: none; }
-.file-grid .file-card > .file-info { grid-area: 2 / 1; align-self: start; justify-self: stretch; min-width: 0; }
-/* The size / item count is a label on the bottom edge of the icon or preview, so it sits in the same place on every card whatever the name's length or the row's height.
-   (Search results keep it in the text, because they also show the folder path there.) */
+.file-grid .file-card > .file-info { grid-area: 3 / 1; align-self: start; justify-self: stretch; min-width: 0; margin-top: 0.3rem; }
+/* The size / item count is a caption directly under the icon or preview (never on top of it, so badges and artwork stay visible), in the same place on every card whatever the name's length.
+   Grid cards also stay one flat shade: stripes mean nothing without rows. (Search results keep the size in the text, because they also show the folder path there.) */
+.file-grid { --zebra-up: 0%; --zebra-down: 0%; }
 .file-grid .file-card > .file-info:not(:has(.file-path)) { display: contents; }
-.file-grid .file-card > .file-info:not(:has(.file-path)) > .file-name { grid-area: 2 / 1; align-self: start; justify-self: stretch; min-width: 0; }
-.file-grid .file-card > .file-info:not(:has(.file-path)) > .file-meta { grid-area: 1 / 1; align-self: end; justify-self: center; max-width: calc(100% - 0.5rem); margin-bottom: 0.3rem; padding: 0.05rem 0.45rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.35; color: var(--text-secondary); background: color-mix(in srgb, var(--bg-primary) 84%, transparent); border-radius: var(--radius-sm); pointer-events: none; }
+.file-grid .file-card > .file-info:not(:has(.file-path)) > .file-name { grid-area: 3 / 1; align-self: start; justify-self: stretch; min-width: 0; margin-top: 0.15rem; }
+.file-grid .file-card > .file-info:not(:has(.file-path)) > .file-meta { grid-area: 2 / 1; align-self: start; justify-self: center; max-width: 100%; margin-top: 0.25rem; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.35; color: var(--text-muted); background: none; pointer-events: none; }
 .file-grid .file-card > .file-info > .file-meta:empty { display: none; }
 /* Thumbnail sizes (Settings > Density, or Ctrl + wheel over a grid). Medium is the original look and needs no rules. */
 html[data-thumb="s"] .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); --gi: 2.75rem; }
@@ -1057,6 +1066,11 @@ body.is-recording .audio-icon .cache-tag { max-width: calc(100% - 3.2rem); }
 @media (pointer: coarse) { :root { --ctl: 2.25rem; } }
 .player-controls-row .playlist-btn:not(.player-play-btn), .playlist-bar .playlist-controls .playlist-btn, #modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) { width: var(--ctl); height: var(--ctl); min-width: 0; min-height: 0; padding: 0; flex-shrink: 0; }
 .playlist-bar .playlist-btn .btn-txt { padding-right: 0.2rem; }
+/* Header action buttons (star, info, link, download, open) are a little larger than the playlist-bar ones; Play and Close shrank by 25%, so the header ends up no taller than before. */
+#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn):not(#closeBtn) { width: max(var(--ctl), 2rem); height: max(var(--ctl), 2rem); }
+#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) svg { width: 17px; height: 17px; }
+#modalContent .modal-actions .modal-btn#closeBtn, .modal-btn.play-playlist-btn { min-height: 0; }
+@media (pointer: coarse) { #modalContent .modal-actions .modal-btn#closeBtn::after, .modal-btn.play-playlist-btn::after, .playlist-btn.player-play-btn::after { content: ""; position: absolute; inset: -6px; } #modalContent .modal-actions .modal-btn#closeBtn, .modal-btn.play-playlist-btn, .playlist-btn.player-play-btn { position: relative; } }
 
 /* --- Mobile: previews are full-screen pages; the player keeps desktop sizes and a fixed layout ---
    Station name in the header (as on desktop); the song replaces it in one fixed slot, the status line is one fixed line, and spare room is simply empty. */
@@ -1566,7 +1580,7 @@ html[data-theme="concrete"] #playlistRec:hover:not(:disabled) { background: var(
 .mq-on > .mq-t::after { content: attr(data-mq); content: attr(data-mq) / ""; padding-inline-start: 3em; }
 @media (prefers-reduced-motion: reduce) { .mq-on > .mq-t { will-change: auto; } }
 
-.twin { display: none; flex: 1; min-width: 0; min-height: 0; --tw-a: 50fr; --tw-b: 50fr; grid-template-columns: minmax(0, var(--tw-a)) 1.5rem minmax(0, var(--tw-b)); grid-template-rows: minmax(0, 1fr); }
+.twin { display: none; flex: 1; min-width: 0; min-height: 0; --tw-a: 50fr; --tw-b: 50fr; --tw-gut: 2rem; grid-template-columns: minmax(0, var(--tw-a)) var(--tw-gut) minmax(0, var(--tw-b)); grid-template-rows: minmax(0, 1fr); }
 body.twin-on .twin { display: grid; }
 body.twin-on #main, body.twin-on .tree-panel, body.twin-on .breadcrumb, body.twin-on .mode-chip { display: none !important; }
 body.twin-on .view-toggle .view-btn[data-view] { display: none; }
@@ -1581,7 +1595,7 @@ body.twin-on .header-actions { margin-left: auto; }
 .tw-pane:not(.active) .tw-head { background: var(--bg-secondary); color: var(--text-muted); }
 @media (prefers-reduced-motion: reduce) { .tw-pane { transition: none; } }
 .tw-head { position: relative; display: flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.4rem; background: var(--bg-secondary); border-bottom: var(--bw) solid var(--border-color); flex-shrink: 0; min-width: 0; }
-.tw-pane.active .tw-head { background: color-mix(in srgb, var(--accent) 20%, var(--bg-tertiary)); border-bottom-color: var(--accent); }
+.tw-pane.active .tw-head { background: color-mix(in srgb, var(--accent) 10%, var(--bg-tertiary)); border-bottom-color: var(--accent); }
 .tw-src { display: inline-flex; align-items: center; gap: 0.3rem; flex-shrink: 0; padding: 0.2rem 0.4rem; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius-sm); font: inherit; font-size: var(--data-size); cursor: pointer; }
 .tw-src:hover, .tw-src[aria-expanded="true"] { border-color: var(--accent); }
 .tw-src svg { width: 14px; height: 14px; flex-shrink: 0; }
@@ -1629,11 +1643,11 @@ body.twin-on .header-actions { margin-left: auto; }
 .tw-split:hover, .tw-split.dragging, .tw-split:focus-visible { background: var(--accent); outline: none; }
 .tw-split.centered.dragging { box-shadow: inset 0 0 0 2px var(--bg-primary); }
 .tw-split-tools { display: flex; flex-direction: column; gap: 2px; }
-.tw-split-tools button { width: 1.25rem; height: 1.25rem; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; }
+.tw-split-tools button { width: 1.6rem; height: 1.6rem; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--control-surface); color: var(--on-control); border: var(--bw) solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; }
 .tw-split-tools button:hover, .tw-split-tools button[aria-pressed="true"] { border-color: var(--accent); }
-.tw-split-tools svg { width: 14px; height: 14px; }
+.tw-split-tools svg { width: 16px; height: 16px; }
 @media (max-width: 640px) {
-    .twin { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--tw-a)) 1.5rem minmax(0, var(--tw-b)); }
+    .twin { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--tw-a)) var(--tw-gut-h, 1.75rem) minmax(0, var(--tw-b)); }
     .twin[data-max] { grid-template-rows: minmax(0, 1fr); }
     .tw-split { cursor: row-resize; }
     .tw-split-tools { flex-direction: row; }
@@ -1654,10 +1668,11 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
     html[data-vivid] :focus-visible { outline: 2px solid var(--text-primary); outline-offset: -2px; }
 }
 
-.twin[data-stack] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--tw-a)) 1.5rem minmax(0, var(--tw-b)); }
+.twin[data-stack] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--tw-a)) var(--tw-gut-h, 1.75rem) minmax(0, var(--tw-b)); }
 .twin[data-stack][data-max] { grid-template-rows: minmax(0, 1fr); }
 .twin[data-stack] .tw-split { cursor: row-resize; }
 .twin[data-stack] .tw-split-tools { flex-direction: row; }
+.twin[data-stack] .tw-split-tools button { width: 1.4rem; height: 1.4rem; }
 @media (max-width: 640px) { .tw-split-tools [data-act="layout"] { display: none; } }
 
 .tw-view, .tw-media { display: none; flex: 1; min-height: 0; }
@@ -1752,9 +1767,9 @@ body.compact-density .tw-pane .file-grid .file-icon { width: 26px; height: 26px;
 /* While a player fills a panel, the sort / zip / list / grid controls of that panel have nothing to act on. */
 .tw-pane[data-mode="media"] .tw-tools { display: none; }
 
-.tw-vhead .modal-btn.vb-close { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.5rem 0.9rem; }
-.tw-vhead .modal-btn.vb-close svg { width: 22px; height: 22px; }
-@media (max-width: 640px) { .tw-vhead .modal-btn.vb-close { padding: 0.5rem; min-width: 44px; min-height: 44px; } .tw-vhead .modal-btn.vb-close svg { width: 24px; height: 24px; } }
+.tw-vhead .modal-btn.vb-close { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.375rem 0.675rem; }
+.tw-vhead .modal-btn.vb-close svg { width: 16.5px; height: 16.5px; }
+@media (max-width: 640px) { .tw-vhead .modal-btn.vb-close { padding: 0.375rem; min-width: 33px; min-height: 33px; } .tw-vhead .modal-btn.vb-close svg { width: 18px; height: 18px; } }
 .modal-btn.vb-fav.favorited, .vb-info[aria-pressed="true"] { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
 .tw-view .meta-bar { flex-shrink: 0; }
 html[data-theme="concrete"] .vb-close { --c: var(--red); }
@@ -1850,7 +1865,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                                         </div>
                                     </div>
                                     <div class="settings-row">
-                                        <span class="settings-label">Preview text <span id="previewFontLabel">0.8rem</span></span>
+                                        <span class="settings-label">Preview text <span id="previewFontLabel">13px</span></span>
                                         <div class="settings-control">
                                             <button id="previewFontDecrease" title="Decrease preview text size" aria-label="Decrease preview text size">A-</button>
                                             <button id="previewFontIncrease" title="Increase preview text size" aria-label="Increase preview text size">A+</button>
@@ -3288,7 +3303,9 @@ function resetCustomColor() {
 function renderIntensityBar() {
     const wrap = document.getElementById("colorIntensityControl");
     if (!wrap) return;
-    const baseHex = vividColor || "#5858ff";
+    // With no color picked yet the bar shows quiet grays (and is dimmed), so it doesn't look like a color is already applied.
+    const baseHex = vividColor || "#8a8a8a";
+    wrap.classList.toggle("idle", !vividColor);
     wrap.querySelectorAll(".intensity-seg").forEach((seg) => {
         const pct = parseInt(seg.dataset.intensity, 10);
         seg.style.background = muteColorAtIntensity(baseHex, pct);
@@ -3423,6 +3440,7 @@ function updateThemeButtons() {
 const FONT_SIZE_MIN = 10, FONT_SIZE_MAX = 26;
 function updateFontSizeLabel() {
     document.getElementById("fontSizeLabel").textContent = currentFontSize + "px";
+    try { applyPreviewFontSize(); } catch (e) {} // the preview size is shown in px too, so it follows the interface size
     updateListColumns();
 }
 function changeFontSize(e) {
@@ -3471,7 +3489,7 @@ function clampPreviewFont(v) {
 function applyPreviewFontSize() {
     document.documentElement.style.setProperty("--preview-font-size", previewFontSize + "rem");
     const label = document.getElementById("previewFontLabel");
-    if (label) label.textContent = previewFontSize.toFixed(1) + "rem";
+    if (label) label.textContent = Math.round(previewFontSize * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)) + "px";
 }
 function initPreviewFontSize() {
     let stored = NaN;
@@ -5858,7 +5876,7 @@ function render() {
               <div class="file-icon folder">${currentView === "grid" ? ibIcon("folder") : icons.folder}</div>
               <div class="file-info">
                 <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
-                <span class="file-meta">${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} items`}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
+                <span class="file-meta">${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} ${(item.children?.length || 0) === 1 ? "item" : "items"}`}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
               </div>
               ${
           isColumnView && !searchQuery
@@ -13174,15 +13192,15 @@ const TWIN = (() => {
     }
     // Both boxes show the filter of the panel they belong to; the page keeps them in step whenever panels change, swap or restack.
     function syncInputs() {
-        const two = twoBoxes();
+        const two = T.on && twoBoxes();
         [0, 1].forEach((k) => {
             const input = $(k ? "search2" : "search");
             if (!input || (k && !two)) return;
             const p = T.panes[boxPane(k)];
             if (!p) return;
             const where = !two ? "" : T.vert ? (k ? "bottom" : "top") : (k ? "right" : "left");
-            input.placeholder = two ? `Search ${where} panel...` : "Search this panel...";
-            input.setAttribute("aria-label", two ? `Search files in the ${where} panel` : "Search files in the active panel");
+            input.placeholder = two ? `Search ${where} panel...` : "Search files...";
+            input.setAttribute("aria-label", two ? `Search files in the ${where} panel` : "Search files");
             if (document.activeElement !== input || input.value === p.filter) input.value = p.filter;
         });
         updateSearchClearVisibility();
@@ -14143,6 +14161,46 @@ const TWIN = (() => {
 })();
 
 init();
+
+// Fit the player to the room it has: when the preview is short or narrow (a stacked twin panel, a small window, a phone on its side) everything in it
+// shrinks together, down to a floor, before the body is allowed to scroll. The size is measured at full scale each time, so it never drifts.
+(function fitPlayerToRoom() {
+    const modal = document.getElementById("modalContent"), body = document.getElementById("modalBody");
+    if (!modal || !body || typeof ResizeObserver === "undefined") return;
+    const MIN = 0.55;
+    let raf = 0, watched = null;
+    const parts = () => [...modal.children].filter((e) => e.id !== "modalMain" && !e.hidden && e.offsetParent !== null);
+    function fit() {
+        raf = 0;
+        const c = body.querySelector(":scope > .preview-audio-container");
+        [...modal.children].forEach((e) => { e.style.zoom = ""; });
+        if (c) {
+            c.style.zoom = "";
+            const ic0 = c.querySelector(".audio-icon"); if (ic0) ic0.style.zoom = "";
+            if (c !== watched) { if (watched) ro.unobserve(watched); watched = c; ro.observe(c); }
+        }
+        if (!c || !modal.clientHeight) return;
+        const ps = parts();
+        let total = ps.reduce((n, e) => n + e.getBoundingClientRect().height, 0) + c.scrollHeight;
+        // The big glyph is the only part that is decoration, so it gives way first (down to half size); the text and controls shrink only for what is still missing.
+        const icon = c.querySelector(".audio-icon");
+        if (icon) icon.style.zoom = "";
+        if (icon && total > modal.clientHeight) {
+            const h = icon.getBoundingClientRect().height;
+            const g = Math.max(0.5, Math.min(1, (modal.clientHeight - (total - h)) / h));
+            if (g < 1) { icon.style.zoom = Math.floor(g * 100) / 100; total -= h * (1 - g); }
+        }
+        let z = Math.min(1, modal.clientHeight / total);
+        [...ps, c].forEach((e) => { if (e.scrollWidth > e.clientWidth + 1 && e.clientWidth) z = Math.min(z, e.clientWidth / e.scrollWidth); });
+        z = Math.max(MIN, Math.floor(z * 100) / 100);
+        if (z < 1) { ps.forEach((e) => { e.style.zoom = z; }); c.style.zoom = z; }
+    }
+    const queue = () => { if (!raf) raf = requestAnimationFrame(fit); };
+    const ro = new ResizeObserver(queue);
+    ro.observe(modal); ro.observe(body);
+    new MutationObserver(queue).observe(modal, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });
+    window.addEventListener("resize", queue);
+})();
     </script>
 </body>
 </html>

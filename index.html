@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <script>(function(){try{window.__idx={};var L="./file_index_lean.json",F="./file_index.json";function get(u){return fetch(u).then(function(r){if(!r.ok)throw new Error("Failed to load "+u);return r.json();});}var lp=get(L);lp.catch(function(){});window.__idx[L]=lp;var fp=lp.then(function(){},function(){}).then(function(){return get(F);});fp.catch(function(){});window.__idx[F]=fp;}catch(e){}})();</script>
     <script>(function(){try{var t=localStorage.getItem("theme");if(t==="concrete-custom"){t="concrete";localStorage.setItem("theme",t);}if(t==="vivid")document.documentElement.setAttribute("data-vivid","1");else if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#1a1a1a" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
     <title>File Viewer</title>
     <meta name="description" content="Browse and preview files from this repository directly in your browser — code, images, audio, video, and playlists." />
     <meta property="og:title" content="File Viewer" />
@@ -1056,11 +1058,48 @@ body.is-recording .audio-icon .cache-tag { max-width: calc(100% - 3.2rem); }
 }
 
 @media (pointer: coarse) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: max(16px, 1em); }
     .player-seek { height: 16px; }
     .player-seek::-webkit-slider-thumb { margin-top: 0; }
     html[data-theme="concrete"] .player-seek { height: 20px; }
     html[data-theme="concrete"] .player-seek::-webkit-slider-thumb { margin-top: 2px; }
     .header .search-input { min-height: 34px; }
+}
+
+/* --- Selecting several items --- */
+.file-card.selected { background: color-mix(in srgb, var(--accent) 16%, var(--bg-secondary)) !important; box-shadow: inset 4px 0 0 var(--accent) !important; }
+.file-card.selected:focus-visible { outline-offset: -2px; }
+body.sel-on .main { padding-bottom: 5rem; }
+.sel-bar { position: fixed; left: 50%; transform: translateX(-50%); width: max-content; bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem); z-index: 900; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.375rem 0.5rem; max-width: calc(100vw - 1.5rem); padding: 0.5rem 0.625rem; background: var(--bg-secondary); color: var(--text-primary); border: var(--bw) solid var(--border-strong); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
+.sel-bar[hidden] { display: none; }
+.sel-count { font-weight: 600; font-size: 0.85rem; padding: 0 0.25rem; white-space: nowrap; }
+.sel-btn { font: inherit; font-size: 0.8rem; color: var(--text-primary); background: var(--bg-tertiary); border: var(--bw) solid var(--border-strong); border-radius: var(--radius); padding: 0.375rem 0.7rem; min-height: 2rem; cursor: pointer; }
+.sel-btn:hover:not(:disabled) { background: var(--bg-hover); }
+.sel-btn:disabled { opacity: 0.45; cursor: default; }
+.sel-btn[hidden] { display: none; }
+html[data-theme="concrete"] .file-card.selected { background: var(--yellow) !important; color: var(--ink) !important; box-shadow: none !important; outline: 3px solid var(--text) !important; outline-offset: -3px; }
+html[data-theme="concrete"] .file-card.selected .file-name, html[data-theme="concrete"] .file-card.selected .file-meta, html[data-theme="concrete"] .file-card.selected .col-ext, html[data-theme="concrete"] .file-card.selected .col-size, html[data-theme="concrete"] .file-card.selected .col-date, html[data-theme="concrete"] .file-card.selected .col-time, html[data-theme="concrete"] .file-card.selected .card-star-btn svg { color: var(--ink) !important; }
+html[data-theme="concrete"] .sel-bar { background: var(--yellow); color: var(--ink); border: var(--bw) solid var(--ink); box-shadow: 5px 5px 0 var(--text); border-radius: 0; }
+html[data-theme="concrete"] .sel-count { color: var(--ink); }
+html[data-theme="concrete"] .sel-btn { background: #fff; color: var(--ink); border: var(--bw) solid var(--ink); border-radius: 0; box-shadow: 2px 2px 0 var(--ink); font-weight: 700; text-transform: uppercase; }
+html[data-theme="concrete"] .sel-btn:hover:not(:disabled) { background: var(--orange); }
+@media (max-width: 640px) { .sel-bar { left: 0.75rem; right: 0.75rem; transform: none; max-width: none; width: auto; } .sel-count { flex: 1 1 100%; text-align: center; } }
+/* --- Print: the file list, or just the open preview when one is open; no app chrome, black on white --- */
+@media print {
+    html, body { height: auto !important; overflow: visible !important; display: block !important; font-size: 11pt; }
+    html, body, .app-container, .main, .modal, .modal-body, .modal-header { background: #fff !important; color: #000 !important; }
+    .sel-bar, .header, #treePanel, #twin, .skip-link, .tree-resize, .modal-actions, .playlist-bar, .player-bar, .player-info-btn, .settings-menu, .op-toast, .card-star-btn,
+    .modal-overlay:not(.active), #loadMoreBtn, .load-more-btn { display: none !important; }
+    .app-container, .main { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+    body:has(#modal.active) .header, body:has(#modal.active) .app-container { display: none !important; }
+    .modal-overlay.active { position: static !important; display: block !important; opacity: 1 !important; visibility: visible !important; background: none !important; padding: 0 !important; }
+    .modal { position: static !important; display: block !important; width: auto !important; max-width: none !important; height: auto !important; max-height: none !important; transform: none !important; border: 0 !important; box-shadow: none !important; }
+    .modal-header { border-bottom: 1pt solid #000 !important; }
+    .modal-body { overflow: visible !important; display: block !important; }
+    .file-card { break-inside: avoid; background: none !important; border-bottom: 0.5pt solid #999 !important; box-shadow: none !important; }
+    a { color: #000 !important; }
+    .file-icon.folder, .file-icon.folder svg { color: #000 !important; }
+    .file-icon { background: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1829,7 +1868,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
     <header class="header">
         <div class="header-content">
             <h1 class="sr-only">File Viewer</h1>
-            <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="Go to home folder">
+            <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="File Viewer, go to home folder">
                 <svg viewBox="0 0 24 24" fill="currentcolor"><rect x="2" y="5" width="20" height="14"/><circle cx="8" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="16" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="8" cy="12" r="0.8"/><circle cx="16" cy="12" r="0.8"/><rect x="10" y="15.6" width="4" height="1.6" fill="var(--bg-secondary)"/></svg>
                 <span>File Viewer</span>
             </div>
@@ -1838,7 +1877,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
             <div class="header-actions">
                 <div class="search-container" id="searchBox0">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="currentcolor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" aria-label="Search files" />
+                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" aria-label="Search files" title="Filters: ext:m3u  type:audio  size:>1mb  newer:7d  in:folder  -word" />
                     <button class="search-clear" id="searchClearBtn" type="button" title="Clear search" aria-label="Clear search">
                         <svg viewBox="0 0 24 24" fill="currentcolor" width="12" height="12"><use href="#icon-x"/></svg>
                     </button>
@@ -1874,15 +1913,15 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                                     <div class="settings-row">
                                         <span class="settings-label">Interface text <span id="fontSizeLabel">16px</span></span>
                                         <div class="settings-control">
-                                            <button id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
-                                            <button id="fontIncrease" title="Increase font size" aria-label="Increase font size">A+</button>
+                                            <button id="fontDecrease" title="Decrease font size" aria-label="A-, decrease font size">A-</button>
+                                            <button id="fontIncrease" title="Increase font size" aria-label="A+, increase font size">A+</button>
                                         </div>
                                     </div>
                                     <div class="settings-row">
                                         <span class="settings-label">Preview text <span id="previewFontLabel">13px</span></span>
                                         <div class="settings-control">
-                                            <button id="previewFontDecrease" title="Decrease preview text size" aria-label="Decrease preview text size">A-</button>
-                                            <button id="previewFontIncrease" title="Increase preview text size" aria-label="Increase preview text size">A+</button>
+                                            <button id="previewFontDecrease" title="Decrease preview text size" aria-label="A-, decrease preview text size">A-</button>
+                                            <button id="previewFontIncrease" title="Increase preview text size" aria-label="A+, increase preview text size">A+</button>
                                         </div>
                                     </div>
                                 </div>
@@ -2093,8 +2132,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
             <div class="tree-content" id="treeContent" role="tree" aria-label="Folders"></div>
             <div class="tree-resize" id="treeResize" role="separator" aria-orientation="vertical" aria-label="Resize the folder tree" tabindex="0" title="Drag to resize, double-click to reset"></div>
         </aside>
-        <h2 class="sr-only" id="mainHeading">Files</h2>
-        <main class="main" id="main" tabindex="-1" aria-labelledby="mainHeading">
+        <main class="main" id="main" tabindex="-1" aria-label="Files">
             <div class="skeleton-list" aria-hidden="true">
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name"></div><div class="skeleton-block skeleton-meta"></div></div>
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:60%"></div><div class="skeleton-block skeleton-meta"></div></div>
@@ -2162,6 +2200,8 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
             <div class="modal-body shortcuts-body">
                 <dl class="shortcuts-list">
                     <div class="shortcut-row"><dt><kbd>/</kbd></dt><dd>Focus search</dd></div>
+                    <div class="shortcut-row"><dt><code>ext:m3u</code> <code>type:audio</code> <code>size:&gt;1mb</code></dt><dd>Search filters</dd></div>
+                    <div class="shortcut-row"><dt><code>newer:7d</code> <code>in:folder</code> <code>-word</code></dt><dd>Recent, inside a folder, exclude</dd></div>
                     <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd>Show this help</dd></div>
                     <div class="shortcut-row"><dt><kbd>Esc</kbd></dt><dd>Close dialog</dd></div>
                     <div class="shortcut-row"><dt><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd>Navigate files &amp; folders</dd></div>
@@ -2308,8 +2348,11 @@ let fileIndex = null,
 
 let searchQuery = "",
     // Search results are paged (the whole repo can match thousands of
-    // files). Folders are NOT paged: a folder always shows everything in it.
-    searchResultLimit = 100;
+    // files). Folders show everything in them; the one exception is a huge local folder (over FOLDER_PAGE_AT items), which grows as you scroll
+    // (and by "Show more", End or Down at the last item) so a folder of thousands of files does not build thousands of rows at once.
+    searchResultLimit = 100,
+    folderLimit = 500;
+const FOLDER_PAGE_AT = 2500; // far above the ~1k a hosted folder can hold, so only a huge local folder ever pages
 
 let currentFilePath = "",
     currentFileName = "",
@@ -3514,25 +3557,31 @@ function changePreviewFontSize(dir) {
     applyPreviewFontSize();
 }
 // "1536" -> "1.5 KB". Same format the index generator used to store.
+const SIZE_UNITS = ["B", "KB", "MB", "GB", "TB"];
 function formatFileSize(bytes) {
     if (!bytes || bytes < 0) return "0 B";
-    const k = 1024, units = ["B", "KB", "MB", "GB", "TB"];
-    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), units.length - 1);
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+    let i = 0, v = bytes;
+    while (v >= 1024 && i < 4) { v /= 1024; i++; }
+    return parseFloat(v.toFixed(2)) + " " + SIZE_UNITS[i];
 }
 function isPlaylistExtension(e) {
     const t = e.toLowerCase();
     return t.endsWith(".m3u") || t.endsWith(".m3u8");
 }
 function preprocessFiles(nodes, pathPrefix = "", prefixArr = []) {
+    // The folder's own lowercase and normalized forms are made once; each item only adds its (short) name to them.
+    const parentLower = pathPrefix.toLowerCase();
+    const parentNorm = parentLower.replace(/[^a-z0-9]+/g, " ").trim();
     for (const node of nodes) {
         const currentPathStr = pathPrefix ? `${pathPrefix}/${node.name}` : node.name;
-        const searchKey = currentPathStr.toLowerCase();
+        const nameLower = node.name.toLowerCase();
+        const searchKey = pathPrefix ? parentLower + "/" + nameLower : nameLower;
         const navPath = prefixArr.length ? [...prefixArr, node.name] : [node.name];
 
         // Search keys are built once per file: normalizedKey is the path lowercased with punctuation collapsed to single spaces.
         // The fuzzy keys (compactKey, boundarySet) are built on first use (see fuzzyKeys) to keep start-up and memory small.
-        const normalizedKey = searchKey.replace(/[^a-z0-9]+/g, " ").trim();
+        const nameNorm = nameLower.replace(/[^a-z0-9]+/g, " ").trim();
+        const normalizedKey = parentNorm ? (nameNorm ? parentNorm + " " + nameNorm : parentNorm) : nameNorm;
 
         // The modified date is parsed on first use (see itemDate). The index stores no "1.2 MB" string, so it is made here once from the byte size.
         if (node.type === "file" && node.sizeFormatted === undefined) {
@@ -3545,7 +3594,7 @@ function preprocessFiles(nodes, pathPrefix = "", prefixArr = []) {
             navPath: navPath,
             searchKey: searchKey,
             normalizedKey: normalizedKey,
-            parentPath: pathPrefix.toLowerCase()
+            parentPath: parentLower
         });
         if (node.type === "file") filesByPath.set(currentPathStr, allFiles[allFiles.length - 1]);
         if (node.type === "directory" && node.children) {
@@ -3653,23 +3702,96 @@ function scoreSearchItem(query, tokens, compactQuery, item) {
     return null;
 }
 
-// Runs the fuzzy search across every indexed file/folder, ranked by
+// ---- Search filters ----
+// Words of the form key:value narrow the results and combine with ordinary (fuzzy) words:
+//   ext:m3u,m3u8   type:folder | file | a category (audio, image, video, playlist, code, ...)   size:>1mb  size:<500kb  size:10kb..2mb
+//   newer:7d  older:3m  (d days, w weeks, m months, y years)   after:2026-01-01  before:2026-06-30   in:folder (path contains)
+//   A leading minus turns a filter around (-ext:json) or excludes a word (-backup).
+const SEARCH_UNITS = { b: 1, kb: 1024, mb: 1048576, gb: 1073741824, tb: 1099511627776 };
+function parseSize(v) {
+    const m = /^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb|k|m|g)?$/.exec(v);
+    if (!m) return null;
+    const u = m[2] || "b";
+    return parseFloat(m[1]) * SEARCH_UNITS[u.length === 1 && u !== "b" ? u + "b" : u];
+}
+function parseAge(v) {
+    const m = /^(\d+)\s*([dwmy])$/.exec(v);
+    if (!m) return null;
+    return Date.now() - parseInt(m[1], 10) * ({ d: 1, w: 7, m: 30, y: 365 }[m[2]]) * 86400000;
+}
+const searchParseCache = new Map();
+function parseSearch(q) {
+    const hit = searchParseCache.get(q);
+    if (hit) return hit;
+    const words = [], tests = [];
+    for (let tok of q.split(/\s+/).filter(Boolean)) {
+        let neg = false;
+        if (tok.length > 1 && tok[0] === "-") { neg = true; tok = tok.slice(1); }
+        const m = /^(ext|type|size|newer|older|after|before|in):(.+)$/.exec(tok);
+        let test = null;
+        if (m) {
+            const key = m[1], val = m[2];
+            if (key === "ext") {
+                const set = new Set(val.split(",").map((x) => x.replace(/^\./, "")).filter(Boolean));
+                test = (it) => { if (it.type === "directory") return false; const i = it.name.lastIndexOf("."); return i >= 0 && set.has(it.name.slice(i + 1).toLowerCase()); };
+            } else if (key === "type") {
+                const set = new Set(val.split(",").map((x) => x === "dir" || x === "directory" ? "folder" : x));
+                test = (it) => (it.type === "directory" ? set.has("folder") : set.has("file") || set.has(String(it.category || "").toLowerCase()));
+            } else if (key === "size") {
+                let a = null, b = null, mm;
+                if ((mm = /^>=?(.+)$/.exec(val))) a = parseSize(mm[1]);
+                else if ((mm = /^<=?(.+)$/.exec(val))) b = parseSize(mm[1]);
+                else if ((mm = /^(.+?)\.\.(.+)$/.exec(val))) { a = parseSize(mm[1]); b = parseSize(mm[2]); }
+                else { a = b = parseSize(val.replace(/^=/, "")); }
+                if (a !== null || b !== null) test = (it) => typeof it.size === "number" && it.type !== "directory" && (a === null || it.size >= a) && (b === null || it.size <= b);
+            } else if (key === "newer" || key === "older") {
+                const t = parseAge(val);
+                if (t !== null) test = key === "newer" ? (it) => { const d = itemDateMs(it); return d > 0 && d >= t; } : (it) => { const d = itemDateMs(it); return d > 0 && d <= t; };
+            } else if (key === "after" || key === "before") {
+                const t = Date.parse(val);
+                if (!isNaN(t)) test = key === "after" ? (it) => { const d = itemDateMs(it); return d > 0 && d >= t; } : (it) => { const d = itemDateMs(it); return d > 0 && d <= t; };
+            } else if (key === "in") {
+                test = (it) => it.searchKey.includes(val);
+            }
+        }
+        if (test) tests.push(neg ? (it) => !test(it) : test);
+        else if (neg) tests.push((it) => !it.searchKey.includes(tok));
+        else words.push(tok);
+    }
+    const out = { text: words.join(" "), tests };
+    if (searchParseCache.size > 50) searchParseCache.clear();
+    searchParseCache.set(q, out);
+    return out;
+}
+function searchTextOf(q) { return q ? parseSearch(q).text : q; }
+
+// Ranks `items` for query `q`: filters first, then the fuzzy score, with a bonus for items in the folder being viewed.
+// A query of filters only (no words) lists every match, folders first, by name.
+const SEARCH_COLLATOR = new Intl.Collator(undefined, { numeric: true });
+function rankSearch(items, q, here) {
+    const { text, tests } = parseSearch(q);
+    const tokens = text.split(/[\s/]+/).filter(Boolean);
+    const compact = text.replace(/[^a-z0-9]/g, "");
+    const SAME_FOLDER_BONUS = 400;
+    const scored = [];
+    for (const item of items) {
+        let ok = true;
+        for (let i = 0; i < tests.length; i++) if (!tests[i](item)) { ok = false; break; }
+        if (!ok) continue;
+        if (!text) { scored.push({ item, score: (item.type === "directory" ? 100000 : 0) + (item.parentPath === here ? 50000 : 0) }); continue; }
+        const score = scoreSearchItem(text, tokens, compact, item);
+        if (score === null) continue;
+        scored.push({ item, score: score + (item.parentPath === here ? SAME_FOLDER_BONUS : 0) });
+    }
+    if (text) scored.sort((a, b) => b.score - a.score);
+    else scored.sort((a, b) => b.score - a.score || SEARCH_COLLATOR.compare(a.item.fullPath, b.item.fullPath));
+    return scored.map((x) => x.item);
+}
+
+// Runs the search across every indexed file/folder, ranked by
 // relevance with a bonus for items in the currently viewed folder.
 function searchFiles(query) {
-    const tokens = query.split(/[\s/]+/).filter(Boolean);
-    const compactQuery = query.replace(/[^a-z0-9]/g, "");
-    const currentFolderKey = currentPath.join("/").toLowerCase();
-    const SAME_FOLDER_BONUS = 400;
-
-    const scored = [];
-    for (const item of allFiles) {
-        const score = scoreSearchItem(query, tokens, compactQuery, item);
-        if (score === null) continue;
-        const inCurrentFolder = item.parentPath === currentFolderKey;
-        scored.push({ item, score: score + (inCurrentFolder ? SAME_FOLDER_BONUS : 0) });
-    }
-    scored.sort((a, b) => b.score - a.score);
-    return scored.map((s) => s.item);
+    return rankSearch(allFiles, query, currentPath.join("/").toLowerCase());
 }
 
 // ---- Loudness leveler (on by default) ----
@@ -4896,6 +5018,7 @@ function setupEventListeners() {
     });
     document.getElementById("main").addEventListener("click", handleStarButtonClick);
     document.getElementById("main").addEventListener("click", handleCardClick);
+    selInit();
     document.getElementById("main").addEventListener("click", handleSortHeaderClick);
     document.getElementById("main").addEventListener("keydown", handleGridKeydown);
     document.getElementById("treeContent").addEventListener("click", handleTreeClick);
@@ -4965,6 +5088,7 @@ function setupEventListeners() {
     document.getElementById("topNextBtn").addEventListener("click", goToNextTrack);
     document.getElementById("topShuffleBtn").addEventListener("click", toggleShuffle);
     document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink);
+    if (canNativeShare()) { const lb = document.getElementById("copyLinkBtn"); lb.title = "Share link"; lb.setAttribute("aria-label", "Share file link"); }
     document.getElementById("favoriteBtn").addEventListener("click", () => toggleFavoriteFile(currentFilePath));
     document.getElementById("playlistTest").addEventListener("click", runPlaylistTest);
     document.getElementById("playlistSongs").addEventListener("click", openSongsModal);
@@ -4990,6 +5114,10 @@ function setupEventListeners() {
     document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
     setupGotoStepper();
 }
+// On phones and tablets (touch screen with a share sheet) the link button opens the system share sheet, which has Copy in it; elsewhere it copies.
+function canNativeShare() {
+    return typeof navigator.share === "function" && !LOCAL.active && window.matchMedia("(pointer: coarse)").matches;
+}
 function copyRawLink() {
     const btn = document.getElementById("copyLinkBtn");
     const url = LOCAL.active ? currentFilePath : new URL(hostedUrl(currentFilePath), window.location.href).href;
@@ -4997,6 +5125,14 @@ function copyRawLink() {
         btn.classList.add("copied");
         setTimeout(() => btn.classList.remove("copied"), 1200);
     };
+    if (canNativeShare()) {
+        navigator.share({ title: currentFileName || "File", url }).then(done).catch((err) => {
+            if (err && err.name === "AbortError") return; // the person closed the sheet
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
+            else fallbackCopy(url, done);
+        });
+        return;
+    }
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
     } else {
@@ -5067,6 +5203,10 @@ function handleGridKeydown(e) {
             if (nextIdx < cards.length) {
                 e.preventDefault();
                 cards[nextIdx].focus();
+            } else if (!searchQuery && document.getElementById("loadMoreBtn") && idx === cards.length - 1) {
+                e.preventDefault();
+                pagerGrow(false);
+                requestAnimationFrame(() => document.querySelectorAll("#main .file-card")[idx + 1]?.focus());
             }
             return;
         }
@@ -5084,6 +5224,7 @@ function handleGridKeydown(e) {
             return;
         case "End":
             e.preventDefault();
+            if (!searchQuery && document.getElementById("loadMoreBtn")) { pagerGrow(true); requestAnimationFrame(() => { const c = document.querySelectorAll("#main .file-card"); c[c.length - 1]?.focus(); }); return; }
             cards[cards.length - 1]?.focus();
     }
 }
@@ -5140,10 +5281,240 @@ function safeJsonParse(str, fallback) {
         return fallback;
     }
 }
+// ---- Selecting several items (main list and grid) ----
+// Ctrl/Cmd + click toggles one item, Shift + click selects a range, long press does the same on a touch screen, X toggles the focused item,
+// Shift + Up/Down extends, Ctrl/Cmd + A selects everything in view, Esc clears. While something is selected a plain click toggles instead of opening.
+const SEL = { map: new Map(), anchor: null, folder: "", suppress: false, bar: null };
+function selKeyOf(card) {
+    if (!card || card.classList.contains("parent-dir")) return null;
+    if (card.dataset.directory) return "d:" + card.dataset.path;
+    if (card.dataset.file) return "f:" + card.dataset.file;
+    return null;
+}
+function selEntryOf(card) {
+    const key = selKeyOf(card);
+    if (!key) return null;
+    if (key[0] === "d") {
+        const arr = safeJsonParse(card.dataset.path, null);
+        return arr && arr.length ? { key, type: "d", arr, path: arr.join("/"), name: arr[arr.length - 1] } : null;
+    }
+    const path = card.dataset.file;
+    return { key, type: "f", path, name: card.dataset.name || path.split("/").pop() };
+}
+function selAllEntries() {
+    const items = searchQuery ? searchFiles(searchQuery) : sortItems(getCurrentItems());
+    return items.map((it) => {
+        if (it.type === "directory") {
+            const arr = searchQuery ? it.navPath : [...currentPath, it.name];
+            return { key: "d:" + JSON.stringify(arr), type: "d", arr, path: arr.join("/"), name: it.name };
+        }
+        const path = searchQuery ? it.fullPath : (currentPath.length ? currentPath.join("/") + "/" : "") + it.name;
+        return { key: "f:" + path, type: "f", path, name: it.name };
+    });
+}
+function selPaint() {
+    const main = document.getElementById("main");
+    if (!main) return;
+    main.querySelectorAll(".file-card").forEach((c) => {
+        const k = selKeyOf(c), on = !!k && SEL.map.has(k);
+        if (c.classList.contains("selected") === on) return;
+        c.classList.toggle("selected", on);
+        if (on) { c.dataset.l0 = c.getAttribute("aria-label") || ""; c.setAttribute("aria-label", c.dataset.l0 + ", selected"); }
+        else if (c.dataset.l0 !== undefined) { c.setAttribute("aria-label", c.dataset.l0); delete c.dataset.l0; }
+    });
+}
+function selSync(say) {
+    const n = SEL.map.size;
+    document.body.classList.toggle("sel-on", n > 0);
+    selPaint();
+    const bar = SEL.bar;
+    if (!bar) return;
+    bar.hidden = n === 0;
+    if (n) {
+        let f = 0, d = 0;
+        SEL.map.forEach((e) => { if (e.type === "d") d++; else f++; });
+        const parts = [];
+        if (f) parts.push(`${f} file${f === 1 ? "" : "s"}`);
+        if (d) parts.push(`${d} folder${d === 1 ? "" : "s"}`);
+        bar.querySelector(".sel-count").textContent = parts.join(", ") + " selected";
+        bar.querySelector('[data-sel="copy"]').disabled = f === 0;
+        const sh = bar.querySelector('[data-sel="share"]');
+        sh.hidden = !canNativeShare() || f === 0;
+    }
+    if (say !== false) announce(n ? `${n} selected` : "Selection cleared");
+}
+function selClear() {
+    if (!SEL.map.size) return;
+    SEL.map.clear();
+    SEL.anchor = null;
+    selSync();
+}
+function selToggle(entry, force) {
+    if (!entry) return;
+    if (!SEL.map.size) SEL.folder = currentPath.join("/");
+    const on = force !== undefined ? force : !SEL.map.has(entry.key);
+    if (on) SEL.map.set(entry.key, entry); else SEL.map.delete(entry.key);
+    SEL.anchor = entry.key;
+    selSync();
+}
+function selRange(card) {
+    const cards = Array.from(document.querySelectorAll("#main .file-card")).filter((c) => selKeyOf(c));
+    const to = cards.indexOf(card);
+    let from = cards.findIndex((c) => selKeyOf(c) === SEL.anchor);
+    if (to < 0) return;
+    if (from < 0) from = to;
+    if (!SEL.map.size) SEL.folder = currentPath.join("/");
+    const [a, b] = from < to ? [from, to] : [to, from];
+    for (let i = a; i <= b; i++) { const e = selEntryOf(cards[i]); if (e) SEL.map.set(e.key, e); }
+    selSync();
+}
+function selSelectAll() {
+    if (!SEL.map.size) SEL.folder = currentPath.join("/");
+    selAllEntries().forEach((e) => SEL.map.set(e.key, e));
+    selSync();
+}
+function selPaintStars() {
+    document.querySelectorAll("#main .card-star-btn").forEach((btn) => {
+        const type = btn.dataset.starType, raw = btn.dataset.starPath;
+        let on, label;
+        if (type === "folder") { const arr = safeJsonParse(raw, null); if (!arr) return; on = isPinned(arr); label = on ? "Unpin this folder" : "Pin this folder"; }
+        else { on = isFavoriteFile(raw); label = on ? "Remove from favorites" : "Add to favorites"; }
+        btn.classList.toggle("starred", on);
+        btn.setAttribute("aria-pressed", String(on));
+        btn.title = label;
+        btn.setAttribute("aria-label", label);
+        btn.innerHTML = on ? icons.starFilled : icons.starOutline;
+    });
+}
+function selNote(msg, ms) { opStart(msg); opDone(msg, ms || 2200); }
+function selStar() {
+    const list = [...SEL.map.values()];
+    const isOn = (e) => (e.type === "f" ? isFavoriteFile(e.path) : isPinned(e.arr));
+    const allOn = list.every(isOn);
+    list.forEach((e) => { if (allOn ? isOn(e) : !isOn(e)) { if (e.type === "f") toggleFavoriteFile(e.path); else toggleFolderPin(e.arr); } });
+    selPaintStars();
+    announce(allOn ? "Removed from favorites" : "Added to favorites");
+}
+function selLinks() {
+    return [...SEL.map.values()].filter((e) => e.type === "f").map((e) => LOCAL.active ? e.path : new URL(hostedUrl(e.path), window.location.href).href);
+}
+function selCopy() {
+    const links = selLinks();
+    if (!links.length) return;
+    const text = links.join("\n"), done = () => selNote(`Copied ${links.length} link${links.length === 1 ? "" : "s"}.`);
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    else fallbackCopy(text, done);
+}
+function selShare() {
+    const links = selLinks();
+    if (!links.length || !canNativeShare()) return;
+    navigator.share({ title: `${links.length} file${links.length === 1 ? "" : "s"}`, text: links.join("\n") }).catch(() => {});
+}
+async function selDownload() {
+    if (zipBusy || !fileIndex) return;
+    if (fileIndex.partial) { selNote("File sizes are still loading. Try again in a moment.", 2500); return; }
+    const files = [], used = new Set();
+    for (const e of SEL.map.values()) {
+        if (e.type === "f") {
+            const node = filesByPath.get(e.path);
+            const rel = used.has(e.name) ? e.path : e.name;
+            used.add(rel);
+            files.push({ path: e.path, rel, size: node ? getItemSize(node) : 0, date: node ? getItemDate(node) : null, order: files.length });
+        } else {
+            const dn = findNode(e.path);
+            if (dn && dn.children) collectFolderFiles(dn.children, e.path, e.name, files);
+        }
+    }
+    if (!files.length) { selNote("Nothing to download in the selection.", 2500); return; }
+    if (files.length === 1 && SEL.map.size === 1) {
+        zipBusy = true;
+        const ctl = new AbortController();
+        opStart(`Downloading ${files[0].rel}\u2026`, () => ctl.abort());
+        try { recSave(await blobForPath(files[0].path, ctl.signal), files[0].rel.split("/").pop()); opDone(`Saved ${files[0].rel.split("/").pop()}.`, 2500); }
+        catch (err) { opDone(err && err.name === "AbortError" ? "Cancelled." : "Could not download the file.", 3500); }
+        finally { zipBusy = false; }
+        return;
+    }
+    await zipFilesFlow(files, "selection", "", "selection");
+}
+function selInit() {
+    const main = document.getElementById("main");
+    const bar = document.createElement("div");
+    bar.id = "selBar";
+    bar.className = "sel-bar";
+    bar.setAttribute("role", "region");
+    bar.setAttribute("aria-label", "Selected items");
+    bar.hidden = true;
+    bar.innerHTML = `<span class="sel-count" aria-hidden="true"></span>
+        <button type="button" class="sel-btn" data-sel="all">Select all</button>
+        <button type="button" class="sel-btn" data-sel="zip">Download</button>
+        <button type="button" class="sel-btn" data-sel="star">Star</button>
+        <button type="button" class="sel-btn" data-sel="copy">Copy links</button>
+        <button type="button" class="sel-btn" data-sel="share" hidden>Share</button>
+        <button type="button" class="sel-btn" data-sel="clear">Clear</button>`;
+    document.body.appendChild(bar);
+    SEL.bar = bar;
+    bar.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-sel]");
+        if (!b) return;
+        ({ all: selSelectAll, zip: selDownload, star: selStar, copy: selCopy, share: selShare, clear: selClear })[b.dataset.sel]();
+    });
+    // Cards are rebuilt on every render and on "show more": mark the selected ones again, and drop the selection when the folder changes.
+    let raf = 0;
+    new MutationObserver(() => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+            raf = 0;
+            if (SEL.map.size && SEL.folder !== currentPath.join("/")) { SEL.map.clear(); SEL.anchor = null; selSync(false); return; }
+            if (SEL.map.size) selPaint();
+        });
+    }).observe(main, { childList: true, subtree: true });
+    // Long press on a touch screen starts (or extends) a selection.
+    let timer = 0, sx = 0, sy = 0;
+    const cancel = () => { clearTimeout(timer); timer = 0; };
+    main.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "mouse" || e.target.closest(".card-star-btn")) return;
+        const card = e.target.closest(".file-card");
+        if (!card || !selKeyOf(card)) return;
+        sx = e.clientX; sy = e.clientY;
+        cancel();
+        timer = setTimeout(() => {
+            timer = 0;
+            SEL.suppress = true;
+            selToggle(selEntryOf(card));
+            if (navigator.vibrate) { try { navigator.vibrate(15); } catch (err) {} }
+        }, 450);
+    });
+    main.addEventListener("pointermove", (e) => { if (timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) cancel(); });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((t) => main.addEventListener(t, cancel));
+    main.addEventListener("contextmenu", (e) => { if (SEL.suppress || (timer && e.target.closest(".file-card"))) e.preventDefault(); });
+    main.addEventListener("keydown", (e) => {
+        if (e.target.closest("input, textarea, select") || e.altKey) return;
+        const card = e.target.closest(".file-card");
+        if ((e.key === "x" || e.key === "X") && card && !e.ctrlKey && !e.metaKey) { const en = selEntryOf(card); if (en) { e.preventDefault(); selToggle(en); } return; }
+        if ((e.key === "a" || e.key === "A") && (e.ctrlKey || e.metaKey) && !TWIN.on) { e.preventDefault(); selSelectAll(); return; }
+        if (e.shiftKey && card && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+            const en = selEntryOf(card);
+            if (en) selToggle(en, true);
+            setTimeout(() => { const c = document.activeElement && document.activeElement.closest ? document.activeElement.closest("#main .file-card") : null; const n = c && selEntryOf(c); if (n) selToggle(n, true); }, 0);
+        }
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape" || !SEL.map.size || e.defaultPrevented) return;
+        if (document.querySelector(".modal-overlay.active") || e.target.closest("input, textarea, select")) return;
+        e.preventDefault();
+        selClear();
+    });
+}
 function handleCardClick(e) {
     if (e.target.closest(".card-star-btn")) return;
     const t = e.target.closest(".file-card");
     if (!t) return;
+    if (SEL.suppress) { SEL.suppress = false; e.preventDefault(); return; } // the click that ends a long press
+    const entry = selEntryOf(t);
+    if (entry && (e.ctrlKey || e.metaKey)) { e.preventDefault(); selToggle(entry); return; }
+    if (entry && e.shiftKey && SEL.map.size) { e.preventDefault(); selRange(t); return; }
+    if (entry && SEL.map.size) { selToggle(entry); return; }
     if (t.dataset.directory) {
         const path = safeJsonParse(t.dataset.path, null);
         if (path) navigateTo(path);
@@ -5377,6 +5748,7 @@ function handleHashChange() {
 }
 function navigateTo(pathArr) {
     currentPath = pathArr;
+    folderLimit = 500;
     searchQuery = "";
     document.getElementById("search").value = "";
     updateSearchClearVisibility();
@@ -5762,7 +6134,7 @@ function render() {
     } else {
         all = sortItems(getCurrentItems());
     }
-    const visibleItems = searchQuery ? all.slice(0, searchResultLimit) : all;
+    const visibleItems = searchQuery ? all.slice(0, searchResultLimit) : all.length > FOLDER_PAGE_AT ? all.slice(0, folderLimit) : all;
 
     if (searchQuery) {
         announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);
@@ -5840,7 +6212,7 @@ function render() {
       `;
     if (currentPath.length > 0 && !searchQuery) {
         html += `
-            <div class="file-card directory parent-dir" data-directory="true" data-path="${escapeHtml(JSON.stringify(currentPath.slice(0, -1)))}" tabindex="0" role="button" aria-label="Go to parent folder">
+            <div class="file-card directory parent-dir" data-directory="true" data-path="${escapeHtml(JSON.stringify(currentPath.slice(0, -1)))}" tabindex="0" role="link" aria-label="Go to parent folder">
               ${isColumnView ? `<span class="card-star-spacer" aria-hidden="true"></span>` : ""}
               <div class="file-icon folder">${currentView === "grid" ? ibIcon("folder") : icons.folder}</div>
               <div class="file-info">
@@ -5882,11 +6254,11 @@ function render() {
 
         if (item.type === "directory") {
             html += `
-            <div class="file-card directory" data-directory="true" data-path="${escapeHtml(JSON.stringify(parentPathArr))}" tabindex="0" role="button" aria-label="Open folder ${escapeHtml(item.name)}">
+            <div class="file-card directory" data-directory="true" data-path="${escapeHtml(JSON.stringify(parentPathArr))}" tabindex="0" role="link" aria-label="Open folder ${escapeHtml(item.name)}">
               ${renderStarButton("folder", parentPathArr)}
               <div class="file-icon folder">${currentView === "grid" ? ibIcon("folder") : icons.folder}</div>
               <div class="file-info">
-                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
+                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchTextOf(searchQuery)) : escapeHtml(item.name)}</span>
                 <span class="file-meta">${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} ${(item.children?.length || 0) === 1 ? "item" : "items"}`}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
               </div>
               ${
@@ -5904,12 +6276,12 @@ function render() {
                     : `<img class="file-thumbnail file-thumbnail-inline lazy" ${LOCAL.active ? `data-lpath="${escapeHtml(clickPath)}"` : `data-src="${escapeHtml(hostedUrl(clickPath))}"`} alt="" loading="lazy" decoding="async">`;
             }
             html += `
-            <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">
+            <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="link" aria-label="Open file ${escapeHtml(item.name)}">
               ${renderStarButton("file", clickPath)}
               ${thumbnailHtml}
               <div class="file-icon ${iconType}${xcAttr}">${iconSvg}</div>
               <div class="file-info">
-                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
+                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchTextOf(searchQuery)) : escapeHtml(item.name)}</span>
                 <span class="file-meta">${isColumnView && !searchQuery ? "" : item.sizeFormatted}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
               </div>
               ${
@@ -5934,13 +6306,21 @@ function render() {
     });
     const loadMoreBtn = document.getElementById("loadMoreBtn");
     if (loadMoreBtn) {
-        loadMoreBtn.addEventListener("click", () => {
-            searchResultLimit += 100;
-            render();
-        });
+        loadMoreBtn.addEventListener("click", () => pagerGrow(false));
+        // A big folder keeps filling as the bottom comes near; search results stay behind the button.
+        if (!searchQuery && "IntersectionObserver" in window) {
+            const io = new IntersectionObserver((en) => { if (en.some((x) => x.isIntersecting)) { io.disconnect(); pagerGrow(false); } }, { root: mainEl, rootMargin: "900px 0px" });
+            io.observe(loadMoreBtn);
+        }
     }
     syncSortUI();
     updateListHeaderStuck();
+}
+// Shows more of a paged list: search results 100 at a time, a big folder twice as many (or all of it with `all`).
+function pagerGrow(all) {
+    if (searchQuery) searchResultLimit += 100;
+    else folderLimit = all ? Infinity : folderLimit * 2;
+    render();
 }
 async function parsePlaylist(e, t) {
     try {
@@ -6002,10 +6382,7 @@ function updatePlaylistUI() {
         const plNum = document.createElement("span");
         plNum.className = "pl-num";
         plNum.textContent = `${currentPlaylistIndex + 1}/${currentPlaylist.length}`;
-        const plTitle = document.createElement("span");
-        plTitle.className = "pl-title";
-        plTitle.textContent = `: ${item.title}`;
-        t.append(plNum, plTitle);
+        t.append(plNum); // the station name is in the window title and under the glyph, so the status row keeps only the position
         let prevDisabled, nextDisabled;
         if (isShuffle) {
             (prevDisabled = shuffleHistory.length <= 1), (nextDisabled = currentPlaylist.length <= 1);
@@ -10975,6 +11352,7 @@ function showUnavailable(containerEl, fileName, fileUrl, err) {
     if (err && err.status === 404) reason = "This file could not be found (404).";
     else if (err && err.status) reason = `The server returned an error (HTTP ${err.status}).`;
     else if (err && LOCAL.active) reason = "This file couldn't be read from the local folder. If it was changed or moved since the folder was opened, open the folder again.";
+    else if (err && navigator.onLine === false) reason = "You are offline, and this file was not opened before, so there is no saved copy of it.";
     else if (err) reason = "This file couldn't be loaded — it may be blocked by CORS or a network issue.";
     containerEl.innerHTML = `
         <div class="preview-unavailable">
@@ -12259,14 +12637,18 @@ async function downloadFolderZip() {
     const files = [];
     collectFolderFiles(children, pathArr.join("/"), "", files);
     if (!files.length) { opStart("There are no files in this folder."); opDone("There are no files in this folder.", 2500); return; }
+    const folderName = pathArr.length ? pathArr[pathArr.length - 1] : LOCAL.active ? LOCAL.name || "folder" : "files";
+    return zipFilesFlow(files, folderName, folderName, "folder");
+}
+// Packs `files` ({path, rel, size, date, order}) into one zip and saves it as `folderName`.zip; `topDir` (or "") is the folder name inside the zip.
+async function zipFilesFlow(files, folderName, topDir, noun) {
     const total = files.reduce((a, f) => a + (f.size || 0), 0);
     const lim = LOCAL.active ? { warn: 1024 * MB, max: 3.5 * 1024 * MB } : { warn: 100 * MB, max: 1024 * MB };
     if (files.length > ZIP_MAX_FILES || files.some((f) => f.size >= 0xffffffff) || total > lim.max) {
-        alert(`This folder is too big to pack in the browser (${files.length.toLocaleString()} files, ${formatFileSize(total)}). The limit is ${formatFileSize(lim.max)} and ${ZIP_MAX_FILES.toLocaleString()} files. Open a smaller sub-folder instead.`);
+        alert(`This ${noun} is too big to pack in the browser (${files.length.toLocaleString()} files, ${formatFileSize(total)}). The limit is ${formatFileSize(lim.max)} and ${ZIP_MAX_FILES.toLocaleString()} files. Open a smaller sub-folder instead.`);
         return;
     }
-    if (total > lim.warn && !confirm(`This folder has ${files.length.toLocaleString()} files (${formatFileSize(total)}). ${LOCAL.active ? "Packing it can take a while." : "It will be downloaded and held in memory first."} Continue?`)) return;
-    const folderName = pathArr.length ? pathArr[pathArr.length - 1] : LOCAL.active ? LOCAL.name || "folder" : "files";
+    if (total > lim.warn && !confirm(`This ${noun} has ${files.length.toLocaleString()} files (${formatFileSize(total)}). ${LOCAL.active ? "Packing it can take a while." : "It will be downloaded and held in memory first."} Continue?`)) return;
     const ctl = new AbortController(), wCollect = LOCAL.active ? 0.05 : 0.8;
     zipBusy = true;
     opStart(`Collecting ${files.length.toLocaleString()} files\u2026`, () => ctl.abort());
@@ -12276,7 +12658,7 @@ async function downloadFolderZip() {
         const worker = async () => {
             while (next < files.length && !ctl.signal.aborted) {
                 const f = files[next++];
-                try { items[f.order] = { name: `${folderName}/${f.rel}`, blob: await blobForPath(f.path, ctl.signal), date: f.date }; }
+                try { items[f.order] = { name: `${topDir ? topDir + "/" : ""}${f.rel}`, blob: await blobForPath(f.path, ctl.signal), date: f.date }; }
                 catch (err) { if (err && err.name === "AbortError") return; failed++; }
                 finished++;
                 opUpdate(`Collecting files\u2026 ${finished.toLocaleString()} / ${files.length.toLocaleString()}`, (finished / files.length) * wCollect);
@@ -13167,7 +13549,7 @@ const TWIN = (() => {
         let html = `<div class="${grid ? "file-grid" : "file-list list-columns"}">`;
         if (!grid) html += `<div class="file-list-header"><span class="col-star-spacer" aria-hidden="true"></span><span class="col-icon-spacer" aria-hidden="true"></span>${hcol("name", "Name", "col-name")}${hcol("ext", "Ext", "col-ext")}${hcol("size", "Size", "col-size")}${hcol("date", "Date", "col-date")}${hcol("date", "Time", "col-time")}</div>`;
         if (p.path.length) {
-            html += `<div class="file-card directory parent-dir" role="button" tabindex="-1" data-up="1" aria-label="Go to parent folder">${grid ? "" : '<span aria-hidden="true"></span>'}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">..</span><span class="file-meta"></span></div>${grid ? "" : renderColumnCells("", "", "", "")}</div>`;
+            html += `<div class="file-card directory parent-dir" role="link" tabindex="-1" data-up="1" aria-label="Go to parent folder">${grid ? "" : '<span aria-hidden="true"></span>'}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">..</span><span class="file-meta"></span></div>${grid ? "" : renderColumnCells("", "", "", "")}</div>`;
         }
         const extSlot = new Map(), extSeen = new Map();
         [...new Set(all.filter((i) => i.type !== "directory").map((i) => getFileExtension(i.name).toLowerCase()).filter(Boolean))].sort().forEach((x, i) => extSlot.set(x, i % 12));
@@ -13176,7 +13558,7 @@ const TWIN = (() => {
             p.map.set(item.name, item);
             const name = escapeHtml(item.name);
             if (item.type === "directory") {
-                html += `<div class="file-card directory" role="button" tabindex="-1" data-n="${name}" data-t="d" aria-label="Open folder ${name}">${starHtml(c, "folder", [...p.path, item.name])}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : ""}</span></div>${grid ? "" : renderColumnCells("", "DIR", escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
+                html += `<div class="file-card directory" role="link" tabindex="-1" data-n="${name}" data-t="d" aria-label="Open folder ${name}">${starHtml(c, "folder", [...p.path, item.name])}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : ""}</span></div>${grid ? "" : renderColumnCells("", "DIR", escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
                 continue;
             }
             const iconType = getFileIconType(item.name) || item.category || "other";
@@ -13186,7 +13568,7 @@ const TWIN = (() => {
             const full = base + item.name;
             const thumb = grid && item.category === "image"
                 ? `<img class="file-thumbnail lazy" ${p.source === "local" ? `data-tlocal="${escapeHtml(full)}"` : `data-src="${escapeHtml(hostedUrlIn(c, full))}"`} alt="" decoding="async">` : "";
-            html += `<div class="file-card" role="button" tabindex="-1" data-n="${name}" data-t="f" aria-label="Open file ${name}">${starHtml(c, "file", full)}${thumb}<div class="file-icon ${iconType}${xc}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid ? item.sizeFormatted : ""}</span></div>${grid ? "" : renderColumnCells(escapeHtml(getFileExtension(item.name)), item.sizeFormatted, escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
+            html += `<div class="file-card" role="link" tabindex="-1" data-n="${name}" data-t="f" aria-label="Open file ${name}">${starHtml(c, "file", full)}${thumb}<div class="file-icon ${iconType}${xc}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid ? item.sizeFormatted : ""}</span></div>${grid ? "" : renderColumnCells(escapeHtml(getFileExtension(item.name)), item.sizeFormatted, escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
         }
         html += "</div>";
         if (!all.length) html += emptyHtml("Empty folder.");
@@ -13207,14 +13589,7 @@ const TWIN = (() => {
     const boxOf = (p) => $(twoBoxes() && (T.flip ? 1 - p.id : p.id) === 1 ? "search2" : "search");
     const cardItem = (p, card) => (card.dataset.r !== undefined ? p.results[Number(card.dataset.r)] : p.map.get(card.dataset.n));
     function searchPane(c, q, p) {
-        const tokens = q.split(/[\s/]+/).filter(Boolean), compact = q.replace(/[^a-z0-9]/g, ""), here = p.path.join("/").toLowerCase();
-        const scored = [];
-        for (const item of c.allFiles) {
-            const sc = scoreSearchItem(q, tokens, compact, item);
-            if (sc !== null) scored.push({ item, score: sc + (item.parentPath === here ? 400 : 0) });
-        }
-        scored.sort((a, b) => b.score - a.score);
-        return scored.map((x) => x.item);
+        return rankSearch(c.allFiles, q, p.path.join("/").toLowerCase());
     }
     function renderResults(p, c, q, sc, top) {
         const key = p.source + "\u0000" + q + "\u0000" + p.path.join("/") + "\u0000" + c.allFiles.length;
@@ -13234,7 +13609,7 @@ const TWIN = (() => {
             const thumb = grid && !dir && item.category === "image"
                 ? `<img class="file-thumbnail lazy" ${p.source === "local" ? `data-tlocal="${escapeHtml(item.fullPath)}"` : `data-src="${escapeHtml(hostedUrlIn(c, item.fullPath))}"`} alt="" decoding="async">` : "";
             const meta = dir ? (grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : "") : item.sizeFormatted;
-            html += `<div class="file-card${dir ? " directory" : ""}" role="button" tabindex="-1" data-r="${idx}" aria-label="${dir ? "Open folder " : "Open file "}${name}">${starHtml(c, dir ? "folder" : "file", dir ? item.navPath : item.fullPath)}${thumb}<div class="file-icon ${iconType}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${highlightMatch(item.name, q)}</span><span class="file-meta">${meta}${where ? `<span class="file-path">${where}</span>` : ""}</span></div></div>`;
+            html += `<div class="file-card${dir ? " directory" : ""}" role="link" tabindex="-1" data-r="${idx}" aria-label="${dir ? "Open folder " : "Open file "}${name}">${starHtml(c, dir ? "folder" : "file", dir ? item.navPath : item.fullPath)}${thumb}<div class="file-icon ${iconType}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${highlightMatch(item.name, searchTextOf(q))}</span><span class="file-meta">${meta}${where ? `<span class="file-path">${where}</span>` : ""}</span></div></div>`;
         });
         html += "</div>";
         if (!all.length) html += emptyHtml(`No results for \u201c${escapeHtml(raw)}\u201d.`);
@@ -13332,7 +13707,7 @@ const TWIN = (() => {
             html += '<div class="tw-fav-head">Pinned folders</div><div class="file-list tw-fav-list">';
             for (const arr of pins) {
                 const name = escapeHtml(arr[arr.length - 1]), where = arr.length > 1 ? arr.slice(0, -1).join("/") : (p.source === "local" ? LOCAL.name || "Local folder" : "Home");
-                html += `<div class="file-card directory" role="button" tabindex="-1" data-fav="d" data-fp="${escapeHtml(JSON.stringify(arr))}" aria-label="Open pinned folder ${name}" title="${escapeHtml(arr.join("/"))}">${starHtml(c, "folder", arr)}<div class="file-icon folder">${icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
+                html += `<div class="file-card directory" role="link" tabindex="-1" data-fav="d" data-fp="${escapeHtml(JSON.stringify(arr))}" aria-label="Open pinned folder ${name}" title="${escapeHtml(arr.join("/"))}">${starHtml(c, "folder", arr)}<div class="file-icon folder">${icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
             }
             html += "</div>";
         }
@@ -13342,7 +13717,7 @@ const TWIN = (() => {
                 const item = c.filesByPath.get(path), name = escapeHtml(item ? item.name : path.substring(path.lastIndexOf("/") + 1));
                 const iconType = item ? getFileIconType(item.name) || item.category || "other" : "other";
                 const segs = path.split("/").slice(0, -1), where = segs.length ? segs.join("/") : (p.source === "local" ? LOCAL.name || "Local folder" : "Home");
-                html += `<div class="file-card" role="button" tabindex="-1" data-fav="f" data-fpath="${escapeHtml(path)}" aria-label="Open favorite file ${name}" title="${escapeHtml(path)}">${starHtml(c, "file", path)}<div class="file-icon ${iconType}">${icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
+                html += `<div class="file-card" role="link" tabindex="-1" data-fav="f" data-fpath="${escapeHtml(path)}" aria-label="Open favorite file ${name}" title="${escapeHtml(path)}">${starHtml(c, "file", path)}<div class="file-icon ${iconType}">${icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
             }
             html += "</div>";
         }
@@ -14310,6 +14685,17 @@ const TWIN = (() => {
 })();
 
 init();
+    </script>
+    <script>
+    // Offline support: sw.js keeps the last copy of the page, the file index and every file you opened, and shows it when the network is down or too slow.
+    // Without sw.js next to this page nothing changes. Needs https (or localhost).
+    (function () {
+        if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
+        window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+        var note = function (m) { try { opStart(m); opDone(m, 3500); } catch (e) {} };
+        window.addEventListener("offline", function () { note("You are offline. Pages and files you opened before still work."); });
+        window.addEventListener("online", function () { note("Back online."); });
+    })();
     </script>
 </body>
 </html>

@@ -14693,8 +14693,8 @@ init();
         if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
         window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
         var note = function (m) { try { opStart(m); opDone(m, 3500); } catch (e) {} };
-        window.addEventListener("offline", function () { note("You are offline. Pages and files you opened before still work."); });
-        window.addEventListener("online", function () { note("Back online."); });
+        // window.addEventListener("offline", function () { note("You are offline. Pages and files you opened before still work."); });
+        // window.addEventListener("online", function () { note("Back online."); });
     })();
     </script>
 </body>

@@ -7,8 +7,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#1a1a1a" />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="icon-192.png" />
     <title>File Viewer</title>
     <meta name="description" content="Browse and preview files from this repository directly in your browser — code, images, audio, video, and playlists." />
     <meta property="og:title" content="File Viewer" />
@@ -11352,7 +11350,7 @@ function showUnavailable(containerEl, fileName, fileUrl, err) {
     if (err && err.status === 404) reason = "This file could not be found (404).";
     else if (err && err.status) reason = `The server returned an error (HTTP ${err.status}).`;
     else if (err && LOCAL.active) reason = "This file couldn't be read from the local folder. If it was changed or moved since the folder was opened, open the folder again.";
-    else if (err && navigator.onLine === false) reason = "You are offline, and this file was not opened before, so there is no saved copy of it.";
+    else if (err && navigator.onLine === false) reason = "You appear to be offline — reconnect and try again.";
     else if (err) reason = "This file couldn't be loaded — it may be blocked by CORS or a network issue.";
     containerEl.innerHTML = `
         <div class="preview-unavailable">
@@ -14685,17 +14683,6 @@ const TWIN = (() => {
 })();
 
 init();
-    </script>
-    <script>
-    // Offline support: sw.js keeps the last copy of the page, the file index and every file you opened, and shows it when the network is down or too slow.
-    // Without sw.js next to this page nothing changes. Needs https (or localhost).
-    (function () {
-        if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
-        window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
-        var note = function (m) { try { opStart(m); opDone(m, 3500); } catch (e) {} };
-        // window.addEventListener("offline", function () { note("You are offline. Pages and files you opened before still work."); });
-        // window.addEventListener("online", function () { note("Back online."); });
-    })();
     </script>
 </body>
 </html>

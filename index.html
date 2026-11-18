@@ -2772,6 +2772,8 @@ html[data-theme="concrete"] .file-grid .file-card > .file-icon > svg.ib { width:
 .pv-status { min-height: 1.3em; margin: 0.8rem 0 0; font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); overflow-wrap: anywhere; }
 .pv-status.err { color: #e5675b; }
 .pv-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.pv-select { cursor: pointer; }
+.pv-select:disabled { opacity: 0.55; cursor: default; }
 
 /* Thumbnail size (S / M / L) in the stats line of the main grid and in the head of a twin panel showing a grid */
 .stats-bar .ts-ctl { margin-left: auto; align-items: center; }
@@ -3713,6 +3715,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                 </div>
                 <div class="header-tools">
                 <button class="settings-btn" id="localBtn" title="Open a local folder (works offline)" aria-label="Open a local folder"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></button>
+                <button class="settings-btn" id="extraSourceBtn" title="Load an extra source: a link (m3u/m3u8, stream, media, text&hellip;) or a local file" aria-label="Load an extra source"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-2.89 0-5.4 1.64-6.53 4.06C2.34 8.36 0 11.03 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.18 9l1.41 1.41L10 17z"/></svg></button>
                 <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
                     <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
                 </button>
@@ -4134,6 +4137,28 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                     <button type="button" class="theme-reset-btn local-pick" id="previewLoadBtn">Load</button>
                     <button type="button" class="theme-reset-btn local-pick" id="previewStopBtn" hidden>Stop previewing</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="extraModal" role="dialog" aria-modal="true" aria-labelledby="extraTitle">
+        <div class="modal stats-modal" id="extraModalContent">
+            <div class="modal-header">
+                <span class="modal-title" id="extraTitle">Load an extra source</span>
+                <div class="modal-actions"><button class="modal-btn" id="extraModalClose" title="Close" aria-label="Close"><svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg></button></div>
+            </div>
+            <div class="modal-body stats-body">
+                <p class="local-msg">Paste a link or pick a file from this device &mdash; each opens in the matching player or viewer: m3u/m3u8 playlists, streams, audio, video, images, PDFs, fonts, archives and text.</p>
+                <p class="local-msg">Recent links are remembered in the dropdown below; the last one is already filled in and ready to load.</p>
+                <label class="pv-label" for="extraRecentSelect">Recent sources</label>
+                <select class="pv-input pv-select" id="extraRecentSelect" aria-label="Recent sources"></select>
+                <label class="pv-label" for="extraUrlInput">Stream or file link</label>
+                <input class="pv-input" id="extraUrlInput" type="text" inputmode="url" placeholder="https://example.com/playlist.m3u8" autocomplete="off" autocapitalize="off" spellcheck="false" />
+                <p class="pv-status" id="extraStatus" role="status"></p>
+                <div class="pv-actions">
+                    <button type="button" class="theme-reset-btn local-pick" id="extraLoadBtn">Load</button>
+                    <button type="button" class="theme-reset-btn local-pick" id="extraFileBtn">Choose a local file&hellip;</button>
+                </div>
+                <input type="file" id="extraFileInput" class="sr-only" tabindex="-1" aria-hidden="true" />
             </div>
         </div>
     </div>
@@ -6491,6 +6516,7 @@ function wireUiOnce() {
     setupSkipLink();
     setupIntersectionObserver();
     setupNewFeatureListeners();
+    setupExtraSourceListeners();
     TWIN.init();
 }
 // The index comes in two files: the lean one (root names only) is tiny, so the top level shows from it at once; the full one
@@ -6773,6 +6799,7 @@ function setupEventListeners() {
             }
             if (document.getElementById("localModal").classList.contains("active")) { closeLocalModal(); return; }
             if (document.getElementById("previewModal").classList.contains("active")) { closePreviewModal(); return; }
+            if (document.getElementById("extraModal").classList.contains("active")) { closeExtraModal(); return; }
             const settingsMenuEl = document.getElementById("settingsMenu");
             const themeMenuEl = document.getElementById("themeColorMenu");
             if (settingsMenuEl.classList.contains("active")) {
@@ -8352,10 +8379,10 @@ function setupGotoStepper() {
     });
 }
 async function startPlaylistMode() {
-    if (!isPlaylistFile || !currentFilePath) return;
+    if (!isPlaylistFile || (!currentFilePath && !EXTRA.active)) return;
     const startedFor = currentFilePath;
-    const e = await urlForPath(currentFilePath),
-        t = await parsePlaylistForCurrent(e);
+    // An extra-source playlist has no repo file to re-read: the parsed entries were stashed when it first played.
+    const t = EXTRA.active ? (EXTRA.items || []).slice() : await parsePlaylistForCurrent(await urlForPath(currentFilePath));
     if (currentFilePath !== startedFor) return;
     failStreak = 0;
     await Promise.race([streamHealth.open(), new Promise((r) => setTimeout(r, 1200))]);
@@ -8391,13 +8418,14 @@ function stopPlaylist() {
         activeMedia.load();
     }
     if (currentFileName) document.getElementById("modalTitle").textContent = currentFileName;
+    const lastItems = currentPlaylist.slice(); // still needed to redraw the static text view below
     (currentPlaylist = []),
         (currentPlaylistIndex = 0),
         (shuffleBag = []),
         (shuffleHistory = []),
         document.getElementById("playlistBar").classList.remove("active"),
         isPlaylistFile &&
-            (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText());
+            (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText(lastItems));
 }
 // Cache of fetched text for playlists and previews, bounded by entry count and total size. Map order is insertion order,
 // so deleting the first key evicts the least recently used entry (hits re-insert their key).
@@ -8501,7 +8529,13 @@ function renderTextPreview(container, text, fileName, byteTruncated) {
         </div>
       `;
 }
-async function showPlaylistAsText() {
+async function showPlaylistAsText(prevList) {
+    if (EXTRA.active) { // an extra-source playlist has no repo file to re-read: list the entries that just played
+        const list = Array.isArray(prevList) ? prevList : [];
+        const lines = list.map((it, i) => `${i + 1}. ${it.title}\n   ${it.url}`);
+        renderTextPreview(document.getElementById("modalBody"), lines.join("\n"), currentFileName, false);
+        return;
+    }
     const e = await urlForPath(currentFilePath);
     try {
         const { text, truncated } = await fetchTextPreview(e);
@@ -13028,6 +13062,9 @@ async function openFile(filePath, fileType, fileName) {
 
     currentFilePath = filePath;
     currentFileName = fileName;
+    EXTRA.active = false;
+    document.getElementById("favoriteBtn").classList.remove("hidden");
+    document.getElementById("copyLinkBtn").classList.remove("hidden");
     isPlaylistFile = isPlaylistExtension(fileName);
 
     // The request URL: percent-encodes #, ? and % so such filenames resolve instead of being cut at a "fragment".
@@ -13266,6 +13303,9 @@ function closeModal() {
     currentFilePath = "";
     currentFileName = "";
     isPlaylistFile = false;
+    EXTRA.active = false;
+    document.getElementById("favoriteBtn").classList.remove("hidden");
+    document.getElementById("copyLinkBtn").classList.remove("hidden");
     document.getElementById("playlistBar").classList.remove("active");
     document.getElementById("playPlaylistBtn").classList.add("hidden");
     restoreModalFocus("modal");
@@ -14984,6 +15024,393 @@ function setupNewFeatureListeners() {
         btns[Math.max(0, Math.min(btns.length - 1, to))].focus();
     });
     syncModeUi();
+}
+
+// ---- Load an extra source ----
+// The button next to the local-folder one opens a window shaped exactly like the 5-tap preview window. It takes
+// a link (m3u/m3u8 playlists, streams, audio, video, images, PDFs, fonts, archives, text) or a file from the
+// device and opens each in the matching player or viewer. Links are remembered newest-first in the dropdown and
+// the last one is filled in ready to load; local files play straight from the File, nothing is uploaded.
+const EXTRA = { active: false }; // true while the file preview shows something opened from the extra-source window
+const EXTRA_RECENT_KEY = "extraSourceRecent";
+const EXTRA_RECENT_MAX = 8;
+function loadExtraRecents() {
+    try {
+        const list = JSON.parse(store.getItem(EXTRA_RECENT_KEY) || "[]");
+        return Array.isArray(list) ? list.filter((u) => typeof u === "string" && /^https?:\/\//i.test(u)).slice(0, EXTRA_RECENT_MAX) : [];
+    } catch (err) { return []; }
+}
+let extraRecents = loadExtraRecents();
+function saveExtraRecents() {
+    try { store.setItem(EXTRA_RECENT_KEY, JSON.stringify(extraRecents)); } catch (err) { /* storage blocked: the links are just not remembered */ }
+}
+function rememberExtraSource(url) {
+    extraRecents = [url].concat(extraRecents.filter((u) => u !== url)).slice(0, EXTRA_RECENT_MAX);
+    saveExtraRecents();
+    refreshExtraRecentOptions(url);
+}
+function extraSourceLabel(url) {
+    try {
+        const u = new URL(url), name = safeDecode(u.pathname.split("/").pop() || "").trim();
+        const base = name || u.host || url;
+        const short = base.length > 46 ? base.slice(0, 45) + "\u2026" : base;
+        return name && u.host && !name.includes(u.host) ? short + " \u2014 " + u.host : short;
+    } catch (err) { return url; }
+}
+function refreshExtraRecentOptions(selected) {
+    const sel = document.getElementById("extraRecentSelect");
+    if (!sel) return;
+    sel.textContent = "";
+    if (!extraRecents.length) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "No recent sources yet";
+        sel.append(opt);
+        sel.disabled = true;
+        return;
+    }
+    sel.disabled = false;
+    for (const url of extraRecents) {
+        const opt = document.createElement("option");
+        opt.value = url;
+        opt.textContent = extraSourceLabel(url);
+        opt.title = url;
+        sel.append(opt);
+    }
+    sel.value = selected && extraRecents.includes(selected) ? selected : extraRecents[0];
+}
+function setExtraStatus(text, isError) {
+    const st = document.getElementById("extraStatus");
+    st.textContent = text || "";
+    st.classList.toggle("err", !!isError);
+}
+function openExtraModal() {
+    const $ = (id) => document.getElementById(id);
+    if (!$("extraUrlInput").value && extraRecents.length) $("extraUrlInput").value = extraRecents[0]; // the last choice, ready to load
+    refreshExtraRecentOptions();
+    setExtraStatus("");
+    rememberModalFocus("extraModal");
+    $("extraModal").classList.add("active");
+    syncBackgroundInert();
+    focusWhenReady("extraUrlInput", "extraModal");
+}
+function closeExtraModal() {
+    const m = document.getElementById("extraModal");
+    if (!m || !m.classList.contains("active")) return;
+    m.classList.remove("active");
+    syncBackgroundInert();
+    restoreModalFocus("extraModal");
+}
+function normalizeExtraUrl(raw) {
+    const s = raw.trim();
+    if (!s) return "";
+    if (/^https?:\/\//i.test(s)) return s;
+    // Any other scheme (rtsp:, rtmp:, data: …) comes back untouched so the caller can reject what a browser cannot play.
+    if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return s;
+    return "https://" + s;
+}
+function extraNameFromUrl(url) {
+    try {
+        const u = new URL(url);
+        const name = safeDecode(u.pathname.split("/").pop() || "").trim();
+        return name || u.host || "stream";
+    } catch (err) { return "stream"; }
+}
+async function sniffExtraContentType(url) {
+    // Header-only probe for links without a usable extension; on CORS or network refusal it returns "" and the
+    // caller falls back to the stream engine.
+    try {
+        const res = await fetch(url, { headers: { Range: "bytes=0-1" } });
+        return (res.headers.get("content-type") || "").toLowerCase();
+    } catch (err) { return ""; }
+}
+function playExtraPlaylist(items) {
+    failStreak = 0;
+    EXTRA.items = items; // stashed so the Play button can restart it after a stop (there is no repo file to re-read)
+    currentPlaylist = items;
+    currentPlaylistIndex = 0;
+    if (isShuffle) { shuffleHistory = [0]; refillShuffleBag(); }
+    document.getElementById("playPlaylistBtn").classList.add("hidden");
+    updatePlaylistUI();
+    syncTestUI(true);
+    playPlaylistTrack(0);
+}
+function showExtraEmptyPlaylist(bodyEl) {
+    bodyEl.innerHTML = `
+      <div class="preview-unavailable">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+        </svg>
+        <h3>Empty or invalid playlist</h3>
+        <p>No playable items found in this playlist.</p>
+      </div>
+    `;
+}
+// A playlist picked from the device: only absolute http(s) entries can play, because relative ones have no
+// folder to resolve against.
+function parseExtraM3uText(text) {
+    const items = [];
+    let title = null;
+    for (let line of text.split(/\r?\n/)) {
+        line = line.trim();
+        if (!line) continue;
+        if (line.startsWith("#")) {
+            if (line.startsWith("#EXTINF:") && line.indexOf(",") !== -1) title = line.substring(line.indexOf(",") + 1).trim();
+            continue;
+        }
+        if (!/^https?:\/\//i.test(line)) continue;
+        items.push({ url: line, title: title || safeDecode(line.split("/").pop()), header: "" });
+        title = null;
+    }
+    return items;
+}
+async function openExtraPlaylistUrl(name, url, bodyEl, seq) {
+    isPlaylistFile = true;
+    let items;
+    try {
+        const text = await fetchTextCached(url);
+        if (seq !== openSeq) return;
+        items = /#EXT-X-(STREAM-INF|TARGETDURATION|MEDIA-SEQUENCE|MAP|KEY)/i.test(text)
+            ? [{ url, title: name, header: "" }] // an HLS media or master playlist: hand the whole link to the engine
+            : await parsePlaylist(url, url); // the text was just fetched, so this hits the fetch cache
+    } catch (err) {
+        // The text could not be read (CORS or offline): some such links still play when loaded directly.
+        if (seq !== openSeq) return;
+        items = [{ url, title: name, header: "" }];
+    }
+    if (seq !== openSeq) return;
+    items.length > 0 ? playExtraPlaylist(items) : showExtraEmptyPlaylist(bodyEl);
+}
+// The simple file player for device picks (and for links the server says are video): the same layout as the
+// hosted-file preview, minus the stream-specific bits. Web Audio extras only go on same-origin sources, since
+// an element wired into Web Audio must be CORS-clean or it goes silent.
+function mountExtraPlayer(bodyEl, kind, name, url, sameOrigin) {
+    const o = escapeHtml(url);
+    if (kind === "video") {
+        document.getElementById("modalContent").classList.add("video-modal");
+        bodyEl.innerHTML = `
+          <div class="preview-media-container">
+            <video class="preview-video" autoplay playsinline ${mediaTagAttrs()}>
+              <source src="${o}">
+              Your browser does not support video playback.
+            </video>
+            ${mediaControlsMarkup()}
+          </div>
+        `;
+        const v = bodyEl.querySelector("video");
+        if (v) {
+            v.volume = volToEl(currentVolume);
+            v.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); store.setItem(VOL_KEY, currentVolume); };
+            if (sameOrigin) setupAudioNormalization(v);
+            setupMediaSession(v, name);
+            maybeWireMediaControls(v);
+        }
+    } else {
+        document.getElementById("modalContent").classList.add("compact-modal");
+        bodyEl.innerHTML = `
+          <div class="preview-audio-container">
+            <div class="audio-icon">${pickPlayerNoteIcon()}</div>
+            <div class="playlist-now-playing">${escapeHtml(name)}</div>
+            <audio class="preview-audio" autoplay ${mediaTagAttrs()}>
+              <source src="${o}">
+              Your browser does not support audio playback.
+            </audio>
+            ${mediaControlsMarkup()}
+          </div>
+        `;
+        const a = bodyEl.querySelector("audio");
+        if (a) {
+            a.volume = volToEl(currentVolume);
+            a.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); store.setItem(VOL_KEY, currentVolume); };
+            if (sameOrigin) setupAudioNormalization(a);
+            attachEqButton(a);
+            setupMediaSession(a, name);
+            maybeWireMediaControls(a);
+        }
+        wirePlayerIconTap(bodyEl);
+        centerAudioIconSvg(bodyEl.querySelector(".audio-icon"));
+    }
+}
+// Prepares the shared file-preview modal for something opened from the extra-source window, then routes it by
+// extension — and, for links without a usable one, by the server's content type — to the right player or viewer.
+async function openExtraSource(opts) {
+    if (!recLeaveOk()) return;
+    endPlaySession();
+    cancelHealthTest();
+    runModalCleanups();
+    metaReset();
+    const seq = ++openSeq;
+    const name = opts.name || "file";
+    // Blob URLs are registered after the cleanup drain above, so they are revoked when the modal closes or moves on.
+    const url = opts.file ? trackBlobUrl(opts.file) : opts.url || "";
+    const kind = previewKindOverride(name) || categoryForName(name);
+    const modalEl = document.getElementById("modal"), bodyEl = document.getElementById("modalBody");
+    const wasOpen = modalEl.classList.contains("active");
+    if (!wasOpen) rememberModalFocus("modal");
+    EXTRA.active = true;
+    currentFilePath = "";
+    currentFileName = name;
+    isPlaylistFile = false;
+    currentPlaylist = [];
+    currentPlaylistIndex = 0;
+    shuffleBag = [];
+    shuffleHistory = [];
+    failStreak = 0;
+    document.getElementById("modalTitle").textContent = name;
+    document.getElementById("downloadBtn").href = url;
+    document.getElementById("downloadBtn").download = name;
+    document.getElementById("rawBtn").href = url;
+    // There is no repo path behind this one, so the favorite and link-copy buttons would only get in the way.
+    document.getElementById("favoriteBtn").classList.add("hidden");
+    document.getElementById("copyLinkBtn").classList.add("hidden");
+    bodyEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    bodyEl.classList.remove("scrollable");
+    document.getElementById("playlistBar").classList.remove("active");
+    document.getElementById("playPlaylistBtn").classList.add("hidden");
+    document.getElementById("modalContent").classList.remove("video-modal", "compact-modal");
+    hideGallery();
+    modalEl.classList.add("active");
+    syncBackgroundInert();
+    if (!wasOpen) focusWhenReady("closeBtn", "modal");
+    try {
+        switch (kind) {
+            case "playlist":
+                if (opts.file) {
+                    isPlaylistFile = true;
+                    const text = await opts.file.text();
+                    if (seq !== openSeq) return;
+                    const items = parseExtraM3uText(text);
+                    items.length > 0 ? playExtraPlaylist(items) : showExtraEmptyPlaylist(bodyEl);
+                } else await openExtraPlaylistUrl(name, url, bodyEl, seq);
+                break;
+            case "image":
+                bodyEl.innerHTML = `<img class="preview-image" src="${escapeHtml(url)}" alt="${escapeHtml(name)}">`;
+                break;
+            case "video":
+            case "audio":
+                if (opts.file) mountExtraPlayer(bodyEl, kind, name, url, true);
+                else playExtraPlaylist([{ url, title: name, header: "" }]);
+                break;
+            case "document":
+                if (name.toLowerCase().endsWith(".pdf")) bodyEl.innerHTML = `<iframe class="preview-pdf" src="${escapeHtml(url)}"></iframe>`;
+                else showUnavailable(bodyEl, name, url);
+                break;
+            case "font": {
+                const fontFamily = "PreviewFont" + Date.now();
+                const fontFace = new FontFace(fontFamily, `url("${url}")`);
+                await fontFace.load();
+                document.fonts.add(fontFace);
+                bodyEl.innerHTML = `
+              <div style="padding: 1.5rem; text-align: center; font-family: '${fontFamily}', sans-serif;">
+                <p style="font-size: 2rem; margin-bottom: 0.75rem;">The quick brown fox jumps over the lazy dog</p>
+                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">abcdefghijklmnopqrstuvwxyz</p>
+                <p style="font-size: 1.5rem;">0123456789!@#$%^&*()</p>
+              </div>
+            `;
+                break;
+            }
+            case "md-view":
+                await showMarkdownPreview(bodyEl, "", name, url);
+                bodyEl.classList.add("scrollable");
+                break;
+            case "archive-view":
+                await showArchivePreview(bodyEl, "", name, url);
+                bodyEl.classList.add("scrollable");
+                break;
+            case "code":
+            case "markup":
+            case "style":
+            case "data":
+            case "text":
+                try {
+                    const { text, truncated } = await fetchTextPreview(url);
+                    if (seq !== openSeq) return;
+                    renderTextPreview(bodyEl, text, name, truncated);
+                    bodyEl.classList.add("scrollable");
+                } catch (err) {
+                    if (seq === openSeq) showUnavailable(bodyEl, name, url, err);
+                }
+                break;
+            default: {
+                // No known extension: ask the server what it is and route by that. When even the answer cannot be
+                // read, the stream engine is the best bet for a bare stream link.
+                if (opts.file) { showUnavailable(bodyEl, name, url); break; }
+                const mime = await sniffExtraContentType(url);
+                if (seq !== openSeq) return;
+                if (mime.includes("video/")) mountExtraPlayer(bodyEl, "video", name, url, false);
+                else if (mime.includes("image/")) bodyEl.innerHTML = `<img class="preview-image" src="${escapeHtml(url)}" alt="${escapeHtml(name)}">`;
+                else if (mime.includes("pdf")) bodyEl.innerHTML = `<iframe class="preview-pdf" src="${escapeHtml(url)}"></iframe>`;
+                else if (mime.includes("mpegurl")) await openExtraPlaylistUrl(name, url, bodyEl, seq);
+                else if (/^text\/|application\/(json|xml)/.test(mime)) {
+                    try {
+                        const { text, truncated } = await fetchTextPreview(url);
+                        if (seq !== openSeq) return;
+                        renderTextPreview(bodyEl, text, name, truncated);
+                        bodyEl.classList.add("scrollable");
+                    } catch (err) {
+                        if (seq === openSeq) showUnavailable(bodyEl, name, url, err);
+                    }
+                } else playExtraPlaylist([{ url, title: name, header: "" }]);
+                break;
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        if (seq === openSeq) showUnavailable(bodyEl, name, url);
+    }
+}
+let extraBusy = false;
+async function submitExtraUrl() {
+    if (extraBusy) return;
+    const raw = document.getElementById("extraUrlInput").value.trim();
+    if (!raw) { setExtraStatus("Paste a link first, or choose a local file below.", true); return; }
+    const url = normalizeExtraUrl(raw);
+    if (!/^https?:\/\//i.test(url)) { setExtraStatus("A browser can only open http(s) links \u2014 rtsp/rtmp streams cannot play here.", true); return; }
+    extraBusy = true;
+    document.getElementById("extraLoadBtn").disabled = true;
+    setExtraStatus("Opening\u2026");
+    const name = extraNameFromUrl(url);
+    rememberExtraSource(url);
+    try {
+        await openExtraSource({ name, url });
+        closeExtraModal();
+        announce(`Opened ${name}`);
+    } catch (err) {
+        setExtraStatus((err && err.message) || "Could not open that link.", true);
+    } finally {
+        extraBusy = false;
+        document.getElementById("extraLoadBtn").disabled = false;
+    }
+}
+async function handleExtraFileChange() {
+    const input = document.getElementById("extraFileInput");
+    const file = input.files && input.files[0];
+    input.value = ""; // picking the same file again later must still fire change
+    if (!file) return;
+    try {
+        await openExtraSource({ name: file.name, file });
+        closeExtraModal();
+        announce(`Opened ${file.name}`);
+    } catch (err) {
+        console.error(err);
+    }
+}
+function setupExtraSourceListeners() {
+    const $ = (id) => document.getElementById(id);
+    $("extraSourceBtn").addEventListener("click", openExtraModal);
+    $("extraModalClose").addEventListener("click", closeExtraModal);
+    $("extraModal").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeExtraModal(); });
+    $("extraModal").addEventListener("keydown", (e) => trapModalFocus(e, "extraModalContent"));
+    $("extraLoadBtn").addEventListener("click", submitExtraUrl);
+    $("extraUrlInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitExtraUrl(); } });
+    $("extraRecentSelect").addEventListener("change", () => {
+        const url = $("extraRecentSelect").value;
+        if (url) { $("extraUrlInput").value = url; setExtraStatus(""); $("extraUrlInput").focus(); }
+    });
+    $("extraFileBtn").addEventListener("click", () => { $("extraFileInput").click(); });
+    $("extraFileInput").addEventListener("change", handleExtraFileChange);
+    refreshExtraRecentOptions();
 }
 const Marquee = (() => {
     const SELECTOR = ".np-song, .playlist-now-playing, #modalTitle, .playlist-track, .playlist-health, #eqLive, .ar-path, .gal-item.active .gal-name";

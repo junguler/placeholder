@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <script>(function(){try{window.__idx={};var L="./file_index_lean.json",F="./file_index.json";function get(u){return fetch(u).then(function(r){if(!r.ok)throw new Error("Failed to load "+u);return r.json();});}var lp=get(L);lp.catch(function(){});window.__idx[L]=lp;var fp=lp.then(function(){},function(){}).then(function(){return get(F);});fp.catch(function(){});window.__idx[F]=fp;}catch(e){}})();</script>
     <script>(function(){try{var t=localStorage.getItem("theme");if(t==="concrete-custom"){t="concrete";localStorage.setItem("theme",t);}if(t==="vivid")document.documentElement.setAttribute("data-vivid","1");else if(t&&t!=="auto")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#1a1a1a" />
     <title>File Viewer</title>
@@ -14,1830 +14,6 @@
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23121212' width='24' height='24'/%3E%3Crect fill='%239b5de5' x='2' y='5' width='20' height='14'/%3E%3Ccircle fill='%23121212' cx='8' cy='12' r='2.4'/%3E%3Ccircle fill='%23121212' cx='16' cy='12' r='2.4'/%3E%3Ccircle fill='%239b5de5' cx='8' cy='12' r='0.8'/%3E%3Ccircle fill='%239b5de5' cx='16' cy='12' r='0.8'/%3E%3Crect fill='%23121212' x='10' y='15.6' width='4' height='1.6'/%3E%3C/svg%3E" />
     
-    <script>
-/* hls-lite: a minimal, dependency-free HLS (RFC 8216) playback engine.
-   Original implementation written for this page — it plays HLS by fetching and parsing
-   M3U8 playlists, demuxing MPEG-TS segments (AAC / MP3 / H.264 / ID3), remuxing them
-   into fragmented MP4 and feeding the result to Media Source Extensions.
-   Public API mirrors the subset this page uses: the Hls constructor, isSupported(),
-   Events, ErrorTypes, loadSource / attachMedia / on / off / destroy / recoverMediaError,
-   levels, currentLevel, loadLevel and the ERROR / MANIFEST_PARSED / LEVEL_SWITCHED /
-   FRAG_PARSING_METADATA events. */
-(function () {
-    "use strict";
-
-    // ---------------------------------------------------------------- constants
-    var Events = {
-        MEDIA_ATTACHING: "hlsMediaAttaching",
-        MEDIA_ATTACHED: "hlsMediaAttached",
-        MEDIA_DETACHING: "hlsMediaDetaching",
-        MEDIA_DETACHED: "hlsMediaDetached",
-        BUFFER_RESET: "hlsBufferReset",
-        BUFFER_CODECS: "hlsBufferCodecs",
-        BUFFER_CREATED: "hlsBufferCreated",
-        BUFFER_APPENDING: "hlsBufferAppending",
-        BUFFER_APPENDED: "hlsBufferAppended",
-        BUFFER_FLUSHING: "hlsBufferFlushing",
-        BUFFER_FLUSHED: "hlsBufferFlushed",
-        MANIFEST_LOADING: "hlsManifestLoading",
-        MANIFEST_LOADED: "hlsManifestLoaded",
-        MANIFEST_PARSED: "hlsManifestParsed",
-        LEVEL_LOADING: "hlsLevelLoading",
-        LEVEL_LOADED: "hlsLevelLoaded",
-        LEVEL_SWITCHED: "hlsLevelSwitched",
-        FRAG_LOADING: "hlsFragLoading",
-        FRAG_LOADED: "hlsFragLoaded",
-        FRAG_PARSED: "hlsFragParsed",
-        FRAG_PARSING_METADATA: "hlsFragParsingMetadata",
-        FRAG_BUFFERED: "hlsFragBuffered",
-        KEY_LOADING: "hlsKeyLoading",
-        KEY_LOADED: "hlsKeyLoaded",
-        ERROR: "hlsError",
-        DESTROYING: "hlsDestroying"
-    };
-    var ErrorTypes = {
-        NETWORK_ERROR: "networkError",
-        MEDIA_ERROR: "mediaError",
-        MUX_ERROR: "muxError",
-        KEY_SYSTEM_ERROR: "keySystemError",
-        OTHER_ERROR: "otherError"
-    };
-    var ErrorDetails = {
-        manifestLoadError: "manifestLoadError",
-        manifestLoadTimeout: "manifestLoadTimeout",
-        manifestParsingError: "manifestParsingError",
-        levelLoadError: "levelLoadError",
-        levelLoadTimeout: "levelLoadTimeout",
-        levelEmptyError: "levelEmptyError",
-        fragLoadError: "fragLoadError",
-        fragLoadTimeout: "fragLoadTimeout",
-        fragParsingError: "fragParsingError",
-        keyLoadError: "keyLoadError",
-        bufferAddCodecError: "bufferAddCodecError",
-        bufferIncompatibleCodecsError: "bufferIncompatibleCodecsError",
-        bufferAppendError: "bufferAppendError",
-        bufferStalledError: "bufferStalledError",
-        unsupportedCodecError: "unsupportedCodecError"
-    };
-    var DEFAULT_CONFIG = {
-        maxBufferLength: 30,          // seconds of media to keep ahead of the playhead
-        maxMaxBufferLength: 600,      // hard ceiling for maxBufferLength
-        backBufferLength: Infinity,   // seconds of already-played media to keep
-        liveSyncDurationCount: 3,     // start live playback this many target durations behind the edge
-        maxBufferSize: 60 * 1000 * 1000, // bytes of decoded media per buffer flush check
-        manifestLoadingTimeOut: 10000,
-        manifestLoadingMaxRetry: 1,
-        manifestLoadingRetryDelay: 1000,
-        levelLoadingTimeOut: 10000,
-        levelLoadingMaxRetry: 4,
-        levelLoadingRetryDelay: 1000,
-        fragLoadingTimeOut: 20000,
-        fragLoadingMaxRetry: 6,
-        fragLoadingRetryDelay: 1000,
-        keyLoadingTimeOut: 10000,
-        nudgeMaxRetry: 3
-    };
-
-    // ---------------------------------------------------------------- tiny utils
-    function log() {} // silent by design; swap for console.log.bind(console) while debugging
-
-    function extend(target) {
-        for (var i = 1; i < arguments.length; i++) {
-            var src = arguments[i];
-            if (!src) continue;
-            for (var k in src) if (Object.prototype.hasOwnProperty.call(src, k)) target[k] = src[k];
-        }
-        return target;
-    }
-
-    function Emitter() {
-        this._c = {};
-    }
-    Emitter.prototype = {
-        on: function (ev, cb) { (this._c[ev] || (this._c[ev] = [])).push(cb); return this; },
-        off: function (ev, cb) {
-            var l = this._c[ev];
-            if (l) {
-                var i = l.indexOf(cb);
-                if (i >= 0) l.splice(i, 1);
-            }
-            return this;
-        },
-        once: function (ev, cb) {
-            var self = this;
-            var w = function (data) { self.off(ev, w); cb(data); };
-            return this.on(ev, w);
-        },
-        trigger: function (ev, data) {
-            var l = this._c[ev];
-            if (l) l = l.slice();
-            if (l) for (var i = 0; i < l.length; i++) {
-                try { l[i](ev, data); } catch (e) { log("listener error for", ev, e); }
-            }
-        },
-        destroy: function () { this._c = {}; }
-    };
-
-    // Abortable fetch with timeout + bounded retries. Returns a Promise of the body
-    // (ArrayBuffer or text). Used for playlists, keys and segments alike.
-    function load(url, opts, controller) {
-        opts = opts || {};
-        var timeout = opts.timeout || 20000;
-        var maxRetry = opts.maxRetry || 0;
-        var delay = opts.retryDelay || 1000;
-        var attempt = 0;
-        function run() {
-            var ac = new AbortController();
-            if (controller) controller.register(ac);
-            var timer = setTimeout(function () { ac.abort(); }, timeout);
-            return fetch(url, { signal: ac.signal, credentials: "omit", redirect: "follow", headers: opts.headers }).then(function (res) {
-                if (!res.ok) throw new Error("HTTP " + res.status + " for " + url);
-                return opts.text ? res.text() : res.arrayBuffer();
-            }).then(function (body) {
-                clearTimeout(timer);
-                if (controller) controller.unregister(ac);
-                return body;
-            }, function (err) {
-                clearTimeout(timer);
-                if (controller) controller.unregister(ac);
-                if (controller && controller.killed) throw new Error("destroyed");
-                if (attempt < maxRetry) {
-                    attempt++;
-                    var wait = delay * Math.pow(2, attempt - 1);
-                    log("retry", attempt, "of", maxRetry, "for", url, "in", wait, "ms:", err && err.message);
-                    return new Promise(function (r) { setTimeout(r, wait); }).then(run);
-                }
-                throw err;
-            });
-        }
-        return run();
-    }
-
-    function AbortBag() {
-        this.bag = [];
-        this.killed = false;
-    }
-    AbortBag.prototype = {
-        register: function (ac) { this.bag.push(ac); },
-        unregister: function (ac) {
-            var i = this.bag.indexOf(ac);
-            if (i >= 0) this.bag.splice(i, 1);
-        },
-        abortAll: function () {
-            this.killed = true;
-            for (var i = 0; i < this.bag.length; i++) { try { this.bag[i].abort(); } catch (e) {} }
-            this.bag = [];
-        }
-    };
-
-    function byteRangeOf(frag) {
-        if (!frag.byterange) return undefined;
-        return "bytes=" + frag.byterange.offset + "-" + (frag.byterange.offset + frag.byterange.length - 1);
-    }
-
-    // ---------------------------------------------------------------- M3U8 parsing
-    function parseAttrList(input) {
-        var out = {}, re = /([A-Z0-9-]+)=("[^"]*"|[^,]*)/g, m;
-        while ((m = re.exec(input)) !== null) {
-            var v = m[2];
-            if (v.charAt(0) === '"') v = v.slice(1, -1);
-            out[m[1]] = v;
-        }
-        return out;
-    }
-
-    function parseCodecs(codecs) {
-        // Splits a CODECS attribute into the first video codec and first audio codec.
-        var videoCodec = "", audioCodec = "", list = [];
-        if (codecs) {
-            var parts = String(codecs).toLowerCase().split(/[ ,]+/).filter(Boolean);
-            for (var i = 0; i < parts.length; i++) {
-                var c = parts[i];
-                if (!videoCodec && /^(avc1|avc3|hev1|hvc1|av01|vp09|vp9)\./.test(c)) videoCodec = parts[i];
-                else if (!audioCodec && /^(mp4a|opus|flac|ac-3|ec-3|mp3)\./.test(c) || !audioCodec && c === "mp3") audioCodec = c;
-                list.push(c);
-            }
-        }
-        // mp4a.40.34 is how some muxers label plain MP3; keep the label (the page maps it)
-        return { videoCodec: videoCodec, audioCodec: audioCodec, codecSet: list.join(",") };
-    }
-
-    function resolveUrl(base, url) {
-        try { return new URL(url, base).href; } catch (e) { return url; }
-    }
-
-    // Parses a master playlist. Returns { levels: [...] } or null when the text is
-    // a media playlist instead. EXT-X-MEDIA audio renditions are folded in: a video
-    // variant without its own URI is replaced by the first rendition of its group.
-    function parseMasterPlaylist(text, baseUrl) {
-        var lines = text.split(/\r?\n/), levels = [], renditions = [], cur = null, curRend = null;
-        for (var i = 0; i < lines.length; i++) {
-            var line = lines[i].trim();
-            if (!line) continue;
-            if (line.indexOf("#EXT-X-STREAM-INF:") === 0) {
-                var attrs = parseAttrList(line.slice(18));
-                var codecs = parseCodecs(attrs.CODECS);
-                var res = attrs.RESOLUTION ? attrs.RESOLUTION.split("x") : [0, 0];
-                cur = {
-                    url: "", bitrate: parseInt(attrs.BANDWIDTH, 10) || 0,
-                    averageBitrate: parseInt(attrs["AVERAGE-BANDWIDTH"], 10) || parseInt(attrs.BANDWIDTH, 10) || 0,
-                    width: parseInt(res[0], 10) || 0, height: parseInt(res[1], 10) || 0,
-                    name: attrs.NAME || "",
-                    videoCodec: codecs.videoCodec, audioCodec: codecs.audioCodec, codecSet: codecs.codecSet,
-                    audioGroup: attrs.AUDIO || ""
-                };
-            } else if (line.indexOf("#EXT-X-MEDIA:") === 0) {
-                var ma = parseAttrList(line.slice(13));
-                if (ma.TYPE === "AUDIO" && ma.URI) {
-                    renditions.push({
-                        url: resolveUrl(baseUrl, ma.URI), group: ma["GROUP-ID"] || "",
-                        name: ma.NAME || "", language: ma.LANGUAGE || "",
-                        bitrate: 0, averageBitrate: 0, width: 0, height: 0,
-                        videoCodec: "", audioCodec: parseCodecs(ma.CODECS).audioCodec || "", codecSet: ""
-                    });
-                }
-            } else if (line.charAt(0) !== "#") {
-                if (cur && !cur.url) {
-                    cur.url = resolveUrl(baseUrl, line);
-                    levels.push(cur);
-                }
-                cur = null;
-            }
-        }
-        if (!levels.length && renditions.length) {
-            // Audio-rendition-only master (common for radio): use renditions as levels.
-            var seen = {};
-            for (var r = 0; r < renditions.length; r++) {
-                var rd = renditions[r];
-                if (!seen[rd.url]) { seen[rd.url] = 1; levels.push(rd); }
-            }
-        } else if (levels.length) {
-            // A variant that carries no URI of its own (tag before the URI line is the
-            // group reference only) falls back to its audio group rendition.
-            for (var v = 0; v < levels.length; v++) {
-                var lv = levels[v];
-                if (!lv.url && lv.audioGroup) {
-                    for (var g = 0; g < renditions.length; g++) {
-                        if (renditions[g].group === lv.audioGroup) { lv.url = renditions[g].url; break; }
-                    }
-                }
-            }
-            levels = levels.filter(function (l) { return !!l.url; });
-        }
-        return levels.length ? { levels: levels } : null;
-    }
-
-    // Parses a media playlist into `details` with an ordered fragment list.
-    function parseLevelPlaylist(text, url) {
-        var lines = text.split(/\r?\n/);
-        var frags = [], curDur = 0, curTitle = "", curDisco = false, curPdt = null;
-        var key = null, map = null, byterange = null;
-        var total = 0, sn = 0, startSN = 0, targetDur = 10, version = 1, ended = false;
-        var discoSeq = 0, seenUri = false, startTimeOffset = 0, hasStartTime = false;
-        var prevFrag = null;
-        for (var i = 0; i < lines.length; i++) {
-            var line = lines[i].trim();
-            if (!line) continue;
-            if (line.charAt(0) === "#") {
-                if (line.indexOf("#EXTINF:") === 0) {
-                    var c = line.slice(8).split(",");
-                    curDur = parseFloat(c[0]) || 0;
-                    curTitle = c.slice(1).join(",");
-                } else if (line.indexOf("#EXT-X-TARGETDURATION:") === 0) {
-                    targetDur = parseInt(line.slice(22), 10) || 10;
-                } else if (line.indexOf("#EXT-X-VERSION:") === 0) {
-                    version = parseInt(line.slice(15), 10) || 1;
-                } else if (line.indexOf("#EXT-X-MEDIA-SEQUENCE:") === 0) {
-                    sn = startSN = parseInt(line.slice(22), 10) || 0;
-                } else if (line.indexOf("#EXT-X-DISCONTINUITY-SEQUENCE:") === 0) {
-                    discoSeq = parseInt(line.slice(31), 10) || 0;
-                } else if (line.indexOf("#EXT-X-KEY:") === 0) {
-                    var ka = parseAttrList(line.slice(11));
-                    if (!ka.METHOD || ka.METHOD === "NONE") key = null;
-                    else key = {
-                        method: ka.METHOD, uri: ka.URI ? resolveUrl(url, ka.URI) : "",
-                        iv: ka.IV ? ivFromHex(ka.IV) : null
-                    };
-                } else if (line.indexOf("#EXT-X-MAP:") === 0) {
-                    var mp = parseAttrList(line.slice(11));
-                    if (mp.URI) map = {
-                        url: resolveUrl(url, mp.URI),
-                        byterange: mp.BYTERANGE ? parseByterange(mp.BYTERANGE, 0) : null
-                    };
-                } else if (line.indexOf("#EXT-X-BYTERANGE:") === 0) {
-                    byterange = parseByterange(line.slice(17), prevFrag && prevFrag.byterange ?
-                        prevFrag.byterange.offset + prevFrag.byterange.length : 0);
-                } else if (line === "#EXT-X-DISCONTINUITY") {
-                    curDisco = true;
-                } else if (line.indexOf("#EXT-X-PROGRAM-DATE-TIME:") === 0) {
-                    curPdt = line.slice(25);
-                } else if (line === "#EXT-X-ENDLIST") {
-                    ended = true;
-                } else if (line.indexOf("#EXT-X-PLAYLIST-TYPE:") === 0) {
-                    if (line.slice(21).trim().toUpperCase() === "VOD") ended = true;
-                } else if (line.indexOf("#EXT-X-START:") === 0) {
-                    var sa = parseAttrList(line.slice(13));
-                    if (sa["TIME-OFFSET"]) { startTimeOffset = parseFloat(sa["TIME-OFFSET"]) || 0; hasStartTime = true; }
-                }
-                continue;
-            }
-            // A plain URI line closes the pending fragment.
-            var frag = {
-                url: resolveUrl(url, line),
-                duration: curDur, title: curTitle || "", sn: sn,
-                programDateTime: curPdt, key: key, map: map,
-                byterange: byterange, discontinuity: curDisco || undefined,
-                start: total
-            };
-            total += curDur;
-            frags.push(frag);
-            prevFrag = frag;
-            sn++; curDur = 0; curTitle = ""; curDisco = false; curPdt = null; byterange = null;
-            seenUri = true;
-        }
-        if (!seenUri) return null;
-        return {
-            url: url, version: version, targetduration: targetDur,
-            totalduration: total, fragments: frags, live: !ended, ended: ended,
-            startSN: startSN, endSN: sn - 1, discoSeq: discoSeq,
-            startTimeOffset: startTimeOffset, hasStartTime: hasStartTime
-        };
-    }
-
-    function parseByterange(spec, prevEnd) {
-        var m = /^(\d+)(?:@(\d+))?$/.exec(String(spec).trim());
-        if (!m) return null;
-        var len = parseInt(m[1], 10);
-        var off = m[2] !== undefined ? parseInt(m[2], 10) : prevEnd;
-        return { length: len, offset: off };
-    }
-
-    function ivFromHex(hex) {
-        var h = hex.toLowerCase().replace(/^0x/, "").padStart(32, "0").slice(-32);
-        var out = new Uint8Array(16);
-        for (var i = 0; i < 16; i++) out[i] = parseInt(h.substr(i * 2, 2), 16);
-        return out;
-    }
-
-    // ---------------------------------------------------------------- format sniffing
-    // Strips any ID3v2 tags sitting at the head of raw audio segments and returns
-    // them (they carry the radio "now playing" data) plus the offset after them.
-    function stripId3Tags(data) {
-        var off = 0, tags = [];
-        while (off + 10 <= data.length &&
-            data[off] === 0x49 && data[off + 1] === 0x44 && data[off + 2] === 0x33) {
-            var size = ((data[off + 6] & 0x7f) << 21) | ((data[off + 7] & 0x7f) << 14) |
-                ((data[off + 8] & 0x7f) << 7) | (data[off + 9] & 0x7f);
-            var len = 10 + size + ((data[off + 5] & 0x10) ? 10 : 0); // footer when flagged
-            if (len <= 0 || off + len > data.length) break;
-            tags.push({ data: data.subarray(off, off + len) });
-            off += len;
-        }
-        return { tags: tags, offset: off };
-    }
-
-    // Returns "fmp4" | "ts" | "aac" | "mp3" | "unknown".
-    function sniffFormat(data) {
-        if (!data || data.length < 12) return "unknown";
-        if (data[4] === 0x47 && data[0] !== 0x47) return "ts"; // M2TS packets
-        if (data[0] === 0x47) return "ts";
-        if (data[4] === 0x66 && data[5] === 0x74 && data[6] === 0x79 && data[7] === 0x70) return "fmp4"; // ftyp
-        if (data[4] === 0x73 && data[5] === 0x74 && data[6] === 0x79 && data[7] === 0x70) return "fmp4"; // styp
-        var id3 = stripId3Tags(data);
-        var i = id3.offset;
-        if (i + 1 < data.length && data[i] === 0xff && (data[i + 1] & 0xf0) === 0xf0) {
-            return (data[i + 1] & 0x06) === 0 ? "aac" : "mp3";
-        }
-        return "unknown";
-    }
-
-    // ---------------------------------------------------------------- MPEG-TS demuxer
-    var AAC_FREQ = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
-    var TS_TYPES = { 0x1b: "avc", 0x0f: "aac", 0x03: "mp3", 0x04: "mp3", 0x15: "id3", 0x11: "latm", 0x24: "hevc", 0x81: "ac3" };
-
-    function parsePts(b, o) {
-        return (((b[o] >> 1) & 0x07) * 0x100000000 + b[o + 1] * 0x1000000 +
-            ((b[o + 2] >> 1) & 0x7f) * 0x8000 + b[o + 3] * 128 + ((b[o + 4] >> 1) & 0x7f));
-    }
-
-    function concatChunks(chunks, total) {
-        if (chunks.length === 1) return chunks[0];
-        var out = new Uint8Array(total), p = 0;
-        for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], p); p += chunks[i].length; }
-        return out;
-    }
-
-    // Demuxes one MPEG-TS payload into elementary samples.
-    // Returns { audio, video, metadata, unsupported }.
-    function demuxTs(data) {
-        var packetSize = (data[0] === 0x47) ? 188 : (data[4] === 0x47 ? 192 : 0);
-        var out = { audio: null, video: null, metadata: [], unsupported: [] };
-        if (!packetSize) return out;
-        var pids = {};          // pid -> {type, pesChunks, pesLen, pesPts, pesDts, total}
-        var sections = {};      // pid -> {bytes: [], expected: -1}
-        var pmtPid = -1;
-        var audioPid = -1, videoPid = -1, id3Pid = -1;
-        var pesDone = [];       // completed PES payloads {pid, pts, dts, data}
-
-        function handleSection(pid, bytes) {
-            if (!bytes || bytes.length < 8) return;
-            var tid = bytes[0];
-            if (pid === 0 && tid === 0x00) { // PAT
-                var len = ((bytes[1] & 0x0f) << 8) | bytes[2];
-                for (var i = 8; i + 4 <= 3 + len - 4 /*CRC*/; i += 4) {
-                    var prog = (bytes[i] << 8) | bytes[i + 1];
-                    var epid = ((bytes[i + 2] & 0x1f) << 8) | bytes[i + 3];
-                    if (prog !== 0 && pmtPid === -1) pmtPid = epid;
-                }
-            } else if (pid === pmtPid && tid === 0x02) { // PMT
-                var plen = ((bytes[1] & 0x0f) << 8) | bytes[2];
-                var end = 3 + plen - 4;
-                var pinfoLen = ((bytes[10] & 0x0f) << 8) | bytes[11];
-                var j = 12 + pinfoLen;
-                while (j + 5 <= end) {
-                    var st = bytes[j];
-                    var epid2 = ((bytes[j + 1] & 0x1f) << 8) | bytes[j + 2];
-                    var eslen = ((bytes[j + 3] & 0x0f) << 8) | bytes[j + 4];
-                    var t = TS_TYPES[st];
-                    if (t && !(pids[epid2] && pids[epid2].type)) {
-                        pids[epid2] = { type: t, chunks: [], total: 0, pts: 0, dts: 0, hasPts: false };
-                        if (t === "aac" || t === "mp3") audioPid = audioPid === -1 ? epid2 : audioPid;
-                        else if (t === "avc") videoPid = epid2;
-                        else if (t === "id3") id3Pid = epid2;
-                        else out.unsupported.push(t);
-                    }
-                    j += 5 + eslen;
-                }
-            }
-        }
-
-        function feedSection(pid, chunk, pusi) {
-            var st = sections[pid] || (sections[pid] = { bytes: [], expected: -1 });
-            var i = 0;
-            if (pusi) {
-                i = chunk[0] + 1; // pointer_field
-                st.bytes = [];
-                st.expected = -1;
-            }
-            while (i < chunk.length) {
-                if (st.expected === -1) {
-                    if (chunk.length - i < 3) { // header split across packets
-                        st.bytes = Array.prototype.slice.call(chunk.subarray(i));
-                        return;
-                    }
-                    var tid = chunk[i];
-                    if (tid !== 0x00 && tid !== 0x02 && tid !== 0x42) { st.bytes = []; return; }
-                    st.bytes = Array.prototype.slice.call(chunk.subarray(i, i + 3));
-                    st.expected = 3 + (((chunk[i + 1] & 0x0f) << 8) | chunk[i + 2]);
-                    i += 3;
-                    continue;
-                }
-                var need = st.expected - st.bytes.length;
-                var take = Math.min(need, chunk.length - i);
-                for (var k = 0; k < take; k++) st.bytes.push(chunk[i + k]);
-                i += take;
-                if (st.bytes.length >= st.expected) {
-                    handleSection(pid, st.bytes);
-                    st.bytes = [];
-                    st.expected = -1;
-                }
-            }
-        }
-
-        function flushPes(pid) {
-            var p = pids[pid];
-            if (!p || !p.chunks.length) return;
-            pesDone.push({ pid: pid, pts: p.pts, dts: p.dts, hasPts: p.hasPts, data: concatChunks(p.chunks, p.total) });
-            p.chunks = []; p.total = 0; p.hasPts = false;
-        }
-
-        for (var pos = 0; pos + packetSize <= data.length; pos += packetSize) {
-            if (data[pos] !== 0x47) continue; // re-sync: skip broken packet
-            var pusi = !!(data[pos + 1] & 0x40);
-            var pid = ((data[pos + 1] & 0x1f) << 8) | data[pos + 2];
-            var afc = (data[pos + 3] >> 4) & 0x03;
-            var off = pos + 4;
-            if (afc & 0x02) off += 1 + data[pos + 4]; // adaptation field
-            if (!(afc & 0x01) || off >= pos + packetSize) continue;
-            var payload = data.subarray(off, pos + packetSize);
-            if (pid === 0 || pid === pmtPid) { feedSection(pid, payload, pusi); continue; }
-            var p = pids[pid];
-            if (!p) continue;
-            if (pusi) {
-                flushPes(pid);
-                if (payload.length < 9 || payload[0] || payload[1] || payload[2] !== 1) continue;
-                var plen = (payload[4] << 8) | payload[5];
-                var flags = (payload[6] << 8) | payload[7];
-                var hdr = payload[8];
-                if ((flags & 0x8000) && payload.length >= 14) {
-                    p.pts = parsePts(payload, 9);
-                    p.hasPts = true;
-                    p.dts = (flags & 0x4000) && payload.length >= 19 ? parsePts(payload, 14) : p.pts;
-                }
-                var dstart = 9 + hdr;
-                var dend = plen ? Math.min(payload.length, 6 + plen) : payload.length;
-                if (dstart > dend) continue;
-                p.chunks.push(payload.subarray(dstart, dend));
-                p.total += dend - dstart;
-            } else if (p.chunks.length) {
-                p.chunks.push(payload);
-                p.total += payload.length;
-            }
-        }
-        for (var pid3 in pids) flushPes(parseInt(pid3, 10));
-
-        // ---- elementary stream post-processing
-        if (audioPid >= 0) {
-            var aType = pids[audioPid].type;
-            // Concatenate ALL PES payloads of the audio PID into one continuous
-            // elementary stream: muxers chop audio mid-frame at PES boundaries, so
-            // frames must be walked across packet edges, not per packet.
-            var pesList = [];
-            for (var e = 0; e < pesDone.length; e++) {
-                if (pesDone[e].pid === audioPid) pesList.push(pesDone[e]);
-            }
-            var audio = demuxPesAudio(pesList, aType);
-            if (audio) out.audio = audio;
-        }
-        if (videoPid >= 0) {
-            var vp = pesDone.filter(function (x) { return x.pid === videoPid; });
-            out.video = demuxAvc(vp);
-        }
-        if (id3Pid >= 0) {
-            for (var m = 0; m < pesDone.length; m++) {
-                var md = pesDone[m];
-                if (md.pid === id3Pid && md.data.length > 10) out.metadata.push({ pts: md.hasPts ? md.pts : 0, data: md.data });
-            }
-        }
-        return out;
-    }
-
-    // ---- Continuous audio elementary stream demuxer (AAC ADTS + MPEG audio).
-    // pesStarts marks where each PES payload begins and the PTS it carries; a
-    // frame's timestamp is its starting PES's PTS plus the frame's position inside it.
-    function demuxPesAudio(pesList, kind) {
-        if (!pesList.length) return null;
-        var total = 0, i;
-        for (i = 0; i < pesList.length; i++) total += pesList[i].data.length;
-        var buf = new Uint8Array(total);
-        var starts = [], acc = 0;
-        for (i = 0; i < pesList.length; i++) {
-            starts.push({ o: acc, pts: pesList[i].hasPts ? pesList[i].pts : 0 });
-            buf.set(pesList[i].data, acc);
-            acc += pesList[i].data.length;
-        }
-        var samples = [], config = null;
-        var si = 0, local = 0; // PES index the current frame starts in, frames inside it
-        i = 0;
-        while (i + 7 <= total) {
-            if (buf[i] !== 0xff || (buf[i + 1] & 0xe0) !== 0xe0) { i++; continue; }
-            var flen = 0, spf = 0, sr = 0, ch = 0, headSize = 4;
-            if (kind === "aac") {
-                if ((buf[i + 1] & 0xf0) !== 0xf0 || (buf[i + 1] & 0x06) !== 0) { i++; continue; }
-                var profile = (buf[i + 2] >> 6) & 0x03;
-                var sfIdx = (buf[i + 2] >> 2) & 0x0f;
-                ch = ((buf[i + 2] & 0x01) << 2) | ((buf[i + 3] >> 6) & 0x03); // 3-bit channel config
-                flen = ((buf[i + 3] & 0x03) << 11) | (buf[i + 4] << 3) | ((buf[i + 5] >> 5) & 0x07);
-                headSize = (buf[i + 1] & 0x01) ? 7 : 9; // CRC protection adds 2 bytes
-                sr = AAC_FREQ[sfIdx] || 44100;
-                spf = 1024;
-                if (sfIdx === 15 || flen <= headSize) { i++; continue; }
-                if (!config) config = { samplerate: sr, channels: ch || 2, profile: profile, sfIdx: sfIdx, spf: spf };
-            } else {
-                var ver = (buf[i + 1] >> 3) & 0x03;      // 3=MPEG1 2=MPEG2 0=MPEG2.5
-                var layer = (buf[i + 1] >> 1) & 0x03;    // 1=L3 2=L2 3=L1
-                if (ver === 1 || layer === 0) { i++; continue; }
-                var brIdx = (buf[i + 2] >> 4) & 0x0f;
-                var sfIdx3 = (buf[i + 2] >> 2) & 0x03;
-                var pad = (buf[i + 2] >> 1) & 0x01;
-                var mode = (buf[i + 3] >> 6) & 0x03;
-                if (brIdx === 0 || brIdx === 15 || sfIdx3 === 3) { i++; continue; }
-                var kbps, freq;
-                if (ver === 3) {
-                    kbps = MP3_BITRATES[3][layer][brIdx];
-                    freq = [44100, 48000, 32000][sfIdx3];
-                    spf = layer === 3 ? 384 : 1152; // MPEG-1: L3/L2 1152, L1 384
-                } else {
-                    kbps = MP3_BITRATES[2][layer][brIdx];
-                    freq = [44100, 48000, 32000][sfIdx3] / (ver === 2 ? 2 : 4);
-                    spf = layer === 3 ? 384 : (layer === 2 ? 1152 : 576); // MPEG-2/2.5: L3 576
-                }
-                if (!kbps || !freq) { i++; continue; }
-                flen = layer === 3
-                    ? Math.floor((12 * kbps * 1000 / freq + pad) * 4)
-                    : Math.floor(spf / 8 * kbps * 1000 / freq) + pad;
-                sr = freq;
-                ch = mode === 3 ? 1 : 2;
-                if (!config) config = { samplerate: sr, channels: ch, layer: layer, spf: spf };
-            }
-            var next = i + flen;
-            var nextIsSync = next + 1 < total && buf[next] === 0xff && (buf[next + 1] & 0xe0) === 0xe0;
-            if (next < total && !nextIsSync) { i++; continue; } // false sync: resync
-            if (next > total) break;                            // truncated tail
-            while (si + 1 < starts.length && i >= starts[si + 1].o) { si++; local = 0; }
-            var basePts = starts[si].pts;
-            var pts = basePts + local * spf * 90000 / sr;
-            // fMP4 wants the raw frame: for AAC strip the ADTS header, MP3 keeps it.
-            samples.push({ data: buf.subarray(kind === "aac" ? i + headSize : i, next), pts: pts, dts: pts });
-            local++;
-            i = next;
-        }
-        if (!samples.length) return null;
-        return { codec: kind, samples: samples, config: config };
-    }
-
-    // ---- MP3 (MPEG-1/2/2.5 audio) bitrate tables. Keys follow the layer bits in
-    // the frame header: 1 = Layer III, 2 = Layer II, 3 = Layer I.
-    var MP3_BITRATES = {
-        3: { 1: [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],
-             2: [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],
-             3: [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448] }
-    };
-    var MP3_LOW_RATES = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
-    MP3_BITRATES[2] = { 1: MP3_LOW_RATES, 2: MP3_LOW_RATES, 3: [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256] };
-    MP3_BITRATES[0] = MP3_BITRATES[2];
-
-    // ---- H.264: PES payloads -> access units with 4-byte length-prefixed NAL units.
-    function demuxAvc(pesList) {
-        var samples = [], sps = null, pps = null;
-        var au = null, lastDts = 0, auCount = 0;
-        function flushAu() {
-            if (au && au.units.length) {
-                var data = new Uint8Array(au.size);
-                var p = 0;
-                for (var i = 0; i < au.units.length; i++) {
-                    var u = au.units[i];
-                    data[p++] = (u.length >>> 24) & 0xff; data[p++] = (u.length >>> 16) & 0xff;
-                    data[p++] = (u.length >>> 8) & 0xff; data[p++] = u.length & 0xff;
-                    data.set(u, p); p += u.length;
-                }
-                samples.push({ data: data, pts: au.pts, dts: au.dts, key: au.key });
-            }
-            au = null;
-        }
-        for (var e = 0; e < pesList.length; e++) {
-            var pes = pesList[e], data = pes.data;
-            var pts = pes.hasPts ? pes.pts : lastDts;
-            var dts = pes.dts || pts;
-            var i = 0;
-            var inAuPts = pts, inAuDts = dts, auHasSlice = false;
-            while (i + 4 <= data.length) {
-                var sc = -1;
-                if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 1) sc = i, i += 3;
-                else if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0 && data[i + 3] === 1) sc = i, i += 4;
-                else { i++; continue; }
-                if (i >= data.length) break;
-                var nalType = data[i] & 0x1f;
-                // find next start code
-                var j = i;
-                while (j + 3 <= data.length) {
-                    if (data[j] === 0 && data[j + 1] === 0 && (data[j + 2] === 1 || (data[j + 2] === 0 && data[j + 3] === 1))) break;
-                    j++;
-                }
-                var nalEnd = (j + 3 <= data.length && data[j + 2] === 1) ? j : (j + 3 <= data.length && data[j + 2] === 0 && data[j + 3] === 1) ? j : data.length;
-                // trim trailing zero bytes of the NALU
-                while (nalEnd > i && data[nalEnd - 1] === 0) nalEnd--;
-                var nalu = data.subarray(i, nalEnd);
-                if (nalType === 7) sps = nalu;
-                else if (nalType === 8) pps = nalu;
-                if (nalType === 9) { // AUD: close the previous access unit
-                    flushAu();
-                    auHasSlice = false;
-                } else if (nalType === 1 || nalType === 5) {
-                    // A slice whose first_mb_in_slice ue(v) starts with bit 1 means
-                    // first_mb == 0, i.e. the first slice of a new picture.
-                    if (auHasSlice && (data[i + 1] & 0x80) !== 0) {
-                        flushAu();
-                        inAuPts = dts; inAuDts = dts;
-                    }
-                    if (!au) au = { units: [], size: 0, pts: inAuPts, dts: inAuDts, key: false };
-                    au.units.push(nalu);
-                    au.size += 4 + nalu.length;
-                    if (nalType === 5) au.key = true;
-                    auHasSlice = true;
-                } else if (nalType === 6 || nalType === 2 || nalType === 3 || nalType === 4) {
-                    if (!au) au = { units: [], size: 0, pts: inAuPts, dts: inAuDts, key: false };
-                    au.units.push(nalu);
-                    au.size += 4 + nalu.length;
-                }
-                i = nalEnd;
-            }
-            flushAu();
-            auCount++;
-            if (samples.length) lastDts = samples[samples.length - 1].dts;
-        }
-        return { samples: samples, sps: sps, pps: pps };
-    }
-
-    // ---- Raw (non-TS) segment demuxing: ADTS .aac and MPEG audio .mp3 segments.
-    // Timestamps derive from the fragment position in the playlist (90 kHz clock).
-    function demuxRawAudio(data, format, baseTime) {
-        var id3 = stripId3Tags(data);
-        var basePts = Math.round(baseTime * 90000);
-        var body = data.subarray(id3.offset);
-        var r = demuxPesAudio([{ data: body, hasPts: true, pts: basePts }], format);
-        var metadata = id3.tags.map(function (t) { return { pts: basePts, data: t.data }; });
-        return { tags: id3.tags, metadata: metadata, samples: r ? r.samples : [], config: r ? r.config : null, format: format };
-    }
-
-    // ---------------------------------------------------------------- MP4 box writer
-    function u8(v) { var b = new Uint8Array(1); b[0] = v & 0xff; return b; }
-    function u16(v) { var b = new Uint8Array(2); b[0] = (v >>> 8) & 0xff; b[1] = v & 0xff; return b; }
-    function u24(v) { var b = new Uint8Array(3); b[0] = (v >>> 16) & 0xff; b[1] = (v >>> 8) & 0xff; b[2] = v & 0xff; return b; }
-    function u32(v) { var b = new Uint8Array(4); b[0] = (v >>> 24) & 0xff; b[1] = (v >>> 16) & 0xff; b[2] = (v >>> 8) & 0xff; b[3] = v & 0xff; return b; }
-    function i32(v) { return u32(v < 0 ? v + 0x100000000 : v); }
-    function u64(v) {
-        var hi = Math.floor(v / 0x100000000), lo = v % 0x100000000;
-        return concatChunks([u32(hi), u32(lo)], 8);
-    }
-    function ascii(s) {
-        var b = new Uint8Array(s.length);
-        for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i) & 0xff;
-        return b;
-    }
-
-    function box(type) {
-        var parts = Array.prototype.slice.call(arguments, 1);
-        var size = 8;
-        for (var i = 0; i < parts.length; i++) size += parts[i].length;
-        var out = new Uint8Array(size);
-        out.set(u32(size), 0);
-        out.set(ascii(type), 4);
-        var p = 8;
-        for (var j = 0; j < parts.length; j++) { out.set(parts[j], p); p += parts[j].length; }
-        return out;
-    }
-
-    function fullBox(type, version, flags) {
-        var parts = Array.prototype.slice.call(arguments, 3);
-        return box.apply(null, [type, concatChunks([u8(version), u24(flags)], 4)].concat(parts));
-    }
-
-    var UNITY_MATRIX = concatChunks([u32(0x00010000), u32(0), u32(0), u32(0), u32(0x00010000), u32(0), u32(0), u32(0), u32(0x40000000)], 36);
-
-    // MP4 descriptors are TLV boxes with a 7-bit-expandable length field.
-    function descriptor(tag, payload) {
-        var len = payload.length, lenBytes = [];
-        do {
-            var b = len & 0x7f;
-            len >>>= 7;
-            if (len) b |= 0x80;
-            lenBytes.unshift(b);
-        } while (len);
-        var head = new Uint8Array(1 + lenBytes.length);
-        head[0] = tag;
-        for (var i = 0; i < lenBytes.length; i++) head[i + 1] = lenBytes[i];
-        return concatChunks([head, payload], head.length + payload.length);
-    }
-
-    // AudioSpecificConfig for AAC from the ADTS header fields.
-    function aacAsc(cfg) {
-        var aot = (cfg.profile & 0x03) + 1; // ADTS profile 1 (LC) -> AOT 2
-        var sfIdx = cfg.sfIdx & 0x0f, ch = cfg.channels & 0x0f;
-        if (sfIdx === 15) {
-            var freq = cfg.samplerate;
-            return concatChunks([u8(aot << 3), u8(ch << 3), u24(freq)], 5);
-        }
-        return concatChunks([u8((aot << 3) | (sfIdx >> 1)), u8(((sfIdx & 1) << 7) | (ch << 3))], 2);
-    }
-
-    function esdsBox(trackId, objectType, asc) {
-        var dcdPayload = [u8(objectType), u8((5 << 2) | 1), u24(6144), u32(128000), u32(128000)];
-        if (asc) dcdPayload.push(descriptor(0x05, asc));
-        dcdPayload.push(descriptor(0x06, u8(0x02)));
-        var dcd = descriptor(0x04, concatChunks(dcdPayload, dcdPayload.reduce(function (a, b) { return a + b.length; }, 0)));
-        var es = descriptor(0x03, concatChunks([u16(trackId), u8(0), dcd], 3 + dcd.length));
-        return fullBox("esds", 0, 0, es);
-    }
-
-    function audioSampleEntry(fourcc, track) {
-        var base = concatChunks([
-            new Uint8Array(6), u16(1),          // reserved, data_reference_index
-            new Uint8Array(8),                  // version/revision/vendor
-            u16(track.config.channels || 2), u16(16), u16(0), u16(0),
-            u32(Math.round((track.config.samplerate || 44100) * 0x10000))
-        ], 28);
-        var objectType = track.codec === "mp3" ? 0x6b : 0x40;
-        var asc = track.codec === "aac" ? aacAsc(track.config) : null;
-        return box(fourcc, base, esdsBox(track.id, objectType, asc));
-    }
-
-    function avcCBox(sps, pps) {
-        var payload = concatChunks([
-            u8(1), u8(sps[1]), u8(sps[2]), u8(sps[3]), u8(0xff), u8(0xe1),
-            u16(sps.length), sps, u8(1), u16(pps.length), pps
-        ], 8 + 2 + sps.length + 2 + pps.length);
-        return box("avcC", payload);
-    }
-
-    // Exp-Golomb bit reader over emulation-prevention-free RBSP.
-    function spsPictureSize(sps) {
-        try {
-            var b = [], n = 0;
-            for (var i = 1; i < sps.length; i++) { // skip NAL header byte
-                if (i + 2 < sps.length && sps[i] === 0 && sps[i + 1] === 0 && sps[i + 2] === 3) {
-                    b[n++] = 0; b[n++] = 0; i += 2;
-                } else b[n++] = sps[i];
-            }
-            var p = 0;
-            function peek() { return (b[p >> 3] >> (7 - (p & 7))) & 1; }
-            function bit() { var v = peek(); p++; return v; }
-            function bits(c) { var v = 0; while (c--) v = (v << 1) | bit(); return v; }
-            function ue() { var z = 0; while (!bit() && z < 32) z++; return (1 << z) - 1 + bits(z); }
-            var profile = bits(8); bits(8); bits(8); // profile, constraints, level
-            ue(); // seq_parameter_set_id
-            var high = [100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135].indexOf(profile) >= 0;
-            if (high) {
-                if (ue() === 3) ue();
-                ue(); ue(); // bit_depth_luma/chroma
-                if (bit()) { var cnt = ue(); for (var s = 0; s < cnt; s++) { if (bit()) { var ss = 16; if (s < 6) ss = 64; bits(8); for (var j = 0; j < ss; j++) ue(); } } }
-            }
-            ue(); // log2_max_frame_num
-            var pocType = ue();
-            if (pocType === 0) ue();
-            else if (pocType === 1) { bit(); ue(); ue(); var cnt2 = ue(); for (var q = 0; q < cnt2; q++) ue(); }
-            ue(); // max_num_ref_frames
-            bit(); // gaps_in_frame_num
-            var wMbs = ue(), hUnits = ue();
-            var frameOnly = bit();
-            if (!frameOnly) bit();
-            bit(); // direct_8x8
-            var crop = bit();
-            var cropL = 0, cropR = 0, cropT = 0, cropB = 0;
-            if (crop) { cropL = ue(); cropR = ue(); cropT = ue(); cropB = ue(); }
-            var width = (wMbs + 1) * 16;
-            var height = (hUnits + 1) * 16 * (frameOnly ? 1 : 2);
-            width -= (cropL + cropR) * 2;                          // 4:2:0 crop units
-            height -= (cropT + cropB) * 2 * (frameOnly ? 1 : 2);
-            return { width: width, height: height };
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function videoSampleEntry(track) {
-        var size = track.sps ? spsPictureSize(track.sps) : null;
-        var w = size ? size.width : (track.width || 0);
-        var h = size ? size.height : (track.height || 0);
-        var base = concatChunks([
-            new Uint8Array(6), u16(1),          // reserved, data_reference_index
-            u16(0), u16(0), new Uint8Array(12), // pre_defined, reserved, pre_defined
-            u16(w), u16(h),
-            u32(0x00480000), u32(0x00480000),   // 72 dpi
-            u32(0), u16(1),                     // reserved, frame_count
-            new Uint8Array(32),                 // compressorname
-            u16(0x0018), u16(0xffff)            // depth, pre_defined
-        ], 78);
-        return box("avc1", base, avcCBox(track.sps, track.pps));
-    }
-
-    function trakBox(track, duration1000) {
-        var isVideo = track.type === "video";
-        var size = isVideo && track.sps ? spsPictureSize(track.sps) : null;
-        var tw = size ? size.width : (track.width || 0);
-        var th = size ? size.height : (track.height || 0);
-        var tkhd = fullBox("tkhd", 0, 7,
-            u32(0), u32(0), u32(track.id), u32(0), u32(duration1000 || 0),
-            new Uint8Array(8), u16(0), u16(isVideo ? 0 : 1),
-            u16(isVideo ? 0 : 0x0100), u16(0), UNITY_MATRIX,
-            u32(Math.round(tw * 0x10000)), u32(Math.round(th * 0x10000)));
-        var mdhd = fullBox("mdhd", 0, 0, u32(0), u32(0), u32(track.timescale), u32(Math.round(track.duration1000 || 0)), u16(0x55c4), u16(0));
-        var hdlr = fullBox("hdlr", 0, 0, u32(0), ascii(isVideo ? "vide" : "soun"), new Uint8Array(12), ascii("glim"), u8(0));
-        var mediaHeader = isVideo
-            ? fullBox("vmhd", 0, 1, u16(0), new Uint8Array(6))
-            : fullBox("smhd", 0, 0, u16(0), u16(0));
-        var entry = isVideo ? videoSampleEntry(track) : audioSampleEntry(track.codec === "mp3" ? ".mp3" : "mp4a", track);
-        var stbl = box("stbl",
-            fullBox("stsd", 0, 0, u32(1), entry),
-            fullBox("stts", 0, 0, u32(0)),
-            fullBox("stsc", 0, 0, u32(0)),
-            fullBox("stsz", 0, 0, u32(0), u32(0)),
-            fullBox("stco", 0, 0, u32(0)));
-        return box("trak", tkhd, box("mdia", mdhd, hdlr, box("minf", mediaHeader,
-            box("dinf", fullBox("dref", 0, 0, u32(1), fullBox("url ", 0, 1))), stbl)));
-    }
-
-    // Builds the ftyp+moov init segment for the given tracks. Durations stay 0:
-    // this is a fragmented movie, MSE derives duration from appended fragments
-    // (non-zero tkhd/mvhd durations make Chromium reject the init append).
-    function mp4InitSegment(tracks) {
-        var hasVideo = tracks.some(function (t) { return t.type === "video"; });
-        var ftyp = box("ftyp", ascii("isom"), u32(0x200),
-            ascii(hasVideo ? "isomiso2avc1mp41" : "isomiso2M4A mp41"));
-        var nextId = 1;
-        var traks = [], trexs = [];
-        for (var i = 0; i < tracks.length; i++) {
-            var t = tracks[i];
-            traks.push(trakBox(t, 0));
-            trexs.push(fullBox("trex", 0, 0, u32(t.id), u32(1), u32(0), u32(0), u32(0)));
-            nextId = t.id + 1;
-        }
-        var mvhd = fullBox("mvhd", 0, 0,
-            u32(0), u32(0), u32(1000), u32(0), u32(0x00010000), u16(0x0100),
-            u16(0), new Uint8Array(8), UNITY_MATRIX, new Uint8Array(24), u32(nextId));
-        var moov = box.apply(null, ["moov", mvhd].concat(traks).concat([box.apply(null, ["mvex"].concat(trexs))]));
-        return concatChunks([ftyp, moov], ftyp.length + moov.length);
-    }
-
-    // Builds one moof+mdat blob carrying every track's samples of this fragment.
-    // The same blob is appended to each track's SourceBuffer; MSE routes samples
-    // by track id. items: [{track, samples:[{data,duration,flags,cts,dts}]}].
-    function mp4Fragment(items, seq) {
-        var trafs = [], payloads = [], mdatSize = 0, moofSize;
-        for (var i = 0; i < items.length; i++) {
-            var s = items[i].samples;
-            for (var k = 0; k < s.length; k++) { payloads.push(s[k].data); mdatSize += s[k].data.length; }
-        }
-        moofSize = 8 /* moof box header, included in data-offset base */ + 16; // mfhd
-        for (var t = 0; t < items.length; t++) {
-            var n = items[t].samples.length;
-            var withCts = items[t].track.type === "video" && items[t].samples.some(function (x) { return x.cts !== 0; });
-            var trunSize = 8 + 4 + 4 + 4 + n * (withCts ? 16 : 12);
-            moofSize += 8 /*traf header*/ + 16 /*tfhd*/ + 20 /*tfdt v1*/ + trunSize;
-        }
-        var dataBase = moofSize + 8; // mdat header size
-        var offset = dataBase;
-        for (var q = 0; q < items.length; q++) {
-            var track = items[q].track, samples = items[q].samples;
-            var withCts2 = track.type === "video" && samples.some(function (x) { return x.cts !== 0; });
-            var trunEntries = [];
-            for (var e = 0; e < samples.length; e++) {
-                var sm = samples[e];
-                trunEntries.push(u32(sm.duration), u32(sm.data.length), u32(sm.flags || 0x02000000));
-                if (withCts2) trunEntries.push(i32(sm.cts || 0));
-                sm._offset = offset;
-                offset += sm.data.length;
-            }
-            var trun = fullBox.apply(null, ["trun", withCts2 ? 1 : 0, 0x000701 | (withCts2 ? 0x000800 : 0),
-                u32(samples.length), u32(samples[0]._offset)].concat(trunEntries));
-            var tfhd = fullBox("tfhd", 0, 0x020000, u32(track.id));
-            var tfdt = fullBox("tfdt", 1, 0, u64(Math.max(0, Math.round(samples[0].dts))));
-            trafs.push(box("traf", tfhd, tfdt, trun));
-        }
-        var mfhd = fullBox("mfhd", 0, 0, u32(seq & 0xffffffff));
-        var moof = box.apply(null, ["moof", mfhd].concat(trafs));
-        var mdatParts = [u32(mdatSize + 8), ascii("mdat")].concat(payloads);
-        var mdat = concatChunks(mdatParts, mdatSize + 8);
-        return concatChunks([moof, mdat], moof.length + mdat.length);
-    }
-
-    // ---- Prepares demuxed samples of one fragment for the box writers.
-    // timeOffsets (seconds per type) shifts the fragment's tfdt base — the player
-    // leaves it at 0 (it positions fragments via SourceBuffer.timestampOffset);
-    // offline muxing (e.g. tests) passes the cumulative playlist position.
-    // Returns { tracks, items }.
-    function prepareFragment(demux, state, isInit, timeOffsets) {
-        // state.audio/video: persistent track models (id, timescale, config, duration...)
-        var items = [], tracks = [];
-        if (demux.audio) {
-            var cfg = demux.audio.config || {};
-            var t = state.audio;
-            if (!t) {
-                t = state.audio = {
-                    id: 1, type: "audio", codec: demux.audio.codec,
-                    timescale: cfg.samplerate || 44100, duration: 0,
-                    config: cfg, samplesPerFrame: demux.audio.codec === "aac" ? 1024 : (cfg.spf || 1152)
-                };
-            }
-            var samples = [];
-            // Normalize timestamps: each fragment starts its own decode-time timeline
-            // at zero; the buffer controller positions fragments via timestampOffset.
-            var dts0 = demux.audio.samples.length ? demux.audio.samples[0].dts : 0;
-            var aOff = Math.round(((timeOffsets && timeOffsets.audio) || 0) * t.timescale);
-            for (var i = 0; i < demux.audio.samples.length; i++) {
-                var s = demux.audio.samples[i];
-                var dts = Math.round((s.dts - dts0) * t.timescale / 90000) + aOff;
-                samples.push({ data: s.data, duration: t.samplesPerFrame, flags: 0x02000000, cts: 0, dts: dts });
-            }
-            t.duration += t.samplesPerFrame * samples.length;
-            items.push({ track: t, samples: samples });
-            tracks.push(t);
-        }
-        if (demux.video) {
-            var v = state.video;
-            if (!v) {
-                v = state.video = { id: 2, type: "video", codec: "avc", timescale: 90000, duration: 0, width: 0, height: 0 };
-            }
-            if (demux.video.sps) { v.sps = demux.video.sps; }
-            if (demux.video.pps) v.pps = demux.video.pps;
-            var vs = demux.video.samples, vSamples = [], prevDts = 0;
-            var vDts0 = vs.length ? vs[0].dts : 0;
-            var vOff = Math.round(((timeOffsets && timeOffsets.video) || 0) * 90000);
-            for (var k = 0; k < vs.length; k++) {
-                var sv = vs[k];
-                var dtsV = Math.max(Math.round(sv.dts - vDts0), prevDts + 1) + vOff;
-                var durV = k + 1 < vs.length ? Math.max(1, Math.round(vs[k + 1].dts - vDts0) - (dtsV - vOff)) : Math.max(1, Math.round(90000 / 30));
-                vSamples.push({ data: sv.data, duration: durV, flags: sv.key ? 0x02000000 : 0x01010000, cts: Math.max(0, Math.round(sv.pts - sv.dts)), dts: dtsV });
-                prevDts = dtsV + durV - vOff;
-            }
-            if (vs.length) v.lastDts = prevDts;
-            v.duration += vSamples.reduce(function (a, b) { return a + b.duration; }, 0);
-            if (vSamples.length) { items.push({ track: v, samples: vSamples }); tracks.push(v); }
-        }
-        return { items: items, tracks: tracks };
-    }
-
-    // ---------------------------------------------------------------- the Hls class
-    function Hls(config) {
-        Emitter.call(this);
-        this.config = extend({}, DEFAULT_CONFIG, config || {});
-        this._aborts = new AbortBag();
-        this._timers = [];
-        this._keys = {};          // key URI -> { raw: Uint8Array, cryptoKey: Promise }
-        this._maps = {};          // EXT-X-MAP URI -> Promise<ArrayBuffer>
-        this._levels = [];
-        this._levelIdx = -1;
-        this._details = null;
-        this._fragIdx = 0;
-        this._media = null;
-        this._ms = null;
-        this._sbs = {};           // "audio" / "video" -> SourceBuffer
-        this._trackTime = {};     // media seconds appended per buffer
-        this._tracks = {};        // demux/remux track models
-        this._opQueue = [];
-        this._opsRunning = false;
-        this._appendedInit = false;
-        this._mimes = null;
-        this._lastAheadSrc = "";  // last fragment URI appended
-        this._nudgeCount = 0;
-        this._lastWatchTime = -1;
-        this._seekTarget = null;
-        this._liveSync = false;
-        this._reloadPending = false;
-        this._fragInFlight = false;
-        this._bufferFullPoll = null;
-        this._liveTimer = null;
-        this._destroyed = false;
-        this._startPosSet = false;
-        this._onSourceOpenWaiters = [];
-        this._sbsCreated = false;
-        this._pendingInitBytes = null;
-        this._manifestStarted = false;
-        this._nextSnToLoad = null;
-        this._gen = 0; // bumps on every reset so stale append/remove callbacks are ignored
-        var self = this;
-        this._watchdog = setInterval(function () { self._watchTick(); }, 2000);
-    }
-
-    Hls.prototype = Object.create(Emitter.prototype);
-    extend(Hls.prototype, {
-        // ---- public API
-        loadSource: function (url) {
-            if (this._destroyed) return;
-            // Absolutize against the document so variant playlists resolve correctly.
-            try { url = new URL(url, location.href).href; } catch (e) {}
-            this.url = url;
-            this._manifestUrl = url;
-            if (this._media) this._start();
-        },
-        attachMedia: function (media) {
-            if (this._destroyed || !media) return;
-            this._media = media;
-            var self = this;
-            this.trigger(Events.MEDIA_ATTACHING, { media: media });
-            this._onSeekingBound = function () { self._onSeeking(); };
-            media.addEventListener("seeking", this._onSeekingBound);
-            var ms = new MediaSource();
-            this._ms = ms;
-            this._objectUrl = URL.createObjectURL(ms);
-            media.src = this._objectUrl;
-            ms.addEventListener("sourceopen", function () { self._onSourceOpen(); });
-            this.trigger(Events.MEDIA_ATTACHED, { media: media });
-            if (this.url) this._start();
-        },
-        detachMedia: function () {
-            this._teardownMse();
-            if (this._media && this._onSeekingBound) this._media.removeEventListener("seeking", this._onSeekingBound);
-            this._media = null;
-            this.trigger(Events.MEDIA_DETACHED);
-        },
-        destroy: function () {
-            if (this._destroyed) return;
-            this._destroyed = true;
-            this.trigger(Events.DESTROYING);
-            this._aborts.abortAll();
-            clearInterval(this._watchdog);
-            this._clearTimer(this._bufferFullPoll);
-            this._clearTimer(this._liveTimer);
-            this._teardownMse();
-            if (this._media && this._onSeekingBound) {
-                this._media.removeEventListener("seeking", this._onSeekingBound);
-                try { this._media.removeAttribute("src"); this._media.load(); } catch (e) {}
-            }
-            this._media = null;
-            Emitter.prototype.destroy.call(this);
-        },
-        recoverMediaError: function () {
-            // Fresh decode pipeline: rebuild the MediaSource and re-open the playlist,
-            // continuing from the current playhead.
-            log("recoverMediaError");
-            var pos = this._media ? this._media.currentTime : 0;
-            this._teardownMse();
-            this._tracks = {};
-            this._trackTime = {};
-            this._appendedInit = false;
-            this._lastAheadSrc = "";
-            this._seekTarget = pos || null;
-            this._startPosSet = pos > 0;
-            if (this._media && this._levelIdx >= 0) {
-                var self = this;
-                var ms = new MediaSource();
-                this._ms = ms;
-                if (this._objectUrl) { try { URL.revokeObjectURL(this._objectUrl); } catch (e) {} }
-                this._objectUrl = URL.createObjectURL(ms);
-                this._media.src = this._objectUrl;
-                ms.addEventListener("sourceopen", function () { self._loadLevelPlaylist(self._levelIdx); });
-            }
-        },
-        startLoad: function () { if (this._media && this.url) this._start(); },
-        stopLoad: function () { this._aborts.abortAll(); this._aborts.killed = false; },
-
-        // ---- internal: timers
-        _clearTimer: function (t) { if (t) { clearTimeout(t); } },
-
-        // ---- internal: pipeline start
-        _start: function () {
-            if (this._destroyed || this._manifestStarted) return;
-            this._manifestStarted = true;
-            var self = this;
-            this.trigger(Events.MANIFEST_LOADING, { url: this.url });
-            load(this.url, { text: true, timeout: this.config.manifestLoadingTimeOut, maxRetry: this.config.manifestLoadingMaxRetry, retryDelay: this.config.manifestLoadingRetryDelay }, this._aborts)
-                .then(function (text) {
-                    var master = parseMasterPlaylist(text, self.url);
-                    if (master) {
-                        self._levels = master.levels;
-                        // Pick the highest-bitrate variant up front.
-                        var best = 0;
-                        for (var i = 1; i < master.levels.length; i++) {
-                            if ((master.levels[i].averageBitrate || master.levels[i].bitrate) > (master.levels[best].averageBitrate || master.levels[best].bitrate)) best = i;
-                        }
-                        self.trigger(Events.MANIFEST_LOADED, { levels: master.levels, url: self.url });
-                        self._levelIdx = best;
-                        self.trigger(Events.MANIFEST_PARSED, { levels: master.levels, firstLevel: best });
-                        self._loadLevelPlaylist(best);
-                    } else {
-                        // The URL is a media playlist already: wrap it in a synthetic level.
-                        var details = parseLevelPlaylist(text, self.url);
-                        if (!details) {
-                            self._fatal(ErrorTypes.NETWORK_ERROR, ErrorDetails.manifestParsingError, "unrecognized playlist");
-                            return;
-                        }
-                        var lv = { url: self.url, bitrate: 0, averageBitrate: 0, width: 0, height: 0, name: "", videoCodec: "", audioCodec: "", codecSet: "", details: details };
-                        self._levels = [lv];
-                        self._details = details;
-                        self.trigger(Events.MANIFEST_LOADED, { levels: self._levels, url: self.url });
-                        self._levelIdx = 0;
-                        self.trigger(Events.MANIFEST_PARSED, { levels: self._levels, firstLevel: 0 });
-                        self._onLevelLoaded(details);
-                    }
-                })
-                .catch(function (err) {
-                    if (self._destroyed) return;
-                    self._fatal(ErrorTypes.NETWORK_ERROR, ErrorDetails.manifestLoadError, err && err.message);
-                });
-        },
-
-        _loadLevelPlaylist: function (idx, seekTo) {
-            if (this._destroyed) return;
-            var self = this, level = this._levels[idx];
-            if (!level) return this._fatal(ErrorTypes.NETWORK_ERROR, ErrorDetails.levelLoadError, "no such level");
-            if (seekTo !== undefined) this._seekTarget = seekTo;
-            this.trigger(Events.LEVEL_LOADING, { level: idx, url: level.url });
-            load(level.url, { text: true, timeout: this.config.levelLoadingTimeOut, maxRetry: this.config.levelLoadingMaxRetry, retryDelay: this.config.levelLoadingRetryDelay }, this._aborts)
-                .then(function (text) {
-                    var details = parseLevelPlaylist(text, level.url);
-                    if (!details || !details.fragments.length) {
-                        return self._fatal(ErrorTypes.NETWORK_ERROR, ErrorDetails.levelEmptyError, "empty playlist");
-                    }
-                    level.details = details;
-                    self._details = details;
-                    self.trigger(Events.LEVEL_LOADED, { details: details, level: idx });
-                    self._onLevelLoaded(details);
-                })
-                .catch(function (err) {
-                    if (self._destroyed) return;
-                    self._fatal(ErrorTypes.NETWORK_ERROR, /aborted|destroyed/i.test(err && err.message) ? ErrorDetails.levelLoadTimeout : ErrorDetails.levelLoadError, err && err.message);
-                });
-        },
-
-        _switchLevel: function (idx) {
-            if (idx === this._levelIdx) return;
-            this._levelIdx = idx;
-            this._tracks = {};
-            this._appendedInit = false;
-            this._lastAheadSrc = "";
-            var pos = this._media ? this._media.currentTime : 0;
-            this._flushAll(function () {
-                this._trackTime = {};
-                this._loadLevelPlaylist(idx, pos || 0);
-            }.bind(this));
-        },
-
-        _onLevelLoaded: function (details) {
-            this._liveSync = details.live;
-            var start = 0;
-            if (details.live) {
-                // Start a few target durations behind the live edge, like every player does.
-                start = Math.max(0, details.fragments.length - 1 - this.config.liveSyncDurationCount);
-            }
-            if (this._seekTarget !== null && this._seekTarget !== undefined) {
-                var target = this._seekTarget;
-                this._seekTarget = null;
-                var found = this._fragAtTime(details, target);
-                if (found >= 0) {
-                    start = found;
-                    this._trackTime = { audio: target - details.fragments[found].start, video: target - details.fragments[found].start };
-                }
-            }
-            this._fragIdx = start;
-            this._startPosSet = false;
-            this.trigger(Events.LEVEL_SWITCHED, { level: this._levelIdx });
-            this._loadNextFrag();
-        },
-
-        _fragAtTime: function (details, t) {
-            var frags = details.fragments;
-            for (var i = 0; i < frags.length; i++) {
-                var f = frags[i];
-                if (t < f.start + f.duration || i === frags.length - 1) return i;
-            }
-            return 0;
-        },
-
-        // ---- internal: fragment loading
-        _bufferedAhead: function () {
-            var end = 0, cur = this._media ? this._media.currentTime : 0;
-            for (var k in this._sbs) {
-                var b = this._sbs[k].buffered;
-                for (var i = 0; i < b.length; i++) {
-                    if (b.end(i) > end) end = b.end(i);
-                }
-            }
-            return end ? end - cur : 0;
-        },
-
-        _loadNextFrag: function () {
-            if (this._destroyed || !this._details) return;
-            var details = this._details, self = this;
-            if (this._fragIdx >= details.fragments.length) {
-                if (details.ended) return; // VOD fully appended
-                return this._scheduleReload(0);
-            }
-            var maxLen = Math.min(this.config.maxBufferLength, this.config.maxMaxBufferLength);
-            if (this._bufferedAhead() >= maxLen) {
-                // Buffer target reached: poll again shortly; live streams reload their
-                // playlist on the cadence of its target duration meanwhile.
-                this._clearTimer(this._bufferFullPoll);
-                this._bufferFullPoll = setTimeout(function () { self._bufferFullPoll = null; self._loadNextFrag(); }, 500);
-                if (details.live) this._scheduleReload(details.targetduration);
-                return;
-            }
-            if (this._fragInFlight) return;
-            var frag = details.fragments[this._fragIdx];
-            this._fragInFlight = true;
-            this._nextSnToLoad = frag.sn;
-            this.trigger(Events.FRAG_LOADING, { frag: frag });
-            var range = byteRangeOf(frag);
-            var headers = range ? { Range: range } : undefined;
-            load(frag.url, { timeout: this.config.fragLoadingTimeOut, maxRetry: this.config.fragLoadingMaxRetry, retryDelay: this.config.fragLoadingRetryDelay, headers: headers }, this._aborts)
-                .then(function (buf) {
-                    if (self._destroyed) return;
-                    self.trigger(Events.FRAG_LOADED, { frag: frag });
-                    var body = new Uint8Array(buf);
-                    var keyDone = frag.key ? self._decrypt(body, frag) : Promise.resolve(body);
-                    return keyDone.then(function (plain) { self._processFrag(plain, frag); });
-                })
-                .catch(function (err) {
-                    self._fragInFlight = false;
-                    if (self._destroyed) return;
-                    self._fatal(ErrorTypes.NETWORK_ERROR, ErrorDetails.fragLoadError, err && err.message, frag);
-                });
-        },
-
-        _decrypt: function (body, frag) {
-            var key = frag.key, self = this;
-            var iv = key.iv || (function () {
-                var iv = new Uint8Array(16);
-                var sn = frag.sn;
-                for (var i = 15; i >= 0; i--) { iv[i] = sn & 0xff; sn = Math.floor(sn / 256); }
-                return iv;
-            })();
-            var rec = this._keys[key.uri];
-            if (!rec) {
-                rec = this._keys[key.uri] = { p: null };
-                rec.p = load(key.uri, { timeout: this.config.keyLoadingTimeOut, maxRetry: 3, retryDelay: this.config.keyLoadingRetryDelay }, this._aborts)
-                    .then(function (kb) {
-                        return crypto.subtle.importKey("raw", kb, { name: "AES-CBC" }, false, ["decrypt"]);
-                    });
-            }
-            return rec.p.then(function (cryptoKey) {
-                return crypto.subtle.decrypt({ name: "AES-CBC", iv: iv }, cryptoKey, body);
-            }).then(function (plain) {
-                return new Uint8Array(plain);
-            }).catch(function (err) {
-                delete self._keys[key.uri];
-                throw err;
-            });
-        },
-
-        // ---- internal: demux / remux / buffer
-        _processFrag: function (data, frag) {
-            var self = this, format = sniffFormat(data);
-            var finish = function (demux, passthroughBytes) {
-                self._fragInFlight = false;
-                if (demux && demux.metadata && demux.metadata.length) {
-                    var samples = demux.metadata.map(function (m) {
-                        return { data: m.data, pts: m.pts, dts: m.pts, len: m.data.length };
-                    });
-                    self.trigger(Events.FRAG_PARSING_METADATA, { samples: samples, frag: frag });
-                }
-                self.trigger(Events.FRAG_PARSED, { frag: frag });
-                if (passthroughBytes) self._appendPassthrough(passthroughBytes, frag);
-                else self._appendRemuxed(demux, frag);
-            };
-            if (format === "fmp4") {
-                // Segments already come as fragmented MP4: pass them through untouched.
-                if (frag.map && !this._maps[frag.map.url]) {
-                    this._maps[frag.map.url] = load(frag.map.url, { timeout: this.config.fragLoadingTimeOut, maxRetry: 2, retryDelay: 1000 }, this._aborts);
-                }
-                var initP = frag.map ? this._maps[frag.map.url] : Promise.resolve(null);
-                initP.then(function (initBuf) {
-                    self._pendingInitBytes = initBuf ? new Uint8Array(initBuf) : null;
-                    finish(null, data);
-                }).catch(function (err) {
-                    self._fragInFlight = false;
-                    self._fatal(ErrorTypes.NETWORK_ERROR, ErrorDetails.fragLoadError, "init segment: " + (err && err.message), frag);
-                });
-                return;
-            }
-            var demux;
-            try {
-                if (format === "ts") demux = demuxTs(data);
-                else if (format === "aac" || format === "mp3") demux = demuxRawAudio(data, format, frag.start);
-                else throw new Error("unrecognized segment format");
-            } catch (e) {
-                this._fragInFlight = false;
-                return this._fatal(ErrorTypes.OTHER_ERROR, ErrorDetails.fragParsingError, e && e.message, frag);
-            }
-            if (!demux.audio && !demux.video) {
-                this._fragInFlight = false;
-                return this._fatal(ErrorTypes.OTHER_ERROR, ErrorDetails.fragParsingError, "no audio or video tracks found in segment", frag);
-            }
-            if (demux.unsupported && demux.unsupported.length && !demux.audio && !demux.video) {
-                this._fragInFlight = false;
-                return this._fatal(ErrorTypes.OTHER_ERROR, ErrorDetails.unsupportedCodecError, "unsupported stream type: " + demux.unsupported.join(","), frag);
-            }
-            finish(demux, false);
-        },
-
-        _mimeForTracks: function () {
-            // Decide SourceBuffer MIME types from the demuxed track models (or the
-            // level's CODECS for passthrough). Falls back through known-good codecs.
-            var can = function (m) { try { return MediaSource.isTypeSupported(m); } catch (e) { return false; } };
-            var mimes = {};
-            var level = this._levels[this._levelIdx] || {};
-            if (this._tracks.audio) {
-                var t = this._tracks.audio;
-                var codec = t.codec === "aac" ? "mp4a.40." + ((t.config.profile & 0x03) + 1) : "mp3";
-                mimes.audio = can('audio/mp4; codecs="' + codec + '"') ? 'audio/mp4; codecs="' + codec + '"' : null;
-                if (!mimes.audio && level.audioCodec && can('audio/mp4; codecs="' + level.audioCodec + '"')) {
-                    mimes.audio = 'audio/mp4; codecs="' + level.audioCodec + '"';
-                }
-            }
-            if (this._tracks.video) {
-                var sps = this._tracks.video.sps;
-                var vcodec = sps && sps.length > 3
-                    ? "avc1." + hex2(sps[1]) + hex2(sps[2]) + hex2(sps[3])
-                    : (level.videoCodec || "avc1.42E01E");
-                mimes.video = can('video/mp4; codecs="' + vcodec + '"') ? 'video/mp4; codecs="' + vcodec + '"'
-                    : (can('video/mp4; codecs="avc1.42E01E"') ? 'video/mp4; codecs="avc1.42E01E"' : null);
-            }
-            if (!mimes.audio && !mimes.video) {
-                // fMP4 passthrough: the level's CODECS attribute describes the content.
-                if (level.videoCodec && level.audioCodec && can('video/mp4; codecs="' + level.videoCodec + ',' + level.audioCodec + '"')) {
-                    mimes.video = 'video/mp4; codecs="' + level.videoCodec + ',' + level.audioCodec + '"';
-                } else if (level.videoCodec && can('video/mp4; codecs="' + level.videoCodec + '"')) {
-                    mimes.video = 'video/mp4; codecs="' + level.videoCodec + '"';
-                } else if (level.audioCodec && can('audio/mp4; codecs="' + level.audioCodec + '"')) {
-                    mimes.audio = 'audio/mp4; codecs="' + level.audioCodec + '"';
-                } else {
-                    var bare = level.videoCodec ? "video/mp4" : "audio/mp4";
-                    if (can(bare)) {
-                        if (level.videoCodec) mimes.video = bare; else mimes.audio = bare;
-                    }
-                }
-            }
-            return mimes;
-        },
-
-        _appendRemuxed: function (demux, frag) {
-            var prepared = prepareFragment(demux, this._tracks, !this._appendedInit);
-            if (!prepared.items.length) return this._loadNextFrag();
-            var mimes = this._mimeForTracks();
-            var missing = null;
-            if (this._tracks.audio && !mimes.audio) missing = "audio codec " + (this._tracks.audio.codec || "");
-            if (!missing && this._tracks.video && !mimes.video) missing = "video codec";
-            if (missing) return this._fatal(ErrorTypes.OTHER_ERROR, ErrorDetails.bufferIncompatibleCodecsError, "unsupported " + missing, frag);
-            this._mimes = mimes;
-            var blob = mp4Fragment(prepared.items, frag.sn || 1);
-            var init = this._appendedInit ? null : mp4InitSegment(Object.keys(this._tracks).map(function (k) { return this._tracks[k]; }, this));
-            // Per-track: where this fragment lands in media time and how long it is.
-            var meta = [];
-            for (var i = 0; i < prepared.items.length; i++) {
-                var it = prepared.items[i], tk = it.track;
-                var firstDts = it.samples[0].dts / tk.timescale;
-                var total = it.samples.reduce(function (a, s) { return a + s.duration; }, 0) / tk.timescale;
-                var type = tk.type;
-                meta.push({
-                    type: type, firstDts: firstDts, total: total,
-                    offset: (this._trackTime[type] || 0) - firstDts
-                });
-                this._trackTime[type] = (this._trackTime[type] || 0) + total;
-            }
-            this._queueInitAndBlob(init, blob, meta, frag);
-        },
-
-        _appendPassthrough: function (data, frag) {
-            // fMP4: the init segment (if any) is queued first, then the raw segment
-            // bytes, appended unchanged to every buffer; MSE routes by track id.
-            var meta = [{ type: "audio", offset: null }, { type: "video", offset: null }];
-            var init = this._pendingInitBytes;
-            this._pendingInitBytes = null;
-            this._queueInitAndBlob(init, data, meta, frag);
-        },
-
-        // Queues: [maybe init segment] + fragment blob on every relevant buffer, then
-        // continues the pipeline when the appends complete.
-        _queueInitAndBlob: function (init, blob, meta, frag) {
-            var self = this;
-            var ensureBuffers = function (done) {
-                if (self._sbsCreated) return done();
-                self._onSourceOpenWaiters.push(done);
-                // Buffers may still be waiting for sourceopen; if codecs are known now,
-                // try to create immediately.
-                self._tryCreateBuffers();
-            };
-            ensureBuffers(function () {
-                var ops = [];
-                if (init && !self._appendedInit) {
-                    var types = Object.keys(self._sbs);
-                    for (var t = 0; t < types.length; t++) ops.push({ kind: "append", type: types[t], data: init });
-                    self._appendedInit = true;
-                }
-                var bufTypes = Object.keys(self._sbs);
-                for (var b = 0; b < bufTypes.length; b++) {
-                    var bt = bufTypes[b];
-                    var m = null;
-                    for (var mm = 0; mm < meta.length; mm++) if (meta[mm].type === bt) m = meta[mm];
-                    if (m && m.offset !== null && m.offset !== undefined) ops.push({ kind: "offset", type: bt, value: m.offset });
-                    ops.push({ kind: "append", type: bt, data: blob });
-                }
-                ops.push({ kind: "done", frag: frag, meta: meta });
-                self._opQueue.push.apply(self._opQueue, ops);
-                self._pump();
-            });
-        },
-
-        _pump: function () {
-            if (this._opsRunning || this._destroyed) return;
-            var self = this;
-            var gen = this._gen;
-            this._opsRunning = true;
-            var step = function () {
-                if (self._destroyed || gen !== self._gen) { self._opsRunning = false; return; }
-                var op = self._opQueue.shift();
-                if (!op) {
-                    self._opsRunning = false;
-                    return;
-                }
-                if (op.kind === "done") {
-                    self._opsRunning = false;
-                    self.trigger(Events.BUFFER_APPENDED, { frag: op.frag });
-                    self.trigger(Events.FRAG_BUFFERED, { frag: op.frag });
-                    var maxLen = Math.min(self.config.maxBufferLength, self.config.maxMaxBufferLength);
-                    if (self._bufferedAhead() < maxLen) self._loadNextFrag();
-                    else {
-                        self._clearTimer(self._bufferFullPoll);
-                        self._bufferFullPoll = setTimeout(function () { self._bufferFullPoll = null; self._loadNextFrag(); }, 500);
-                    }
-                    return;
-                }
-                var sb = self._sbs[op.type];
-                if (!sb) return step(); // buffer vanished (reset) — skip op
-                try {
-                    if (op.kind === "offset") {
-                        sb.timestampOffset = op.value;
-                        setTimeout(step, 0);
-                    } else if (op.kind === "append") {
-                        var onDone = function () {
-                            sb.removeEventListener("updateend", onDone);
-                            sb.removeEventListener("error", onFail);
-                            sb.removeEventListener("abort", onFail);
-                            if (gen !== self._gen) return;
-                            step();
-                        };
-                        var onFail = function () {
-                            sb.removeEventListener("updateend", onDone);
-                            sb.removeEventListener("error", onFail);
-                            sb.removeEventListener("abort", onFail);
-                            if (gen !== self._gen) return;
-                            self._opQueue.length = 0;
-                            self._opsRunning = false;
-                            self._fatal(ErrorTypes.MEDIA_ERROR, ErrorDetails.bufferAppendError, "SourceBuffer append failed", op.frag);
-                        };
-                        sb.addEventListener("updateend", onDone);
-                        sb.addEventListener("error", onFail);
-                        sb.addEventListener("abort", onFail);
-                        sb.appendBuffer(op.data);
-                    } else if (op.kind === "remove") {
-                        if (!sb.buffered.length) return step();
-                        var onRm = function () {
-                            sb.removeEventListener("updateend", onRm);
-                            sb.removeEventListener("error", onRm);
-                            if (gen !== self._gen) return;
-                            step();
-                        };
-                        sb.addEventListener("updateend", onRm);
-                        sb.addEventListener("error", onRm);
-                        try { sb.remove(op.start, op.end); } catch (e) { sb.removeEventListener("updateend", onRm); step(); }
-                    }
-                } catch (e) {
-                    self._opQueue.length = 0;
-                    self._opsRunning = false;
-                    self._fatal(ErrorTypes.MEDIA_ERROR, ErrorDetails.bufferAppendError, e && e.message, op.frag);
-                }
-            };
-            step();
-        },
-
-        // Removes everything buffered on every SourceBuffer. Bumps the generation
-        // counter so appends/remove callbacks from before the flush are ignored.
-        _flushAll: function (done) {
-            this._gen++;
-            var self = this, types = Object.keys(this._sbs), pending = 0;
-            var finish = function () { self.trigger(Events.BUFFER_FLUSHED); if (done) done(); };
-            if (!types.length) return finish();
-            types.forEach(function (type) {
-                var sb = self._sbs[type], b = sb.buffered;
-                if (!b.length) return;
-                pending++;
-                var onDone = function () {
-                    sb.removeEventListener("updateend", onDone);
-                    sb.removeEventListener("error", onDone);
-                    if (--pending <= 0) finish();
-                };
-                sb.addEventListener("updateend", onDone);
-                sb.addEventListener("error", onDone);
-                try {
-                    if (sb.updating) sb.abort();
-                    sb.remove(b.start(0), b.end(b.length - 1));
-                } catch (e) { onDone(); }
-            });
-            if (!pending) finish();
-        },
-
-        _tryCreateBuffers: function () {
-            if (this._sbsCreated || !this._ms || this._ms.readyState !== "open") return;
-            var mimes = this._mimes || (this._pendingInitBytes ? this._mimeForTracks() : null);
-            if (!mimes || (!mimes.audio && !mimes.video)) return;
-            try {
-                if (mimes.audio) this._sbs.audio = this._ms.addSourceBuffer(mimes.audio);
-                if (mimes.video) this._sbs.video = this._ms.addSourceBuffer(mimes.video);
-                this._sbsCreated = true;
-                this.trigger(Events.BUFFER_CREATED, { tracks: mimes });
-                // VOD: give the media element its real duration (MSE leaves it at
-                // Infinity until told, and the page reads duration to show "on demand").
-                if (this._details && this._details.ended) {
-                    try { this._ms.duration = this._details.totalduration; } catch (e) {}
-                }
-                var waiters = this._onSourceOpenWaiters.splice(0);
-                for (var i = 0; i < waiters.length; i++) waiters[i]();
-            } catch (e) {
-                this._fatal(ErrorTypes.MEDIA_ERROR, ErrorDetails.bufferAddCodecError, e && e.message);
-            }
-        },
-
-        _onSourceOpen: function () {
-            this._tryCreateBuffers();
-        },
-
-        // ---- internal: seek / live / watchdog
-        _onSeeking: function () {
-            if (this._destroyed || !this._media || !this._details) return;
-            var t = this._media.currentTime;
-            var covered = false;
-            for (var k in this._sbs) {
-                var b = this._sbs[k].buffered;
-                for (var i = 0; i < b.length; i++) {
-                    if (t >= b.start(i) - 0.5 && t <= b.end(i)) covered = true;
-                }
-            }
-            if (covered) return;
-            if (this._details.ended) {
-                var idx = this._fragAtTime(this._details, t);
-                if (idx >= 0) {
-                    var frag = this._details.fragments[idx];
-                    this._aborts.abortAll();
-                    this._aborts.killed = false;
-                    this._fragInFlight = false;
-                    this._opQueue.length = 0;
-                    this._tracks = {};
-                    this._appendedInit = false;
-                    var self = this;
-                    this._flushAll(function () {
-                        self._trackTime = { audio: t - frag.start, video: t - frag.start };
-                        self._fragIdx = idx;
-                        self._loadNextFrag();
-                    });
-                }
-            } else {
-                // Live: drop everything and come back at the live edge.
-                this._aborts.abortAll();
-                this._aborts.killed = false;
-                this._fragInFlight = false;
-                this._opQueue.length = 0;
-                var self = this;
-                this._flushAll(function () {
-                    self._trackTime = {};
-                    self._onLevelLoaded(self._details);
-                });
-            }
-        },
-
-        _scheduleReload: function (delaySec) {
-            if (this._destroyed || !this._details || !this._details.live || this._reloadPending) return;
-            this._reloadPending = true;
-            var self = this, wait = Math.max(1, (delaySec || this._details.targetduration || 5)) * 1000;
-            this._liveTimer = setTimeout(function () {
-                self._liveTimer = null;
-                self._reloadPending = false;
-                self._reloadPlaylist();
-            }, wait);
-        },
-
-        _reloadPlaylist: function () {
-            if (this._destroyed) return;
-            var self = this, level = this._levels[this._levelIdx];
-            load(level.url, { text: true, timeout: this.config.levelLoadingTimeOut, maxRetry: 2, retryDelay: 1000 }, this._aborts)
-                .then(function (text) {
-                    if (self._destroyed) return;
-                    var details = parseLevelPlaylist(text, level.url);
-                    if (!details || !details.fragments.length) return self._scheduleReload(1);
-                    level.details = details;
-                    self._details = details;
-                    self.trigger(Events.LEVEL_LOADED, { details: details, level: self._levelIdx });
-                    if (details.ended) { // stream turned into a VOD
-                        self._liveSync = false;
-                        try { self._ms.duration = details.totalduration; } catch (e) {}
-                        return;
-                    }
-                    // Fell behind the sliding window? Restart at the live edge.
-                    if (self._nextSnToLoad !== null && details.startSN > self._nextSnToLoad) {
-                        self._onLevelLoaded(details);
-                        return;
-                    }
-                    // Otherwise resume from the sequence number we were about to load.
-                    var nextSn = self._nextSnToLoad !== null ? self._nextSnToLoad : details.fragments[0].sn;
-                    var resume = -1;
-                    for (var i = 0; i < details.fragments.length; i++) {
-                        if (details.fragments[i].sn >= nextSn) { resume = i; break; }
-                    }
-                    if (resume === -1) return self._scheduleReload(details.targetduration);
-                    self._fragIdx = resume;
-                    self._loadNextFrag();
-                })
-                .catch(function () {
-                    if (!self._destroyed) self._scheduleReload(2);
-                });
-        },
-
-        _watchTick: function () {
-            if (this._destroyed || !this._media || !this._sbsCreated) return;
-            var m = this._media;
-            // back-buffer trimming
-            var back = this.config.backBufferLength;
-            if (isFinite(back) && back > 0) {
-                for (var k in this._sbs) {
-                    var sb = this._sbs[k], b = sb.buffered;
-                    if (b.length && m.currentTime - b.start(0) > back && !sb.updating) {
-                        this._opQueue.push({ kind: "remove", type: k, start: b.start(0), end: m.currentTime - back });
-                        this._pump();
-                    }
-                }
-            }
-            if (m.paused) return;
-            var ahead = this._bufferedAhead();
-            if (m.readyState <= 2 && ahead > 0.5) {
-                // Data is buffered but the decoder stalls: nudge the playhead.
-                if (this._lastWatchTime === m.currentTime) {
-                    this._nudgeCount++;
-                    if (this._nudgeCount <= this.config.nudgeMaxRetry) {
-                        log("nudge", this._nudgeCount);
-                        try { m.currentTime += 0.1; } catch (e) {}
-                    } else {
-                        this._nudgeCount = 0;
-                        this._fatal(ErrorTypes.MEDIA_ERROR, ErrorDetails.bufferStalledError, "playback stalled with data buffered");
-                    }
-                } else {
-                    this._nudgeCount = 0;
-                }
-            } else {
-                this._nudgeCount = 0;
-            }
-            this._lastWatchTime = m.currentTime;
-            // Live streams keep their playlist fresh even when the buffer is full.
-            if (this._details && this._details.live) this._scheduleReload(this._details.targetduration);
-        },
-
-        _teardownMse: function () {
-            this._opQueue.length = 0;
-            this._opsRunning = false;
-            this._sbsCreated = false;
-            this._sbs = {};
-            this._appendedInit = false;
-            if (this._ms) {
-                try { if (this._ms.readyState === "open") this._ms.endOfStream(); } catch (e) {}
-                this._ms = null;
-            }
-            if (this._objectUrl) { try { URL.revokeObjectURL(this._objectUrl); } catch (e) {} this._objectUrl = null; }
-            this._onSourceOpenWaiters = [];
-            this.trigger(Events.BUFFER_RESET);
-        },
-
-        _fatal: function (type, details, message, frag) {
-            log("fatal:", type, details, message);
-            this.trigger(Events.ERROR, {
-                type: type, details: details, fatal: true,
-                url: frag ? frag.url : (this._details ? this._details.url : this.url),
-                frag: frag, reason: message, event: message
-            });
-        },
-
-    });
-
-    // Read/write accessors. Defined separately because extend() would flatten
-    // getters and setters into plain values.
-    Object.defineProperties(Hls.prototype, {
-        media: { get: function () { return this._media; } },
-        levels: { get: function () { return this._levels; } },
-        currentLevel: {
-            get: function () { return this._levelIdx; },
-            set: function (v) { if (typeof v === "number" && v >= 0 && v < this._levels.length) this._switchLevel(v); }
-        },
-        loadLevel: {
-            get: function () { return this._levelIdx; },
-            set: function (v) { this.currentLevel = v; }
-        },
-        nextLevel: {
-            get: function () { return this._levelIdx + 1 < this._levels.length ? this._levelIdx + 1 : this._levelIdx; },
-            set: function (v) { this.currentLevel = typeof v === "number" ? v : this._levelIdx + 1; }
-        },
-        autoLevelEnabled: { get: function () { return true; } },
-        liveSyncPosition: {
-            get: function () {
-                var d = this._details;
-                if (!d || !d.live) return 0;
-                return Math.max(0, d.totalduration - d.targetduration * this.config.liveSyncDurationCount);
-            }
-        }
-    });
-
-    function hex2(v) {
-        var h = (v || 0).toString(16);
-        return h.length < 2 ? "0" + h : h;
-    }
-
-    // ---------------------------------------------------------------- exports
-    function isSupported() {
-        if (typeof window === "undefined" || !window.MediaSource || !window.MediaSource.isTypeSupported) return false;
-        try {
-            return MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E,mp4a.40.2"') ||
-                MediaSource.isTypeSupported('audio/mp4; codecs="mp4a.40.2"') ||
-                MediaSource.isTypeSupported('audio/mp4; codecs="mp3"');
-        } catch (e) {
-            return false;
-        }
-    }
-
-    Hls.isSupported = isSupported;
-    Hls.Events = Events;
-    Hls.ErrorTypes = ErrorTypes;
-    Hls.ErrorDetails = ErrorDetails;
-    Hls.version = "1.0.0-lite";
-    Hls.DefaultConfig = DEFAULT_CONFIG;
-    // Exposed for tests and debugging; not part of the hls.js-compatible surface.
-    Hls._internals = {
-        parseMasterPlaylist: parseMasterPlaylist, parseLevelPlaylist: parseLevelPlaylist,
-        sniffFormat: sniffFormat, demuxTs: demuxTs, demuxRawAudio: demuxRawAudio,
-        demuxPesAudio: demuxPesAudio,
-        prepareFragment: prepareFragment, mp4InitSegment: mp4InitSegment, mp4Fragment: mp4Fragment,
-        stripId3Tags: stripId3Tags
-    };
-
-    window.Hls = Hls;
-})();
-
-</script>
     <style>
 :root {
     --bg-primary: #121212;
@@ -2772,8 +948,6 @@ html[data-theme="concrete"] .file-grid .file-card > .file-icon > svg.ib { width:
 .pv-status { min-height: 1.3em; margin: 0.8rem 0 0; font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); overflow-wrap: anywhere; }
 .pv-status.err { color: #e5675b; }
 .pv-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
-.pv-select { cursor: pointer; }
-.pv-select:disabled { opacity: 0.55; cursor: default; }
 
 /* Thumbnail size (S / M / L) in the stats line of the main grid and in the head of a twin panel showing a grid */
 .stats-bar .ts-ctl { margin-left: auto; align-items: center; }
@@ -2882,48 +1056,11 @@ body.is-recording .audio-icon .cache-tag { max-width: calc(100% - 3.2rem); }
 }
 
 @media (pointer: coarse) {
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: max(16px, 1em); }
     .player-seek { height: 16px; }
     .player-seek::-webkit-slider-thumb { margin-top: 0; }
     html[data-theme="concrete"] .player-seek { height: 20px; }
     html[data-theme="concrete"] .player-seek::-webkit-slider-thumb { margin-top: 2px; }
     .header .search-input { min-height: 34px; }
-}
-
-/* --- Selecting several items --- */
-.file-card.selected { background: color-mix(in srgb, var(--accent) 16%, var(--bg-secondary)) !important; box-shadow: inset 4px 0 0 var(--accent) !important; }
-.file-card.selected:focus-visible { outline-offset: -2px; }
-body.sel-on .main { padding-bottom: 5rem; }
-.sel-bar { position: fixed; left: 50%; transform: translateX(-50%); width: max-content; bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem); z-index: 900; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.375rem 0.5rem; max-width: calc(100vw - 1.5rem); padding: 0.5rem 0.625rem; background: var(--bg-secondary); color: var(--text-primary); border: var(--bw) solid var(--border-strong); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
-.sel-bar[hidden] { display: none; }
-.sel-count { font-weight: 600; font-size: 0.85rem; padding: 0 0.25rem; white-space: nowrap; }
-.sel-btn { font: inherit; font-size: 0.8rem; color: var(--text-primary); background: var(--bg-tertiary); border: var(--bw) solid var(--border-strong); border-radius: var(--radius); padding: 0.375rem 0.7rem; min-height: 2rem; cursor: pointer; }
-.sel-btn:hover:not(:disabled) { background: var(--bg-hover); }
-.sel-btn:disabled { opacity: 0.45; cursor: default; }
-.sel-btn[hidden] { display: none; }
-html[data-theme="concrete"] .file-card.selected { background: var(--yellow) !important; color: var(--ink) !important; box-shadow: none !important; outline: 3px solid var(--text) !important; outline-offset: -3px; }
-html[data-theme="concrete"] .file-card.selected .file-name, html[data-theme="concrete"] .file-card.selected .file-meta, html[data-theme="concrete"] .file-card.selected .col-ext, html[data-theme="concrete"] .file-card.selected .col-size, html[data-theme="concrete"] .file-card.selected .col-date, html[data-theme="concrete"] .file-card.selected .col-time, html[data-theme="concrete"] .file-card.selected .card-star-btn svg { color: var(--ink) !important; }
-html[data-theme="concrete"] .sel-bar { background: var(--yellow); color: var(--ink); border: var(--bw) solid var(--ink); box-shadow: 5px 5px 0 var(--text); border-radius: 0; }
-html[data-theme="concrete"] .sel-count { color: var(--ink); }
-html[data-theme="concrete"] .sel-btn { background: #fff; color: var(--ink); border: var(--bw) solid var(--ink); border-radius: 0; box-shadow: 2px 2px 0 var(--ink); font-weight: 700; text-transform: uppercase; }
-html[data-theme="concrete"] .sel-btn:hover:not(:disabled) { background: var(--orange); }
-@media (max-width: 640px) { .sel-bar { left: 0.75rem; right: 0.75rem; transform: none; max-width: none; width: auto; } .sel-count { flex: 1 1 100%; text-align: center; } }
-/* --- Print: the file list, or just the open preview when one is open; no app chrome, black on white --- */
-@media print {
-    html, body { height: auto !important; overflow: visible !important; display: block !important; font-size: 11pt; }
-    html, body, .app-container, .main, .modal, .modal-body, .modal-header { background: #fff !important; color: #000 !important; }
-    .sel-bar, .header, #treePanel, #twin, .skip-link, .tree-resize, .modal-actions, .playlist-bar, .player-bar, .player-info-btn, .settings-menu, .op-toast, .card-star-btn,
-    .modal-overlay:not(.active), #loadMoreBtn, .load-more-btn { display: none !important; }
-    .app-container, .main { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
-    body:has(#modal.active) .header, body:has(#modal.active) .app-container { display: none !important; }
-    .modal-overlay.active { position: static !important; display: block !important; opacity: 1 !important; visibility: visible !important; background: none !important; padding: 0 !important; }
-    .modal { position: static !important; display: block !important; width: auto !important; max-width: none !important; height: auto !important; max-height: none !important; transform: none !important; border: 0 !important; box-shadow: none !important; }
-    .modal-header { border-bottom: 1pt solid #000 !important; }
-    .modal-body { overflow: visible !important; display: block !important; }
-    .file-card { break-inside: avoid; background: none !important; border-bottom: 0.5pt solid #999 !important; box-shadow: none !important; }
-    a { color: #000 !important; }
-    .file-icon.folder, .file-icon.folder svg { color: #000 !important; }
-    .file-icon { background: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3692,7 +1829,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
     <header class="header">
         <div class="header-content">
             <h1 class="sr-only">File Viewer</h1>
-            <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="File Viewer, go to home folder">
+            <div class="logo" id="logoHome" role="button" tabindex="0" aria-label="Go to home folder">
                 <svg viewBox="0 0 24 24" fill="currentcolor"><rect x="2" y="5" width="20" height="14"/><circle cx="8" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="16" cy="12" r="2.4" fill="var(--bg-secondary)"/><circle cx="8" cy="12" r="0.8"/><circle cx="16" cy="12" r="0.8"/><rect x="10" y="15.6" width="4" height="1.6" fill="var(--bg-secondary)"/></svg>
                 <span>File Viewer</span>
             </div>
@@ -3701,7 +1838,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
             <div class="header-actions">
                 <div class="search-container" id="searchBox0">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="currentcolor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61.0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" aria-label="Search files" title="Filters: ext:m3u  type:audio  size:>1mb  newer:7d  in:folder  -word" />
+                    <input class="search-input" id="search" placeholder="Search..." autocomplete="off" aria-label="Search files" />
                     <button class="search-clear" id="searchClearBtn" type="button" title="Clear search" aria-label="Clear search">
                         <svg viewBox="0 0 24 24" fill="currentcolor" width="12" height="12"><use href="#icon-x"/></svg>
                     </button>
@@ -3715,7 +1852,6 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                 </div>
                 <div class="header-tools">
                 <button class="settings-btn" id="localBtn" title="Open a local folder (works offline)" aria-label="Open a local folder"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></button>
-                <button class="settings-btn" id="extraSourceBtn" title="Load an extra source: a link (m3u/m3u8, stream, media, text&hellip;) or a local file" aria-label="Load an extra source"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-2.89 0-5.4 1.64-6.53 4.06C2.34 8.36 0 11.03 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.18 9l1.41 1.41L10 17z"/></svg></button>
                 <button class="settings-btn" id="shortcutsBtn" title="Keyboard shortcuts" aria-label="Show keyboard shortcuts">
                     <svg viewBox="0 0 24 24" fill="currentcolor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21.0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
                 </button>
@@ -3738,15 +1874,15 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                                     <div class="settings-row">
                                         <span class="settings-label">Interface text <span id="fontSizeLabel">16px</span></span>
                                         <div class="settings-control">
-                                            <button id="fontDecrease" title="Decrease font size" aria-label="A-, decrease font size">A-</button>
-                                            <button id="fontIncrease" title="Increase font size" aria-label="A+, increase font size">A+</button>
+                                            <button id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
+                                            <button id="fontIncrease" title="Increase font size" aria-label="Increase font size">A+</button>
                                         </div>
                                     </div>
                                     <div class="settings-row">
                                         <span class="settings-label">Preview text <span id="previewFontLabel">13px</span></span>
                                         <div class="settings-control">
-                                            <button id="previewFontDecrease" title="Decrease preview text size" aria-label="A-, decrease preview text size">A-</button>
-                                            <button id="previewFontIncrease" title="Increase preview text size" aria-label="A+, increase preview text size">A+</button>
+                                            <button id="previewFontDecrease" title="Decrease preview text size" aria-label="Decrease preview text size">A-</button>
+                                            <button id="previewFontIncrease" title="Increase preview text size" aria-label="Increase preview text size">A+</button>
                                         </div>
                                     </div>
                                 </div>
@@ -3957,7 +2093,8 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
             <div class="tree-content" id="treeContent" role="tree" aria-label="Folders"></div>
             <div class="tree-resize" id="treeResize" role="separator" aria-orientation="vertical" aria-label="Resize the folder tree" tabindex="0" title="Drag to resize, double-click to reset"></div>
         </aside>
-        <main class="main" id="main" tabindex="-1" aria-label="Files">
+        <h2 class="sr-only" id="mainHeading">Files</h2>
+        <main class="main" id="main" tabindex="-1" aria-labelledby="mainHeading">
             <div class="skeleton-list" aria-hidden="true">
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name"></div><div class="skeleton-block skeleton-meta"></div></div>
                 <div class="skeleton-row"><div class="skeleton-block skeleton-icon"></div><div class="skeleton-block skeleton-name" style="width:60%"></div><div class="skeleton-block skeleton-meta"></div></div>
@@ -4025,8 +2162,6 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
             <div class="modal-body shortcuts-body">
                 <dl class="shortcuts-list">
                     <div class="shortcut-row"><dt><kbd>/</kbd></dt><dd>Focus search</dd></div>
-                    <div class="shortcut-row"><dt><code>ext:m3u</code> <code>type:audio</code> <code>size:&gt;1mb</code></dt><dd>Search filters</dd></div>
-                    <div class="shortcut-row"><dt><code>newer:7d</code> <code>in:folder</code> <code>-word</code></dt><dd>Recent, inside a folder, exclude</dd></div>
                     <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd>Show this help</dd></div>
                     <div class="shortcut-row"><dt><kbd>Esc</kbd></dt><dd>Close dialog</dd></div>
                     <div class="shortcut-row"><dt><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd>Navigate files &amp; folders</dd></div>
@@ -4140,28 +2275,6 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
             </div>
         </div>
     </div>
-    <div class="modal-overlay" id="extraModal" role="dialog" aria-modal="true" aria-labelledby="extraTitle">
-        <div class="modal stats-modal" id="extraModalContent">
-            <div class="modal-header">
-                <span class="modal-title" id="extraTitle">Load an extra source</span>
-                <div class="modal-actions"><button class="modal-btn" id="extraModalClose" title="Close" aria-label="Close"><svg viewBox="0 0 24 24" fill="currentcolor"><use href="#icon-x"/></svg></button></div>
-            </div>
-            <div class="modal-body stats-body">
-                <p class="local-msg">Paste a link or pick a file from this device &mdash; each opens in the matching player or viewer: m3u/m3u8 playlists, streams, audio, video, images, PDFs, fonts, archives and text.</p>
-                <p class="local-msg">Recent links are remembered in the dropdown below; the last one is already filled in and ready to load.</p>
-                <label class="pv-label" for="extraRecentSelect">Recent sources</label>
-                <select class="pv-input pv-select" id="extraRecentSelect" aria-label="Recent sources"></select>
-                <label class="pv-label" for="extraUrlInput">Stream or file link</label>
-                <input class="pv-input" id="extraUrlInput" type="text" inputmode="url" placeholder="https://example.com/playlist.m3u8" autocomplete="off" autocapitalize="off" spellcheck="false" />
-                <p class="pv-status" id="extraStatus" role="status"></p>
-                <div class="pv-actions">
-                    <button type="button" class="theme-reset-btn local-pick" id="extraLoadBtn">Load</button>
-                    <button type="button" class="theme-reset-btn local-pick" id="extraFileBtn">Choose a local file&hellip;</button>
-                </div>
-                <input type="file" id="extraFileInput" class="sr-only" tabindex="-1" aria-hidden="true" />
-            </div>
-        </div>
-    </div>
     <div id="srAnnouncer" class="sr-only" aria-live="polite" role="status"></div>
     <script>
 // Storage can throw just by being touched (blocked site data, hardened Firefox, some private modes): `store` is localStorage when it works,
@@ -4195,11 +2308,8 @@ let fileIndex = null,
 
 let searchQuery = "",
     // Search results are paged (the whole repo can match thousands of
-    // files). Folders show everything in them; the one exception is a huge local folder (over FOLDER_PAGE_AT items), which grows as you scroll
-    // (and by "Show more", End or Down at the last item) so a folder of thousands of files does not build thousands of rows at once.
-    searchResultLimit = 100,
-    folderLimit = 500;
-const FOLDER_PAGE_AT = 2500; // far above the ~1k a hosted folder can hold, so only a huge local folder ever pages
+    // files). Folders are NOT paged: a folder always shows everything in it.
+    searchResultLimit = 100;
 
 let currentFilePath = "",
     currentFileName = "",
@@ -5404,31 +3514,25 @@ function changePreviewFontSize(dir) {
     applyPreviewFontSize();
 }
 // "1536" -> "1.5 KB". Same format the index generator used to store.
-const SIZE_UNITS = ["B", "KB", "MB", "GB", "TB"];
 function formatFileSize(bytes) {
     if (!bytes || bytes < 0) return "0 B";
-    let i = 0, v = bytes;
-    while (v >= 1024 && i < 4) { v /= 1024; i++; }
-    return parseFloat(v.toFixed(2)) + " " + SIZE_UNITS[i];
+    const k = 1024, units = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), units.length - 1);
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
 }
 function isPlaylistExtension(e) {
     const t = e.toLowerCase();
     return t.endsWith(".m3u") || t.endsWith(".m3u8");
 }
 function preprocessFiles(nodes, pathPrefix = "", prefixArr = []) {
-    // The folder's own lowercase and normalized forms are made once; each item only adds its (short) name to them.
-    const parentLower = pathPrefix.toLowerCase();
-    const parentNorm = parentLower.replace(/[^a-z0-9]+/g, " ").trim();
     for (const node of nodes) {
         const currentPathStr = pathPrefix ? `${pathPrefix}/${node.name}` : node.name;
-        const nameLower = node.name.toLowerCase();
-        const searchKey = pathPrefix ? parentLower + "/" + nameLower : nameLower;
+        const searchKey = currentPathStr.toLowerCase();
         const navPath = prefixArr.length ? [...prefixArr, node.name] : [node.name];
 
         // Search keys are built once per file: normalizedKey is the path lowercased with punctuation collapsed to single spaces.
         // The fuzzy keys (compactKey, boundarySet) are built on first use (see fuzzyKeys) to keep start-up and memory small.
-        const nameNorm = nameLower.replace(/[^a-z0-9]+/g, " ").trim();
-        const normalizedKey = parentNorm ? (nameNorm ? parentNorm + " " + nameNorm : parentNorm) : nameNorm;
+        const normalizedKey = searchKey.replace(/[^a-z0-9]+/g, " ").trim();
 
         // The modified date is parsed on first use (see itemDate). The index stores no "1.2 MB" string, so it is made here once from the byte size.
         if (node.type === "file" && node.sizeFormatted === undefined) {
@@ -5441,7 +3545,7 @@ function preprocessFiles(nodes, pathPrefix = "", prefixArr = []) {
             navPath: navPath,
             searchKey: searchKey,
             normalizedKey: normalizedKey,
-            parentPath: parentLower
+            parentPath: pathPrefix.toLowerCase()
         });
         if (node.type === "file") filesByPath.set(currentPathStr, allFiles[allFiles.length - 1]);
         if (node.type === "directory" && node.children) {
@@ -5549,96 +3653,23 @@ function scoreSearchItem(query, tokens, compactQuery, item) {
     return null;
 }
 
-// ---- Search filters ----
-// Words of the form key:value narrow the results and combine with ordinary (fuzzy) words:
-//   ext:m3u,m3u8   type:folder | file | a category (audio, image, video, playlist, code, ...)   size:>1mb  size:<500kb  size:10kb..2mb
-//   newer:7d  older:3m  (d days, w weeks, m months, y years)   after:2026-01-01  before:2026-06-30   in:folder (path contains)
-//   A leading minus turns a filter around (-ext:json) or excludes a word (-backup).
-const SEARCH_UNITS = { b: 1, kb: 1024, mb: 1048576, gb: 1073741824, tb: 1099511627776 };
-function parseSize(v) {
-    const m = /^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb|k|m|g)?$/.exec(v);
-    if (!m) return null;
-    const u = m[2] || "b";
-    return parseFloat(m[1]) * SEARCH_UNITS[u.length === 1 && u !== "b" ? u + "b" : u];
-}
-function parseAge(v) {
-    const m = /^(\d+)\s*([dwmy])$/.exec(v);
-    if (!m) return null;
-    return Date.now() - parseInt(m[1], 10) * ({ d: 1, w: 7, m: 30, y: 365 }[m[2]]) * 86400000;
-}
-const searchParseCache = new Map();
-function parseSearch(q) {
-    const hit = searchParseCache.get(q);
-    if (hit) return hit;
-    const words = [], tests = [];
-    for (let tok of q.split(/\s+/).filter(Boolean)) {
-        let neg = false;
-        if (tok.length > 1 && tok[0] === "-") { neg = true; tok = tok.slice(1); }
-        const m = /^(ext|type|size|newer|older|after|before|in):(.+)$/.exec(tok);
-        let test = null;
-        if (m) {
-            const key = m[1], val = m[2];
-            if (key === "ext") {
-                const set = new Set(val.split(",").map((x) => x.replace(/^\./, "")).filter(Boolean));
-                test = (it) => { if (it.type === "directory") return false; const i = it.name.lastIndexOf("."); return i >= 0 && set.has(it.name.slice(i + 1).toLowerCase()); };
-            } else if (key === "type") {
-                const set = new Set(val.split(",").map((x) => x === "dir" || x === "directory" ? "folder" : x));
-                test = (it) => (it.type === "directory" ? set.has("folder") : set.has("file") || set.has(String(it.category || "").toLowerCase()));
-            } else if (key === "size") {
-                let a = null, b = null, mm;
-                if ((mm = /^>=?(.+)$/.exec(val))) a = parseSize(mm[1]);
-                else if ((mm = /^<=?(.+)$/.exec(val))) b = parseSize(mm[1]);
-                else if ((mm = /^(.+?)\.\.(.+)$/.exec(val))) { a = parseSize(mm[1]); b = parseSize(mm[2]); }
-                else { a = b = parseSize(val.replace(/^=/, "")); }
-                if (a !== null || b !== null) test = (it) => typeof it.size === "number" && it.type !== "directory" && (a === null || it.size >= a) && (b === null || it.size <= b);
-            } else if (key === "newer" || key === "older") {
-                const t = parseAge(val);
-                if (t !== null) test = key === "newer" ? (it) => { const d = itemDateMs(it); return d > 0 && d >= t; } : (it) => { const d = itemDateMs(it); return d > 0 && d <= t; };
-            } else if (key === "after" || key === "before") {
-                const t = Date.parse(val);
-                if (!isNaN(t)) test = key === "after" ? (it) => { const d = itemDateMs(it); return d > 0 && d >= t; } : (it) => { const d = itemDateMs(it); return d > 0 && d <= t; };
-            } else if (key === "in") {
-                test = (it) => it.searchKey.includes(val);
-            }
-        }
-        if (test) tests.push(neg ? (it) => !test(it) : test);
-        else if (neg) tests.push((it) => !it.searchKey.includes(tok));
-        else words.push(tok);
-    }
-    const out = { text: words.join(" "), tests };
-    if (searchParseCache.size > 50) searchParseCache.clear();
-    searchParseCache.set(q, out);
-    return out;
-}
-function searchTextOf(q) { return q ? parseSearch(q).text : q; }
-
-// Ranks `items` for query `q`: filters first, then the fuzzy score, with a bonus for items in the folder being viewed.
-// A query of filters only (no words) lists every match, folders first, by name.
-const SEARCH_COLLATOR = new Intl.Collator(undefined, { numeric: true });
-function rankSearch(items, q, here) {
-    const { text, tests } = parseSearch(q);
-    const tokens = text.split(/[\s/]+/).filter(Boolean);
-    const compact = text.replace(/[^a-z0-9]/g, "");
-    const SAME_FOLDER_BONUS = 400;
-    const scored = [];
-    for (const item of items) {
-        let ok = true;
-        for (let i = 0; i < tests.length; i++) if (!tests[i](item)) { ok = false; break; }
-        if (!ok) continue;
-        if (!text) { scored.push({ item, score: (item.type === "directory" ? 100000 : 0) + (item.parentPath === here ? 50000 : 0) }); continue; }
-        const score = scoreSearchItem(text, tokens, compact, item);
-        if (score === null) continue;
-        scored.push({ item, score: score + (item.parentPath === here ? SAME_FOLDER_BONUS : 0) });
-    }
-    if (text) scored.sort((a, b) => b.score - a.score);
-    else scored.sort((a, b) => b.score - a.score || SEARCH_COLLATOR.compare(a.item.fullPath, b.item.fullPath));
-    return scored.map((x) => x.item);
-}
-
-// Runs the search across every indexed file/folder, ranked by
+// Runs the fuzzy search across every indexed file/folder, ranked by
 // relevance with a bonus for items in the currently viewed folder.
 function searchFiles(query) {
-    return rankSearch(allFiles, query, currentPath.join("/").toLowerCase());
+    const tokens = query.split(/[\s/]+/).filter(Boolean);
+    const compactQuery = query.replace(/[^a-z0-9]/g, "");
+    const currentFolderKey = currentPath.join("/").toLowerCase();
+    const SAME_FOLDER_BONUS = 400;
+
+    const scored = [];
+    for (const item of allFiles) {
+        const score = scoreSearchItem(query, tokens, compactQuery, item);
+        if (score === null) continue;
+        const inCurrentFolder = item.parentPath === currentFolderKey;
+        scored.push({ item, score: score + (inCurrentFolder ? SAME_FOLDER_BONUS : 0) });
+    }
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map((s) => s.item);
 }
 
 // ---- Loudness leveler (on by default) ----
@@ -6516,7 +4547,6 @@ function wireUiOnce() {
     setupSkipLink();
     setupIntersectionObserver();
     setupNewFeatureListeners();
-    setupExtraSourceListeners();
     TWIN.init();
 }
 // The index comes in two files: the lean one (root names only) is tiny, so the top level shows from it at once; the full one
@@ -6799,7 +4829,6 @@ function setupEventListeners() {
             }
             if (document.getElementById("localModal").classList.contains("active")) { closeLocalModal(); return; }
             if (document.getElementById("previewModal").classList.contains("active")) { closePreviewModal(); return; }
-            if (document.getElementById("extraModal").classList.contains("active")) { closeExtraModal(); return; }
             const settingsMenuEl = document.getElementById("settingsMenu");
             const themeMenuEl = document.getElementById("themeColorMenu");
             if (settingsMenuEl.classList.contains("active")) {
@@ -6867,7 +4896,6 @@ function setupEventListeners() {
     });
     document.getElementById("main").addEventListener("click", handleStarButtonClick);
     document.getElementById("main").addEventListener("click", handleCardClick);
-    selInit();
     document.getElementById("main").addEventListener("click", handleSortHeaderClick);
     document.getElementById("main").addEventListener("keydown", handleGridKeydown);
     document.getElementById("treeContent").addEventListener("click", handleTreeClick);
@@ -6937,7 +4965,6 @@ function setupEventListeners() {
     document.getElementById("topNextBtn").addEventListener("click", goToNextTrack);
     document.getElementById("topShuffleBtn").addEventListener("click", toggleShuffle);
     document.getElementById("copyLinkBtn").addEventListener("click", copyRawLink);
-    if (canNativeShare()) { const lb = document.getElementById("copyLinkBtn"); lb.title = "Share link"; lb.setAttribute("aria-label", "Share file link"); }
     document.getElementById("favoriteBtn").addEventListener("click", () => toggleFavoriteFile(currentFilePath));
     document.getElementById("playlistTest").addEventListener("click", runPlaylistTest);
     document.getElementById("playlistSongs").addEventListener("click", openSongsModal);
@@ -6963,10 +4990,6 @@ function setupEventListeners() {
     document.getElementById("playPlaylistBtn").addEventListener("click", startPlaylistMode);
     setupGotoStepper();
 }
-// On phones and tablets (touch screen with a share sheet) the link button opens the system share sheet, which has Copy in it; elsewhere it copies.
-function canNativeShare() {
-    return typeof navigator.share === "function" && !LOCAL.active && window.matchMedia("(pointer: coarse)").matches;
-}
 function copyRawLink() {
     const btn = document.getElementById("copyLinkBtn");
     const url = LOCAL.active ? currentFilePath : new URL(hostedUrl(currentFilePath), window.location.href).href;
@@ -6974,14 +4997,6 @@ function copyRawLink() {
         btn.classList.add("copied");
         setTimeout(() => btn.classList.remove("copied"), 1200);
     };
-    if (canNativeShare()) {
-        navigator.share({ title: currentFileName || "File", url }).then(done).catch((err) => {
-            if (err && err.name === "AbortError") return; // the person closed the sheet
-            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
-            else fallbackCopy(url, done);
-        });
-        return;
-    }
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
     } else {
@@ -7052,10 +5067,6 @@ function handleGridKeydown(e) {
             if (nextIdx < cards.length) {
                 e.preventDefault();
                 cards[nextIdx].focus();
-            } else if (!searchQuery && document.getElementById("loadMoreBtn") && idx === cards.length - 1) {
-                e.preventDefault();
-                pagerGrow(false);
-                requestAnimationFrame(() => document.querySelectorAll("#main .file-card")[idx + 1]?.focus());
             }
             return;
         }
@@ -7073,7 +5084,6 @@ function handleGridKeydown(e) {
             return;
         case "End":
             e.preventDefault();
-            if (!searchQuery && document.getElementById("loadMoreBtn")) { pagerGrow(true); requestAnimationFrame(() => { const c = document.querySelectorAll("#main .file-card"); c[c.length - 1]?.focus(); }); return; }
             cards[cards.length - 1]?.focus();
     }
 }
@@ -7130,240 +5140,10 @@ function safeJsonParse(str, fallback) {
         return fallback;
     }
 }
-// ---- Selecting several items (main list and grid) ----
-// Ctrl/Cmd + click toggles one item, Shift + click selects a range, long press does the same on a touch screen, X toggles the focused item,
-// Shift + Up/Down extends, Ctrl/Cmd + A selects everything in view, Esc clears. While something is selected a plain click toggles instead of opening.
-const SEL = { map: new Map(), anchor: null, folder: "", suppress: false, bar: null };
-function selKeyOf(card) {
-    if (!card || card.classList.contains("parent-dir")) return null;
-    if (card.dataset.directory) return "d:" + card.dataset.path;
-    if (card.dataset.file) return "f:" + card.dataset.file;
-    return null;
-}
-function selEntryOf(card) {
-    const key = selKeyOf(card);
-    if (!key) return null;
-    if (key[0] === "d") {
-        const arr = safeJsonParse(card.dataset.path, null);
-        return arr && arr.length ? { key, type: "d", arr, path: arr.join("/"), name: arr[arr.length - 1] } : null;
-    }
-    const path = card.dataset.file;
-    return { key, type: "f", path, name: card.dataset.name || path.split("/").pop() };
-}
-function selAllEntries() {
-    const items = searchQuery ? searchFiles(searchQuery) : sortItems(getCurrentItems());
-    return items.map((it) => {
-        if (it.type === "directory") {
-            const arr = searchQuery ? it.navPath : [...currentPath, it.name];
-            return { key: "d:" + JSON.stringify(arr), type: "d", arr, path: arr.join("/"), name: it.name };
-        }
-        const path = searchQuery ? it.fullPath : (currentPath.length ? currentPath.join("/") + "/" : "") + it.name;
-        return { key: "f:" + path, type: "f", path, name: it.name };
-    });
-}
-function selPaint() {
-    const main = document.getElementById("main");
-    if (!main) return;
-    main.querySelectorAll(".file-card").forEach((c) => {
-        const k = selKeyOf(c), on = !!k && SEL.map.has(k);
-        if (c.classList.contains("selected") === on) return;
-        c.classList.toggle("selected", on);
-        if (on) { c.dataset.l0 = c.getAttribute("aria-label") || ""; c.setAttribute("aria-label", c.dataset.l0 + ", selected"); }
-        else if (c.dataset.l0 !== undefined) { c.setAttribute("aria-label", c.dataset.l0); delete c.dataset.l0; }
-    });
-}
-function selSync(say) {
-    const n = SEL.map.size;
-    document.body.classList.toggle("sel-on", n > 0);
-    selPaint();
-    const bar = SEL.bar;
-    if (!bar) return;
-    bar.hidden = n === 0;
-    if (n) {
-        let f = 0, d = 0;
-        SEL.map.forEach((e) => { if (e.type === "d") d++; else f++; });
-        const parts = [];
-        if (f) parts.push(`${f} file${f === 1 ? "" : "s"}`);
-        if (d) parts.push(`${d} folder${d === 1 ? "" : "s"}`);
-        bar.querySelector(".sel-count").textContent = parts.join(", ") + " selected";
-        bar.querySelector('[data-sel="copy"]').disabled = f === 0;
-        const sh = bar.querySelector('[data-sel="share"]');
-        sh.hidden = !canNativeShare() || f === 0;
-    }
-    if (say !== false) announce(n ? `${n} selected` : "Selection cleared");
-}
-function selClear() {
-    if (!SEL.map.size) return;
-    SEL.map.clear();
-    SEL.anchor = null;
-    selSync();
-}
-function selToggle(entry, force) {
-    if (!entry) return;
-    if (!SEL.map.size) SEL.folder = currentPath.join("/");
-    const on = force !== undefined ? force : !SEL.map.has(entry.key);
-    if (on) SEL.map.set(entry.key, entry); else SEL.map.delete(entry.key);
-    SEL.anchor = entry.key;
-    selSync();
-}
-function selRange(card) {
-    const cards = Array.from(document.querySelectorAll("#main .file-card")).filter((c) => selKeyOf(c));
-    const to = cards.indexOf(card);
-    let from = cards.findIndex((c) => selKeyOf(c) === SEL.anchor);
-    if (to < 0) return;
-    if (from < 0) from = to;
-    if (!SEL.map.size) SEL.folder = currentPath.join("/");
-    const [a, b] = from < to ? [from, to] : [to, from];
-    for (let i = a; i <= b; i++) { const e = selEntryOf(cards[i]); if (e) SEL.map.set(e.key, e); }
-    selSync();
-}
-function selSelectAll() {
-    if (!SEL.map.size) SEL.folder = currentPath.join("/");
-    selAllEntries().forEach((e) => SEL.map.set(e.key, e));
-    selSync();
-}
-function selPaintStars() {
-    document.querySelectorAll("#main .card-star-btn").forEach((btn) => {
-        const type = btn.dataset.starType, raw = btn.dataset.starPath;
-        let on, label;
-        if (type === "folder") { const arr = safeJsonParse(raw, null); if (!arr) return; on = isPinned(arr); label = on ? "Unpin this folder" : "Pin this folder"; }
-        else { on = isFavoriteFile(raw); label = on ? "Remove from favorites" : "Add to favorites"; }
-        btn.classList.toggle("starred", on);
-        btn.setAttribute("aria-pressed", String(on));
-        btn.title = label;
-        btn.setAttribute("aria-label", label);
-        btn.innerHTML = on ? icons.starFilled : icons.starOutline;
-    });
-}
-function selNote(msg, ms) { opStart(msg); opDone(msg, ms || 2200); }
-function selStar() {
-    const list = [...SEL.map.values()];
-    const isOn = (e) => (e.type === "f" ? isFavoriteFile(e.path) : isPinned(e.arr));
-    const allOn = list.every(isOn);
-    list.forEach((e) => { if (allOn ? isOn(e) : !isOn(e)) { if (e.type === "f") toggleFavoriteFile(e.path); else toggleFolderPin(e.arr); } });
-    selPaintStars();
-    announce(allOn ? "Removed from favorites" : "Added to favorites");
-}
-function selLinks() {
-    return [...SEL.map.values()].filter((e) => e.type === "f").map((e) => LOCAL.active ? e.path : new URL(hostedUrl(e.path), window.location.href).href);
-}
-function selCopy() {
-    const links = selLinks();
-    if (!links.length) return;
-    const text = links.join("\n"), done = () => selNote(`Copied ${links.length} link${links.length === 1 ? "" : "s"}.`);
-    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
-    else fallbackCopy(text, done);
-}
-function selShare() {
-    const links = selLinks();
-    if (!links.length || !canNativeShare()) return;
-    navigator.share({ title: `${links.length} file${links.length === 1 ? "" : "s"}`, text: links.join("\n") }).catch(() => {});
-}
-async function selDownload() {
-    if (zipBusy || !fileIndex) return;
-    if (fileIndex.partial) { selNote("File sizes are still loading. Try again in a moment.", 2500); return; }
-    const files = [], used = new Set();
-    for (const e of SEL.map.values()) {
-        if (e.type === "f") {
-            const node = filesByPath.get(e.path);
-            const rel = used.has(e.name) ? e.path : e.name;
-            used.add(rel);
-            files.push({ path: e.path, rel, size: node ? getItemSize(node) : 0, date: node ? getItemDate(node) : null, order: files.length });
-        } else {
-            const dn = findNode(e.path);
-            if (dn && dn.children) collectFolderFiles(dn.children, e.path, e.name, files);
-        }
-    }
-    if (!files.length) { selNote("Nothing to download in the selection.", 2500); return; }
-    if (files.length === 1 && SEL.map.size === 1) {
-        zipBusy = true;
-        const ctl = new AbortController();
-        opStart(`Downloading ${files[0].rel}\u2026`, () => ctl.abort());
-        try { recSave(await blobForPath(files[0].path, ctl.signal), files[0].rel.split("/").pop()); opDone(`Saved ${files[0].rel.split("/").pop()}.`, 2500); }
-        catch (err) { opDone(err && err.name === "AbortError" ? "Cancelled." : "Could not download the file.", 3500); }
-        finally { zipBusy = false; }
-        return;
-    }
-    await zipFilesFlow(files, "selection", "", "selection");
-}
-function selInit() {
-    const main = document.getElementById("main");
-    const bar = document.createElement("div");
-    bar.id = "selBar";
-    bar.className = "sel-bar";
-    bar.setAttribute("role", "region");
-    bar.setAttribute("aria-label", "Selected items");
-    bar.hidden = true;
-    bar.innerHTML = `<span class="sel-count" aria-hidden="true"></span>
-        <button type="button" class="sel-btn" data-sel="all">Select all</button>
-        <button type="button" class="sel-btn" data-sel="zip">Download</button>
-        <button type="button" class="sel-btn" data-sel="star">Star</button>
-        <button type="button" class="sel-btn" data-sel="copy">Copy links</button>
-        <button type="button" class="sel-btn" data-sel="share" hidden>Share</button>
-        <button type="button" class="sel-btn" data-sel="clear">Clear</button>`;
-    document.body.appendChild(bar);
-    SEL.bar = bar;
-    bar.addEventListener("click", (e) => {
-        const b = e.target.closest("[data-sel]");
-        if (!b) return;
-        ({ all: selSelectAll, zip: selDownload, star: selStar, copy: selCopy, share: selShare, clear: selClear })[b.dataset.sel]();
-    });
-    // Cards are rebuilt on every render and on "show more": mark the selected ones again, and drop the selection when the folder changes.
-    let raf = 0;
-    new MutationObserver(() => {
-        if (raf) return;
-        raf = requestAnimationFrame(() => {
-            raf = 0;
-            if (SEL.map.size && SEL.folder !== currentPath.join("/")) { SEL.map.clear(); SEL.anchor = null; selSync(false); return; }
-            if (SEL.map.size) selPaint();
-        });
-    }).observe(main, { childList: true, subtree: true });
-    // Long press on a touch screen starts (or extends) a selection.
-    let timer = 0, sx = 0, sy = 0;
-    const cancel = () => { clearTimeout(timer); timer = 0; };
-    main.addEventListener("pointerdown", (e) => {
-        if (e.pointerType === "mouse" || e.target.closest(".card-star-btn")) return;
-        const card = e.target.closest(".file-card");
-        if (!card || !selKeyOf(card)) return;
-        sx = e.clientX; sy = e.clientY;
-        cancel();
-        timer = setTimeout(() => {
-            timer = 0;
-            SEL.suppress = true;
-            selToggle(selEntryOf(card));
-            if (navigator.vibrate) { try { navigator.vibrate(15); } catch (err) {} }
-        }, 450);
-    });
-    main.addEventListener("pointermove", (e) => { if (timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) cancel(); });
-    ["pointerup", "pointercancel", "pointerleave"].forEach((t) => main.addEventListener(t, cancel));
-    main.addEventListener("contextmenu", (e) => { if (SEL.suppress || (timer && e.target.closest(".file-card"))) e.preventDefault(); });
-    main.addEventListener("keydown", (e) => {
-        if (e.target.closest("input, textarea, select") || e.altKey) return;
-        const card = e.target.closest(".file-card");
-        if ((e.key === "x" || e.key === "X") && card && !e.ctrlKey && !e.metaKey) { const en = selEntryOf(card); if (en) { e.preventDefault(); selToggle(en); } return; }
-        if ((e.key === "a" || e.key === "A") && (e.ctrlKey || e.metaKey) && !TWIN.on) { e.preventDefault(); selSelectAll(); return; }
-        if (e.shiftKey && card && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
-            const en = selEntryOf(card);
-            if (en) selToggle(en, true);
-            setTimeout(() => { const c = document.activeElement && document.activeElement.closest ? document.activeElement.closest("#main .file-card") : null; const n = c && selEntryOf(c); if (n) selToggle(n, true); }, 0);
-        }
-    });
-    document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape" || !SEL.map.size || e.defaultPrevented) return;
-        if (document.querySelector(".modal-overlay.active") || e.target.closest("input, textarea, select")) return;
-        e.preventDefault();
-        selClear();
-    });
-}
 function handleCardClick(e) {
     if (e.target.closest(".card-star-btn")) return;
     const t = e.target.closest(".file-card");
     if (!t) return;
-    if (SEL.suppress) { SEL.suppress = false; e.preventDefault(); return; } // the click that ends a long press
-    const entry = selEntryOf(t);
-    if (entry && (e.ctrlKey || e.metaKey)) { e.preventDefault(); selToggle(entry); return; }
-    if (entry && e.shiftKey && SEL.map.size) { e.preventDefault(); selRange(t); return; }
-    if (entry && SEL.map.size) { selToggle(entry); return; }
     if (t.dataset.directory) {
         const path = safeJsonParse(t.dataset.path, null);
         if (path) navigateTo(path);
@@ -7597,7 +5377,6 @@ function handleHashChange() {
 }
 function navigateTo(pathArr) {
     currentPath = pathArr;
-    folderLimit = 500;
     searchQuery = "";
     document.getElementById("search").value = "";
     updateSearchClearVisibility();
@@ -7983,7 +5762,7 @@ function render() {
     } else {
         all = sortItems(getCurrentItems());
     }
-    const visibleItems = searchQuery ? all.slice(0, searchResultLimit) : all.length > FOLDER_PAGE_AT ? all.slice(0, folderLimit) : all;
+    const visibleItems = searchQuery ? all.slice(0, searchResultLimit) : all;
 
     if (searchQuery) {
         announce(all.length === 0 ? `No results for "${searchQuery}"` : `${all.length} result${all.length === 1 ? "" : "s"} for "${searchQuery}"`);
@@ -8061,7 +5840,7 @@ function render() {
       `;
     if (currentPath.length > 0 && !searchQuery) {
         html += `
-            <div class="file-card directory parent-dir" data-directory="true" data-path="${escapeHtml(JSON.stringify(currentPath.slice(0, -1)))}" tabindex="0" role="link" aria-label="Go to parent folder">
+            <div class="file-card directory parent-dir" data-directory="true" data-path="${escapeHtml(JSON.stringify(currentPath.slice(0, -1)))}" tabindex="0" role="button" aria-label="Go to parent folder">
               ${isColumnView ? `<span class="card-star-spacer" aria-hidden="true"></span>` : ""}
               <div class="file-icon folder">${currentView === "grid" ? ibIcon("folder") : icons.folder}</div>
               <div class="file-info">
@@ -8103,11 +5882,11 @@ function render() {
 
         if (item.type === "directory") {
             html += `
-            <div class="file-card directory" data-directory="true" data-path="${escapeHtml(JSON.stringify(parentPathArr))}" tabindex="0" role="link" aria-label="Open folder ${escapeHtml(item.name)}">
+            <div class="file-card directory" data-directory="true" data-path="${escapeHtml(JSON.stringify(parentPathArr))}" tabindex="0" role="button" aria-label="Open folder ${escapeHtml(item.name)}">
               ${renderStarButton("folder", parentPathArr)}
               <div class="file-icon folder">${currentView === "grid" ? ibIcon("folder") : icons.folder}</div>
               <div class="file-info">
-                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchTextOf(searchQuery)) : escapeHtml(item.name)}</span>
+                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">${isColumnView && !searchQuery ? "" : `${item.children?.length || 0} ${(item.children?.length || 0) === 1 ? "item" : "items"}`}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
               </div>
               ${
@@ -8125,12 +5904,12 @@ function render() {
                     : `<img class="file-thumbnail file-thumbnail-inline lazy" ${LOCAL.active ? `data-lpath="${escapeHtml(clickPath)}"` : `data-src="${escapeHtml(hostedUrl(clickPath))}"`} alt="" loading="lazy" decoding="async">`;
             }
             html += `
-            <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="link" aria-label="Open file ${escapeHtml(item.name)}">
+            <div class="file-card" data-file="${escapeHtml(clickPath)}" data-category="${item.category}" data-name="${escapeHtml(item.name)}" tabindex="0" role="button" aria-label="Open file ${escapeHtml(item.name)}">
               ${renderStarButton("file", clickPath)}
               ${thumbnailHtml}
               <div class="file-icon ${iconType}${xcAttr}">${iconSvg}</div>
               <div class="file-info">
-                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchTextOf(searchQuery)) : escapeHtml(item.name)}</span>
+                <span class="file-name">${searchQuery ? highlightMatch(item.name, searchQuery) : escapeHtml(item.name)}</span>
                 <span class="file-meta">${isColumnView && !searchQuery ? "" : item.sizeFormatted}${searchQuery && parentDisplayPath ? `<span class="file-path">${escapeHtml(parentDisplayPath)}</span>` : ""}</span>
               </div>
               ${
@@ -8155,21 +5934,13 @@ function render() {
     });
     const loadMoreBtn = document.getElementById("loadMoreBtn");
     if (loadMoreBtn) {
-        loadMoreBtn.addEventListener("click", () => pagerGrow(false));
-        // A big folder keeps filling as the bottom comes near; search results stay behind the button.
-        if (!searchQuery && "IntersectionObserver" in window) {
-            const io = new IntersectionObserver((en) => { if (en.some((x) => x.isIntersecting)) { io.disconnect(); pagerGrow(false); } }, { root: mainEl, rootMargin: "900px 0px" });
-            io.observe(loadMoreBtn);
-        }
+        loadMoreBtn.addEventListener("click", () => {
+            searchResultLimit += 100;
+            render();
+        });
     }
     syncSortUI();
     updateListHeaderStuck();
-}
-// Shows more of a paged list: search results 100 at a time, a big folder twice as many (or all of it with `all`).
-function pagerGrow(all) {
-    if (searchQuery) searchResultLimit += 100;
-    else folderLimit = all ? Infinity : folderLimit * 2;
-    render();
 }
 async function parsePlaylist(e, t) {
     try {
@@ -8231,7 +6002,10 @@ function updatePlaylistUI() {
         const plNum = document.createElement("span");
         plNum.className = "pl-num";
         plNum.textContent = `${currentPlaylistIndex + 1}/${currentPlaylist.length}`;
-        t.append(plNum); // the station name is in the window title and under the glyph, so the status row keeps only the position
+        const plTitle = document.createElement("span");
+        plTitle.className = "pl-title";
+        plTitle.textContent = `: ${item.title}`;
+        t.append(plNum, plTitle);
         let prevDisabled, nextDisabled;
         if (isShuffle) {
             (prevDisabled = shuffleHistory.length <= 1), (nextDisabled = currentPlaylist.length <= 1);
@@ -8379,10 +6153,10 @@ function setupGotoStepper() {
     });
 }
 async function startPlaylistMode() {
-    if (!isPlaylistFile || (!currentFilePath && !EXTRA.active)) return;
+    if (!isPlaylistFile || !currentFilePath) return;
     const startedFor = currentFilePath;
-    // An extra-source playlist has no repo file to re-read: the parsed entries were stashed when it first played.
-    const t = EXTRA.active ? (EXTRA.items || []).slice() : await parsePlaylistForCurrent(await urlForPath(currentFilePath));
+    const e = await urlForPath(currentFilePath),
+        t = await parsePlaylistForCurrent(e);
     if (currentFilePath !== startedFor) return;
     failStreak = 0;
     await Promise.race([streamHealth.open(), new Promise((r) => setTimeout(r, 1200))]);
@@ -8418,14 +6192,13 @@ function stopPlaylist() {
         activeMedia.load();
     }
     if (currentFileName) document.getElementById("modalTitle").textContent = currentFileName;
-    const lastItems = currentPlaylist.slice(); // still needed to redraw the static text view below
     (currentPlaylist = []),
         (currentPlaylistIndex = 0),
         (shuffleBag = []),
         (shuffleHistory = []),
         document.getElementById("playlistBar").classList.remove("active"),
         isPlaylistFile &&
-            (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText(lastItems));
+            (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText());
 }
 // Cache of fetched text for playlists and previews, bounded by entry count and total size. Map order is insertion order,
 // so deleting the first key evicts the least recently used entry (hits re-insert their key).
@@ -8529,13 +6302,7 @@ function renderTextPreview(container, text, fileName, byteTruncated) {
         </div>
       `;
 }
-async function showPlaylistAsText(prevList) {
-    if (EXTRA.active) { // an extra-source playlist has no repo file to re-read: list the entries that just played
-        const list = Array.isArray(prevList) ? prevList : [];
-        const lines = list.map((it, i) => `${i + 1}. ${it.title}\n   ${it.url}`);
-        renderTextPreview(document.getElementById("modalBody"), lines.join("\n"), currentFileName, false);
-        return;
-    }
+async function showPlaylistAsText() {
     const e = await urlForPath(currentFilePath);
     try {
         const { text, truncated } = await fetchTextPreview(e);
@@ -8721,7 +6488,7 @@ function parseStreamPlaylist(text, base) {
 }
 const PLAYLIST_WRAPPER_EXTS = ["m3u", "m3u8", "pls", "asx", "xspf"];
 // Follows playlist wrappers (up to 5 deep) to the real stream URL. HLS master playlists resolve to their best variant;
-// media playlists are left to the built-in HLS engine. Anything unreadable (usually no CORS) is returned as-is.
+// media playlists are left to hls.js. Anything unreadable (usually no CORS) is returned as-is.
 async function resolveStreamUrl(url, depth) {
     depth = depth || 0;
     if (depth >= 5) {
@@ -10425,7 +8192,7 @@ function closeSongsModal() {
     restoreModalFocus("songsModal");
 }
 function saveSongsList() {
-    if (!songsHeard.length) return streamNotice("No songs yet. Titles show up here while a station sends them.");
+    if (!songsHeard.length) return alert("No songs yet. Titles show up here while a station sends them.");
     const txt = songsHeard.map((s) => s.t + "  [" + s.s + ", " + new Date(s.a).toLocaleString() + "]").join("\r\n");
     recSave(new Blob([txt], { type: "text/plain" }), "Songs heard " + new Date().toISOString().slice(0, 10) + ".txt");
 }
@@ -10596,7 +8363,7 @@ async function recSaveAll(b) {
     const items = REC.items.slice().reverse(), total = items.reduce((a, i) => a + i.blob.size, 0);
     if (!items.length || b.disabled) return false;
     if (items.length === 1) { recSave(items[0].blob, items[0].name); return true; }
-    if (total > 3.5 * 1024 ** 3) { streamNotice("That's too much for one zip. Open the list and save the files one by one."); return false; }
+    if (total > 3.5 * 1024 ** 3) { alert("That's too much for one zip. Open the list and save the files one by one."); return false; }
     const t = b.innerHTML;
     b.textContent = "Zipping…";
     b.disabled = true;
@@ -11456,15 +9223,7 @@ function openRecModal() {
     syncBackgroundInert();
     focusWhenReady("recCloseBtn", "recModal");
 }
-let recClearTimer = null;
-function disarmRecClear() {
-    clearTimeout(recClearTimer);
-    recClearTimer = null;
-    const b = recEl("recClearBtn");
-    if (b) { b.textContent = "Clear"; b.classList.remove("armed"); }
-}
 function closeRecModal() {
-    disarmRecClear();
     recEl("recModal").classList.remove("active");
     syncBackgroundInert();
     restoreModalFocus("recModal");
@@ -11530,15 +9289,7 @@ function recInit() {
         if (it) recSave(it.blob, it.name);
     });
     recEl("recClearBtn").addEventListener("click", () => {
-        if (!REC.items.length) return;
-        if (!recClearTimer) {
-            const b = recEl("recClearBtn");
-            b.textContent = "Press again to clear";
-            b.classList.add("armed");
-            recClearTimer = setTimeout(disarmRecClear, 3000);
-            return;
-        }
-        disarmRecClear();
+        if (!REC.items.length || !confirm("Delete all recordings from this browser? Anything you have not saved to your device will be gone.")) return;
         REC.items = [];
         recDbClearItems();
         renderRecList();
@@ -11588,15 +9339,11 @@ function streamNotice(text) {
 }
 // While a recording runs the player never leaves its station on its own: a dead connection is retried, again and again,
 // on the same stream. (The recorder has its own connection, so a player hiccup never touches the recording.)
-let recLeaveArm = 0;
 function recLeaveOk() {
     if (!REC.st) return true;
-    // First attempt arms: the toast explains, a repeat within 8 s goes through. No native dialog, so the live
-    // stream keeps running while the user decides. Everything recorded so far is kept either way.
-    if (recLeaveArm && Date.now() - recLeaveArm < 8000) { recLeaveArm = 0; recStop("Station changed."); return true; }
-    recLeaveArm = Date.now();
-    streamNotice("A recording is running. Repeat this action to stop the recording and continue — everything recorded so far is kept.");
-    return false;
+    if (!confirm("A recording is running. Changing the station stops it.\n\nEverything recorded so far is kept. Stop recording and continue?")) return false;
+    recStop("Station changed.");
+    return true;
 }
 function holdSessionForRecording(session) {
     if (playSession !== session) return;
@@ -12388,10 +10135,28 @@ function attachStream(session, el, url) {
         session.usesHls = false;
         return startOwnBuffer(session, el, url, onBlocked, startNative);
     }
-    // HLS is handled by the built-in engine (embedded below the <head>, ~55 KB,
-    // original implementation of RFC 8216) — no external library is fetched.
+    // hls.js (about 540 KB) is only fetched the first time an .m3u8 stream is played.
     if (!lower.includes(".m3u8")) return startNative();
-    return Hls.isSupported() ? startHls() : startNative();
+    if (typeof Hls !== "undefined") return Hls.isSupported() ? startHls() : startNative();
+    loadHlsLib().then(() => {
+        if (playSession !== session) return;
+        if (typeof Hls !== "undefined" && Hls.isSupported()) startHls();
+        else startNative();
+    });
+}
+let hlsLibPromise = null;
+function loadHlsLib() {
+    if (typeof Hls !== "undefined") return Promise.resolve();
+    if (!hlsLibPromise) {
+        hlsLibPromise = new Promise((resolve) => {
+            const sc = document.createElement("script");
+            sc.src = "./hls.min.js";
+            sc.onload = resolve;
+            sc.onerror = () => { hlsLibPromise = null; sc.remove(); resolve(); };
+            document.head.appendChild(sc);
+        });
+    }
+    return hlsLibPromise;
 }
 async function playPlaylistTrack(e) {
     if (e < 0 || e >= currentPlaylist.length) return;
@@ -13062,9 +10827,6 @@ async function openFile(filePath, fileType, fileName) {
 
     currentFilePath = filePath;
     currentFileName = fileName;
-    EXTRA.active = false;
-    document.getElementById("favoriteBtn").classList.remove("hidden");
-    document.getElementById("copyLinkBtn").classList.remove("hidden");
     isPlaylistFile = isPlaylistExtension(fileName);
 
     // The request URL: percent-encodes #, ? and % so such filenames resolve instead of being cut at a "fragment".
@@ -13213,7 +10975,6 @@ function showUnavailable(containerEl, fileName, fileUrl, err) {
     if (err && err.status === 404) reason = "This file could not be found (404).";
     else if (err && err.status) reason = `The server returned an error (HTTP ${err.status}).`;
     else if (err && LOCAL.active) reason = "This file couldn't be read from the local folder. If it was changed or moved since the folder was opened, open the folder again.";
-    else if (err && navigator.onLine === false) reason = "You appear to be offline — reconnect and try again.";
     else if (err) reason = "This file couldn't be loaded — it may be blocked by CORS or a network issue.";
     containerEl.innerHTML = `
         <div class="preview-unavailable">
@@ -13303,9 +11064,6 @@ function closeModal() {
     currentFilePath = "";
     currentFileName = "";
     isPlaylistFile = false;
-    EXTRA.active = false;
-    document.getElementById("favoriteBtn").classList.remove("hidden");
-    document.getElementById("copyLinkBtn").classList.remove("hidden");
     document.getElementById("playlistBar").classList.remove("active");
     document.getElementById("playPlaylistBtn").classList.add("hidden");
     restoreModalFocus("modal");
@@ -14501,30 +12259,14 @@ async function downloadFolderZip() {
     const files = [];
     collectFolderFiles(children, pathArr.join("/"), "", files);
     if (!files.length) { opStart("There are no files in this folder."); opDone("There are no files in this folder.", 2500); return; }
-    const folderName = pathArr.length ? pathArr[pathArr.length - 1] : LOCAL.active ? LOCAL.name || "folder" : "files";
-    return zipFilesFlow(files, folderName, folderName, "folder");
-}
-// Packs `files` ({path, rel, size, date, order}) into one zip and saves it as `folderName`.zip; `topDir` (or "") is the folder name inside the zip.
-let zipWarnArm = null;
-async function zipFilesFlow(files, folderName, topDir, noun) {
     const total = files.reduce((a, f) => a + (f.size || 0), 0);
     const lim = LOCAL.active ? { warn: 1024 * MB, max: 3.5 * 1024 * MB } : { warn: 100 * MB, max: 1024 * MB };
     if (files.length > ZIP_MAX_FILES || files.some((f) => f.size >= 0xffffffff) || total > lim.max) {
-        const tooBig = `This ${noun} is too big to pack in the browser (${files.length.toLocaleString()} files, ${formatFileSize(total)}). The limit is ${formatFileSize(lim.max)} and ${ZIP_MAX_FILES.toLocaleString()} files. Open a smaller sub-folder instead.`;
-        opStart(tooBig);
-        opDone(tooBig, 7000);
+        alert(`This folder is too big to pack in the browser (${files.length.toLocaleString()} files, ${formatFileSize(total)}). The limit is ${formatFileSize(lim.max)} and ${ZIP_MAX_FILES.toLocaleString()} files. Open a smaller sub-folder instead.`);
         return;
     }
-    if (total > lim.warn) {
-        // Over the friendly-size limit: the first attempt explains via the toast, a repeat within 8 s goes through.
-        const sig = noun + ":" + files.length + ":" + total;
-        if (!zipWarnArm || zipWarnArm.sig !== sig || Date.now() - zipWarnArm.at > 8000) {
-            zipWarnArm = { sig, at: Date.now() };
-            streamNotice(`This ${noun} has ${files.length.toLocaleString()} files (${formatFileSize(total)}). Repeat to pack it anyway. ${LOCAL.active ? "Packing it can take a while." : "It will be downloaded and held in memory first."}`);
-            return;
-        }
-        zipWarnArm = null;
-    }
+    if (total > lim.warn && !confirm(`This folder has ${files.length.toLocaleString()} files (${formatFileSize(total)}). ${LOCAL.active ? "Packing it can take a while." : "It will be downloaded and held in memory first."} Continue?`)) return;
+    const folderName = pathArr.length ? pathArr[pathArr.length - 1] : LOCAL.active ? LOCAL.name || "folder" : "files";
     const ctl = new AbortController(), wCollect = LOCAL.active ? 0.05 : 0.8;
     zipBusy = true;
     opStart(`Collecting ${files.length.toLocaleString()} files\u2026`, () => ctl.abort());
@@ -14534,7 +12276,7 @@ async function zipFilesFlow(files, folderName, topDir, noun) {
         const worker = async () => {
             while (next < files.length && !ctl.signal.aborted) {
                 const f = files[next++];
-                try { items[f.order] = { name: `${topDir ? topDir + "/" : ""}${f.rel}`, blob: await blobForPath(f.path, ctl.signal), date: f.date }; }
+                try { items[f.order] = { name: `${folderName}/${f.rel}`, blob: await blobForPath(f.path, ctl.signal), date: f.date }; }
                 catch (err) { if (err && err.name === "AbortError") return; failed++; }
                 finished++;
                 opUpdate(`Collecting files\u2026 ${finished.toLocaleString()} / ${files.length.toLocaleString()}`, (finished / files.length) * wCollect);
@@ -15025,393 +12767,6 @@ function setupNewFeatureListeners() {
     });
     syncModeUi();
 }
-
-// ---- Load an extra source ----
-// The button next to the local-folder one opens a window shaped exactly like the 5-tap preview window. It takes
-// a link (m3u/m3u8 playlists, streams, audio, video, images, PDFs, fonts, archives, text) or a file from the
-// device and opens each in the matching player or viewer. Links are remembered newest-first in the dropdown and
-// the last one is filled in ready to load; local files play straight from the File, nothing is uploaded.
-const EXTRA = { active: false }; // true while the file preview shows something opened from the extra-source window
-const EXTRA_RECENT_KEY = "extraSourceRecent";
-const EXTRA_RECENT_MAX = 8;
-function loadExtraRecents() {
-    try {
-        const list = JSON.parse(store.getItem(EXTRA_RECENT_KEY) || "[]");
-        return Array.isArray(list) ? list.filter((u) => typeof u === "string" && /^https?:\/\//i.test(u)).slice(0, EXTRA_RECENT_MAX) : [];
-    } catch (err) { return []; }
-}
-let extraRecents = loadExtraRecents();
-function saveExtraRecents() {
-    try { store.setItem(EXTRA_RECENT_KEY, JSON.stringify(extraRecents)); } catch (err) { /* storage blocked: the links are just not remembered */ }
-}
-function rememberExtraSource(url) {
-    extraRecents = [url].concat(extraRecents.filter((u) => u !== url)).slice(0, EXTRA_RECENT_MAX);
-    saveExtraRecents();
-    refreshExtraRecentOptions(url);
-}
-function extraSourceLabel(url) {
-    try {
-        const u = new URL(url), name = safeDecode(u.pathname.split("/").pop() || "").trim();
-        const base = name || u.host || url;
-        const short = base.length > 46 ? base.slice(0, 45) + "\u2026" : base;
-        return name && u.host && !name.includes(u.host) ? short + " \u2014 " + u.host : short;
-    } catch (err) { return url; }
-}
-function refreshExtraRecentOptions(selected) {
-    const sel = document.getElementById("extraRecentSelect");
-    if (!sel) return;
-    sel.textContent = "";
-    if (!extraRecents.length) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "No recent sources yet";
-        sel.append(opt);
-        sel.disabled = true;
-        return;
-    }
-    sel.disabled = false;
-    for (const url of extraRecents) {
-        const opt = document.createElement("option");
-        opt.value = url;
-        opt.textContent = extraSourceLabel(url);
-        opt.title = url;
-        sel.append(opt);
-    }
-    sel.value = selected && extraRecents.includes(selected) ? selected : extraRecents[0];
-}
-function setExtraStatus(text, isError) {
-    const st = document.getElementById("extraStatus");
-    st.textContent = text || "";
-    st.classList.toggle("err", !!isError);
-}
-function openExtraModal() {
-    const $ = (id) => document.getElementById(id);
-    if (!$("extraUrlInput").value && extraRecents.length) $("extraUrlInput").value = extraRecents[0]; // the last choice, ready to load
-    refreshExtraRecentOptions();
-    setExtraStatus("");
-    rememberModalFocus("extraModal");
-    $("extraModal").classList.add("active");
-    syncBackgroundInert();
-    focusWhenReady("extraUrlInput", "extraModal");
-}
-function closeExtraModal() {
-    const m = document.getElementById("extraModal");
-    if (!m || !m.classList.contains("active")) return;
-    m.classList.remove("active");
-    syncBackgroundInert();
-    restoreModalFocus("extraModal");
-}
-function normalizeExtraUrl(raw) {
-    const s = raw.trim();
-    if (!s) return "";
-    if (/^https?:\/\//i.test(s)) return s;
-    // Any other scheme (rtsp:, rtmp:, data: …) comes back untouched so the caller can reject what a browser cannot play.
-    if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return s;
-    return "https://" + s;
-}
-function extraNameFromUrl(url) {
-    try {
-        const u = new URL(url);
-        const name = safeDecode(u.pathname.split("/").pop() || "").trim();
-        return name || u.host || "stream";
-    } catch (err) { return "stream"; }
-}
-async function sniffExtraContentType(url) {
-    // Header-only probe for links without a usable extension; on CORS or network refusal it returns "" and the
-    // caller falls back to the stream engine.
-    try {
-        const res = await fetch(url, { headers: { Range: "bytes=0-1" } });
-        return (res.headers.get("content-type") || "").toLowerCase();
-    } catch (err) { return ""; }
-}
-function playExtraPlaylist(items) {
-    failStreak = 0;
-    EXTRA.items = items; // stashed so the Play button can restart it after a stop (there is no repo file to re-read)
-    currentPlaylist = items;
-    currentPlaylistIndex = 0;
-    if (isShuffle) { shuffleHistory = [0]; refillShuffleBag(); }
-    document.getElementById("playPlaylistBtn").classList.add("hidden");
-    updatePlaylistUI();
-    syncTestUI(true);
-    playPlaylistTrack(0);
-}
-function showExtraEmptyPlaylist(bodyEl) {
-    bodyEl.innerHTML = `
-      <div class="preview-unavailable">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
-        </svg>
-        <h3>Empty or invalid playlist</h3>
-        <p>No playable items found in this playlist.</p>
-      </div>
-    `;
-}
-// A playlist picked from the device: only absolute http(s) entries can play, because relative ones have no
-// folder to resolve against.
-function parseExtraM3uText(text) {
-    const items = [];
-    let title = null;
-    for (let line of text.split(/\r?\n/)) {
-        line = line.trim();
-        if (!line) continue;
-        if (line.startsWith("#")) {
-            if (line.startsWith("#EXTINF:") && line.indexOf(",") !== -1) title = line.substring(line.indexOf(",") + 1).trim();
-            continue;
-        }
-        if (!/^https?:\/\//i.test(line)) continue;
-        items.push({ url: line, title: title || safeDecode(line.split("/").pop()), header: "" });
-        title = null;
-    }
-    return items;
-}
-async function openExtraPlaylistUrl(name, url, bodyEl, seq) {
-    isPlaylistFile = true;
-    let items;
-    try {
-        const text = await fetchTextCached(url);
-        if (seq !== openSeq) return;
-        items = /#EXT-X-(STREAM-INF|TARGETDURATION|MEDIA-SEQUENCE|MAP|KEY)/i.test(text)
-            ? [{ url, title: name, header: "" }] // an HLS media or master playlist: hand the whole link to the engine
-            : await parsePlaylist(url, url); // the text was just fetched, so this hits the fetch cache
-    } catch (err) {
-        // The text could not be read (CORS or offline): some such links still play when loaded directly.
-        if (seq !== openSeq) return;
-        items = [{ url, title: name, header: "" }];
-    }
-    if (seq !== openSeq) return;
-    items.length > 0 ? playExtraPlaylist(items) : showExtraEmptyPlaylist(bodyEl);
-}
-// The simple file player for device picks (and for links the server says are video): the same layout as the
-// hosted-file preview, minus the stream-specific bits. Web Audio extras only go on same-origin sources, since
-// an element wired into Web Audio must be CORS-clean or it goes silent.
-function mountExtraPlayer(bodyEl, kind, name, url, sameOrigin) {
-    const o = escapeHtml(url);
-    if (kind === "video") {
-        document.getElementById("modalContent").classList.add("video-modal");
-        bodyEl.innerHTML = `
-          <div class="preview-media-container">
-            <video class="preview-video" autoplay playsinline ${mediaTagAttrs()}>
-              <source src="${o}">
-              Your browser does not support video playback.
-            </video>
-            ${mediaControlsMarkup()}
-          </div>
-        `;
-        const v = bodyEl.querySelector("video");
-        if (v) {
-            v.volume = volToEl(currentVolume);
-            v.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); store.setItem(VOL_KEY, currentVolume); };
-            if (sameOrigin) setupAudioNormalization(v);
-            setupMediaSession(v, name);
-            maybeWireMediaControls(v);
-        }
-    } else {
-        document.getElementById("modalContent").classList.add("compact-modal");
-        bodyEl.innerHTML = `
-          <div class="preview-audio-container">
-            <div class="audio-icon">${pickPlayerNoteIcon()}</div>
-            <div class="playlist-now-playing">${escapeHtml(name)}</div>
-            <audio class="preview-audio" autoplay ${mediaTagAttrs()}>
-              <source src="${o}">
-              Your browser does not support audio playback.
-            </audio>
-            ${mediaControlsMarkup()}
-          </div>
-        `;
-        const a = bodyEl.querySelector("audio");
-        if (a) {
-            a.volume = volToEl(currentVolume);
-            a.onvolumechange = (e) => { currentVolume = elToVol(e.target.volume); store.setItem(VOL_KEY, currentVolume); };
-            if (sameOrigin) setupAudioNormalization(a);
-            attachEqButton(a);
-            setupMediaSession(a, name);
-            maybeWireMediaControls(a);
-        }
-        wirePlayerIconTap(bodyEl);
-        centerAudioIconSvg(bodyEl.querySelector(".audio-icon"));
-    }
-}
-// Prepares the shared file-preview modal for something opened from the extra-source window, then routes it by
-// extension — and, for links without a usable one, by the server's content type — to the right player or viewer.
-async function openExtraSource(opts) {
-    if (!recLeaveOk()) return;
-    endPlaySession();
-    cancelHealthTest();
-    runModalCleanups();
-    metaReset();
-    const seq = ++openSeq;
-    const name = opts.name || "file";
-    // Blob URLs are registered after the cleanup drain above, so they are revoked when the modal closes or moves on.
-    const url = opts.file ? trackBlobUrl(opts.file) : opts.url || "";
-    const kind = previewKindOverride(name) || categoryForName(name);
-    const modalEl = document.getElementById("modal"), bodyEl = document.getElementById("modalBody");
-    const wasOpen = modalEl.classList.contains("active");
-    if (!wasOpen) rememberModalFocus("modal");
-    EXTRA.active = true;
-    currentFilePath = "";
-    currentFileName = name;
-    isPlaylistFile = false;
-    currentPlaylist = [];
-    currentPlaylistIndex = 0;
-    shuffleBag = [];
-    shuffleHistory = [];
-    failStreak = 0;
-    document.getElementById("modalTitle").textContent = name;
-    document.getElementById("downloadBtn").href = url;
-    document.getElementById("downloadBtn").download = name;
-    document.getElementById("rawBtn").href = url;
-    // There is no repo path behind this one, so the favorite and link-copy buttons would only get in the way.
-    document.getElementById("favoriteBtn").classList.add("hidden");
-    document.getElementById("copyLinkBtn").classList.add("hidden");
-    bodyEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-    bodyEl.classList.remove("scrollable");
-    document.getElementById("playlistBar").classList.remove("active");
-    document.getElementById("playPlaylistBtn").classList.add("hidden");
-    document.getElementById("modalContent").classList.remove("video-modal", "compact-modal");
-    hideGallery();
-    modalEl.classList.add("active");
-    syncBackgroundInert();
-    if (!wasOpen) focusWhenReady("closeBtn", "modal");
-    try {
-        switch (kind) {
-            case "playlist":
-                if (opts.file) {
-                    isPlaylistFile = true;
-                    const text = await opts.file.text();
-                    if (seq !== openSeq) return;
-                    const items = parseExtraM3uText(text);
-                    items.length > 0 ? playExtraPlaylist(items) : showExtraEmptyPlaylist(bodyEl);
-                } else await openExtraPlaylistUrl(name, url, bodyEl, seq);
-                break;
-            case "image":
-                bodyEl.innerHTML = `<img class="preview-image" src="${escapeHtml(url)}" alt="${escapeHtml(name)}">`;
-                break;
-            case "video":
-            case "audio":
-                if (opts.file) mountExtraPlayer(bodyEl, kind, name, url, true);
-                else playExtraPlaylist([{ url, title: name, header: "" }]);
-                break;
-            case "document":
-                if (name.toLowerCase().endsWith(".pdf")) bodyEl.innerHTML = `<iframe class="preview-pdf" src="${escapeHtml(url)}"></iframe>`;
-                else showUnavailable(bodyEl, name, url);
-                break;
-            case "font": {
-                const fontFamily = "PreviewFont" + Date.now();
-                const fontFace = new FontFace(fontFamily, `url("${url}")`);
-                await fontFace.load();
-                document.fonts.add(fontFace);
-                bodyEl.innerHTML = `
-              <div style="padding: 1.5rem; text-align: center; font-family: '${fontFamily}', sans-serif;">
-                <p style="font-size: 2rem; margin-bottom: 0.75rem;">The quick brown fox jumps over the lazy dog</p>
-                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
-                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">abcdefghijklmnopqrstuvwxyz</p>
-                <p style="font-size: 1.5rem;">0123456789!@#$%^&*()</p>
-              </div>
-            `;
-                break;
-            }
-            case "md-view":
-                await showMarkdownPreview(bodyEl, "", name, url);
-                bodyEl.classList.add("scrollable");
-                break;
-            case "archive-view":
-                await showArchivePreview(bodyEl, "", name, url);
-                bodyEl.classList.add("scrollable");
-                break;
-            case "code":
-            case "markup":
-            case "style":
-            case "data":
-            case "text":
-                try {
-                    const { text, truncated } = await fetchTextPreview(url);
-                    if (seq !== openSeq) return;
-                    renderTextPreview(bodyEl, text, name, truncated);
-                    bodyEl.classList.add("scrollable");
-                } catch (err) {
-                    if (seq === openSeq) showUnavailable(bodyEl, name, url, err);
-                }
-                break;
-            default: {
-                // No known extension: ask the server what it is and route by that. When even the answer cannot be
-                // read, the stream engine is the best bet for a bare stream link.
-                if (opts.file) { showUnavailable(bodyEl, name, url); break; }
-                const mime = await sniffExtraContentType(url);
-                if (seq !== openSeq) return;
-                if (mime.includes("video/")) mountExtraPlayer(bodyEl, "video", name, url, false);
-                else if (mime.includes("image/")) bodyEl.innerHTML = `<img class="preview-image" src="${escapeHtml(url)}" alt="${escapeHtml(name)}">`;
-                else if (mime.includes("pdf")) bodyEl.innerHTML = `<iframe class="preview-pdf" src="${escapeHtml(url)}"></iframe>`;
-                else if (mime.includes("mpegurl")) await openExtraPlaylistUrl(name, url, bodyEl, seq);
-                else if (/^text\/|application\/(json|xml)/.test(mime)) {
-                    try {
-                        const { text, truncated } = await fetchTextPreview(url);
-                        if (seq !== openSeq) return;
-                        renderTextPreview(bodyEl, text, name, truncated);
-                        bodyEl.classList.add("scrollable");
-                    } catch (err) {
-                        if (seq === openSeq) showUnavailable(bodyEl, name, url, err);
-                    }
-                } else playExtraPlaylist([{ url, title: name, header: "" }]);
-                break;
-            }
-        }
-    } catch (err) {
-        console.error(err);
-        if (seq === openSeq) showUnavailable(bodyEl, name, url);
-    }
-}
-let extraBusy = false;
-async function submitExtraUrl() {
-    if (extraBusy) return;
-    const raw = document.getElementById("extraUrlInput").value.trim();
-    if (!raw) { setExtraStatus("Paste a link first, or choose a local file below.", true); return; }
-    const url = normalizeExtraUrl(raw);
-    if (!/^https?:\/\//i.test(url)) { setExtraStatus("A browser can only open http(s) links \u2014 rtsp/rtmp streams cannot play here.", true); return; }
-    extraBusy = true;
-    document.getElementById("extraLoadBtn").disabled = true;
-    setExtraStatus("Opening\u2026");
-    const name = extraNameFromUrl(url);
-    rememberExtraSource(url);
-    try {
-        await openExtraSource({ name, url });
-        closeExtraModal();
-        announce(`Opened ${name}`);
-    } catch (err) {
-        setExtraStatus((err && err.message) || "Could not open that link.", true);
-    } finally {
-        extraBusy = false;
-        document.getElementById("extraLoadBtn").disabled = false;
-    }
-}
-async function handleExtraFileChange() {
-    const input = document.getElementById("extraFileInput");
-    const file = input.files && input.files[0];
-    input.value = ""; // picking the same file again later must still fire change
-    if (!file) return;
-    try {
-        await openExtraSource({ name: file.name, file });
-        closeExtraModal();
-        announce(`Opened ${file.name}`);
-    } catch (err) {
-        console.error(err);
-    }
-}
-function setupExtraSourceListeners() {
-    const $ = (id) => document.getElementById(id);
-    $("extraSourceBtn").addEventListener("click", openExtraModal);
-    $("extraModalClose").addEventListener("click", closeExtraModal);
-    $("extraModal").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeExtraModal(); });
-    $("extraModal").addEventListener("keydown", (e) => trapModalFocus(e, "extraModalContent"));
-    $("extraLoadBtn").addEventListener("click", submitExtraUrl);
-    $("extraUrlInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitExtraUrl(); } });
-    $("extraRecentSelect").addEventListener("change", () => {
-        const url = $("extraRecentSelect").value;
-        if (url) { $("extraUrlInput").value = url; setExtraStatus(""); $("extraUrlInput").focus(); }
-    });
-    $("extraFileBtn").addEventListener("click", () => { $("extraFileInput").click(); });
-    $("extraFileInput").addEventListener("change", handleExtraFileChange);
-    refreshExtraRecentOptions();
-}
 const Marquee = (() => {
     const SELECTOR = ".np-song, .playlist-now-playing, #modalTitle, .playlist-track, .playlist-health, #eqLive, .ar-path, .gal-item.active .gal-name";
     const SPEED_EM = 2.8;   // scroll speed in letter heights per second (about 45 px on a 16 px title)
@@ -15812,7 +13167,7 @@ const TWIN = (() => {
         let html = `<div class="${grid ? "file-grid" : "file-list list-columns"}">`;
         if (!grid) html += `<div class="file-list-header"><span class="col-star-spacer" aria-hidden="true"></span><span class="col-icon-spacer" aria-hidden="true"></span>${hcol("name", "Name", "col-name")}${hcol("ext", "Ext", "col-ext")}${hcol("size", "Size", "col-size")}${hcol("date", "Date", "col-date")}${hcol("date", "Time", "col-time")}</div>`;
         if (p.path.length) {
-            html += `<div class="file-card directory parent-dir" role="link" tabindex="-1" data-up="1" aria-label="Go to parent folder">${grid ? "" : '<span aria-hidden="true"></span>'}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">..</span><span class="file-meta"></span></div>${grid ? "" : renderColumnCells("", "", "", "")}</div>`;
+            html += `<div class="file-card directory parent-dir" role="button" tabindex="-1" data-up="1" aria-label="Go to parent folder">${grid ? "" : '<span aria-hidden="true"></span>'}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">..</span><span class="file-meta"></span></div>${grid ? "" : renderColumnCells("", "", "", "")}</div>`;
         }
         const extSlot = new Map(), extSeen = new Map();
         [...new Set(all.filter((i) => i.type !== "directory").map((i) => getFileExtension(i.name).toLowerCase()).filter(Boolean))].sort().forEach((x, i) => extSlot.set(x, i % 12));
@@ -15821,7 +13176,7 @@ const TWIN = (() => {
             p.map.set(item.name, item);
             const name = escapeHtml(item.name);
             if (item.type === "directory") {
-                html += `<div class="file-card directory" role="link" tabindex="-1" data-n="${name}" data-t="d" aria-label="Open folder ${name}">${starHtml(c, "folder", [...p.path, item.name])}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : ""}</span></div>${grid ? "" : renderColumnCells("", "DIR", escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
+                html += `<div class="file-card directory" role="button" tabindex="-1" data-n="${name}" data-t="d" aria-label="Open folder ${name}">${starHtml(c, "folder", [...p.path, item.name])}<div class="file-icon folder">${grid ? ibIcon("folder") : icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : ""}</span></div>${grid ? "" : renderColumnCells("", "DIR", escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
                 continue;
             }
             const iconType = getFileIconType(item.name) || item.category || "other";
@@ -15831,7 +13186,7 @@ const TWIN = (() => {
             const full = base + item.name;
             const thumb = grid && item.category === "image"
                 ? `<img class="file-thumbnail lazy" ${p.source === "local" ? `data-tlocal="${escapeHtml(full)}"` : `data-src="${escapeHtml(hostedUrlIn(c, full))}"`} alt="" decoding="async">` : "";
-            html += `<div class="file-card" role="link" tabindex="-1" data-n="${name}" data-t="f" aria-label="Open file ${name}">${starHtml(c, "file", full)}${thumb}<div class="file-icon ${iconType}${xc}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid ? item.sizeFormatted : ""}</span></div>${grid ? "" : renderColumnCells(escapeHtml(getFileExtension(item.name)), item.sizeFormatted, escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
+            html += `<div class="file-card" role="button" tabindex="-1" data-n="${name}" data-t="f" aria-label="Open file ${name}">${starHtml(c, "file", full)}${thumb}<div class="file-icon ${iconType}${xc}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${grid ? item.sizeFormatted : ""}</span></div>${grid ? "" : renderColumnCells(escapeHtml(getFileExtension(item.name)), item.sizeFormatted, escapeHtml(formatItemDate(item)), escapeHtml(formatItemTime(item)))}</div>`;
         }
         html += "</div>";
         if (!all.length) html += emptyHtml("Empty folder.");
@@ -15852,7 +13207,14 @@ const TWIN = (() => {
     const boxOf = (p) => $(twoBoxes() && (T.flip ? 1 - p.id : p.id) === 1 ? "search2" : "search");
     const cardItem = (p, card) => (card.dataset.r !== undefined ? p.results[Number(card.dataset.r)] : p.map.get(card.dataset.n));
     function searchPane(c, q, p) {
-        return rankSearch(c.allFiles, q, p.path.join("/").toLowerCase());
+        const tokens = q.split(/[\s/]+/).filter(Boolean), compact = q.replace(/[^a-z0-9]/g, ""), here = p.path.join("/").toLowerCase();
+        const scored = [];
+        for (const item of c.allFiles) {
+            const sc = scoreSearchItem(q, tokens, compact, item);
+            if (sc !== null) scored.push({ item, score: sc + (item.parentPath === here ? 400 : 0) });
+        }
+        scored.sort((a, b) => b.score - a.score);
+        return scored.map((x) => x.item);
     }
     function renderResults(p, c, q, sc, top) {
         const key = p.source + "\u0000" + q + "\u0000" + p.path.join("/") + "\u0000" + c.allFiles.length;
@@ -15872,7 +13234,7 @@ const TWIN = (() => {
             const thumb = grid && !dir && item.category === "image"
                 ? `<img class="file-thumbnail lazy" ${p.source === "local" ? `data-tlocal="${escapeHtml(item.fullPath)}"` : `data-src="${escapeHtml(hostedUrlIn(c, item.fullPath))}"`} alt="" decoding="async">` : "";
             const meta = dir ? (grid && !c.fileIndex.partial ? (item.children ? item.children.length : 0) + " items" : "") : item.sizeFormatted;
-            html += `<div class="file-card${dir ? " directory" : ""}" role="link" tabindex="-1" data-r="${idx}" aria-label="${dir ? "Open folder " : "Open file "}${name}">${starHtml(c, dir ? "folder" : "file", dir ? item.navPath : item.fullPath)}${thumb}<div class="file-icon ${iconType}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${highlightMatch(item.name, searchTextOf(q))}</span><span class="file-meta">${meta}${where ? `<span class="file-path">${where}</span>` : ""}</span></div></div>`;
+            html += `<div class="file-card${dir ? " directory" : ""}" role="button" tabindex="-1" data-r="${idx}" aria-label="${dir ? "Open folder " : "Open file "}${name}">${starHtml(c, dir ? "folder" : "file", dir ? item.navPath : item.fullPath)}${thumb}<div class="file-icon ${iconType}">${grid ? ibIcon(iconType, item.name) : icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${highlightMatch(item.name, q)}</span><span class="file-meta">${meta}${where ? `<span class="file-path">${where}</span>` : ""}</span></div></div>`;
         });
         html += "</div>";
         if (!all.length) html += emptyHtml(`No results for \u201c${escapeHtml(raw)}\u201d.`);
@@ -15970,7 +13332,7 @@ const TWIN = (() => {
             html += '<div class="tw-fav-head">Pinned folders</div><div class="file-list tw-fav-list">';
             for (const arr of pins) {
                 const name = escapeHtml(arr[arr.length - 1]), where = arr.length > 1 ? arr.slice(0, -1).join("/") : (p.source === "local" ? LOCAL.name || "Local folder" : "Home");
-                html += `<div class="file-card directory" role="link" tabindex="-1" data-fav="d" data-fp="${escapeHtml(JSON.stringify(arr))}" aria-label="Open pinned folder ${name}" title="${escapeHtml(arr.join("/"))}">${starHtml(c, "folder", arr)}<div class="file-icon folder">${icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
+                html += `<div class="file-card directory" role="button" tabindex="-1" data-fav="d" data-fp="${escapeHtml(JSON.stringify(arr))}" aria-label="Open pinned folder ${name}" title="${escapeHtml(arr.join("/"))}">${starHtml(c, "folder", arr)}<div class="file-icon folder">${icons.folder}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
             }
             html += "</div>";
         }
@@ -15980,7 +13342,7 @@ const TWIN = (() => {
                 const item = c.filesByPath.get(path), name = escapeHtml(item ? item.name : path.substring(path.lastIndexOf("/") + 1));
                 const iconType = item ? getFileIconType(item.name) || item.category || "other" : "other";
                 const segs = path.split("/").slice(0, -1), where = segs.length ? segs.join("/") : (p.source === "local" ? LOCAL.name || "Local folder" : "Home");
-                html += `<div class="file-card" role="link" tabindex="-1" data-fav="f" data-fpath="${escapeHtml(path)}" aria-label="Open favorite file ${name}" title="${escapeHtml(path)}">${starHtml(c, "file", path)}<div class="file-icon ${iconType}">${icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
+                html += `<div class="file-card" role="button" tabindex="-1" data-fav="f" data-fpath="${escapeHtml(path)}" aria-label="Open favorite file ${name}" title="${escapeHtml(path)}">${starHtml(c, "file", path)}<div class="file-icon ${iconType}">${icons[iconType] || icons.other}</div><div class="file-info"><span class="file-name">${name}</span><span class="file-meta">${escapeHtml(where)}</span></div></div>`;
             }
             html += "</div>";
         }

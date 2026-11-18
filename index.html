@@ -10391,7 +10391,7 @@ function closeSongsModal() {
     restoreModalFocus("songsModal");
 }
 function saveSongsList() {
-    if (!songsHeard.length) return alert("No songs yet. Titles show up here while a station sends them.");
+    if (!songsHeard.length) return streamNotice("No songs yet. Titles show up here while a station sends them.");
     const txt = songsHeard.map((s) => s.t + "  [" + s.s + ", " + new Date(s.a).toLocaleString() + "]").join("\r\n");
     recSave(new Blob([txt], { type: "text/plain" }), "Songs heard " + new Date().toISOString().slice(0, 10) + ".txt");
 }
@@ -10562,7 +10562,7 @@ async function recSaveAll(b) {
     const items = REC.items.slice().reverse(), total = items.reduce((a, i) => a + i.blob.size, 0);
     if (!items.length || b.disabled) return false;
     if (items.length === 1) { recSave(items[0].blob, items[0].name); return true; }
-    if (total > 3.5 * 1024 ** 3) { alert("That's too much for one zip. Open the list and save the files one by one."); return false; }
+    if (total > 3.5 * 1024 ** 3) { streamNotice("That's too much for one zip. Open the list and save the files one by one."); return false; }
     const t = b.innerHTML;
     b.textContent = "Zipping…";
     b.disabled = true;
@@ -11422,7 +11422,15 @@ function openRecModal() {
     syncBackgroundInert();
     focusWhenReady("recCloseBtn", "recModal");
 }
+let recClearTimer = null;
+function disarmRecClear() {
+    clearTimeout(recClearTimer);
+    recClearTimer = null;
+    const b = recEl("recClearBtn");
+    if (b) { b.textContent = "Clear"; b.classList.remove("armed"); }
+}
 function closeRecModal() {
+    disarmRecClear();
     recEl("recModal").classList.remove("active");
     syncBackgroundInert();
     restoreModalFocus("recModal");
@@ -11488,7 +11496,15 @@ function recInit() {
         if (it) recSave(it.blob, it.name);
     });
     recEl("recClearBtn").addEventListener("click", () => {
-        if (!REC.items.length || !confirm("Delete all recordings from this browser? Anything you have not saved to your device will be gone.")) return;
+        if (!REC.items.length) return;
+        if (!recClearTimer) {
+            const b = recEl("recClearBtn");
+            b.textContent = "Press again to clear";
+            b.classList.add("armed");
+            recClearTimer = setTimeout(disarmRecClear, 3000);
+            return;
+        }
+        disarmRecClear();
         REC.items = [];
         recDbClearItems();
         renderRecList();
@@ -11538,11 +11554,15 @@ function streamNotice(text) {
 }
 // While a recording runs the player never leaves its station on its own: a dead connection is retried, again and again,
 // on the same stream. (The recorder has its own connection, so a player hiccup never touches the recording.)
+let recLeaveArm = 0;
 function recLeaveOk() {
     if (!REC.st) return true;
-    if (!confirm("A recording is running. Changing the station stops it.\n\nEverything recorded so far is kept. Stop recording and continue?")) return false;
-    recStop("Station changed.");
-    return true;
+    // First attempt arms: the toast explains, a repeat within 8 s goes through. No native dialog, so the live
+    // stream keeps running while the user decides. Everything recorded so far is kept either way.
+    if (recLeaveArm && Date.now() - recLeaveArm < 8000) { recLeaveArm = 0; recStop("Station changed."); return true; }
+    recLeaveArm = Date.now();
+    streamNotice("A recording is running. Repeat this action to stop the recording and continue — everything recorded so far is kept.");
+    return false;
 }
 function holdSessionForRecording(session) {
     if (playSession !== session) return;
@@ -14445,14 +14465,26 @@ async function downloadFolderZip() {
     return zipFilesFlow(files, folderName, folderName, "folder");
 }
 // Packs `files` ({path, rel, size, date, order}) into one zip and saves it as `folderName`.zip; `topDir` (or "") is the folder name inside the zip.
+let zipWarnArm = null;
 async function zipFilesFlow(files, folderName, topDir, noun) {
     const total = files.reduce((a, f) => a + (f.size || 0), 0);
     const lim = LOCAL.active ? { warn: 1024 * MB, max: 3.5 * 1024 * MB } : { warn: 100 * MB, max: 1024 * MB };
     if (files.length > ZIP_MAX_FILES || files.some((f) => f.size >= 0xffffffff) || total > lim.max) {
-        alert(`This ${noun} is too big to pack in the browser (${files.length.toLocaleString()} files, ${formatFileSize(total)}). The limit is ${formatFileSize(lim.max)} and ${ZIP_MAX_FILES.toLocaleString()} files. Open a smaller sub-folder instead.`);
+        const tooBig = `This ${noun} is too big to pack in the browser (${files.length.toLocaleString()} files, ${formatFileSize(total)}). The limit is ${formatFileSize(lim.max)} and ${ZIP_MAX_FILES.toLocaleString()} files. Open a smaller sub-folder instead.`;
+        opStart(tooBig);
+        opDone(tooBig, 7000);
         return;
     }
-    if (total > lim.warn && !confirm(`This ${noun} has ${files.length.toLocaleString()} files (${formatFileSize(total)}). ${LOCAL.active ? "Packing it can take a while." : "It will be downloaded and held in memory first."} Continue?`)) return;
+    if (total > lim.warn) {
+        // Over the friendly-size limit: the first attempt explains via the toast, a repeat within 8 s goes through.
+        const sig = noun + ":" + files.length + ":" + total;
+        if (!zipWarnArm || zipWarnArm.sig !== sig || Date.now() - zipWarnArm.at > 8000) {
+            zipWarnArm = { sig, at: Date.now() };
+            streamNotice(`This ${noun} has ${files.length.toLocaleString()} files (${formatFileSize(total)}). Repeat to pack it anyway. ${LOCAL.active ? "Packing it can take a while." : "It will be downloaded and held in memory first."}`);
+            return;
+        }
+        zipWarnArm = null;
+    }
     const ctl = new AbortController(), wCollect = LOCAL.active ? 0.05 : 0.8;
     zipBusy = true;
     opStart(`Collecting ${files.length.toLocaleString()} files\u2026`, () => ctl.abort());

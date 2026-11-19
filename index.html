@@ -1549,6 +1549,7 @@ html[data-theme="concrete"] .modal { background: var(--panel); border: var(--bw)
 html[data-theme="concrete"] .modal-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); }
 html[data-theme="concrete"] .modal-title { font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
 html[data-theme="concrete"] .modal-body { background: var(--ink); }
+html[data-theme="concrete"] #modal .modal:has(#playlistBar.active):not(.video-modal) :is(.meta-bar, .rec-panel)[hidden] { background: var(--ink); } /* the player's reserved empty slots match its black body */
 @media (min-width: 641px) {
 html[data-theme="concrete"] .modal-overlay,
 html[data-theme="concrete"] .modal-overlay .modal,

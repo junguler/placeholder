@@ -794,12 +794,16 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
     #playlistBar .playlist-controls { margin-right: auto; }
 }
 /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
-.rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; min-height: 2.55rem; box-sizing: border-box; background: var(--bg-tertiary); border-top: var(--bw) solid var(--border-color); flex-shrink: 0; }
-/* The recording row sits below the player so opening it never pushes the glyph or player: on desktop the window keeps its top edge fixed (height is added at the bottom),
-   on phones the row overlays the empty space under the controls instead of resizing the stage. */
+.rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; min-height: var(--rec-h, 2.55rem); box-sizing: border-box; background: var(--bg-tertiary); border-top: var(--bw) solid var(--border-color); flex-shrink: 0; }
+/* Player window (station list): centred in the page and in a twin panel, both ways. The details bar and the recording row are always part of its height (hidden but
+   holding their space), so the window is as tall as it can ever get from the start and opening either bar never moves it. On phones the recording row overlays
+   the empty space under the controls instead, and a narrow panel gets the same phone layout, so those need no reserve. --rec-h is learned (see recReserve) in case the row wraps. */
 @media (min-width: 641px) {
-    .modal-overlay:has(.playlist-bar.active) { align-items: flex-start; padding-top: clamp(0.5rem, calc(50vh - 12.5rem), calc(100vh - 32rem)); padding-top: clamp(0.5rem, calc(50dvh - 12.5rem), calc(100dvh - 32rem)); }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; }
 }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; }
 .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
 /* File details bar: two lines at a fixed height on every screen, so opening it or stepping to the next file never moves the window. The facts fill it two to a column
    and the rest scrolls sideways (wheel, swipe, arrow keys; dragging still selects text); a soft shadow on an edge shows there is more that way. */
@@ -1787,7 +1791,6 @@ html[data-vivid] *::after { forced-color-adjust: none !important; }
 #modal.tw-embedded .modal { max-width: 100%; max-height: 100%; transform: none; transition: none; }
 #modal.tw-embedded .modal.compact-modal { max-width: min(560px, 100%); }
 #modal.tw-embedded .modal.video-modal { height: 100%; }
-#modal.tw-embedded:not(.tw-narrow):has(.playlist-bar.active) { align-items: flex-start; padding-top: var(--tw-pt, 0.5rem); }
 #modal.tw-embedded.tw-narrow, #modal.tw-embedded.tw-narrow:has(.playlist-bar.active) { padding: 0; align-items: center; }
 #modal.tw-embedded.tw-narrow .modal, #modal.tw-embedded.tw-narrow .modal.compact-modal, #modal.tw-embedded.tw-narrow .modal.video-modal { width: 100%; max-width: none; height: 100%; max-height: none; border: 0; border-radius: 0; }
 #modal.tw-narrow .preview-audio-container .np-stack { display: block; min-height: 0; }
@@ -5548,6 +5551,19 @@ async function selPlayList(list) {
         extraBusy = false;
     }
 }
+// The recording row reserves its own height (see the player window CSS). Normally one line; when it wraps taller the reserve grows to match,
+// so the next time it opens the window does not move. Only ever grows.
+(function recReserve() {
+    if (typeof ResizeObserver !== "function") return;
+    const el = document.getElementById("recPanel");
+    if (!el) return;
+    let max = 0;
+    new ResizeObserver(() => {
+        if (el.hidden || el.getClientRects().length === 0) return;
+        const h = Math.ceil(el.getBoundingClientRect().height);
+        if (h > max + 1) { max = h; document.documentElement.style.setProperty("--rec-h", h + "px"); }
+    }).observe(el);
+})();
 function selInit() {
     const main = document.getElementById("main");
     const bar = document.createElement("div");
@@ -6839,6 +6855,15 @@ let healthTest = null;
 let testUiAt = 0;
 let songsHeard = [];
 const noCorsHosts = new Set();
+// An HLS stream the page cannot read (its server sends no CORS permission, or it is http on an https page) is handed to the browser's own HLS player when it has one
+// (Safari, iOS): that plays it without asking for permission. No page can read such a stream itself, with any HLS library. Returns true when it restarted the stream.
+function corsRescue(session, el) {
+    if (playSession !== session || session.nativeTried || !(el.canPlayType && el.canPlayType("application/vnd.apple.mpegurl"))) return false;
+    session.nativeTried = true;
+    session.nativeHls = true;
+    setTimeout(() => { if (playSession === session) startAttempt(session, true); }, 0);
+    return true;
+}
 const npBad = new Set(); // "source|origin" pairs that never worked (this page load)
 const npFails = new Map(); // "source|origin" -> failures in a row; a source is only given up on after 3
 
@@ -10036,7 +10061,7 @@ function startAttempt(session, reconnect) {
     if (reconnect && session.mseFailed && session.mseWhy === "fetch") { session.mseFailed = false; session.mseWhy = ""; }
     const url = session.cands[session.candIdx];
     const kind = session.video || isVideoStreamUrl(url) ? "video" : "audio";
-    const cors = !(session.corsFailed || noCorsHosts.has(hostKey(url)));
+    const cors = !(session.nativeHls || session.corsFailed || noCorsHosts.has(hostKey(url)));
     session.cors = cors;
     const el = ensurePlaylistMedia(kind, session, cors, !reconnect);
     session.el = el;
@@ -10609,6 +10634,7 @@ function attachStream(session, el, url) {
         });
         hls.on(Hls.Events.ERROR, (event, data) => {
             if (!data || !data.fatal || playSession !== session) return;
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR && !session.everPlayed && corsRescue(session, el)) return;
             if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !session.mediaRecovered) {
                 session.mediaRecovered = true;
                 try {
@@ -10641,6 +10667,7 @@ function attachStream(session, el, url) {
     };
     // Plain audio streams are pulled by the page itself (fetch -> MediaSource) so the cache keeps filling while paused.
     // Anything the browser refuses (no CORS, unsupported format) plays through the ordinary element as before.
+    if (session.nativeHls && lower.includes(".m3u8")) return startNative();
     if (lower.includes(".m3u8")) noOwnBuffer(session, "hls");
     if (!lower.includes(".m3u8") && canUseOwnBuffer(session, el, url)) {
         destroyMse();
@@ -10668,6 +10695,8 @@ async function playPlaylistTrack(e) {
         corsFailed: false,
         cors: true,
         usesHls: false,
+        nativeTried: false,
+        nativeHls: false, // HLS handed to the browser's own player (no permission needed)
         video: false, // the stream has pictures (HLS with a video level): played in a <video>, not the sound-only player
         everPlayed: false,
         retries: 0,
@@ -14552,10 +14581,9 @@ const TWIN = (() => {
         if (T.ro) { T.ro.disconnect(); T.ro = null; }
         if (m.parentNode !== document.body) document.body.appendChild(m);
         m.classList.remove("tw-embedded", "tw-narrow");
-        m.style.removeProperty("--tw-pt");
         unseatPlayerWindows();
     }
-    // The panel stands in for the browser window: up to 640px wide it gets the phone layout, and the playlist window keeps the page's anchor near the top.
+    // The panel stands in for the browser window: up to 640px wide it gets the phone layout, and the playlist window is centred like the page's.
     function fitEmbedded() {
         const m = $("modal"), slot = m.parentNode;
         if (!m.classList.contains("tw-embedded") || !slot || !slot.classList || !slot.classList.contains("tw-media")) return;
@@ -14563,7 +14591,6 @@ const TWIN = (() => {
         if (!w || !h) return;
         const narrow = w <= 640;
         slot.querySelectorAll(":scope > .modal-overlay").forEach((el) => el.classList.toggle("tw-narrow", narrow));
-        m.style.setProperty("--tw-pt", Math.max(8, Math.min(h - 512, h / 2 - 200)) + "px");
     }
     function closePreview(p, quiet) {
         if (p.mode === "media") { T.quiet = !!quiet; try { closeModal(); } finally { T.quiet = false; } return; }

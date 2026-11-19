@@ -522,8 +522,6 @@ html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="h
 .modal-btn.play-playlist-btn:hover { color: var(--text-primary); }
 .modal-btn.play-playlist-btn svg { width: 22px; height: 22px; }
 .modal-btn.hidden { display: none; }
-#modalContent .modal-actions .modal-btn#closeBtn { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.5rem 0.9rem; }
-#modalContent .modal-actions .modal-btn#closeBtn svg { width: 22px; height: 22px; }
 .playlist-bar { --bar-btn-h: var(--ctl); --bar-btn-w: var(--ctl); display: none; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.5rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); position: relative; }
 .playlist-bar.active { display: flex; }
 .playlist-controls { display: flex; gap: 0.25rem; align-items: center; }
@@ -711,8 +709,6 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
     .modal-btn.play-playlist-btn .btn-label { display: none; }
     .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
     .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
-    #modalContent .modal-actions .modal-btn#closeBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
-    #modalContent .modal-actions .modal-btn#closeBtn svg { width: 24px; height: 24px; }
     .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
     .playlist-btn span:not(.btn-txt):not(.blabel):not(.lbl-long):not(.lbl-short) { display: none; }
     .preview-image { max-height: 80vh; max-height: 80dvh; }
@@ -799,11 +795,11 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
    holding their space), so the window is as tall as it can ever get from the start and opening either bar never moves it. On phones the recording row overlays
    the empty space under the controls instead, and a narrow panel gets the same phone layout, so those need no reserve. --rec-h is learned (see recReserve) in case the row wraps. */
 @media (min-width: 641px) {
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; }
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; background: var(--bg-primary); border-top-color: transparent; }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; background: var(--bg-primary); border-top-color: transparent; }
 }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; background: var(--bg-primary); border-top-color: transparent; }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; background: var(--bg-primary); border-top-color: transparent; }
 .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
 /* File details bar: two lines at a fixed height on every screen, so opening it or stepping to the next file never moves the window. The facts fill it two to a column
    and the rest scrolls sideways (wheel, swipe, arrow keys; dragging still selects text); a soft shadow on an edge shows there is more that way. */
@@ -1145,7 +1141,7 @@ html[data-theme="concrete"] .tw-selbar { background: var(--yellow); color: var(-
 .player-controls-row .playlist-btn:not(.player-play-btn), .playlist-bar .playlist-controls .playlist-btn, #modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) { width: var(--ctl); height: var(--ctl); min-width: 0; min-height: 0; padding: 0; flex-shrink: 0; }
 .playlist-bar .playlist-btn .btn-txt { padding-right: 0.2rem; }
 /* Header action buttons (star, info, link, download, open) are a little larger than the playlist-bar ones; Play and Close shrank by 25%, so the header ends up no taller than before. */
-#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn):not(#closeBtn) { width: max(var(--ctl), 2rem); height: max(var(--ctl), 2rem); }
+#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) { width: max(var(--ctl), 2rem); height: max(var(--ctl), 2rem); }
 #modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) svg { width: 17px; height: 17px; }
 @media (pointer: coarse) { #modalContent .modal-actions .modal-btn#closeBtn::after, .modal-btn.play-playlist-btn::after, .playlist-btn.player-play-btn::after { content: ""; position: absolute; inset: -6px; } #modalContent .modal-actions .modal-btn#closeBtn, .modal-btn.play-playlist-btn, .playlist-btn.player-play-btn { position: relative; } }
 
@@ -1848,9 +1844,8 @@ body.compact-density .tw-pane .file-grid .file-icon { width: 26px; height: 26px;
 /* While a player fills a panel, the sort / zip / list / grid controls of that panel have nothing to act on. */
 .tw-pane[data-mode="media"] .tw-tools { display: none; }
 
-.tw-vhead .modal-btn.vb-close { width: auto; height: auto; min-width: 0; min-height: 0; padding: 0.5rem 0.9rem; }
-.tw-vhead .modal-btn.vb-close svg { width: 22px; height: 22px; }
-@media (max-width: 640px) { .tw-vhead .modal-btn.vb-close { padding: 0.5rem; min-width: 44px; min-height: 44px; } .tw-vhead .modal-btn.vb-close svg { width: 24px; height: 24px; } }
+.tw-vhead .modal-btn.vb-close { width: max(var(--ctl), 2rem); height: max(var(--ctl), 2rem); }
+.tw-vhead .modal-btn.vb-close svg { width: 17px; height: 17px; }
 .modal-btn.vb-fav.favorited, .vb-info[aria-pressed="true"] { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
 .tw-view .meta-bar { flex-shrink: 0; }
 html[data-theme="concrete"] .vb-close { --c: var(--red); }

@@ -795,12 +795,12 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
    holding their space), so the window is as tall as it can ever get from the start and opening either bar never moves it. On phones the recording row overlays
    the empty space under the controls instead, and a narrow panel gets the same phone layout, so those need no reserve. --rec-h is learned (see recReserve) in case the row wraps. */
 @media (min-width: 641px) {
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
 }
 #modal .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] > *, #modal .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] > * { visibility: hidden; }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
 .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
 /* File details bar: two lines at a fixed height on every screen, so opening it or stepping to the next file never moves the window. The facts fill it two to a column
    and the rest scrolls sideways (wheel, swipe, arrow keys; dragging still selects text); a soft shadow on an edge shows there is more that way. */
@@ -1549,7 +1549,18 @@ html[data-theme="concrete"] .modal { background: var(--panel); border: var(--bw)
 html[data-theme="concrete"] .modal-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); }
 html[data-theme="concrete"] .modal-title { font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
 html[data-theme="concrete"] .modal-body { background: var(--ink); }
-html[data-theme="concrete"] #modal .modal:has(#playlistBar.active):not(.video-modal) :is(.meta-bar, .rec-panel)[hidden] { background: var(--ink); } /* the player's reserved empty slots match its black body */
+/* The hidden bars still reserve their layout space while a playlist is open. Match the
+   specificity of the standard and twin-panel spacer rules so Concrete keeps these slots
+   black instead of letting the page's tinted background show through. */
+html[data-theme="concrete"] #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) :is(.meta-bar, .rec-panel)[hidden],
+html[data-theme="concrete"] #modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) :is(.meta-bar, .rec-panel)[hidden] {
+    background: var(--ink) !important;
+}
+#modal .modal:has(#playlistBar.active):not(.video-modal) .meta-bar.meta-empty { background: var(--bg-primary) !important; border-top-color: transparent; }
+html[data-theme="concrete"] #modal .modal:has(#playlistBar.active):not(.video-modal) .meta-bar.meta-empty { background: var(--ink) !important; }
+/* Whatever is not covered by a bar inside the station player window (the reserved empty slots) shows the window's own colour, so make that the colour of the player body */
+#modal .modal:has(#playlistBar.active):not(.video-modal) { background: var(--bg-primary); }
+html[data-theme="concrete"] #modal .modal:has(#playlistBar.active):not(.video-modal) { background: var(--ink); } /* the player's reserved empty slots match its black body */
 @media (min-width: 641px) {
 html[data-theme="concrete"] .modal-overlay,
 html[data-theme="concrete"] .modal-overlay .modal,
@@ -11085,6 +11096,7 @@ function metaPaint() {
         }, { passive: false });
     }
     const keys = (META.extra.length ? META_ORDER[META.kind].concat(META.extra) : META_ORDER[META.kind]).filter((k) => META.vals[k]);
+    bar.classList.toggle("meta-empty", keys.length === 0);
     const emb = true; // the bar is always one line; a line wider than the bar scrolls
     const sig = (emb ? "tw:" : "") + keys.join("|"), tip = (k) => META.tips[k] || META.vals[k];
     if (emb && typeof ResizeObserver === "function" && !bar._ro) { bar._ro = new ResizeObserver(() => Marquee.fitBar(bar)); bar._ro.observe(bar); }
@@ -11127,7 +11139,7 @@ function metaReset() {
     META.ctl = null; META.kind = ""; META.vals = {}; META.tips = {}; META.size = 0; META.dur = 0; META.audio = null; META.started = false; META.seq++;
     META.session = null; META.base = {}; META.labels = {}; META.extra = [];
     const bar = document.getElementById("metaBar");
-    bar._sig = ""; bar.innerHTML = "";
+    bar._sig = ""; bar.innerHTML = ""; bar.classList.remove("meta-empty");
     metaSync();
 }
 // Called once a picture, video or song is on screen: what is already known is shown at once, the rest arrives as it is read.

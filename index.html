@@ -795,11 +795,12 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
    holding their space), so the window is as tall as it can ever get from the start and opening either bar never moves it. On phones the recording row overlays
    the empty space under the controls instead, and a narrow panel gets the same phone layout, so those need no reserve. --rec-h is learned (see recReserve) in case the row wraps. */
 @media (min-width: 641px) {
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; background: var(--bg-primary); border-top-color: transparent; }
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; background: var(--bg-primary); border-top-color: transparent; }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
+    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
 }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; visibility: hidden; --ml: 1; background: var(--bg-primary); border-top-color: transparent; }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; visibility: hidden; background: var(--bg-primary); border-top-color: transparent; }
+#modal .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] > *, #modal .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] > * { visibility: hidden; }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
+#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary); border-top-color: transparent; pointer-events: none; }
 .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
 /* File details bar: two lines at a fixed height on every screen, so opening it or stepping to the next file never moves the window. The facts fill it two to a column
    and the rest scrolls sideways (wheel, swipe, arrow keys; dragging still selects text); a soft shadow on an edge shows there is more that way. */
@@ -2208,7 +2209,7 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
                 <aside class="gallery-rail" id="galleryRail" aria-label="Files in this folder" hidden></aside>
                 <div class="modal-body" id="modalBody"></div>
             </div>
-            <div class="meta-bar" id="metaBar" tabindex="0" role="region" aria-label="File details" hidden></div>
+            <div class="meta-bar" id="metaBar" tabindex="-1" role="region" aria-label="File details" hidden></div>
             <div class="rec-panel" id="recPanel" hidden></div>
         </div>
     </div>
@@ -11113,6 +11114,8 @@ function metaSync() {
     btn.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.hidden = !on;
+    bar.tabIndex = on ? 0 : -1; // the empty slot that holds its space (player window) is not a tab stop
+    if (on) bar.removeAttribute("aria-hidden"); else bar.setAttribute("aria-hidden", "true");
     const modalEl = document.getElementById("modalContent");
     modalEl.classList.toggle("meta-on", on);
     modalEl.classList.toggle("meta-stream", on && META.kind === "stream");

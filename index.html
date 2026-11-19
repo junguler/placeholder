@@ -23,7 +23,7 @@
     --border-color: #3a3a3a;
     --text-primary: #f0f0f0;
     --text-secondary: #adadad;
-    --text-muted: #8f8f8f;
+    --text-muted: #9e9e9e;
     --accent: #9b5de5;
     --accent-hover: #b280ea;
     /* --accent is for rings, borders and bars; text in the accent uses --accent-text (lighter on dark), and filled buttons with --on-accent use --accent-solid (darker), so both clear WCAG AA. */
@@ -74,7 +74,7 @@ html[data-theme="light"] {
     --border-color: #d6d6d6;
     --text-primary: #1a1a1a;
     --text-secondary: #4d4d4d;
-    --text-muted: #666666;
+    --text-muted: #5c5c5c;
     --accent: #5b21b6;
     --accent-hover: #4c1a99;
     --accent-text: var(--accent);
@@ -154,7 +154,7 @@ html[data-theme="hc-light"] {
         --border-color: #d6d6d6;
         --text-primary: #1a1a1a;
         --text-secondary: #4d4d4d;
-        --text-muted: #666666;
+        --text-muted: #5c5c5c;
         --accent: #5b21b6;
         --accent-hover: #4c1a99;
         --accent-text: var(--accent);
@@ -497,7 +497,7 @@ html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="h
 .empty-state svg:not(.empty-state-illustration) { width: 40px; height: 40px; margin-bottom: 0.5rem; opacity: 0.5; }
 .empty-state h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text-primary); }
 .empty-state p { font-size: 0.85rem; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; padding: 0.5rem; overscroll-behavior: contain; touch-action: pan-y; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; padding: 0.5rem; overscroll-behavior: contain; touch-action: pan-y; }
 .modal-overlay.active { opacity: 1; visibility: visible; }
 .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); max-width: 95vw; max-height: 95vh; max-height: 95dvh; width: 100%; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.2s; overflow: hidden; border: var(--bw) solid var(--border-color); }
 .modal.video-modal { height: 95vh; height: 95dvh; }
@@ -1879,6 +1879,55 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
 @media (hover: hover) and (pointer: fine) {
     html[data-theme="concrete"] :is(.modal-btn, .playlist-btn, .settings-menu-close, .settings-control button, .theme-reset-btn, .md-toggle, .load-more-btn, .download-btn, .tree-hdr-btn, .op-toast button) { position: relative; }
     html[data-theme="concrete"] :is(.settings-btn, .view-btn, .goto-step-btn, .card-star-btn, .modal-btn, .playlist-btn, .settings-menu-close, .settings-control button, .theme-reset-btn, .md-toggle, .load-more-btn, .download-btn, .tree-hdr-btn, .op-toast button)::after { content: ""; position: absolute; inset: -3px; }
+}
+
+/* ---- visual pass fixes ---- */
+/* Keyboard focus ring on breadcrumb buttons was clipped by the scrolling breadcrumb box: give it room */
+.breadcrumb { padding-block: 5px; margin-block: -5px; }
+
+/* Active view button: clear in light themes (white on light grey was too close) */
+html[data-theme="light"] .view-btn.active { box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--accent-text, var(--accent)); }
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .view-btn.active { box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--accent-text, var(--accent)); }
+}
+/* Active view button in the high-contrast themes (background and surface were identical, so nothing showed) */
+html[data-theme="hc-dark"] .view-btn.active, html[data-theme="hc-light"] .view-btn.active { background: var(--accent); color: var(--on-accent, #fff); }
+html[data-theme="hc-light"] .view-btn.active { color: #fff; }
+@media (max-width: 480px) {
+    /* tree view is hidden here, so the list button stands in for it (same as the base rule) */
+    html[data-theme="hc-dark"] .view-toggle:has(.view-btn[data-view="tree"].active) .view-btn[data-view="list"],
+    html[data-theme="hc-light"] .view-toggle:has(.view-btn[data-view="tree"].active) .view-btn[data-view="list"] { background: var(--accent); color: var(--on-accent, #fff); }
+    html[data-theme="hc-light"] .view-toggle:has(.view-btn[data-view="tree"].active) .view-btn[data-view="list"] { color: #fff; }
+}
+
+/* Selects: same flat look as the rest, with a themed chevron instead of the OS one (concrete keeps its own look) */
+html:not([data-theme="concrete"]) .sort-select, html:not([data-theme="concrete"]) .eq-preset {
+    -webkit-appearance: none; appearance: none; padding-right: 1.5rem; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%), linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+    background-position: calc(100% - 11px) 55%, calc(100% - 6px) 55%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+
+/* Parent-folder row: quiet the icon */
+.file-card.parent-dir .file-icon { opacity: 0.7; }
+
+/* Stats modal: category icons take the same colors as the file list */
+.stats-row-icon.file-icon { background: none; width: 18px; height: 18px; padding: 0; }
+
+/* The "preview not available" modal does not need the full width */
+@media (min-width: 641px) {
+    #modal .modal:has(.preview-unavailable) { max-width: min(760px, 95vw); }
+}
+
+/* Phones: search starts as an icon button next to the tools (one row instead of two) and opens full width when used */
+@media (max-width: 640px) {
+    .header-content { row-gap: 0.375rem; }
+    .header-actions { row-gap: 0.375rem; }
+    #searchBox0:not(:focus-within):has(.search-input:placeholder-shown) { flex: 0 0 2rem; }
+    #searchBox0:not(:focus-within) .search-input:placeholder-shown { padding: 0; height: 30px; box-sizing: border-box; color: transparent; cursor: pointer; text-indent: -999px; }
+    #searchBox0:not(:focus-within) .search-input:placeholder-shown::placeholder { color: transparent; }
+    #searchBox0:not(:focus-within) .search-input:placeholder-shown ~ .search-icon, #searchBox0:not(:focus-within) .search-icon { left: 50%; transform: translate(-50%, -50%); }
+    #searchBox0 .search-icon { pointer-events: none; }
+    #searchBox0:focus-within { flex: 1 1 100%; }
 }
 </style>
 </head>
@@ -11664,7 +11713,7 @@ function renderLibraryStats() {
         const label = isPlaylistRow ? "M3U / M3U8" : escapeHtml(cat);
         return `
           <div class="stats-row">
-            <span class="stats-row-icon">${icons[cat] || icons.other}</span>
+            <span class="stats-row-icon file-icon ${escapeHtml(cat)}">${icons[cat] || icons.other}</span>
             <span class="stats-row-label"${isPlaylistRow ? ' style="text-transform:none"' : ""}>${label}</span>
             <span class="stats-row-bar-track"><span class="stats-row-bar-fill" style="width: ${pct}%"></span></span>
             <span class="stats-row-count">${count.toLocaleString()}</span>

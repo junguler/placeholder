@@ -791,16 +791,9 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
 }
 /* Recording panel: same bar language as the playlist bar above it. Left = what is happening, right = what you can press. */
 .rec-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.75rem; padding: 0.45rem 0.75rem; min-height: var(--rec-h, 2.55rem); box-sizing: border-box; background: var(--bg-tertiary); border-top: var(--bw) solid var(--border-color); flex-shrink: 0; }
-/* Player window (station list): centred in the page and in a twin panel, both ways. The details bar and the recording row are always part of its height (hidden but
-   holding their space), so the window is as tall as it can ever get from the start and opening either bar never moves it. On phones the recording row overlays
-   the empty space under the controls instead, and a narrow panel gets the same phone layout, so those need no reserve. --rec-h is learned (see recReserve) in case the row wraps. */
-@media (min-width: 641px) {
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
-    #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
-}
-#modal .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] > *, #modal .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] > * { visibility: hidden; }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .meta-bar[hidden] { display: flex; --ml: 1; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
-#modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) .rec-panel[hidden] { display: flex; background: var(--bg-primary) !important; border-top-color: transparent; pointer-events: none; }
+/* Player window (station list): the details bar and the recording row take space only while they are open. The window stays centred in the page (and in a twin panel),
+   so opening or closing a bar grows or shrinks it evenly around the middle and the player section moves just enough to stay centred. On phones the recording row
+   overlays the empty space under the controls instead (see the max-width: 640px rules). */
 .rec-panel.rec-on { box-shadow: inset 3px 0 0 var(--danger); }
 /* File details bar: two lines at a fixed height on every screen, so opening it or stepping to the next file never moves the window. The facts fill it two to a column
    and the rest scrolls sideways (wheel, swipe, arrow keys; dragging still selects text); a soft shadow on an edge shows there is more that way. */
@@ -1549,18 +1542,11 @@ html[data-theme="concrete"] .modal { background: var(--panel); border: var(--bw)
 html[data-theme="concrete"] .modal-header { background: var(--ink); border-bottom: var(--bw) solid var(--line); }
 html[data-theme="concrete"] .modal-title { font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
 html[data-theme="concrete"] .modal-body { background: var(--ink); }
-/* The hidden bars still reserve their layout space while a playlist is open. Match the
-   specificity of the standard and twin-panel spacer rules so Concrete keeps these slots
-   black instead of letting the page's tinted background show through. */
-html[data-theme="concrete"] #modal:not(.tw-embedded) .modal:has(#playlistBar.active):not(.video-modal) :is(.meta-bar, .rec-panel)[hidden],
-html[data-theme="concrete"] #modal.tw-embedded:not(.tw-narrow) .modal:has(#playlistBar.active):not(.video-modal) :is(.meta-bar, .rec-panel)[hidden] {
-    background: var(--ink) !important;
-}
 #modal .modal:has(#playlistBar.active):not(.video-modal) .meta-bar.meta-empty { background: var(--bg-primary) !important; border-top-color: transparent; }
 html[data-theme="concrete"] #modal .modal:has(#playlistBar.active):not(.video-modal) .meta-bar.meta-empty { background: var(--ink) !important; }
-/* Whatever is not covered by a bar inside the station player window (the reserved empty slots) shows the window's own colour, so make that the colour of the player body */
+/* Whatever is not covered by a bar inside the station player window (if anything) shows the window's own colour, so make that the colour of the player body */
 #modal .modal:has(#playlistBar.active):not(.video-modal) { background: var(--bg-primary); }
-html[data-theme="concrete"] #modal .modal:has(#playlistBar.active):not(.video-modal) { background: var(--ink); } /* the player's reserved empty slots match its black body */
+html[data-theme="concrete"] #modal .modal:has(#playlistBar.active):not(.video-modal) { background: var(--ink); } /* the player body is black */
 @media (min-width: 641px) {
 html[data-theme="concrete"] .modal-overlay,
 html[data-theme="concrete"] .modal-overlay .modal,
@@ -5559,19 +5545,6 @@ async function selPlayList(list) {
         extraBusy = false;
     }
 }
-// The recording row reserves its own height (see the player window CSS). Normally one line; when it wraps taller the reserve grows to match,
-// so the next time it opens the window does not move. Only ever grows.
-(function recReserve() {
-    if (typeof ResizeObserver !== "function") return;
-    const el = document.getElementById("recPanel");
-    if (!el) return;
-    let max = 0;
-    new ResizeObserver(() => {
-        if (el.hidden || el.getClientRects().length === 0) return;
-        const h = Math.ceil(el.getBoundingClientRect().height);
-        if (h > max + 1) { max = h; document.documentElement.style.setProperty("--rec-h", h + "px"); }
-    }).observe(el);
-})();
 function selInit() {
     const main = document.getElementById("main");
     const bar = document.createElement("div");
@@ -11127,7 +11100,7 @@ function metaSync() {
     btn.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.setAttribute("aria-label", (what === "station" ? "Station" : "File") + " details");
     bar.hidden = !on;
-    bar.tabIndex = on ? 0 : -1; // the empty slot that holds its space (player window) is not a tab stop
+    bar.tabIndex = on ? 0 : -1;
     if (on) bar.removeAttribute("aria-hidden"); else bar.setAttribute("aria-hidden", "true");
     const modalEl = document.getElementById("modalContent");
     modalEl.classList.toggle("meta-on", on);

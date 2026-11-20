@@ -32,6 +32,7 @@
     --accent-hover: #b280ea;
     /* --accent is for rings, borders and bars; text in the accent uses --accent-text (lighter on dark), and filled buttons with --on-accent use --accent-solid (darker), so both clear WCAG AA. */
     --accent-text: #bb8cef;
+    --accent-on-control: var(--accent-text);
     --accent-solid: #8648d6;
     --accent-solid-hover: #7a3fc9;
     --on-accent: #ffffff;
@@ -326,7 +327,7 @@ body {
 /* Label text uses the theme's own text color on every button in every state; only the icon above carries a per-theme color. */
 .theme-btn .theme-btn-label { color: var(--text-secondary) !important; }
 /* Icons stay neutral; the active theme's icon takes the accent. Only the Custom button shows its own swatch color. */
-.theme-btn.active svg { color: var(--accent-text, var(--accent)); }
+.theme-btn.active svg { color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 .theme-btn[data-theme="custom"] svg { color: var(--custom-theme-swatch, #8b5cf6); }
 /* While a custom color is active the light/dark/HC buttons all look the same (the custom color overrides them), so they dim to show only the hidden base changes.
    The Custom button stays full strength since it drives what's on screen. */
@@ -439,11 +440,11 @@ body.compact-density .file-list .file-card { contain-intrinsic-size: auto 34px; 
 .file-card:hover .card-star-btn { opacity: 0.85; }
 }
 .card-star-btn svg { width: 13px; height: 13px; }
-.card-star-btn:focus-visible { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+.card-star-btn:focus-visible { opacity: 1; color: var(--accent-on-control, var(--accent-text, var(--accent))); border-color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 @media (hover: hover) {
-.card-star-btn:hover { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+.card-star-btn:hover { opacity: 1; color: var(--accent-on-control, var(--accent-text, var(--accent))); border-color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 }
-.card-star-btn.starred { opacity: 1; color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+.card-star-btn.starred { opacity: 1; color: var(--accent-on-control, var(--accent-text, var(--accent))); border-color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 .card-star-spacer { width: 24px; flex-shrink: 0; }
 @media (hover: hover) {
 .file-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); background: color-mix(in srgb, var(--card-bg, var(--bg-secondary)) 70%, var(--bg-hover) 30%); }
@@ -583,7 +584,7 @@ html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="h
 .modal-btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
 }
 .modal-btn svg { width: 16px; height: 16px; }
-.modal-btn.play-playlist-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; font-weight: 600; gap: 0.4rem; color: var(--accent-text, var(--accent)); }
+.modal-btn.play-playlist-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; font-weight: 600; gap: 0.4rem; color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 @media (hover: hover) {
 .modal-btn.play-playlist-btn:hover { color: var(--text-primary); }
 }
@@ -681,7 +682,7 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
 .eq-lim.on { opacity: 1; background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); color: var(--on-accent); }
 .eq-view { display: flex; flex-direction: column; gap: 0.35rem; }
 .eq-view[hidden] { display: none; }
-.eq-chip.fx-on { border-color: var(--accent); color: var(--accent-text, var(--accent)); }
+.eq-chip.fx-on { border-color: var(--accent); color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 .eq-ico { width: 0.8rem; height: 0.8rem; vertical-align: -0.12em; margin-right: 0.25rem; }
 .fx-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; padding-top: 0.4rem; border-top: var(--bw) solid var(--border-color); }
 .fx-ctl { flex: 0 0 8.5rem; display: flex; align-items: center; }
@@ -821,7 +822,7 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
 }
 .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
 .modal-btn.copied { color: var(--success); border-color: var(--success); }
-.modal-btn.favorite-btn.favorited { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+.modal-btn.favorite-btn.favorited { color: var(--accent-on-control, var(--accent-text, var(--accent))); border-color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 .shortcuts-modal { max-width: 440px; }
 .shortcuts-body { padding: 0.75rem 1rem 1rem; }
 .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -887,13 +888,13 @@ body[data-btn-style="labels"] .playlist-bar #playlistTest .btn-txt, body[data-bt
         var(--bg-tertiary); }
 .meta-bar::-webkit-scrollbar { display: none; }
 .meta-bar:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.meta-bar[hidden], #infoBtn[hidden] { display: none; }
+.meta-bar[hidden], #infoBtn[hidden], .vb-info[hidden], .vb-play[hidden], .local-msg[hidden] { display: none; }
 /* The number of text lines the bar shows is set on the modal (not the bar), so the recording panel can sit exactly above it on phones. */
 .modal.meta-on, .tw-view { --ml: 1; }
 .meta-bar .mi { white-space: nowrap; user-select: text; }
 .meta-bar .ml { color: var(--text-muted); }
 .meta-bar .mv { color: var(--text-primary); user-select: text; }
-#infoBtn[aria-pressed="true"] { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+#infoBtn[aria-pressed="true"] { color: var(--accent-on-control, var(--accent-text, var(--accent))); border-color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 .modal.meta-on:not(.has-gallery) .preview-image { max-height: calc(90vh - 5.2rem); max-height: calc(90dvh - 5.2rem); }
 .rec-panel[hidden], .settings-row[hidden] { display: none; }
 .rec-panel .playlist-btn { height: var(--ctl); box-sizing: border-box; padding: 0 0.65rem; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; }
@@ -1210,6 +1211,9 @@ html[data-theme="concrete"] .sel-btn:hover:not(:disabled) { background: var(--or
 .tw-selbar .sel-count { font-size: var(--data-size); padding: 0 0.25rem 0 0; }
 .tw-selbar .sel-btn { font-size: 0.75rem; min-height: 1.75rem; padding: 0.2rem 0.5rem; }
 .tw-pane[data-mode="view"] .tw-selbar, .tw-pane[data-mode="media"] .tw-selbar { display: none; }
+/* A panel with a preview or a player open gives its whole height to it: the Repo / breadcrumb bar is hidden until the preview is closed. */
+.tw-pane[data-mode="view"] > .tw-head, .tw-pane[data-mode="media"] > .tw-head { display: none; }
+.tw-pane.active[data-mode="view"], .tw-pane.active[data-mode="media"] { box-shadow: inset 0 2px 0 var(--accent); }
 html[data-theme="concrete"] .tw-selbar { background: var(--yellow); color: var(--ink); border-top: var(--bw) solid var(--ink); }
 @media (max-width: 640px) { .sel-bar { left: 0.75rem; right: 0.75rem; transform: none; max-width: none; width: auto; } .sel-count { flex: 1 1 100%; text-align: center; } }
 /* --- Print: the file list, or just the open preview when one is open; no app chrome, black on white --- */
@@ -1999,7 +2003,7 @@ body.compact-density .tw-pane .file-grid .file-icon { width: 26px; height: 26px;
 
 .tw-vhead .modal-btn.vb-close { width: max(var(--ctl), 2rem); height: max(var(--ctl), 2rem); }
 .tw-vhead .modal-btn.vb-close svg { width: 17px; height: 17px; }
-.modal-btn.vb-fav.favorited, .vb-info[aria-pressed="true"] { color: var(--accent-text, var(--accent)); border-color: var(--accent-text, var(--accent)); }
+.modal-btn.vb-fav.favorited, .vb-info[aria-pressed="true"] { color: var(--accent-on-control, var(--accent-text, var(--accent))); border-color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 .tw-view .meta-bar { flex-shrink: 0; }
 html[data-theme="concrete"] .vb-close { --c: var(--red); }
 html[data-theme="concrete"] .vb-dl, html[data-theme="concrete"] .modal-btn.copied { --c: var(--green); }
@@ -2046,9 +2050,9 @@ body.tw-boxes-in-heads .header-actions { flex: 0 0 auto; margin-left: auto; }
 .breadcrumb { padding-block: 5px; margin-block: -5px; }
 
 /* Active view button: clear in light themes (white on light grey was too close) */
-html[data-theme="light"] .view-btn.active { box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--accent-text, var(--accent)); }
+html[data-theme="light"] .view-btn.active { box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 @media (prefers-color-scheme: light) {
-    :root:not([data-theme]) .view-btn.active { box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--accent-text, var(--accent)); }
+    :root:not([data-theme]) .view-btn.active { box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 }
 /* Active view button in the high-contrast themes (background and surface were identical, so nothing showed) */
 html[data-theme="hc-dark"] .view-btn.active, html[data-theme="hc-light"] .view-btn.active { background: var(--accent); color: var(--on-accent, #fff); }
@@ -2527,6 +2531,7 @@ html:not([data-theme="concrete"]) .sort-select, html:not([data-theme="concrete"]
             <div class="modal-body stats-body">
                 <p class="local-msg" id="localMsg"></p>
                 <p class="local-msg">Files are read in this browser only. Nothing is uploaded and nothing is remembered after you close the folder or reload.</p>
+                <p class="local-msg" id="localUploadNote" hidden>Your browser will now ask &ldquo;Upload N files to this site?&rdquo;. That wording is the browser&rsquo;s own and cannot be changed by a page; the files only get read here, they are not sent anywhere.</p>
                 <button type="button" class="theme-reset-btn local-pick" id="localPickBtn">Choose folder&hellip;</button>
             </div>
         </div>
@@ -2540,7 +2545,7 @@ html:not([data-theme="concrete"]) .sort-select, html:not([data-theme="concrete"]
             <div class="modal-body stats-body">
                 <div class="pv-actions pv-presets" id="pvPresets" hidden></div>
                 <label class="pv-label" for="previewJsonInput">Index JSON link</label>
-                <input class="pv-input" id="previewJsonInput" type="text" inputmode="url" placeholder="https://raw.githubusercontent.com/user/repo/branch/file_index.json" autocomplete="off" autocapitalize="off" spellcheck="false" />
+                <input class="pv-input" id="previewJsonInput" type="text" inputmode="url" placeholder="user/repo   (or a full link to its file_index.json)" autocomplete="off" autocapitalize="off" spellcheck="false" />
                 <label class="pv-label" for="previewFilesInput">Load files from <span>(optional)</span></label>
                 <input class="pv-input" id="previewFilesInput" type="text" placeholder="user/repo@branch  (default: the repo named inside the JSON)" autocomplete="off" autocapitalize="off" spellcheck="false" />
                 <p class="pv-status" id="previewStatus" role="status"></p>
@@ -3434,6 +3439,46 @@ function visibleVariant(hex, bgHex, targetRatio, maxShift) {
     }
     return best;
 }
+// The button color for the Vivid look: at least 3:1 against the page, and one where black or white ink (also on the hover color) reaches 4.5:1.
+// A plain "3:1 against the page" lands on mid-tones where neither ink reads well, so the lightness is searched until both hold.
+function pickControlSurface(page) {
+    const { h, s, l } = hexToHsl(page);
+    const start = clampNum(l + (l < 55 ? 22 : -22), 6, 94);
+    const inkOk = (c) => {
+        const hov = visibleVariant(c, c, 1.3, 25), sur = [c, hov];
+        return Math.max(minContrast("#ffffff", sur), minContrast("#000000", sur)) >= 4.5;
+    };
+    for (let d = 0; d <= 100; d++) {
+        for (const dir of d ? [1, -1] : [1]) {
+            const nl = start + dir * d;
+            if (nl < 0 || nl > 100) continue;
+            const c = hslToHex(h, s, nl);
+            if (contrastRatio(c, page) >= 3 && inkOk(c)) return c;
+        }
+    }
+    return fitToSurfaces(hslToHex(h, s, start), [[page, 3]]);
+}
+function minContrast(hex, surfaces) {
+    return Math.min(...surfaces.map((x) => contrastRatio(hex, x)));
+}
+// Moves hex's lightness (hue and saturation kept) the shortest way until it reads on EVERY surface in the list, each with its own minimum:
+// surfaces is [[color, minRatio], ...]. When no lightness of that hue can do it, black or white is used, whichever reads better on the weakest surface.
+// This is what keeps a control, icon or label readable on both the page and the buttons that sit on it, whatever color is picked.
+function fitToSurfaces(hex, surfaces) {
+    const ok = (c) => surfaces.every(([bg, min]) => contrastRatio(c, bg) >= min);
+    if (ok(hex)) return hex;
+    const { h, s, l } = hexToHsl(hex);
+    for (let d = 1; d <= 100; d++) {
+        for (const dir of [1, -1]) {
+            const nl = l + dir * d;
+            if (nl < 0 || nl > 100) continue;
+            const c = hslToHex(h, s, nl);
+            if (ok(c)) return c;
+        }
+    }
+    const worst = (c) => Math.min(...surfaces.map(([bg, min]) => contrastRatio(c, bg) / min));
+    return worst("#ffffff") >= worst("#000000") ? "#ffffff" : "#000000";
+}
 // Blends the picked color toward a calm, desaturated target as intensity drops (hue never moves). intensityPct: 100/80/60/40/20; 100 = unchanged.
 function muteColorAtIntensity(hex, intensityPct) {
     const { h, s, l } = hexToHsl(hex);
@@ -3536,7 +3581,12 @@ function applyTintColor() {
         out["--accent-solid-hover"] = hslToHex(h, sat, solidL("--accent-solid-hover"));
         out["--on-accent"] = contrastRatio("#ffffff", out["--accent-solid"]) >= contrastRatio("#000000", out["--accent-solid"]) ? "#ffffff" : "#000000";
         const fillSurface = out["--control-surface"] || bg;
-        out["--stat-fill"] = visibleVariant(hslToHex(h, Math.min(85, activeS * 1.2), dark ? 62 : 40), fillSurface, 3, 80);
+        const hoverSurface = out["--control-surface-hover"] || fillSurface;
+        // Same rule as Vivid: whatever sits on buttons must read on the button and on its hover color, not only on the page.
+        if (out["--on-control"]) out["--on-control"] = fitToSurfaces(out["--on-control"], [[fillSurface, hc ? 7 : 4.5], [hoverSurface, hc ? 7 : 4.5]]);
+        out["--accent-text"] = fitToSurfaces(out["--accent-text"], [[bg, hc ? 7 : 4.5]]);
+        out["--accent-on-control"] = fitToSurfaces(out["--accent-text"], [[fillSurface, hc ? 7 : 4.5], [hoverSurface, hc ? 7 : 4.5]]);
+        out["--stat-fill"] = fitToSurfaces(hslToHex(h, Math.min(85, activeS * 1.2), dark ? 62 : 40), [[fillSurface, 3], [bg, 3]]);
         for (const [k, v] of Object.entries(out)) root.setProperty(k, v);
         const rgb = hexToRgb(out["--accent"]);
         root.setProperty("--accent-glow", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`);
@@ -3558,7 +3608,7 @@ function applyVividColor() {
     newVals["--accent"] = activeColor;
     // Borders/hover need a lightness nudge or they'd be invisible
     // against an identical fill color.
-    newVals["--border-color"] = visibleVariant(activeColor, activeColor, 2.2, 50);
+    newVals["--border-color"] = visibleVariant(activeColor, activeColor, 3, 60);
     newVals["--accent-hover"] = visibleVariant(activeColor, activeColor, 1.6, 30);
     newVals["--accent-solid"] = activeColor;
     newVals["--accent-solid-hover"] = newVals["--accent-hover"];
@@ -3567,21 +3617,36 @@ function applyVividColor() {
     // button matching the flat panel color would otherwise vanish.
     const { h: ctrlH, s: ctrlS, l: ctrlL } = hexToHsl(activeColor);
     const shiftedL = clampNum(ctrlL + (ctrlL < 55 ? 22 : -22), 6, 94);
-    const controlSurface = visibleVariant(hslToHex(ctrlH, ctrlS, shiftedL), activeColor, 2.5, 70);
+    const controlSurface = pickControlSurface(activeColor);
     newVals["--control-surface"] = controlSurface;
     newVals["--control-surface-hover"] = visibleVariant(controlSurface, controlSurface, 1.3, 25);
-    newVals["--on-control"] = contrastRatio("#ffffff", controlSurface) >= contrastRatio("#000000", controlSurface) ? "#ffffff" : "#000000";
+    const onSurfaces = [controlSurface, newVals["--control-surface-hover"]];
+    newVals["--on-control"] = minContrast("#ffffff", onSurfaces) >= minContrast("#000000", onSurfaces) ? "#ffffff" : "#000000";
     // The skeleton shimmer normally runs between --bg-tertiary and --bg-hover, both flattened here, so it uses the control-surface pair to stay visible.
     newVals["--skeleton-base"] = controlSurface;
     newVals["--skeleton-shine"] = newVals["--control-surface-hover"];
     // Vivid, contrast-safe fill for proportional bars (e.g. Library Stats), where a subtle lightness variant of the flat color wouldn't read.
     const vividFill = hslToHex(ctrlH, 85, 55);
-    newVals["--stat-fill"] = visibleVariant(vividFill, controlSurface, 3, 80);
+    newVals["--stat-fill"] = fitToSurfaces(vividFill, [[controlSurface, 3], [activeColor, 3]]);
     // Accent-as-text variant (e.g. breadcrumb links), since the flat
     // --accent equals the panel background it would sit on.
-    newVals["--accent-text"] = visibleVariant(activeColor, activeColor, 4.5, 100);
+    // It is also the text of the Play button and the pressed star/details buttons, which sit on the control surface, so it must read on that too.
+    newVals["--accent-text"] = fitToSurfaces(activeColor, [[activeColor, 4.5]]);
+    newVals["--accent-on-control"] = fitToSurfaces(activeColor, [[controlSurface, 4.5], [newVals["--control-surface-hover"], 4.5]]);
     for (const key of Object.keys(base)) {
         if (!(key in newVals)) newVals[key] = base[key];
+    }
+    // Status colors (recording dot, warnings, success) keep their meaning but are moved until they show on the page and on the buttons.
+    const stockCs = getComputedStyle(document.documentElement);
+    for (const k of ["--success", "--warning", "--danger"]) {
+        const v = parseCssColor(stockCs.getPropertyValue(k)) || base[k];
+        if (v) newVals[k] = fitToSurfaces(v, [[activeColor, 3], [controlSurface, 3]]);
+    }
+    const dSolid = parseCssColor(stockCs.getPropertyValue("--danger-solid"));
+    if (dSolid) {
+        const ds = fitToSurfaces(dSolid, [[activeColor, 3]]);
+        newVals["--danger-solid"] = ds;
+        newVals["--on-danger"] = contrastRatio("#ffffff", ds) >= contrastRatio("#000000", ds) ? "#ffffff" : "#000000";
     }
     for (const [textKey, minRatio] of [["--text-primary", 4.5], ["--text-secondary", 4.5], ["--text-muted", 4.5]]) {
         if (!base[textKey]) continue;
@@ -3617,7 +3682,7 @@ function clearCustomVars() {
         "--text-primary", "--text-secondary", "--text-muted",
         "--accent", "--accent-hover", "--accent-text", "--accent-solid", "--accent-solid-hover", "--border-strong", "--on-accent", "--accent-glow",
         "--control-surface", "--control-surface-hover", "--on-control", "--stat-fill",
-        "--skeleton-base", "--skeleton-shine",
+        "--skeleton-base", "--skeleton-shine", "--success", "--warning", "--danger", "--danger-solid", "--on-danger", "--accent-on-control",
         "--cc-page", "--cc-panel", "--cc-line", "--cc-muted", "--cc-text", "--cc-accent",
         "--orange", "--pink", "--violet", "--green", "--blue", "--red",
     ];
@@ -10983,7 +11048,7 @@ async function playPlaylistTrack(e) {
     currentPlaylistIndex = e;
     updatePlaylistUI();
     syncPlaylistListCurrent(false);
-    document.getElementById("modalTitle").textContent = item.title;
+    document.getElementById("modalTitle").textContent = isPlaylistFile && currentFileName ? `${currentFileName} \u2013 ${item.title}` : item.title;
     announce(`Loading: ${item.title}`);
     // Show a buffering hint right away instead of a silent wait while the
     // stream URL resolves.
@@ -11374,8 +11439,8 @@ function metaPaint() {
 // Button and bar follow the one saved choice (open or closed), for every picture, video and song until it is changed.
 function metaSync() {
     const btn = document.getElementById("infoBtn"), bar = document.getElementById("metaBar"), on = !!META.kind && META.open;
-    btn.hidden = false;
-    btn.disabled = !META.kind;
+    btn.hidden = !META.kind;
+    btn.disabled = false;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     const what = META.kind === "stream" ? "station" : "file";
     btn.title = (on ? "Hide " : "Show ") + what + " details";
@@ -13318,6 +13383,7 @@ function handleDirInput(e) {
     enterLocalMode(res.name, res.root, res.files);
 }
 function openLocalModal(message) {
+    document.getElementById("localUploadNote").hidden = !!window.showDirectoryPicker;
     document.getElementById("localMsg").textContent = message || "Choose a folder on this device to browse it here, offline.";
     rememberModalFocus("localModal");
     document.getElementById("localModal").classList.add("active");
@@ -13401,8 +13467,29 @@ function checkPreviewFull(data) {
     return data;
 }
 // The lean index (top level only) is requested first so the repo shows at once; the full one downloads alongside and replaces it (see previewFinishFull).
+// "user/repo" is enough: the repo's file_index.json is read from its GitHub Pages site (https://user.github.io/repo/file_index.json), else from its main or master branch.
+// "user/repo@branch" reads that branch of the repo directly. Anything longer (a raw link, a github.com page) is used exactly as written.
+function previewShortSpec(input) {
+    const m = /^\s*([A-Za-z0-9][A-Za-z0-9-]*)\/([\w.-]+?)(?:@(\S+))?\s*$/.exec(String(input || ""));
+    if (!m || /\.json$/i.test(m[2])) return null;
+    const user = m[1], name = m[2], rawOf = (b) => `https://raw.githubusercontent.com/${user}/${name}/${encodePathForUrl(b)}/file_index.json`;
+    if (m[3]) return { urls: [rawOf(m[3])] };
+    const site = name.toLowerCase() === (user + ".github.io").toLowerCase() ? `https://${user}.github.io/` : `https://${user}.github.io/${name}/`;
+    return { urls: [site + "file_index.json", rawOf("main"), rawOf("master")] };
+}
 async function loadPreviewIndex(jsonIn, filesIn) {
-    let url = previewJsonUrl(jsonIn);
+    const sh = previewShortSpec(jsonIn);
+    if (sh) {
+        let firstErr = null;
+        for (const u of sh.urls) {
+            try { return await loadPreviewIndexAt(u, filesIn); }
+            catch (err) { if (!firstErr) firstErr = err; }
+        }
+        throw firstErr || new Error("Could not load that repo's file_index.json.");
+    }
+    return loadPreviewIndexAt(previewJsonUrl(jsonIn), filesIn);
+}
+async function loadPreviewIndexAt(url, filesIn) {
     if (!url) throw new Error("Paste the link of a file_index.json on GitHub: its raw link, or the file's page on github.com.");
     url = url.replace(/_lean(\.json)(?=$|[?#])/i, "$1");
     const leanUrl = /file_index\.json(?=$|[?#])/i.test(url) ? url.replace(/file_index\.json(?=$|[?#])/i, "file_index_lean.json") : "";
@@ -13506,19 +13593,19 @@ function openPreviewModal() {
     const $ = (id) => document.getElementById(id);
     if (!$("previewJsonInput").value) $("previewJsonInput").value = store.getItem("previewJsonUrl") || "";
     if (!$("previewFilesInput").value) $("previewFilesInput").value = store.getItem("previewFilesFrom") || "";
-    // One shortcut, taken from the hosted index itself (its source repo and branch): the repo's own file_index.json. Nothing is built in for any one repo.
-    const hosted = PREVIEW.active && PREVIEW.saved ? PREVIEW.saved.fileIndex : fileIndex;
-    const src = hosted && hosted.source, presets = $("pvPresets");
+    // Developer shortcuts (an intentional easter egg for quick testing; visitors never open this dialog). Do NOT remove them in a cleanup or audit.
+    // Each fills the box with the short user/repo form, which loadPreviewIndex expands.
+    const presets = $("pvPresets");
     presets.textContent = "";
-    if (src && src.repo && src.branch) {
+    for (const [label, spec] of [["placeholder", "junguler/placeholder"], ["m3u-repo", "junguler/m3u-radio-music-playlists"]]) {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "theme-reset-btn local-pick";
-        b.dataset.pvPreset = `https://raw.githubusercontent.com/${src.repo}/${encodePathForUrl(src.branch)}/file_index.json`;
-        b.textContent = `${src.repo} (${src.branch})`;
+        b.dataset.pvPreset = spec;
+        b.textContent = label;
         presets.append(b);
     }
-    presets.hidden = !presets.childElementCount;
+    presets.hidden = false;
     $("previewLoadBtn").textContent = PREVIEW.active ? "Load another" : "Load";
     $("previewStopBtn").hidden = !PREVIEW.active;
     previewSetStatus(PREVIEW.active ? `Previewing ${PREVIEW.url}\nFiles are read from ${PREVIEW.base}` : "");
@@ -14626,6 +14713,23 @@ const TWIN = (() => {
         renderPane(p.id);
         if (!openPathIn(p, card.dataset.fpath || "")) announce("That file could not be found any more");
     }
+    // Only the star buttons of the other panel are flipped; its cards (and their thumbnails) are left alone.
+    function syncStarIn(q, folder, val, on) {
+        const pn = paneEl(q.id);
+        if (!pn) return;
+        const want = folder ? JSON.stringify(val) : val;
+        pn.querySelectorAll(".card-star-btn").forEach((b) => {
+            if ((b.dataset.starType === "folder") !== folder) return;
+            const have = folder ? JSON.stringify(safeJsonParse(b.dataset.starPath, null)) : b.dataset.starPath;
+            if (have !== want) return;
+            const label = folder ? (on ? "Unpin this folder" : "Pin this folder") : (on ? "Remove from favorites (F)" : "Add to favorites (F)");
+            b.classList.toggle("starred", on);
+            b.setAttribute("aria-pressed", String(on));
+            b.title = label;
+            b.setAttribute("aria-label", label);
+            b.innerHTML = on ? icons.starFilled : icons.starOutline;
+        });
+    }
     // The star on a card or favorites row: pins a folder or favorites a file of this panel's source, and refreshes everything that shows it.
     function starClick(p, btn) {
         if (T.media !== null && T.panes[T.media].source !== p.source) { announce("Close the player first, then use favorites"); return; }
@@ -14647,7 +14751,7 @@ const TWIN = (() => {
         T.panes.forEach((q) => {
             if (q.source !== p.source) return;
             if (q.tab === "fav") renderFavs(q, paneEl(q.id).querySelector(".tw-scroll").scrollTop);
-            else if (q.id !== p.id) renderList(q, true);
+            else if (q.id !== p.id) syncStarIn(q, folder, val, on);
             if (q.mode === "view") syncFav(q);
         });
         if (inFavs) { const sc = paneEl(p.id).querySelector(".tw-scroll"); if (sc) sc.focus(); }
@@ -14870,6 +14974,8 @@ const TWIN = (() => {
     }
 
     const MEDIA_KINDS = new Set(["audio", "video", "playlist"]);
+    // Only these start the shared player. A playlist file opens as a plain text preview (with a Play button) like any other file.
+    const PLAY_KINDS = new Set(["audio", "video"]);
     const kindOf = (item) => previewKindOverride(item.name) || (isPlaylistExtension(item.name) ? "playlist" : item.category);
     const fullOf = (p, name) => (p.path.length ? p.path.join("/") + "/" : "") + name;
     const findCard = (p, name) => { const pn = paneEl(p.id); return pn ? Array.from(pn.querySelectorAll(".file-card")).find((el) => el.dataset.n === name) : null; };
@@ -14901,9 +15007,9 @@ const TWIN = (() => {
         if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "nearest" }); } else focusCursor(p);
     }
     function openFileItem(p, item) {
-        if (MEDIA_KINDS.has(kindOf(item))) openMedia(p, item); else openInline(p, item);
+        if (PLAY_KINDS.has(kindOf(item))) openMedia(p, item); else openInline(p, item);
     }
-    function openMedia(p, item) {
+    function openMedia(p, item, autoPlay) {
         const modalEl = $("modal");
         if (T.media !== null && T.media !== p.id) {
             closePreview(T.panes[T.media], true);
@@ -14926,7 +15032,11 @@ const TWIN = (() => {
             T.opening = false;
             if (!modalEl.classList.contains("active") && T.media === p.id) { T.media = null; setMode(p, "list"); }
         };
-        Promise.resolve(openFile(fullOf(p, item.name), item.category, item.name)).then(done, done);
+        const after = () => {
+            done();
+            if (autoPlay && modalEl.classList.contains("active") && T.media === p.id && isPlaylistFile) startPlaylistMode();
+        };
+        Promise.resolve(openFile(fullOf(p, item.name), item.category, item.name)).then(after, done);
     }
     // Previous / next file only exist for a local folder's files; hosted repo files never get them. Media (audio, video, playlists) is always skipped, since it opens in the player.
     const canStep = (p) => p.source === "local";
@@ -14954,6 +15064,11 @@ const TWIN = (() => {
         if (it) openInline(p, it);
         return true;
     }
+    // Play on a playlist preview: this panel takes the player (stopping the other panel's one, if it has any) and starts the list.
+    function playFromInline(p) {
+        const vi = p.viewItem, item = vi && p.map.get(vi.name);
+        if (item) openMedia(p, item, true);
+    }
     function stepInline(p, dir) {
         const it = findStep(p, dir);
         if (it) openInline(p, it);
@@ -14975,6 +15090,7 @@ const TWIN = (() => {
         p.gal = null;
         body.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
         updateStepButtons(p);
+        view.querySelector(".vb-play").hidden = kindOf(item) !== "playlist";
         p.metaRows = metaRowsFor(p, item, full);
         paintMeta(p);
         syncFav(p);
@@ -15049,7 +15165,7 @@ const TWIN = (() => {
                     if (item.name.toLowerCase().endsWith(".pdf")) body.innerHTML = `<iframe class="preview-pdf" title="PDF preview: ${escapeHtml(item.name)}" src="${escapeHtml(url)}"></iframe>`;
                     else showUnavailable(body, item.name, url);
                     break;
-                case "code": case "markup": case "style": case "data": case "text": {
+                case "code": case "markup": case "style": case "data": case "text": case "playlist": {
                     const { text, truncated } = await fetchTextPreview(url);
                     if (stale()) return;
                     renderTextPreview(body, text, item.name, truncated);
@@ -15094,6 +15210,7 @@ const TWIN = (() => {
     function paintMeta(p) {
         const view = paneEl(p.id).querySelector(".tw-view"), bar = view.querySelector(".tw-meta"), btn = view.querySelector(".vb-info");
         const on = META.open && !!p.metaRows;
+        btn.hidden = !p.metaRows;
         btn.setAttribute("aria-pressed", String(!!META.open));
         btn.title = (META.open ? "Hide" : "Show") + " file details";
         bar.hidden = !on;
@@ -15195,7 +15312,7 @@ const TWIN = (() => {
         if (sbtn) { twsAct(p, sbtn.dataset.sel); return; }
         if (t.closest(".tw-selbar")) return;
         const va = t.closest("[data-vact]");
-        if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); else if (k === "info") toggleMeta(); else if (k === "fav") toggleFav(p); else if (k === "copy") copyLink(p, va); return; }
+        if (va) { const k = va.dataset.vact; if (k === "close") closeInline(p); else if (k === "prev") stepInline(p, -1); else if (k === "next") stepInline(p, 1); else if (k === "info") toggleMeta(); else if (k === "play") playFromInline(p); else if (k === "fav") toggleFav(p); else if (k === "copy") copyLink(p, va); return; }
         const gi = t.closest(".tw-rail .gal-item[data-rn]");
         if (gi) { const it = p.map.get(gi.dataset.rn); if (it && !(p.viewItem && p.viewItem.name === it.name)) openInline(p, it); return; }
         if (t.closest(".tw-view, .tw-media")) return;
@@ -15415,7 +15532,7 @@ const TWIN = (() => {
         routeOpen(path, type, name) {
             if (!T.on || T.opening || EXTRA.has(path)) return false;
             const kind = previewKindOverride(name) || (isPlaylistExtension(name) ? "playlist" : type);
-            if (MEDIA_KINDS.has(kind) && T.media !== null) return false;
+            if (PLAY_KINDS.has(kind) && T.media !== null) return false;
             const source = LOCAL.active ? "local" : "hosted";
             let p = T.panes[T.active];
             if (p.source !== source) p = T.panes.find((q) => q.source === source) || p;
@@ -15487,6 +15604,7 @@ const TWIN = (() => {
                 <div class="tw-status" aria-hidden="true"></div>
                 <div class="tw-view" tabindex="-1" aria-label="Preview in panel ${i + 1}">
                     <div class="modal-header tw-vhead"><div class="modal-title tw-vtitle"></div><div class="modal-actions">
+                        <button type="button" class="modal-btn play-playlist-btn vb-play" data-vact="play" title="Play as playlist" aria-label="Play as playlist" hidden>${$("playPlaylistBtn").innerHTML}</button>
                         <button type="button" class="modal-btn" data-vact="prev" title="Previous file (\u2190)" aria-label="Previous file">${ICON.prev}</button>
                         <button type="button" class="modal-btn" data-vact="next" title="Next file (\u2192)" aria-label="Next file">${ICON.next}</button>
                         <button type="button" class="modal-btn favorite-btn vb-fav" data-vact="fav" aria-pressed="false" title="Add to favorites" aria-label="Add file to favorites">${icons.starOutline}</button>

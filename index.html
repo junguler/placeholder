@@ -501,7 +501,7 @@ html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="h
 .file-list .file-icon { width: 24px; height: 24px; }
 .file-list .file-icon svg { width: 14px; height: 14px; }
 .file-list .file-info { flex: 1; min-width: 0; }
-.file-list .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-list .file-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-list .file-meta { font-size: var(--data-size); }
 .file-list .file-size { color: var(--text-muted); font-size: var(--data-size); flex-shrink: 0; }
 .file-list .file-thumbnail { display: none; }
@@ -2326,7 +2326,7 @@ html[data-theme="pivot"] {
 }
 html[data-theme="pivot"] .header { border-bottom:2px solid var(--accent); }
 html[data-theme="pivot"] .file-list { gap:0; }
-html[data-theme="pivot"] .file-list .file-card { border-color:var(--border-color) !important; padding-block:0.3rem; }
+html[data-theme="pivot"] .file-list .file-card { border-color:var(--border-color) !important; padding-block:5px; }
 html[data-theme="pivot"] .file-list .file-card + .file-card { border-top-width:0 !important; }
 html[data-theme="pivot"] .file-list .file-card:hover { outline:1px solid var(--accent); outline-offset:-1px; }
 html[data-theme="pivot"] .file-list-header { background:var(--bg-tertiary); border:var(--bw) solid var(--border-color); margin-bottom:0; }
@@ -2371,7 +2371,19 @@ html[data-theme="neonchalk"] input[type="text"],
 html[data-theme="neonchalk"] input[type="search"],
 html[data-theme="neonchalk"] input[type="number"] { border-color:var(--text-primary); }
 html[data-theme="neonchalk"] .file-card:hover .file-name, html[data-theme="neonchalk"] .file-card.selected .file-name { background:linear-gradient(transparent 52%,var(--accent-solid) 52%); width:fit-content; max-width:100%; }
-html[data-theme="neonchalk"] .view-btn.active, html[data-theme="neonchalk"] .md-toggle[aria-pressed="true"], html[data-theme="neonchalk"] .ts-ctl [aria-pressed="true"] { background:linear-gradient(transparent 55%,var(--accent-solid) 55%); }
+html[data-theme="neonchalk"] .view-btn.active, html[data-theme="neonchalk"] .md-toggle[aria-pressed="true"], html[data-theme="neonchalk"] .ts-ctl [aria-pressed="true"] { background:linear-gradient(transparent 55%,var(--accent-solid) 55%); color:var(--text-primary); }
+
+/* Button and field outlines in Phosphor and Pivot use the stronger border token so controls stay visible against the page (also under a picked color) */
+html[data-theme="phosphor"] .settings-btn, html[data-theme="phosphor"] .modal-btn, html[data-theme="phosphor"] .playlist-btn, html[data-theme="phosphor"] .goto-step-btn,
+html[data-theme="phosphor"] .settings-menu-close, html[data-theme="phosphor"] .settings-control button, html[data-theme="phosphor"] .theme-reset-btn, html[data-theme="phosphor"] .md-toggle,
+html[data-theme="phosphor"] .load-more-btn, html[data-theme="phosphor"] .download-btn, html[data-theme="phosphor"] .tree-hdr-btn, html[data-theme="phosphor"] .op-toast button,
+html[data-theme="phosphor"] .search-input,
+html[data-theme="pivot"] .settings-btn, html[data-theme="pivot"] .modal-btn, html[data-theme="pivot"] .playlist-btn, html[data-theme="pivot"] .goto-step-btn,
+html[data-theme="pivot"] .settings-menu-close, html[data-theme="pivot"] .settings-control button, html[data-theme="pivot"] .theme-reset-btn, html[data-theme="pivot"] .md-toggle,
+html[data-theme="pivot"] .load-more-btn, html[data-theme="pivot"] .download-btn, html[data-theme="pivot"] .tree-hdr-btn, html[data-theme="pivot"] .op-toast button,
+html[data-theme="pivot"] .search-input { border-color:var(--border-strong); }
+/* Dither is strictly black and white: the Vivid button's icon follows the text color until a color is actually picked */
+html[data-theme="dither"] .theme-toggle:not(.custom-color-active) .theme-btn-custom svg { color:currentColor; }
 
 /* The five structural themes under Windows high contrast ("forced colors" in Brave/Edge/Chrome): like Concrete and Vivid, they keep their own contrast-checked palette
    instead of having every surface replaced by the Windows palette (which flattened bevels, stripes, highlighter swashes and the grid into plain boxes).
@@ -2620,7 +2632,7 @@ html[data-theme="neonchalk"] *::after { forced-color-adjust: none !important; }
                                             <button class="theme-btn" data-theme="dialup" title="Dial-Up theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path fill-rule="evenodd" d="M3 4h18v16H3V4zm2 4v10h14V8H5z"/></svg><span class="theme-btn-label">Dial-Up</span></button>
                                             <button class="theme-btn" data-theme="dither" title="Dither theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 3h6v6H3V3zm12 0h6v6h-6V3zM9 9h6v6H9V9zM3 15h6v6H3v-6zm12 0h6v6h-6v-6z"/></svg><span class="theme-btn-label">Dither</span></button>
                                             <button class="theme-btn" data-theme="pivot" title="Pivot theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path fill-rule="evenodd" d="M3 3h18v18H3V3zm2 2v4h4V5H5zm6 0v4h8V5h-8zM5 11v3h4v-3H5zm6 0v3h8v-3h-8zM5 16v3h4v-3H5zm6 0v3h8v-3h-8z"/></svg><span class="theme-btn-label">Pivot</span></button>
-                                            <button class="theme-btn" data-theme="neonchalk" title="Neon Chalk theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg><span class="theme-btn-label">Neon Chalk</span></button>
+                                            <button class="theme-btn" data-theme="neonchalk" title="Neon Chalk theme"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg><span class="theme-btn-label">Chalk</span></button>
                                             <button class="theme-btn theme-btn-custom" data-theme="custom" title="Vivid theme — the flat, saturated single-color look built from your picked color (color panel + intensity bar). Other themes get a + version of your color."><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2 0-.52-.2-.99-.53-1.34-.32-.34-.52-.8-.52-1.32.0-1.1.9-2 2-2H17c2.76.0 5-2.24 5-5C22 6.13 17.5 2 12 2zm-5.5 9c-.83.0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83.0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83.0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5S18.33 11 17.5 11z"/></svg><span class="theme-btn-label">Vivid</span></button>
                                         </div>
                                     </div>
@@ -3419,7 +3431,72 @@ function applyPlayerIconDuo(svg) {
     });
 }
 
+// Keeps the two glyph tones readable and apart. The theme's own --glyph-1 / --glyph-2 are used as they are when they already differ enough
+// (at least GLYPH_MIN_PAIR between the tones and GLYPH_MIN_SURF for the second tone against the tile); otherwise a mid tone in the same hue is
+// found, and if the tile is too close to the main tone that one is pushed to pure white or black first. Set per tile, so no theme CSS changes.
+const GLYPH_MIN_PAIR = 2.3, GLYPH_MIN_SURF = 3;
+let glyphPxCtx = null;
+function glyphPx(c) {
+    if (!glyphPxCtx) glyphPxCtx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+    glyphPxCtx.clearRect(0, 0, 1, 1);
+    glyphPxCtx.fillStyle = "#000"; glyphPxCtx.fillStyle = c; glyphPxCtx.fillRect(0, 0, 1, 1);
+    const d = glyphPxCtx.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2]];
+}
+function glyphLum(c) { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); }
+function glyphRatio(a, b) { const x = glyphLum(a), y = glyphLum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+function glyphToHsl(c) {
+    const r = c[0] / 255, g = c[1] / 255, b = c[2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    if (!d) return [0, 0, l];
+    const s = d / (1 - Math.abs(2 * l - 1));
+    const h = mx === r ? ((g - b) / d + (g < b ? 6 : 0)) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, s, l];
+}
+function glyphFromHsl(h, s, l) {
+    const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+}
+function glyphHex(c) { return "#" + c.map((v) => v.toString(16).padStart(2, "0")).join(""); }
+function fitGlyphDuo(root) {
+    const tiles = root && root.nodeType === 1 && root.classList.contains("audio-icon") ? [root] : [...(root || document).querySelectorAll(".audio-icon")];
+    for (const el of tiles) {
+        if (!el.isConnected) continue;
+        el.style.removeProperty("--glyph-1"); el.style.removeProperty("--glyph-2");
+        const cs = getComputedStyle(el);
+        const probe = document.createElement("i");
+        probe.style.cssText = "display:none;color:var(--glyph-2)";
+        el.appendChild(probe);
+        const c2css = getComputedStyle(probe).color;
+        probe.remove();
+        let g1 = glyphPx(cs.color); const g2 = glyphPx(c2css), surf = glyphPx(cs.backgroundColor);
+        if (glyphRatio(g1, g2) >= GLYPH_MIN_PAIR && glyphRatio(g2, surf) >= GLYPH_MIN_SURF) continue;
+        const hsl = glyphToHsl(g2), hue = hsl[0], sat = hsl[1] < 0.12 ? hsl[1] : Math.min(0.9, Math.max(0.5, hsl[1]));
+        const pick = (main, strict) => {
+            const target = Math.max(GLYPH_MIN_SURF, Math.min(6, Math.sqrt(glyphRatio(main, surf))));
+            let best = null, bestScore = Infinity;
+            for (let l = 2; l <= 98; l++) {
+                const c = glyphFromHsl(hue, sat, l / 100), rs = glyphRatio(c, surf), rp = glyphRatio(c, main);
+                if (strict && (rs < GLYPH_MIN_SURF || rp < GLYPH_MIN_PAIR)) continue;
+                const score = strict ? Math.abs(Math.log(rs / target)) : -Math.min(rs / GLYPH_MIN_SURF, rp / GLYPH_MIN_PAIR);
+                if (score < bestScore) { bestScore = score; best = c; }
+            }
+            return best;
+        };
+        let next = pick(g1, true);
+        if (!next) {
+            const white = [255, 255, 255], black = [0, 0, 0], ext = glyphRatio(white, surf) >= glyphRatio(black, surf) ? white : black;
+            next = pick(ext, true) || pick(ext, false);
+            g1 = ext;
+            el.style.setProperty("--glyph-1", glyphHex(ext));
+        }
+        el.style.setProperty("--glyph-2", glyphHex(next));
+    }
+}
+let glyphRefreshTimer = 0;
+new MutationObserver(() => { clearTimeout(glyphRefreshTimer); glyphRefreshTimer = setTimeout(() => fitGlyphDuo(document), 120); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-vivid", "class", "style"] });
 function centerAudioIconSvg(containerEl) {
+    fitGlyphDuo(containerEl);
     const svg = containerEl && containerEl.querySelector("svg");
     if (!svg) return;
     let bbox;

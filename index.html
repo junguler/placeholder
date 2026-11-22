@@ -520,12 +520,12 @@ html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="h
 }
 .file-list-header .col.active { color: var(--text-primary); }
 .file-list-header .col.active .sort-arrow { color: var(--accent-text, var(--accent)); }
-.file-list-header .col:not(.active) .sort-arrow { opacity: 0.4; text-align: center; }
-@media (hover: hover) { .file-list-header .col:not(.active):hover .sort-arrow { opacity: 0.85; } }
-.file-list-header .sort-arrow { font-size: 0.75rem; width: 0.7em; display: inline-block; }
+.file-list-header .col:not(.active) .sort-arrow { opacity: 0.6; text-align: center; }
+@media (hover: hover) { .file-list-header .col:not(.active):hover .sort-arrow { opacity: 1; } }
+.file-list-header .sort-arrow { font-family: system-ui, "Segoe UI Symbol", "Apple Symbols", sans-serif; font-weight: 400; -webkit-text-stroke: 0; font-size: 1rem; line-height: 1; width: 0.8em; display: inline-block; text-align: center; }
 .file-list-header .col-ext, .file-list-header .col-size, .file-list-header .col-date, .file-list-header .col-time { justify-content: flex-end; position: relative; }
-/* Right-aligned columns: the sort arrow hangs off the label's left side instead of reserving room on the right, so each label ends where its values end. */
-.file-list-header .col-ext .sort-arrow, .file-list-header .col-size .sort-arrow, .file-list-header .col-date .sort-arrow, .file-list-header .col-time .sort-arrow { position: absolute; right: 100%; margin-right: 0.2rem; width: auto; }
+/* Right-aligned columns: the arrow sits inside the column, left of the label, so each label still ends where its values end (the column clips anything drawn outside it). */
+.file-list-header .col-ext .sort-arrow, .file-list-header .col-size .sort-arrow, .file-list-header .col-date .sort-arrow, .file-list-header .col-time .sort-arrow { order: -1; flex: none; }
 .file-list.list-columns .file-card { display: grid; grid-template-columns: var(--list-cols); align-items: center; }
 .file-list.list-columns .col-ext, .file-list.list-columns .col-size, .file-list.list-columns .col-date, .file-list.list-columns .col-time { text-align: right; font-size: var(--data-size); line-height: 1.4; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* In list/tree mode the star sits inline as its own grid column rather than floating over the card content. */
@@ -1360,7 +1360,7 @@ body:not([data-source]) .mode-chip { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .gal-thumb.loaded { transition: none; } }
 
-.md-toggle { display: inline-flex; align-items: center; padding: 0.25rem 0.6rem; border: var(--bw) solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-secondary); font-size: 0.75rem; cursor: pointer; text-decoration: none; flex-shrink: 0; }
+.md-toggle { display: inline-flex; align-items: center; min-height: 2rem; padding: 0.3rem 0.85rem; border: var(--bw) solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-secondary); font-size: 0.8125rem; cursor: pointer; text-decoration: none; flex-shrink: 0; }
 @media (hover: hover) {
 .md-toggle:hover { color: var(--text-primary); border-color: var(--accent); }
 }
@@ -1808,7 +1808,7 @@ html[data-theme="concrete"] {
     --x6: color-mix(in srgb, var(--blue) 50%, var(--green)); --x7: var(--red);
     --x8: color-mix(in srgb, var(--green) 55%, var(--yellow)); --x9: color-mix(in srgb, var(--blue) 55%, var(--violet));
     --x10: color-mix(in srgb, var(--orange) 55%, var(--yellow)); --x11: color-mix(in srgb, var(--violet) 50%, var(--pink));
-    --glyph-1: #ffffff; --glyph-2: var(--yellow);
+    --glyph-1: #ffffff; --glyph-2: var(--yellow); --glyph-tone-ratio: 2.35;
 }
 html:not(.no-xc)[data-theme="concrete"] .file-icon.xc { background: var(--xcv, var(--xc)); color: var(--ink); }
 /* Concrete: the controls row used to clip the play button's hard shadow (and grew a scrollbar when pressed) */
@@ -3489,6 +3489,7 @@ function fitGlyphDuo(root) {
         const c2css = getComputedStyle(probe).color;
         probe.remove();
         let g1 = glyphPx(cs.color); const g2 = glyphPx(c2css), surf = glyphPx(cs.backgroundColor);
+        const toneRatio = parseFloat(cs.getPropertyValue("--glyph-tone-ratio")) || 0;
         if (glyphRatio(g1, g2) >= GLYPH_MIN_PAIR && glyphRatio(g2, surf) >= GLYPH_MIN_SURF) continue;
         const hsl = glyphToHsl(g2), hue = hsl[0], sat = hsl[1] < 0.12 ? hsl[1] : Math.min(0.9, Math.max(0.5, hsl[1]));
         const pick = (main, strict) => {
@@ -3497,7 +3498,7 @@ function fitGlyphDuo(root) {
             for (let l = 2; l <= 98; l++) {
                 const c = glyphFromHsl(hue, sat, l / 100), rs = glyphRatio(c, surf), rp = glyphRatio(c, main);
                 if (strict && (rs < GLYPH_MIN_SURF || rp < GLYPH_MIN_PAIR)) continue;
-                const score = strict ? Math.abs(Math.log(rs / target)) : -Math.min(rs / GLYPH_MIN_SURF, rp / GLYPH_MIN_PAIR);
+                const score = strict ? (toneRatio ? Math.abs(Math.log(rp / toneRatio)) : Math.abs(Math.log(rs / target))) : -Math.min(rs / GLYPH_MIN_SURF, rp / GLYPH_MIN_PAIR);
                 if (score < bestScore) { bestScore = score; best = c; }
             }
             return best;

@@ -587,7 +587,7 @@ html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="h
 .modal.compact-modal { max-width: 560px; }
 #modal:not(.tw-embedded) .modal:not(.has-gallery):not(.video-modal):where(:has(#playlistBar.active):has(.preview-audio-container)) { max-width: 680px; }
 .modal-overlay.active .modal { transform: scale(1); }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.75rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); gap: 0.5rem; flex-shrink: 0; }
 .modal-title { font-size: 0.95rem; line-height: 1.4; font-weight: 700; letter-spacing: -0.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .modal-actions { display: flex; align-items: center; gap: 0.25rem; }
 .modal-btn { padding: 0.375rem; background: var(--control-surface); border: var(--bw) solid var(--border-color); border-radius: var(--radius); color: var(--on-control); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
@@ -599,11 +599,11 @@ html:not([data-theme="concrete"]):not([data-theme="hc-dark"]):not([data-theme="h
 .modal-btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
 }
 .modal-btn svg { width: 16px; height: 16px; }
-.modal-btn.play-playlist-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; font-weight: 600; gap: 0.4rem; color: var(--accent-on-control, var(--accent-text, var(--accent))); }
+.modal-btn.play-playlist-btn, .modal-btn.playlist-source-btn { padding: 0.5rem 0.9rem; font-size: 0.9rem; font-weight: 600; gap: 0.4rem; color: var(--accent-on-control, var(--accent-text, var(--accent))); }
 @media (hover: hover) {
-.modal-btn.play-playlist-btn:hover { color: var(--text-primary); }
+.modal-btn.play-playlist-btn:hover, .modal-btn.playlist-source-btn:hover { color: var(--text-primary); }
 }
-.modal-btn.play-playlist-btn svg { width: 22px; height: 22px; }
+.modal-btn.play-playlist-btn svg, .modal-btn.playlist-source-btn svg { width: 22px; height: 22px; }
 .modal-btn.hidden { display: none; }
 .playlist-bar { --bar-btn-h: var(--ctl); --bar-btn-w: var(--ctl); display: none; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.5rem; padding: 0.45rem 0.75rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); position: relative; }
 .playlist-bar.active { display: flex; }
@@ -801,9 +801,9 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
     .modal-actions { gap: 0.15rem; flex-shrink: 0; }
     .modal-btn { padding: 0.4rem; min-width: 32px; min-height: 32px; }
     .modal-btn svg { width: 15px; height: 15px; }
-    .modal-btn.play-playlist-btn .btn-label { display: none; }
-    .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
-    .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
+    .modal-btn.play-playlist-btn .btn-label, .modal-btn.playlist-source-btn .btn-label { display: none; }
+    .modal-btn.play-playlist-btn, .modal-btn.playlist-source-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
+    .modal-btn.play-playlist-btn svg, .modal-btn.playlist-source-btn svg { width: 24px; height: 24px; }
     .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
     .playlist-btn span:not(.btn-txt):not(.blabel):not(.lbl-long):not(.lbl-short) { display: none; }
     .preview-image { max-height: 80vh; max-height: 80dvh; }
@@ -1260,11 +1260,11 @@ html[data-theme="concrete"] .tw-selbar { background: var(--yellow); color: var(-
        The goto number box keeps its width but shares the height. Touch screens step all of them up together. --- */
 :root { --ctl: 1.7rem; }
 @media (pointer: coarse) { :root { --ctl: 2.25rem; } }
-.player-controls-row .playlist-btn:not(.player-play-btn), .playlist-bar .playlist-controls .playlist-btn, #modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) { width: var(--ctl); height: var(--ctl); min-width: 0; min-height: 0; padding: 0; flex-shrink: 0; }
+.player-controls-row .playlist-btn:not(.player-play-btn), .playlist-bar .playlist-controls .playlist-btn, #modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.playlist-source-btn):not(.text-btn) { width: var(--ctl); height: var(--ctl); min-width: 0; min-height: 0; padding: 0; flex-shrink: 0; }
 .playlist-bar .playlist-btn .btn-txt { padding-right: 0.2rem; }
 /* Header action buttons (star, info, link, download, open) are a little larger than the playlist-bar ones; Play and Close shrank by 25%, so the header is no taller than before. */
-#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) { width: max(var(--ctl), 2rem); height: max(var(--ctl), 2rem); }
-#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.text-btn) svg { width: 17px; height: 17px; }
+#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.playlist-source-btn):not(.text-btn) { width: max(var(--ctl), 2rem); height: max(var(--ctl), 2rem); }
+#modalContent .modal-actions .modal-btn:not(.play-playlist-btn):not(.playlist-source-btn):not(.text-btn) svg { width: 17px; height: 17px; }
 @media (pointer: coarse) { #modalContent .modal-actions .modal-btn#closeBtn::after, .modal-btn.play-playlist-btn::after, .playlist-btn.player-play-btn::after { content: ""; position: absolute; inset: -6px; } #modalContent .modal-actions .modal-btn#closeBtn, .modal-btn.play-playlist-btn, .playlist-btn.player-play-btn { position: relative; } }
 
 /* --- Mobile: previews are full-screen pages; the player keeps desktop sizes and a fixed layout ---
@@ -2585,6 +2585,13 @@ html[data-theme="neonchalk"] *::after { forced-color-adjust: none !important; }
                                             <span class="switch-slider"></span>
                                         </label>
                                     </div>
+                                    <div class="settings-row">
+                                        <span class="settings-label">Open playlists in player</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="playlistSkipToggle" aria-label="When opening an m3u or m3u8 playlist, go straight to the player instead of the text list view" />
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                    </div>
                                 </details>
                                 <details class="settings-section settings-collapsible">
                                     <summary class="settings-section-title">Recording</summary>
@@ -2744,6 +2751,7 @@ html[data-theme="neonchalk"] *::after { forced-color-adjust: none !important; }
                 <span class="modal-title" id="modalTitle" role="heading" aria-level="2">File Preview</span>
                 <div class="modal-actions">
                     <button class="modal-btn play-playlist-btn hidden" id="playPlaylistBtn" title="Play as playlist" aria-label="Play as playlist"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66.0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/></svg><span class="btn-label">Play</span></button>
+                    <button class="modal-btn playlist-source-btn hidden" id="playlistSourceBtn" title="Show the playlist as text" aria-label="Show the playlist as text / list view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><span class="btn-label">List</span></button>
                     <button class="modal-btn" id="focusBtn" aria-pressed="false" title="Hide the side panel and player buttons" aria-label="Hide the side panel and player buttons"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16"/><path d="M9 4v16"/></svg></button>
                     <button class="modal-btn" id="fitBtn" aria-pressed="false" title="Fit video to view" aria-label="Fit video to view"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M17 4h3c1.1 0 2 .9 2 2v2h-2V6h-3V4zM4 8V6h3V4H4c-1.1 0-2 .9-2 2v2h2zm16 8v2h-3v2h3c1.1 0 2-.9 2-2v-2h-2zM7 18H4v-2H2v2c0 1.1.9 2 2 2h3v-2zM18 8H6v8h12V8z"/></svg></button>
                     <button class="modal-btn" id="fullscreenBtn" aria-pressed="false" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="currentcolor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
@@ -3648,6 +3656,9 @@ function loadSettings() {
     closeOnOutsideClick = store.getItem(CLOSE_OUTSIDE_KEY) === "1";
     const closeOutsideToggle = document.getElementById("closeOutsideToggle");
     if (closeOutsideToggle) closeOutsideToggle.checked = closeOnOutsideClick;
+    playlistSkipToPlayer = store.getItem(PLAYLIST_SKIP_KEY) === "1";
+    const playlistSkipToggle = document.getElementById("playlistSkipToggle");
+    if (playlistSkipToggle) playlistSkipToggle.checked = playlistSkipToPlayer;
     document.body.classList.toggle("native-player-mode", useNativePlayer);
     const compactDensity = store.getItem("compactDensity") === "1";
     document.body.classList.toggle("compact-density", compactDensity);
@@ -3717,10 +3728,14 @@ function setupDropdown(btnId, menuId, dropdownId) {
     });
     const closeBtn = menu.querySelector(".settings-menu-close");
     if (closeBtn) closeBtn.addEventListener("click", (e) => { e.stopPropagation(); closeMenu(); });
-    document.addEventListener("click", (e) => {
-        if (!e.target.closest("#" + dropdownId)) {
-            closeMenu();
-        }
+    // Close on outside click (desktop) or on the dimmed backdrop (mobile full-screen menu).
+    // Ignore the toggle button itself so its click handler can open/close; ignore the card so settings stay interactive.
+    document.addEventListener("pointerdown", (e) => {
+        if (!menu.classList.contains("active")) return;
+        if (btn.contains(e.target)) return;
+        const card = menu.querySelector(".settings-menu-card");
+        if (card && card.contains(e.target)) return;
+        closeMenu();
     });
 }
 
@@ -5990,6 +6005,10 @@ function setupEventListeners() {
         closeOnOutsideClick = e.target.checked;
         try { store.setItem(CLOSE_OUTSIDE_KEY, closeOnOutsideClick ? "1" : "0"); } catch (err) { swallow(err); }
     });
+    document.getElementById("playlistSkipToggle").addEventListener("change", (e) => {
+        playlistSkipToPlayer = e.target.checked;
+        try { store.setItem(PLAYLIST_SKIP_KEY, playlistSkipToPlayer ? "1" : "0"); } catch (err) { swallow(err); }
+    });
     wireThumbSize();
     document.getElementById("compactDensityToggle").addEventListener("change", (e) => {
         document.body.classList.toggle("compact-density", e.target.checked);
@@ -6019,6 +6038,7 @@ function setupEventListeners() {
     document.getElementById("playlistTest").addEventListener("click", runPlaylistTest);
     document.getElementById("playlistSongs").addEventListener("click", openSongsModal);
     document.getElementById("playlistList").addEventListener("click", openPlaylistModal);
+    document.getElementById("playlistSourceBtn").addEventListener("click", () => { if (isPlaylistFile) stopPlaylist(); });
     document.getElementById("playlistModalClose").addEventListener("click", closePlaylistModal);
     document.getElementById("playlistSearch").addEventListener("input", renderPlaylistList);
     document.getElementById("playlistListBody").addEventListener("click", playlistRowClick);
@@ -7454,6 +7474,12 @@ function updatePlaylistUI() {
         btn.classList.toggle("active", isShuffle);
         btn.setAttribute("aria-pressed", isShuffle ? "true" : "false");
     });
+    const srcBtn = document.getElementById("playlistSourceBtn");
+    if (srcBtn) {
+        // Show List in the top bar while the player is running a playlist file
+        if (currentPlaylist.length > 0 && isPlaylistFile) srcBtn.classList.remove("hidden");
+        else srcBtn.classList.add("hidden");
+    }
 }
 function refillShuffleBag() {
     shuffleBag = currentPlaylist.map((_, i) => i).filter((i) => i !== currentPlaylistIndex);
@@ -7619,9 +7645,13 @@ function stopPlaylist() {
         (currentPlaylistIndex = 0),
         (shuffleBag = []),
         (shuffleHistory = []),
-        document.getElementById("playlistBar").classList.remove("active"),
-        isPlaylistFile &&
-            (document.getElementById("playPlaylistBtn").classList.remove("hidden"), showPlaylistAsText());
+        document.getElementById("playlistBar").classList.remove("active");
+    const playlistSourceBtn = document.getElementById("playlistSourceBtn");
+    if (playlistSourceBtn) playlistSourceBtn.classList.add("hidden");
+    if (isPlaylistFile) {
+        document.getElementById("playPlaylistBtn").classList.remove("hidden");
+        showPlaylistAsText();
+    }
 }
 // Cache of fetched text for playlists and previews, bounded by entry count and total size. Map order is insertion order,
 // so deleting the first key evicts the least recently used entry (hits re-insert their key).
@@ -7752,10 +7782,12 @@ const SONGS_MAX = 500;
 const NOCORS_KEY = "noCorsHosts";
 const SKIPDEAD_KEY = "skipDeadStreams";
 const BTNSTYLE_KEY = "playerBtnStyle";
+const PLAYLIST_SKIP_KEY = "playlistSkipToPlayer";
 
 let skipDeadStreams = true;
 let closeOnOutsideClick = false; // off by default: a stray click outside the player no longer closes it
 const CLOSE_OUTSIDE_KEY = "closeOnOutsideClick";
+let playlistSkipToPlayer = false; // off by default: playlists open as text with a Play button
 let playSession = null;
 let failStreak = 0;
 let npJob = null;
@@ -12354,6 +12386,8 @@ async function openFile(filePath, fileType, fileName) {
     playlistBarEl.classList.remove("active");
     if (isPlaylistFile) playPlaylistBtn.classList.remove("hidden");
     else playPlaylistBtn.classList.add("hidden");
+    const playlistSourceBtn = document.getElementById("playlistSourceBtn");
+    if (playlistSourceBtn) playlistSourceBtn.classList.add("hidden");
     document.getElementById("modalContent").classList.remove("video-modal", "compact-modal");
     const galleryOn = syncGallery(filePath, previewKindOverride(fileName) || fileType);
     modalEl.classList.add("active");
@@ -12439,6 +12473,18 @@ async function openFile(filePath, fileType, fileName) {
                 break;
             case "playlist":
                 // A playlist is also plain text: show the text first (like the hosted repo does) and let the Play button start it.
+                // When the setting is on, go straight to the player.
+                if (playlistSkipToPlayer) {
+                    try {
+                        const { text, truncated } = await fetchTextPreview(fileUrl);
+                        renderTextPreview(bodyEl, text, fileName, truncated);
+                        bodyEl.classList.add("scrollable");
+                    } catch (err) {
+                        showUnavailable(bodyEl, fileName, fileUrl, err);
+                    }
+                    if (seq === openSeq) startPlaylistMode();
+                    break;
+                }
                 // falls through
             case "code":
             case "markup":
@@ -15419,7 +15465,7 @@ const TWIN = (() => {
     function placeBoxes() {
         const boxes = T.boxes, actions = document.querySelector(".header-actions"), tools = document.querySelector(".header-tools");
         if (!boxes || !actions || !T.panes.length) return;
-        const inHeads = T.on && T.vert && twoBoxes();
+        const inHeads = T.on && twoBoxes();
         boxes.forEach((bx, k) => {
             if (inHeads) {
                 const pn = paneEl(T.panes[boxPane(k)].id), head = pn && pn.querySelector(".tw-head");
@@ -15821,7 +15867,9 @@ const TWIN = (() => {
         if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "nearest" }); } else focusCursor(p);
     }
     function openFileItem(p, item) {
-        if (PLAY_KINDS.has(kindOf(item))) openMedia(p, item); else openInline(p, item);
+        const kind = kindOf(item);
+        if (PLAY_KINDS.has(kind) || (kind === "playlist" && playlistSkipToPlayer)) openMedia(p, item, kind === "playlist");
+        else openInline(p, item);
     }
     function openMedia(p, item, autoPlay) {
         const modalEl = $("modal");

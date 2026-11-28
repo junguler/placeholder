@@ -834,7 +834,7 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
     .modal-btn.play-playlist-btn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
     .modal-btn.play-playlist-btn svg { width: 24px; height: 24px; }
     .playlist-bar { padding: 0.5rem; flex-wrap: wrap; }
-    .playlist-btn span:not(.btn-txt):not(.blabel):not(.lbl-long):not(.lbl-short) { display: none; }
+    .playlist-btn span:not(.btn-txt):not(.blabel):not(.lbl-long):not(.lbl-short):not(.btn-val) { display: none; }
     .preview-image { max-height: 80vh; max-height: 80dvh; }
     .preview-pdf { height: 80vh; height: 80dvh; }
     .preview-media-container { padding: 0.5rem; }
@@ -868,12 +868,12 @@ body[data-btn-style="icons"] .rec-panel .playlist-btn { min-width: 2rem; padding
 .truncation-notice { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-bottom: var(--bw) solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; }
 .modal-btn.copied { color: var(--success); border-color: var(--success); }
 .modal-btn.favorite-btn.favorited { color: var(--accent-on-control, var(--accent-text, var(--accent))); border-color: var(--accent-on-control, var(--accent-text, var(--accent))); }
-.shortcuts-modal { max-width: 440px; }
+.shortcuts-modal { max-width: 600px; }
 .shortcuts-body { padding: 0.75rem 1rem 1rem; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
 .shortcuts-list { display: flex; flex-direction: column; gap: 0.6rem; }
 .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .shortcut-row dt { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-secondary); }
-.shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; }
+.shortcut-row dd { color: var(--text-secondary); font-size: 0.85rem; text-align: right; flex: 1 1 12rem; min-width: 0; }
 .stats-modal { max-width: 420px; }
 .stats-body { padding: 0.85rem 1rem 1rem; overflow-y: auto; }
 .playlist-health { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-left: 0.35em; color: var(--text-muted); font-weight: 400; }
